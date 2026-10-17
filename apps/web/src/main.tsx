@@ -16,6 +16,7 @@ if (import.meta.env.DEV) {
     useEditor.setState({ dirty: false });
     return true;
   };
+  (window as unknown as { __anivoBench: unknown }).__anivoBench = async (style: "clean" | "sketch") => (await import("./dev/bench.js")).benchFrames(style);
 }
 
 createRoot(document.getElementById("root")!).render(
