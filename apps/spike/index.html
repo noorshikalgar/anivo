@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Anivo spike</title>
+    <style>
+      body { margin: 0; background: #0f1720; color: #e6edf3; font: 14px system-ui, sans-serif; }
+      main { padding: 16px; display: grid; gap: 12px; max-width: 980px; }
+      canvas { width: 100%; height: auto; border-radius: 8px; }
+      input[type="range"] { width: 100%; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <canvas id="view" width="1920" height="1080"></canvas>
+      <input id="scrub" type="range" min="0" max="1000" value="0" />
+      <div>
+        <button id="play">Play</button>
+        <label><input id="sketch" type="checkbox" /> Sketch style</label>
+        <button id="mp4">Export MP4</button>
+        <span id="status"></span>
+      </div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

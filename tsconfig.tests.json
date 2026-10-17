@@ -5,7 +5,18 @@
     "declaration": false,
     "declarationMap": false,
     "noEmit": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ]
   },
-  "include": ["packages/*/src/**/*.test.ts", "packages/*/test/**/*.ts"]
+  "include": [
+    "packages/*/src/**/*.test.ts",
+    "packages/*/test/**/*.ts",
+    "tests/e2e/**/*.ts",
+    "playwright.config.ts"
+  ]
 }

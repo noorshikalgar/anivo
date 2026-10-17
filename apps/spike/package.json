@@ -1,0 +1,15 @@
+{
+  "name": "@anivo/spike",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5174 --strictPort"
+  },
+  "dependencies": {
+    "@anivo/engine": "workspace:*",
+    "@anivo/export-web": "workspace:*",
+    "@anivo/render": "workspace:*",
+    "@anivo/schema": "workspace:*"
+  }
+}

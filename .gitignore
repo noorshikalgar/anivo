@@ -9,3 +9,5 @@ coverage/
 !.env.example
 tests/output/
 *.tsbuildinfo
+test-results/
+playwright-report/
