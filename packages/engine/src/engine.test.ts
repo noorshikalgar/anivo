@@ -114,6 +114,21 @@ describe("evaluate", () => {
     expect(times.map((t) => JSON.stringify(evaluateAt(p, t)))).toEqual(first);
   });
 
+  it("gives the same frame for 100 random times as sequential play (phase 0 gate)", () => {
+    // Fixed linear congruential generator, so the test is deterministic.
+    let seed = 12345;
+    const rand = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
+    const total = resolveTimeline(template).totalMs;
+    const times = Array.from({ length: 100 }, () => Math.floor(rand() * total));
+    // Sequential play: one prepared timeline, times in increasing order.
+    const playback = prepare(template);
+    const sequential = new Map<number, string>();
+    for (const t of [...times].sort((a, b) => a - b)) sequential.set(t, JSON.stringify(evaluateAt(playback, t)));
+    // Scrub: a new prepared timeline, times in random order.
+    const scrub = prepare(template);
+    for (const t of times) expect(JSON.stringify(evaluateAt(scrub, t))).toBe(sequential.get(t));
+  });
+
   it("hides an element before its enter action and shows it after", () => {
     expect(el(evaluate(template, 0), "lb").visible).toBe(false);
     expect(el(evaluate(template, 1299), "lb").visible).toBe(false);

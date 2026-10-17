@@ -25,7 +25,7 @@ Each question has an owner and a deadline phase. Record each answer as a decisio
 | # | Question | Options | Recommendation | Decide by |
 |---|---|---|---|---|
 | Q1 | Final product name and domain | **Decided 2026-10-17: Anivo.** Bare npm name free. No public packages under `@anivo`. Repository `noorshikalgar/anivo`. Still to do: create the npm organization, check a domain and trademarks | — | Phase 1 |
-| Q2 | Hand-drawn font | Excalifont, Virgil, Kalam, other OFL font | Test 3 fonts in the spike. Select by readability at 1080p | Phase 0 |
+| Q2 | Hand-drawn font | **Decided 2026-10-17: Kalam.** See [decision 0001](decisions/0001-sketch-font.md) | — | Done |
 | Q3 | UI component kit | **Decided 2026-10-17: Fluent UI React v9.** See [10](10-architecture.md#editor-ui-kit) | — | Done |
 | Q4 | Web bridge security model with Chromium "local network access" | WebSocket to `127.0.0.1` with pairing, or a browser extension | WebSocket with pairing. Test the permission prompt in phase 4 | Phase 4 |
 | Q5 | Share link host for the public instance | Cloudflare R2 + Worker, own server | Cloudflare R2 + Worker (low cost, no server to manage) | After 1.0 |

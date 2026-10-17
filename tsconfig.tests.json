@@ -17,6 +17,7 @@
     "packages/*/src/**/*.test.ts",
     "packages/*/test/**/*.ts",
     "tests/e2e/**/*.ts",
-    "playwright.config.ts"
+    "playwright.config.ts",
+    "scripts/**/*.ts"
   ]
 }

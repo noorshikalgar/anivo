@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "render:template": "tsx scripts/render-template.ts"
   },
   "devDependencies": {
     "@anivo/export-node": "workspace:*",
@@ -24,6 +25,7 @@
     "eslint": "10.13.0",
     "pixelmatch": "8.0.0",
     "pngjs": "7.0.0",
+    "tsx": "4.23.15",
     "typescript": "5.9.3",
     "typescript-eslint": "8.71.2",
     "vite": "8.3.4",
