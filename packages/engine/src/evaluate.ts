@@ -244,10 +244,34 @@ function buildBoundaries(timeline: Timeline, base: StateMap): StateMap[] {
   return boundaries;
 }
 
+/**
+ * Visibility rule (docs/06): an element whose first action is `enter` is not
+ * visible in the base state. The rule is derived here, so it stays correct
+ * when operations add, move, or remove actions.
+ */
+function firstActionIsEnter(scene: Scene): Set<string> {
+  const seen = new Set<string>();
+  const hidden = new Set<string>();
+  for (const step of scene.steps) {
+    for (const action of step.actions) {
+      for (const id of action.targets) {
+        if (seen.has(id)) continue;
+        seen.add(id);
+        if (action.type === "enter") hidden.add(id);
+      }
+    }
+  }
+  return hidden;
+}
+
 export function prepare(scene: Scene): Prepared {
   const timeline = resolveTimeline(scene);
+  const hidden = firstActionIsEnter(scene);
   const base: StateMap = {};
-  for (const el of Object.values(scene.elements)) base[el.id] = baseFrame(el);
+  for (const el of Object.values(scene.elements)) {
+    base[el.id] = baseFrame(el);
+    if (hidden.has(el.id)) base[el.id]!.visible = false;
+  }
   const order = Object.values(scene.elements)
     .sort((a, b) => (a.z < b.z ? -1 : a.z > b.z ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
     .map((el) => el.id);

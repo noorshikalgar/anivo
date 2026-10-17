@@ -24,9 +24,10 @@ function toIssues(error: z.ZodError, prefix = ""): SchemaIssue[] {
  *
  * 1. Validate the file shape.
  * 2. Fill each element ID from its map key.
- * 3. Apply the visibility rule (docs/06): an element whose first action is
- *    `enter` is not visible in the base state.
- * 4. Check that all references point to existing elements.
+ * 3. Check that all references point to existing elements.
+ *
+ * The visibility rule (docs/06) is applied by the engine, not here, so it
+ * stays correct when operations add or remove actions.
  */
 export function loadScene(input: unknown): LoadResult {
   const file = SceneFile.safeParse(input);
@@ -61,11 +62,11 @@ export function loadScene(input: unknown): LoadResult {
   const refIssues = checkReferences(scene);
   if (refIssues.length > 0) return { ok: false, issues: refIssues };
 
-  applyVisibilityRule(scene);
   return { ok: true, scene, readOnly, warnings: [] };
 }
 
-function checkReferences(scene: Scene): SchemaIssue[] {
+/** Check that all references in a scene point to existing elements, and that IDs are unique. */
+export function checkReferences(scene: Scene): SchemaIssue[] {
   const issues: SchemaIssue[] = [];
   const has = (id: string) => id in scene.elements;
   const known = () => Object.keys(scene.elements).slice(0, 20).join(", ");
@@ -104,19 +105,4 @@ function checkReferences(scene: Scene): SchemaIssue[] {
     });
   });
   return issues;
-}
-
-/** Set `visible: false` for each element whose first action is `enter`. Mutates the scene. */
-function applyVisibilityRule(scene: Scene): void {
-  const seen = new Set<string>();
-  for (const step of scene.steps) {
-    for (const action of step.actions) {
-      for (const id of action.targets) {
-        if (seen.has(id)) continue;
-        seen.add(id);
-        const el = scene.elements[id];
-        if (el && action.type === "enter") el.visible = false;
-      }
-    }
-  }
 }
