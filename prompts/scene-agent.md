@@ -72,11 +72,12 @@ Do these steps in sequence.
 ```
 scene "<title>" style=clean|sketch theme=<name> size=1920x1080 fps=60
 
-box <id> "<label>" [fill=<token>] [right-of|left-of|above|below=<id>] [gap=<px>]
+box <id> "<label>" [fill=<token>] [right-of|left-of|above|below=<id>] [gap=<px>] [align=start|center|end] [at=x,y] [size=WxH]
 ellipse | diamond | text | icon <id> <pack>:<name> "<label>" | code <id> lang=<lang> """…"""
 row|column|grid <id> [spacing=<px>] [placement]
   box <id> "<label>"
-arrow <from> -> <to>[, <to>…] [label="<text>"] [route=straight|elbow|curved] [dashed]
+arrow <from> -> <to>[, <to>…] ["label"] [straight|elbow|curved] [dashed] [both] [no-head] [id=<id>]
+arrow 340,300 -> 340,980   (free ends are x,y points)
 caption <id> "<sentence>" [top|bottom]
 
 step "<title>" [hold=<time>] [cue=<time>]
@@ -94,6 +95,9 @@ step "<title>" [hold=<time>] [cue=<time>]
 - `<targets>` is an ID, a list of IDs separated by commas, or a prefix with `*` (`pod-*`).
 - A connector ID is `<from>-><to>` (`user->lb`).
 - Times have units: `300ms`, `1.5s`.
+- Declare all elements at the top level. A step contains actions only.
+- Style keys: `fill`, `stroke`, `stroke-width`, `style=dashed`, `radius`, `font-size`, `color` (text), `text-align`, `weight`, `opacity`, `rotate`.
+- Run `anivo print` (or call `anivo_scene_get` with format `script`) to see a scene in this language.
 
 Call `anivo_schema` for the full schema. Call `anivo_icons_search` to find an icon name. Do not invent icon names.
 
