@@ -24,20 +24,6 @@ describe("loadScene", () => {
     expect(lb?.opacity).toBe(1);
   });
 
-  it("hides elements whose first action is enter", () => {
-    const { scene } = mustLoad(template);
-    for (const el of Object.values(scene.elements)) expect(el.visible).toBe(false);
-  });
-
-  it("keeps elements visible when the first action is not enter", () => {
-    const { scene } = mustLoad({
-      schemaVersion: 1,
-      elements: { a: { type: "rectangle", z: "a0", width: 10, height: 10 } },
-      steps: [{ id: "s1", actions: [{ id: "x1", type: "emphasis", effect: "pulse", targets: ["a"] }] }],
-    });
-    expect(scene.elements["a"]?.visible).toBe(true);
-  });
-
   it("reports an unknown action target with a path and the valid IDs", () => {
     const r = loadScene({
       schemaVersion: 1,

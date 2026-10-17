@@ -129,6 +129,11 @@ describe("evaluate", () => {
     for (const t of times) expect(JSON.stringify(evaluateAt(scrub, t))).toBe(sequential.get(t));
   });
 
+  it("keeps an element visible when its first action is not enter", () => {
+    const s = scene([{ id: "s1", actions: [{ id: "x1", type: "emphasis", effect: "pulse", targets: ["a"] }] }]);
+    expect(el(evaluate(s, 0), "a").visible).toBe(true);
+  });
+
   it("hides an element before its enter action and shows it after", () => {
     expect(el(evaluate(template, 0), "lb").visible).toBe(false);
     expect(el(evaluate(template, 1299), "lb").visible).toBe(false);
