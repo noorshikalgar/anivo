@@ -1,0 +1,46 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/.tsbuildinfo",
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "src/**/*.test.ts"
+  ],
+  "references": [
+    {
+      "path": "../schema"
+    },
+    {
+      "path": "../ops"
+    },
+    {
+      "path": "../engine"
+    },
+    {
+      "path": "../layout"
+    },
+    {
+      "path": "../render"
+    },
+    {
+      "path": "../lint"
+    },
+    {
+      "path": "../script"
+    },
+    {
+      "path": "../fileio"
+    },
+    {
+      "path": "../export-node"
+    }
+  ]
+}

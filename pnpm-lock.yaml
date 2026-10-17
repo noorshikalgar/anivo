@@ -133,6 +133,39 @@ importers:
         specifier: 6.1.2
         version: 6.1.2(vite@8.3.4(@types/node@22.20.5)(esbuild@0.28.2)(tsx@4.23.15))
 
+  packages/cli:
+    dependencies:
+      '@anivo/engine':
+        specifier: workspace:*
+        version: link:../engine
+      '@anivo/export-node':
+        specifier: workspace:*
+        version: link:../export-node
+      '@anivo/lint':
+        specifier: workspace:*
+        version: link:../lint
+      '@anivo/ops':
+        specifier: workspace:*
+        version: link:../ops
+      '@anivo/render':
+        specifier: workspace:*
+        version: link:../render
+      '@anivo/schema':
+        specifier: workspace:*
+        version: link:../schema
+      '@anivo/script':
+        specifier: workspace:*
+        version: link:../script
+      '@anivo/tools':
+        specifier: workspace:*
+        version: link:../tools
+      commander:
+        specifier: 15.0.0
+        version: 15.0.0
+      tsx:
+        specifier: 4.23.15
+        version: 4.23.15
+
   packages/engine:
     dependencies:
       '@anivo/schema':
@@ -254,6 +287,42 @@ importers:
       '@anivo/schema':
         specifier: workspace:*
         version: link:../schema
+
+  packages/tools:
+    dependencies:
+      '@anivo/engine':
+        specifier: workspace:*
+        version: link:../engine
+      '@anivo/export-node':
+        specifier: workspace:*
+        version: link:../export-node
+      '@anivo/fileio':
+        specifier: workspace:*
+        version: link:../fileio
+      '@anivo/layout':
+        specifier: workspace:*
+        version: link:../layout
+      '@anivo/lint':
+        specifier: workspace:*
+        version: link:../lint
+      '@anivo/ops':
+        specifier: workspace:*
+        version: link:../ops
+      '@anivo/render':
+        specifier: workspace:*
+        version: link:../render
+      '@anivo/schema':
+        specifier: workspace:*
+        version: link:../schema
+      '@anivo/script':
+        specifier: workspace:*
+        version: link:../script
+      '@napi-rs/canvas':
+        specifier: 1.0.11
+        version: 1.0.11
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
 
 packages:
 
@@ -1451,6 +1520,10 @@ packages:
   chai@6.3.0:
     resolution: {integrity: sha512-XWAtwJ6OHO+tj0EKCs0Y2UamnyOxseZWltU4x2U2wh8g4AigdjwvtUjvLP2tqkA/avxHEtzxNaqGq/YGNwckKg==}
     engines: {node: '>=18'}
+
+  commander@15.0.0:
+    resolution: {integrity: sha512-z67u4ZhzCL/Tydu1lJARtEZYWbWaN7oYLHbsuzocr6y4N6WZAagG3RQ4FW61V1/0+jImpj293XfrcYnd1qxtPg==}
+    engines: {node: '>=22.12.0'}
 
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
@@ -3638,6 +3711,8 @@ snapshots:
       qified: 0.10.1
 
   chai@6.3.0: {}
+
+  commander@15.0.0: {}
 
   cross-spawn@7.0.6:
     dependencies:

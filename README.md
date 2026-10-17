@@ -33,6 +33,19 @@ pnpm dev
 Then open http://localhost:5173. Other commands: `pnpm test`, `pnpm test:e2e`, `pnpm typecheck`, `pnpm lint`,
 `pnpm render:template load-balancer out.mp4` (render a template with the Node engine).
 
+The `anivo` command-line tool (for people and agents):
+
+```bash
+pnpm anivo new demo.anivo --template load-balancer
+pnpm anivo print demo.anivo > demo.anivo.txt
+pnpm anivo apply demo.anivo demo.anivo.txt --mode replace
+pnpm anivo lint demo.anivo
+pnpm anivo contact-sheet demo.anivo --out sheet.png
+pnpm anivo render demo.anivo --out demo.mp4
+```
+
+Run `pnpm anivo --help` for all commands.
+
 ## Read the documents in this sequence
 
 | # | Document | Contents |

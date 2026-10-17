@@ -16,7 +16,8 @@
     "build:icons": "tsx scripts/build-icon-packs.ts",
     "dev": "pnpm --filter @anivo/web dev",
     "build:templates": "tsx scripts/build-templates.ts",
-    "bench": "tsx scripts/bench.ts"
+    "bench": "tsx scripts/bench.ts",
+    "anivo": "node packages/cli/bin/anivo.js"
   },
   "devDependencies": {
     "@anivo/export-node": "workspace:*",

@@ -38,7 +38,11 @@ let iconsRegistered = false;
 /** Register the bundled icon packs (Lucide, Fluent) with the renderer. */
 export function registerBundledIconPacks(dir = BUNDLED_ICONS_DIR): void {
   if (iconsRegistered && dir === BUNDLED_ICONS_DIR) return;
-  for (const file of readdirSync(dir).filter((f) => f.endsWith(".json"))) {
+  // Lucide is the default pack, so it comes first in search results.
+  const files = readdirSync(dir)
+    .filter((f) => f.endsWith(".json"))
+    .sort((a, b) => (a === "lucide.json" ? -1 : b === "lucide.json" ? 1 : a.localeCompare(b)));
+  for (const file of files) {
     registerIconPack(JSON.parse(readFileSync(join(dir, file), "utf8")) as IconPack);
   }
   if (dir === BUNDLED_ICONS_DIR) iconsRegistered = true;
