@@ -13,6 +13,7 @@ import { useMemo } from "react";
 import { commitProps, commitSettings, deleteSelection, duplicateSelection, renameElement, reorderSelection, setElementText } from "../commands.js";
 import { useEditor } from "../store.js";
 import { ColorField, NumberField, Row, SelectField, TextField } from "./fields.js";
+import { AddActionMenu, StepInspector } from "./StepInspector.js";
 
 const useStyles = makeStyles({
   root: {
@@ -60,7 +61,14 @@ function ElementProperties({ el }: { el: Element }) {
         {el.type}
         {el.type === "icon" ? ` · ${el.pack}:${el.name}` : ""}
       </Text>
-      {selectedStep !== null && <Text className={styles.note}>Changes to position, size, color, and label in a step become a morph in that step.</Text>}
+      {selectedStep !== null && (
+        <>
+          <Text className={styles.note}>Changes to position, size, color, and label in a step become a morph in that step.</Text>
+          <div>
+            <AddActionMenu />
+          </div>
+        </>
+      )}
       {el.type !== "connector" && (
         <TextField
           label={el.type === "text" ? "Text" : "Label"}
@@ -264,18 +272,28 @@ export function Inspector() {
   const selection = useEditor((s) => s.selection);
   const elements = useEditor((s) => s.scene.elements);
   const el = selection.length === 1 ? elements[selection[0]!] : undefined;
+  const step = useEditor((s) => (s.selectedStep === null ? undefined : s.scene.steps.find((st) => st.id === s.selectedStep)));
 
   return (
     <aside className={styles.root} aria-label="Inspector">
       <Text weight="semibold" size={200} className={styles.muted}>
-        {el ? "Element" : selection.length > 1 ? "Selection" : "Scene"}
+        {el ? "Element" : selection.length > 1 ? "Selection" : step ? "Step" : "Scene"}
       </Text>
       {el ? (
         <ElementProperties key={el.id} el={el} />
       ) : selection.length > 1 ? (
-        <Text size={200} className={styles.muted}>
-          {selection.length} elements selected.
-        </Text>
+        <>
+          <Text size={200} className={styles.muted}>
+            {selection.length} elements selected.
+          </Text>
+          {step && (
+            <div>
+              <AddActionMenu />
+            </div>
+          )}
+        </>
+      ) : step ? (
+        <StepInspector key={step.id} step={step} />
       ) : (
         <SceneProperties />
       )}
