@@ -27,6 +27,9 @@
     },
     {
       "path": "packages/script"
+    },
+    {
+      "path": "packages/lint"
     }
   ]
 }
