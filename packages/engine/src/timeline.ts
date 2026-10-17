@@ -10,6 +10,8 @@ export interface TimedAction {
   startMs: number;
   endMs: number;
   ease: EaseFn;
+  /** For a focus action: all targets after group expansion. */
+  focusTargets?: string[];
 }
 
 export interface TimedStep {
@@ -55,6 +57,24 @@ function labelLength(scene: Scene, id: string): number {
  * scene change, not for each frame.
  */
 export function resolveTimeline(scene: Scene): Timeline {
+  // An action on a group applies to all elements in the group.
+  const children = new Map<string, string[]>();
+  for (const el of Object.values(scene.elements)) {
+    if (el.parentId === undefined) continue;
+    const list = children.get(el.parentId) ?? [];
+    list.push(el.id);
+    children.set(el.parentId, list);
+  }
+  const expand = (ids: string[]): string[] => {
+    const out: string[] = [];
+    const visit = (id: string) => {
+      const kids = children.get(id);
+      if (scene.elements[id]?.type === "group") kids?.forEach(visit);
+      else out.push(id);
+    };
+    ids.forEach(visit);
+    return out;
+  };
   const steps: TimedStep[] = [];
   const warnings: TimelineWarning[] = [];
   let cursor = 0;
@@ -77,12 +97,13 @@ export function resolveTimeline(scene: Scene): Timeline {
     let contentEnd = startMs;
     for (const action of step.actions) {
       const ease = actionEase(action);
-      const targets = action.type === "wait" && action.targets.length === 0 ? [""] : action.targets;
+      const targets = action.type === "wait" && action.targets.length === 0 ? [""] : expand(action.targets);
+      const focusTargets = action.type === "emphasis" && action.effect === "focus" ? targets : undefined;
       targets.forEach((target, targetIndex) => {
         const duration = defaultDurationMs(action, labelLength(scene, target));
         const s = startMs + action.delayMs + targetIndex * action.staggerMs;
         const e = s + duration;
-        if (target !== "") actions.push({ action, target, targetIndex, startMs: s, endMs: e, ease });
+        if (target !== "") actions.push({ action, target, targetIndex, startMs: s, endMs: e, ease, ...(focusTargets ? { focusTargets } : {}) });
         contentEnd = Math.max(contentEnd, e);
       });
     }

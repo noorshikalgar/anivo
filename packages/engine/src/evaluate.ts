@@ -197,9 +197,9 @@ function applyEmphasis(f: ElementFrame, action: Extract<Action, { type: "emphasi
   }
 }
 
-function applyFocus(state: StateMap, action: Extract<Action, { type: "emphasis" }>, raw: number): void {
-  const dim = lerp(1, action.params.dimTo ?? 0.25, envelope(raw));
-  const targets = new Set(action.targets);
+function applyFocus(state: StateMap, focusTargets: string[], dimTo: number, raw: number): void {
+  const dim = lerp(1, dimTo, envelope(raw));
+  const targets = new Set(focusTargets);
   for (const id of Object.keys(state)) {
     if (targets.has(id)) continue;
     const f = state[id]!;
@@ -217,7 +217,7 @@ function applyTimedAction(state: StateMap, ta: TimedAction, t: number): void {
   const eased = ta.ease(raw);
 
   if (action.type === "emphasis" && action.effect === "focus") {
-    if (ta.targetIndex === 0 && raw < 1) applyFocus(state, action, raw);
+    if (ta.targetIndex === 0 && raw < 1) applyFocus(state, ta.focusTargets ?? action.targets, action.params.dimTo ?? 0.25, raw);
     return;
   }
 
@@ -249,16 +249,15 @@ function buildBoundaries(timeline: Timeline, base: StateMap): StateMap[] {
  * visible in the base state. The rule is derived here, so it stays correct
  * when operations add, move, or remove actions.
  */
-function firstActionIsEnter(scene: Scene): Set<string> {
+function firstActionIsEnter(timeline: Timeline): Set<string> {
+  // The timeline has the targets after group expansion, in step and action order.
   const seen = new Set<string>();
   const hidden = new Set<string>();
-  for (const step of scene.steps) {
-    for (const action of step.actions) {
-      for (const id of action.targets) {
-        if (seen.has(id)) continue;
-        seen.add(id);
-        if (action.type === "enter") hidden.add(id);
-      }
+  for (const step of timeline.steps) {
+    for (const ta of step.actions) {
+      if (seen.has(ta.target)) continue;
+      seen.add(ta.target);
+      if (ta.action.type === "enter") hidden.add(ta.target);
     }
   }
   return hidden;
@@ -266,7 +265,7 @@ function firstActionIsEnter(scene: Scene): Set<string> {
 
 export function prepare(scene: Scene): Prepared {
   const timeline = resolveTimeline(scene);
-  const hidden = firstActionIsEnter(scene);
+  const hidden = firstActionIsEnter(timeline);
   const base: StateMap = {};
   for (const el of Object.values(scene.elements)) {
     base[el.id] = baseFrame(el);

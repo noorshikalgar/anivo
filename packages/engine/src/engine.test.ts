@@ -136,6 +136,17 @@ describe("evaluate", () => {
     expect(f.timeMs).toBe(0);
   });
 
+  it("applies an action on a group to the elements in the group", () => {
+    const s = scene(
+      [{ id: "s1", actions: [{ id: "g1", type: "enter", effect: "fade", targets: ["grp"], durationMs: 400 }] }],
+      { grp: { type: "group", z: "a9" }, a: { type: "rectangle", z: "a0", parentId: "grp", width: 10, height: 10 }, b: { type: "rectangle", z: "a1", parentId: "grp", width: 10, height: 10 } },
+    );
+    expect(el(evaluate(s, -1), "a").visible).toBe(false);
+    expect(el(evaluate(s, -1), "b").visible).toBe(false);
+    expect(el(evaluate(s, 200), "b").opacity).toBeGreaterThan(0);
+    expect(el(evaluate(s, 400), "a").opacity).toBe(1);
+  });
+
   it("keeps an element visible when its first action is not enter", () => {
     const s = scene([{ id: "s1", actions: [{ id: "x1", type: "emphasis", effect: "pulse", targets: ["a"] }] }]);
     expect(el(evaluate(s, 0), "a").visible).toBe(true);

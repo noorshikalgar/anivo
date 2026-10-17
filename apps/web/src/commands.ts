@@ -1,7 +1,8 @@
 import { prepare } from "@anivo/engine";
 import { evaluateWithLayout } from "@anivo/layout";
 import type { OperationInput } from "@anivo/ops";
-import { type Box, elementBounds, geometryOps } from "./editing.js";
+import type { Element } from "@anivo/schema";
+import { type Box, boundsOf, geometryOps, leafDescendants } from "./editing.js";
 import { useEditor } from "./store.js";
 
 /** Element boxes at the current playhead (the base state in the Base view). */
@@ -9,11 +10,13 @@ export function currentBoxes(): (id: string) => Box | undefined {
   const { scene, playhead, playing, selectedStep } = useEditor.getState();
   const t = !playing && selectedStep === null && playhead === 0 ? -1 : playhead;
   const { frame, routes } = evaluateWithLayout(scene, t);
-  const byId = new Map(frame.elements.map((f) => [f.id, f]));
-  return (id) => {
-    const f = byId.get(id);
-    return f ? elementBounds(f, routes) : undefined;
-  };
+  return (id) => boundsOf(scene, frame, routes, id);
+}
+
+/** Selected elements that move: groups become their elements, connectors stay with their bindings. */
+export function movableIds(ids: string[]): string[] {
+  const { scene } = useEditor.getState();
+  return [...new Set(ids.flatMap((id) => leafDescendants(scene, id)))].filter((id) => scene.elements[id]?.type !== "connector");
 }
 
 /** Is the element visible at the start of the selected step? */
@@ -38,8 +41,7 @@ export function nudgeSelection(dx: number, dy: number): void {
   const st = useEditor.getState();
   const box = currentBoxes();
   const changes = new Map<string, Box>();
-  for (const id of st.selection) {
-    if (st.scene.elements[id]?.type === "connector") continue;
+  for (const id of movableIds(st.selection)) {
     const b = box(id);
     if (b) changes.set(id, { ...b, x: b.x + dx, y: b.y + dy });
   }
@@ -49,28 +51,15 @@ export function nudgeSelection(dx: number, dy: number): void {
 export function deleteSelection(): void {
   const st = useEditor.getState();
   if (st.selection.length === 0) return;
-  const r = st.apply({ label: "Delete", ops: [{ op: "element.remove", ids: st.selection }] });
+  const ids = [...new Set(st.selection.flatMap((id) => [id, ...allDescendants(st.scene.elements, id)]))];
+  const r = st.apply({ label: "Delete", ops: [{ op: "element.remove", ids }] });
   if (r.ok) st.setSelection([]);
 }
 
-/** Duplicate the selected elements with an offset of 24 px. Connectors keep their bindings. */
+/** Duplicate the selected elements with an offset of 24 px. */
 export function duplicateSelection(): void {
-  const st = useEditor.getState();
-  const ops: OperationInput[] = [];
-  for (const id of st.selection) {
-    const el = st.scene.elements[id];
-    if (!el) continue;
-    // The copy gets a new ID, a new draw order key (on top), and a new seed.
-    const props: Record<string, unknown> = { ...el };
-    delete props["id"];
-    delete props["z"];
-    delete props["seed"];
-    delete props["type"];
-    ops.push({ op: "element.add", type: el.type, props: el.type === "connector" ? props : { ...props, x: el.x + 24, y: el.y + 24 } });
-  }
-  if (ops.length === 0) return;
-  const r = st.apply({ label: "Duplicate", ops });
-  if (r.ok) st.setSelection(r.created);
+  const data = copyData(useEditor.getState().selection);
+  if (data) pasteData(data, 24);
 }
 
 export function selectAll(): void {
@@ -232,4 +221,187 @@ export function updateAction(step: string, id: string, set: Record<string, unkno
 
 export function removeAction(step: string, id: string): void {
   useEditor.getState().apply({ label: "Remove action", ops: [{ op: "action.remove", step, id }] });
+}
+
+// --- groups, clipboard, align ------------------------------------------------
+
+function allDescendants(elements: Record<string, Element>, id: string): string[] {
+  const out: string[] = [];
+  for (const el of Object.values(elements)) if (el.parentId === id) out.push(el.id, ...allDescendants(elements, el.id));
+  return out;
+}
+
+export function groupSelection(): void {
+  const st = useEditor.getState();
+  // Group the top-level elements of the selection. Connectors join the group too.
+  const ids = [...new Set(st.selection.filter((id) => st.scene.elements[id]))];
+  if (ids.length < 2) return;
+  let id = "group";
+  for (let n = 2; id in st.scene.elements; n++) id = `group-${n}`;
+  const r = st.apply({
+    label: "Group",
+    ops: [{ op: "element.add", id, type: "group", props: {} }, ...ids.map((child): OperationInput => ({ op: "element.update", id: child, set: { parentId: id } }))],
+  });
+  if (r.ok) st.setSelection([id]);
+}
+
+export function ungroupSelection(): void {
+  const st = useEditor.getState();
+  const groups = st.selection.filter((id) => st.scene.elements[id]?.type === "group");
+  if (groups.length === 0) return;
+  const children = Object.values(st.scene.elements).filter((e) => e.parentId && groups.includes(e.parentId)).map((e) => e.id);
+  // Removing a group keeps its elements (docs/09 element.remove).
+  const r = st.apply({ label: "Ungroup", ops: [{ op: "element.remove", ids: groups }] });
+  if (r.ok) st.setSelection(children);
+}
+
+const CLIP_PREFIX = "anivo-clipboard:";
+
+interface ClipData {
+  elements: Element[];
+}
+
+/** Elements to copy: the selection, the elements in selected groups, and connectors between copied elements. */
+export function copyData(ids: string[]): ClipData | undefined {
+  const { scene } = useEditor.getState();
+  const set = new Set(ids.flatMap((id) => [id, ...allDescendants(scene.elements, id)]));
+  for (const el of Object.values(scene.elements)) {
+    if (el.type !== "connector" || set.has(el.id)) continue;
+    const a = el.start.kind === "bound" ? el.start.elementId : null;
+    const b = el.end.kind === "bound" ? el.end.elementId : null;
+    if (a && b && set.has(a) && set.has(b)) set.add(el.id);
+  }
+  const elements = [...set].map((id) => scene.elements[id]).filter((e): e is Element => !!e).sort((a, b) => (a.z < b.z ? -1 : a.z > b.z ? 1 : 0));
+  return elements.length > 0 ? { elements } : undefined;
+}
+
+/** Add copies of elements with new IDs. References inside the copied set point to the copies. */
+export function pasteData(data: ClipData, offset: number): void {
+  const st = useEditor.getState();
+  const taken = new Set(Object.keys(st.scene.elements));
+  const map = new Map<string, string>();
+  for (const el of data.elements) {
+    // The copy of 'pod-1' is 'pod-1-2', then 'pod-1-3'.
+    const base = el.id.slice(0, 44);
+    let id = `${base}-2`;
+    for (let n = 3; taken.has(id); n++) id = `${base}-${n}`;
+    taken.add(id);
+    map.set(el.id, id);
+  }
+  const ops: OperationInput[] = data.elements.map((el) => {
+    const props: Record<string, unknown> = { ...el };
+    for (const k of ["id", "z", "seed", "type"]) delete props[k];
+    if (el.parentId) {
+      const p = map.get(el.parentId);
+      if (p) props["parentId"] = p;
+      else delete props["parentId"];
+    }
+    if (el.type === "connector") {
+      const fix = (e: typeof el.start) => {
+        if (e.kind !== "bound") return { ...e, x: e.x + offset, y: e.y + offset };
+        const to = map.get(e.elementId);
+        return to ? { ...e, elementId: to } : st.scene.elements[e.elementId] ? e : { kind: "free", x: 0, y: 0 };
+      };
+      props["start"] = fix(el.start);
+      props["end"] = fix(el.end);
+    } else if (el.type !== "group") {
+      props["x"] = el.x + offset;
+      props["y"] = el.y + offset;
+    }
+    return { op: "element.add", id: map.get(el.id)!, type: el.type, props };
+  });
+  // A child refers to its group, so add groups first.
+  ops.sort((a, b) => ((a as { type: string }).type === "group" ? -1 : 0) - ((b as { type: string }).type === "group" ? -1 : 0));
+  const r = st.apply({ label: "Paste", ops });
+  if (r.ok) {
+    const roots = data.elements.filter((e) => !e.parentId || !map.has(e.parentId)).map((e) => map.get(e.id)!);
+    st.setSelection(roots);
+  }
+}
+
+export async function copySelection(cut = false): Promise<void> {
+  const st = useEditor.getState();
+  const data = copyData(st.selection);
+  if (!data) return;
+  const text = CLIP_PREFIX + JSON.stringify(data);
+  internalClipboard = text;
+  await navigator.clipboard?.writeText(text).catch(() => undefined);
+  if (cut) deleteSelection();
+}
+
+let internalClipboard = "";
+
+export async function pasteFromClipboard(): Promise<void> {
+  let text = internalClipboard;
+  try {
+    const sys = await navigator.clipboard?.readText();
+    if (sys?.startsWith(CLIP_PREFIX)) text = sys;
+  } catch {
+    // No clipboard permission: use the copy from this page.
+  }
+  if (!text.startsWith(CLIP_PREFIX)) return;
+  try {
+    pasteData(JSON.parse(text.slice(CLIP_PREFIX.length)) as ClipData, 24);
+  } catch {
+    // Not valid clipboard data. Ignore it.
+  }
+}
+
+export type AlignKind = "left" | "center" | "right" | "top" | "middle" | "bottom";
+
+/** Align the selected elements to the bounds of the selection (FR-CANVAS-07). */
+export function alignSelection(kind: AlignKind): void {
+  const st = useEditor.getState();
+  const box = currentBoxes();
+  const items = st.selection.map((id) => ({ id, b: box(id) })).filter((x): x is { id: string; b: Box } => !!x.b && st.scene.elements[x.id]?.type !== "connector");
+  if (items.length < 2) return;
+  const minX = Math.min(...items.map((i) => i.b.x));
+  const maxX = Math.max(...items.map((i) => i.b.x + i.b.width));
+  const minY = Math.min(...items.map((i) => i.b.y));
+  const maxY = Math.max(...items.map((i) => i.b.y + i.b.height));
+  const changes = new Map<string, Box>();
+  for (const { id, b } of items) {
+    const n = { ...b };
+    if (kind === "left") n.x = minX;
+    if (kind === "center") n.x = (minX + maxX) / 2 - b.width / 2;
+    if (kind === "right") n.x = maxX - b.width;
+    if (kind === "top") n.y = minY;
+    if (kind === "middle") n.y = (minY + maxY) / 2 - b.height / 2;
+    if (kind === "bottom") n.y = maxY - b.height;
+    moveGroupAware(id, b, n, changes, box);
+  }
+  commitGeometry(changes, "Align");
+}
+
+/** Equal space between the selected elements (FR-CANVAS-07). */
+export function distributeSelection(axis: "horizontal" | "vertical"): void {
+  const st = useEditor.getState();
+  const box = currentBoxes();
+  const items = st.selection.map((id) => ({ id, b: box(id) })).filter((x): x is { id: string; b: Box } => !!x.b && st.scene.elements[x.id]?.type !== "connector");
+  if (items.length < 3) return;
+  const h = axis === "horizontal";
+  items.sort((a, b) => (h ? a.b.x - b.b.x : a.b.y - b.b.y));
+  const first = items[0]!.b;
+  const last = items[items.length - 1]!.b;
+  const span = h ? last.x + last.width - first.x : last.y + last.height - first.y;
+  const sizes = items.reduce((s, i) => s + (h ? i.b.width : i.b.height), 0);
+  const gap = (span - sizes) / (items.length - 1);
+  let pos = h ? first.x : first.y;
+  const changes = new Map<string, Box>();
+  for (const { id, b } of items) {
+    const n = h ? { ...b, x: pos } : { ...b, y: pos };
+    pos += (h ? b.width : b.height) + gap;
+    moveGroupAware(id, b, n, changes, box);
+  }
+  commitGeometry(changes, "Distribute");
+}
+
+/** Add the geometry change for an element. A group moves its elements by the same offset. */
+function moveGroupAware(id: string, from: Box, to: Box, changes: Map<string, Box>, box: (id: string) => Box | undefined): void {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  for (const leaf of movableIds([id])) {
+    const b = box(leaf);
+    if (b) changes.set(leaf, { ...b, x: b.x + dx, y: b.y + dy });
+  }
 }
