@@ -7,13 +7,14 @@
     "node": ">=20"
   },
   "scripts": {
-    "typecheck": "tsc -b && tsc -p tsconfig.tests.json && tsc -p apps/spike/tsconfig.json",
+    "typecheck": "tsc -b && tsc -p tsconfig.tests.json && tsc -p apps/spike/tsconfig.json && tsc -p apps/web/tsconfig.json",
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "render:template": "tsx scripts/render-template.ts",
-    "build:icons": "tsx scripts/build-icon-packs.ts"
+    "build:icons": "tsx scripts/build-icon-packs.ts",
+    "dev": "pnpm --filter @anivo/web dev"
   },
   "devDependencies": {
     "@anivo/export-node": "workspace:*",
