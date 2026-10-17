@@ -5,6 +5,7 @@ import { restoreAutosave, startAutosave } from "../files.js";
 import { useEditor } from "../store.js";
 import { darkTheme, lightTheme } from "../theme.js";
 import { CanvasView } from "./CanvasView.js";
+import { ExportDialog } from "./ExportDialog.js";
 import { IconPicker } from "./IconPicker.js";
 import { Inspector } from "./Inspector.js";
 import { PlaybackBar } from "./PlaybackBar.js";
@@ -117,6 +118,7 @@ export function App() {
           <Toaster toasterId={toasterId} />
           {/* Outside the canvas tree: React events from a dialog portal bubble to its React parents. */}
           <IconPicker />
+          <ExportDialog />
         </div>
       )}
     </FluentProvider>

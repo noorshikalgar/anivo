@@ -20,6 +20,9 @@ export function useShortcuts(): void {
       if (mod && e.key.toLowerCase() === "s") {
         e.preventDefault();
         void withErrors(async () => (await (e.shiftKey ? saveFileAs() : saveFile())) && notify("Saved", "success"));
+      } else if (mod && e.key.toLowerCase() === "e") {
+        e.preventDefault();
+        useEditor.setState({ exportOpen: true });
       } else if (mod && e.key.toLowerCase() === "o") {
         e.preventDefault();
         void withErrors(openFile);
