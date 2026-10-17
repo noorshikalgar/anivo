@@ -6,6 +6,12 @@
     },
     {
       "path": "packages/engine"
+    },
+    {
+      "path": "packages/layout"
+    },
+    {
+      "path": "packages/render"
     }
   ]
 }

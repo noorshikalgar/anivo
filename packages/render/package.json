@@ -1,0 +1,16 @@
+{
+  "name": "@anivo/render",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@anivo/engine": "workspace:*",
+    "@anivo/layout": "workspace:*",
+    "@anivo/schema": "workspace:*",
+    "roughjs": "4.6.6"
+  }
+}
