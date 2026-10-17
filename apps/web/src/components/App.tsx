@@ -1,6 +1,7 @@
-import { FluentProvider, Spinner, Text, makeStyles, tokens } from "@fluentui/react-components";
+import { FluentProvider, Spinner, Text, Toast, ToastTitle, Toaster, makeStyles, tokens, useId, useToastController } from "@fluentui/react-components";
 import { useEffect, useState } from "react";
 import { loadAssets, loadTemplate } from "../assets.js";
+import { restoreAutosave, startAutosave } from "../files.js";
 import { useEditor } from "../store.js";
 import { darkTheme, lightTheme } from "../theme.js";
 import { CanvasView } from "./CanvasView.js";
@@ -46,15 +47,33 @@ export function App() {
   const dark = usePrefersDark();
   const [state, setState] = useState<"loading" | "ready" | { error: string }>("loading");
   useShortcuts();
+  useEffect(() => startAutosave(), []);
+  const toasterId = useId("toaster");
+  const { dispatchToast } = useToastController(toasterId);
+  const notice = useEditor((s) => s.notice);
+  useEffect(() => {
+    if (!notice) return;
+    dispatchToast(
+      <Toast>
+        <ToastTitle>{notice.text}</ToastTitle>
+      </Toast>,
+      { intent: notice.intent, timeout: notice.intent === "error" ? 8000 : 2500, position: "bottom" },
+    );
+  }, [notice]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         await loadAssets();
-        const scene = await loadTemplate("load-balancer");
+        // Restore the last session (FR-FILE-03). Start with the template on the first visit.
+        const restored = await restoreAutosave();
+        if (!restored) {
+          const scene = await loadTemplate("load-balancer");
+          if (cancelled) return;
+          useEditor.getState().openScene(scene);
+        }
         if (cancelled) return;
-        useEditor.getState().openScene(scene);
         setState("ready");
       } catch (err) {
         setState({ error: err instanceof Error ? err.message : String(err) });
@@ -95,6 +114,7 @@ export function App() {
           <div className={styles.play}>
             <PlaybackBar />
           </div>
+          <Toaster toasterId={toasterId} />
           {/* Outside the canvas tree: React events from a dialog portal bubble to its React parents. */}
           <IconPicker />
         </div>

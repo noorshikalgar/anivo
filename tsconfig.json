@@ -21,6 +21,9 @@
     },
     {
       "path": "packages/export-web"
+    },
+    {
+      "path": "packages/fileio"
     }
   ]
 }

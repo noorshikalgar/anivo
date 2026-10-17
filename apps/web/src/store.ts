@@ -35,6 +35,12 @@ interface EditorState {
   editingText: string | null;
   /** Scene position for a new icon while the icon picker is open. */
   iconPicker: { x: number; y: number } | null;
+  /** Name of the open file, or null for a new scene. */
+  fileName: string | null;
+  /** True if the scene changed after the last save. */
+  dirty: boolean;
+  /** The last message for the user (see notify.ts). */
+  notice: import("./notify.js").Notice | null;
 
   apply(tx: TransactionInput): ReturnType<OperationBus["apply"]>;
   undo(): void;
@@ -98,6 +104,9 @@ export const useEditor = create<EditorState>((set, get) => {
     tool: "select",
     editingText: null,
     iconPicker: null,
+    fileName: null,
+    dirty: false,
+    notice: null,
 
     apply: (tx) => get().bus.apply(tx),
     undo: () => get().bus.undo(),

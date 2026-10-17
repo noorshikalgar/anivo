@@ -11,6 +11,7 @@
   "dependencies": {
     "@anivo/engine": "workspace:*",
     "@anivo/export-web": "workspace:*",
+    "@anivo/fileio": "workspace:*",
     "@anivo/layout": "workspace:*",
     "@anivo/ops": "workspace:*",
     "@anivo/render": "workspace:*",

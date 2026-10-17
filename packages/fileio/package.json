@@ -1,0 +1,17 @@
+{
+  "name": "@anivo/fileio",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@anivo/schema": "workspace:*",
+    "fflate": "0.8.3"
+  },
+  "devDependencies": {
+    "@anivo/ops": "workspace:*"
+  }
+}
