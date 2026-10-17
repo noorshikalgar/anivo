@@ -1,2 +1,6 @@
-/** The current scene file format version. See docs/05-scene-model.md. */
-export const SCHEMA_VERSION = 1;
+export * from "./primitives.js";
+export * from "./elements.js";
+export * from "./steps.js";
+export * from "./scene.js";
+export * from "./defaults.js";
+export * from "./load.js";

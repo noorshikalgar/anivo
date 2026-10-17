@@ -1,0 +1,64 @@
+import { z } from "zod";
+import { Element } from "./elements.js";
+import { Color, Rect } from "./primitives.js";
+import { EasingName, EnterEffect, Step } from "./steps.js";
+
+/** The current scene file format version. See docs/05-scene-model.md. */
+export const SCHEMA_VERSION = 1;
+
+export const SceneStyle = z.enum(["sketch", "clean"]);
+export type SceneStyle = z.infer<typeof SceneStyle>;
+
+export const VideoSettings = z.object({
+  width: z.number().int().positive().default(1920),
+  height: z.number().int().positive().default(1080),
+  fps: z.union([z.literal(24), z.literal(30), z.literal(60)]).default(60),
+});
+
+export const SceneSettings = z.object({
+  style: SceneStyle.default("clean"),
+  theme: z.string().default("slate-dark"),
+  background: z
+    .object({ kind: z.enum(["solid", "grid", "dots", "transparent"]).default("solid"), color: Color.optional() })
+    .default({ kind: "solid" }),
+  video: VideoSettings.default(VideoSettings.parse({})),
+  camera: Rect.optional().describe("Base camera. Omit to use 0,0 and the video size."),
+  defaults: z
+    .object({
+      enterEffect: EnterEffect.default("fade"),
+      easing: EasingName.default("ease-out"),
+      defaultIconPack: z.string().default("lucide"),
+    })
+    .default({ enterEffect: "fade", easing: "ease-out", defaultIconPack: "lucide" }),
+});
+export type SceneSettings = z.infer<typeof SceneSettings>;
+
+export const SceneMeta = z.object({
+  title: z.string().default("Untitled"),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+  authors: z.array(z.string()).default([]),
+});
+
+/** An element on disk. The `id` is optional because the map key is the ID. */
+const ElementOnDisk = z.record(z.string(), z.record(z.string(), z.unknown()));
+
+/** Raw scene shape before the loader fills IDs and applies rules. */
+export const SceneFile = z.object({
+  schemaVersion: z.number().int().positive(),
+  id: z.string().default(""),
+  meta: SceneMeta.default(SceneMeta.parse({})),
+  settings: SceneSettings.default(SceneSettings.parse({})),
+  elements: ElementOnDisk.default({}),
+  steps: z.array(Step).default([]),
+});
+
+export const Scene = z.object({
+  schemaVersion: z.literal(SCHEMA_VERSION),
+  id: z.string(),
+  meta: SceneMeta,
+  settings: SceneSettings,
+  elements: z.record(z.string(), Element),
+  steps: z.array(Step),
+});
+export type Scene = z.infer<typeof Scene>;

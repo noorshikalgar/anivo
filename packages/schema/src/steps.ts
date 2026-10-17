@@ -1,0 +1,121 @@
+import { z } from "zod";
+import { ActionId, Color, ElementId, Ms, StepId } from "./primitives.js";
+
+export const EasingName = z.enum([
+  "linear",
+  "ease-in",
+  "ease-out",
+  "ease-in-out",
+  "back-out",
+  "spring-soft",
+  "spring-bouncy",
+]);
+export type EasingName = z.infer<typeof EasingName>;
+
+export const Easing = z.union([
+  EasingName,
+  z.object({ cubicBezier: z.tuple([z.number(), z.number(), z.number(), z.number()]) }),
+  z.object({ spring: z.object({ stiffness: z.number().positive(), damping: z.number().positive(), mass: z.number().positive() }) }),
+]);
+export type Easing = z.infer<typeof Easing>;
+
+export const EnterEffect = z.enum(["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter"]);
+export type EnterEffect = z.infer<typeof EnterEffect>;
+
+export const EmphasisEffect = z.enum(["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus"]);
+export type EmphasisEffect = z.infer<typeof EmphasisEffect>;
+
+export const Direction = z.enum(["up", "down", "left", "right"]);
+
+export const EffectParams = z
+  .object({
+    fromScale: z.number(),
+    direction: Direction,
+    distance: z.number(),
+    fillDelay: z.number().min(0).max(1),
+    cursor: z.boolean(),
+    count: z.number().int().positive(),
+    scale: z.number(),
+    amplitude: z.number(),
+    degrees: z.number(),
+    color: Color,
+    width: z.number(),
+    dimTo: z.number().min(0).max(1),
+  })
+  .partial();
+export type EffectParams = z.infer<typeof EffectParams>;
+
+/** Properties that a morph action can change. See docs/06 "morph". */
+export const MorphableProps = z
+  .object({
+    x: z.number(),
+    y: z.number(),
+    width: z.number().nonnegative(),
+    height: z.number().nonnegative(),
+    rotation: z.number(),
+    opacity: z.number().min(0).max(1),
+    fill: Color,
+    stroke: Color,
+    strokeWidth: z.number().nonnegative(),
+    cornerRadius: z.number().nonnegative(),
+    fontSize: z.number().positive(),
+    textColor: Color,
+    label: z.string(),
+  })
+  .partial();
+export type MorphableProps = z.infer<typeof MorphableProps>;
+
+export const FlowParams = z.object({
+  shape: z.enum(["dot", "square", "pill"]).default("dot"),
+  size: z.number().positive().default(8),
+  color: Color.default("accent"),
+  speed: z.number().positive().default(400).describe("Pixels per second."),
+  rate: z.number().positive().default(2).describe("Particles per second."),
+  direction: z.enum(["forward", "reverse", "both"]).default("forward"),
+  distribute: z.enum(["all", "round-robin", "random-seeded"]).default("all"),
+  chainFrom: ElementId.optional().describe("Continue particles that arrive from this connector."),
+  skip: z.array(ElementId).default([]),
+  trail: z.number().min(0).max(1).default(0),
+});
+export type FlowParams = z.infer<typeof FlowParams>;
+
+const actionBase = {
+  id: ActionId,
+  targets: z.array(ElementId).min(1),
+  delayMs: Ms.default(0),
+  durationMs: Ms.optional().describe("Omit to use the default duration for the action type."),
+  easing: Easing.optional(),
+  staggerMs: Ms.default(0),
+};
+
+export const EnterAction = z.object({ ...actionBase, type: z.literal("enter"), effect: EnterEffect, params: EffectParams.default({}) });
+export const ExitAction = z.object({ ...actionBase, type: z.literal("exit"), effect: EnterEffect, params: EffectParams.default({}) });
+export const MorphAction = z.object({ ...actionBase, type: z.literal("morph"), to: MorphableProps });
+export const EmphasisAction = z.object({ ...actionBase, type: z.literal("emphasis"), effect: EmphasisEffect, params: EffectParams.default({}) });
+export const FlowAction = z.object({ ...actionBase, type: z.literal("flow"), flow: FlowParams.default(FlowParams.parse({})) });
+export const WaitAction = z.object({ ...actionBase, targets: z.array(ElementId).default([]), type: z.literal("wait") });
+
+export const Action = z.discriminatedUnion("type", [EnterAction, ExitAction, MorphAction, EmphasisAction, FlowAction, WaitAction]);
+export type Action = z.infer<typeof Action>;
+export type ActionInput = z.input<typeof Action>;
+export type ActionType = Action["type"];
+
+export const Trigger = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("auto") }),
+  z.object({ kind: z.literal("click") }),
+  z.object({ kind: z.literal("cue"), audioId: z.string(), atMs: Ms }),
+]);
+export type Trigger = z.infer<typeof Trigger>;
+
+export const Step = z.object({
+  id: StepId,
+  title: z.string().default(""),
+  trigger: Trigger.default({ kind: "auto" }),
+  durationMs: Ms.optional().describe("Omit to calculate the duration from the actions."),
+  holdMs: Ms.default(500).describe("Time to hold the end state of the step."),
+  actions: z.array(Action).default([]),
+  notes: z.string().optional(),
+  scriptLineId: z.string().optional(),
+});
+export type Step = z.infer<typeof Step>;
+export type StepInput = z.input<typeof Step>;
