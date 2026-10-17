@@ -14,7 +14,7 @@
 
 1. The renderer receives a `FrameState` and a `RenderTarget`. It draws. It does not change the scene.
 2. The renderer uses only a small interface, `Ctx2D`. This interface is the common part of browser Canvas 2D and `@napi-rs/canvas`. Do not use browser-only APIs inside the renderer.
-3. The renderer measures text with its own font metrics from the font files. It does not use DOM measurement. This keeps text layout the same in the browser and in Node.
+3. The renderer measures text with `measureText()` of the canvas context and the bundled font files. It does not use DOM measurement. The cross-engine test keeps text layout the same in the browser and in Node. See [decision 0002](decisions/0002-text-measurement.md).
 4. Each style (`clean`, `sketch`) is a module with the same interface: `drawShape`, `drawConnector`, `drawText`, `drawIcon`.
 5. The editor overlays (selection boxes, handles, guides) are a separate layer. The export never draws them.
 
@@ -35,7 +35,7 @@
 | Use | Font | License |
 |---|---|---|
 | `clean` UI and labels | Inter | OFL 1.1 |
-| `sketch` labels | A hand-drawn OFL font (candidates: Excalifont, Virgil, Kalam) | OFL 1.1 — confirm the license of each candidate |
+| `sketch` labels | Kalam ([decision 0001](decisions/0001-sketch-font.md)) | OFL 1.1 |
 | Code | JetBrains Mono | OFL 1.1 |
 | CJK and other scripts | Noto Sans (subset loaded on demand) | OFL 1.1 |
 

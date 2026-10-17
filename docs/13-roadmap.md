@@ -21,10 +21,12 @@
 
 **Exit gate:**
 
-- [ ] Example A, steps 1 to 4, exports to MP4 in Node and in Chrome.
-- [ ] Browser and Node frames differ by less than 0.5% of pixels.
-- [ ] Scrub to a random time gives the same frame as sequential play (100 random times).
-- [ ] Decision record for the hand-drawn font.
+- [x] Example A, steps 1 to 4, exports to MP4 in Node and in Chrome.
+- [x] Browser and Node frames differ by less than 0.5% of pixels. (Measured: 0.09% clean, 0.17% sketch.)
+- [x] Scrub to a random time gives the same frame as sequential play (100 random times).
+- [x] Decision record for the hand-drawn font ([0001](decisions/0001-sketch-font.md)).
+
+**Status: passed on 2026-10-17.** Demo: `pnpm render:template load-balancer out.mp4 sketch` (10.3 s of 1080p60 video renders in approximately 4.5 s on Apple Silicon).
 
 ## Phase 1 — MVP editor (8 weeks)
 
