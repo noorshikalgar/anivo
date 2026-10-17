@@ -54,7 +54,8 @@ function defaultsForElement(el: Element): Record<string, unknown> {
 }
 
 function compactElement(el: Element): Record<string, unknown> {
-  const out = withoutDefaults(el as Record<string, unknown>, defaultsForElement(el), ["type", "z"]);
+  // Required fields stay, even when they equal the value of the minimal element.
+  const out = withoutDefaults(el as Record<string, unknown>, defaultsForElement(el), ["type", "z", "content", "pack", "name", "start", "end"]);
   delete out["id"]; // the map key is the ID
   if (el.type === "connector") {
     // Connector bounds are derived (docs/05).

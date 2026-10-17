@@ -1,0 +1,21 @@
+{
+  "name": "@anivo/tools",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "license": "MIT",
+  "dependencies": {
+    "@anivo/engine": "workspace:*",
+    "@anivo/export-node": "workspace:*",
+    "@anivo/fileio": "workspace:*",
+    "@anivo/layout": "workspace:*",
+    "@anivo/lint": "workspace:*",
+    "@anivo/ops": "workspace:*",
+    "@anivo/render": "workspace:*",
+    "@anivo/schema": "workspace:*",
+    "@anivo/script": "workspace:*",
+    "@napi-rs/canvas": "1.0.11",
+    "zod": "4.6.7"
+  }
+}

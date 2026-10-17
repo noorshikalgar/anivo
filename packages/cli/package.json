@@ -1,0 +1,23 @@
+{
+  "name": "@anivo/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Anivo command-line tool: render, export, lint, preview, and the MCP server.",
+  "bin": {
+    "anivo": "./bin/anivo.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@anivo/engine": "workspace:*",
+    "@anivo/export-node": "workspace:*",
+    "@anivo/lint": "workspace:*",
+    "@anivo/ops": "workspace:*",
+    "@anivo/render": "workspace:*",
+    "@anivo/schema": "workspace:*",
+    "@anivo/script": "workspace:*",
+    "@anivo/tools": "workspace:*",
+    "commander": "15.0.0",
+    "tsx": "4.23.15"
+  }
+}

@@ -53,6 +53,13 @@ describe("scene JSON", () => {
     expect(la.filter((line, i) => line !== lb[i])).toHaveLength(1);
   });
 
+  it("keeps required fields that equal a default (empty text, required ends)", () => {
+    const bus = new OperationBus(template);
+    bus.apply({ ops: [{ op: "element.add", id: "empty", type: "text", props: { content: "" } }] });
+    const r = sceneFromJson(sceneToJson(bus.scene));
+    expect(r.ok && r.scene.elements["empty"]).toMatchObject({ type: "text", content: { text: "" } });
+  });
+
   it("reports invalid JSON", () => {
     const r = sceneFromJson("{ not json");
     expect(r.ok).toBe(false);
