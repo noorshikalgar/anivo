@@ -2,6 +2,16 @@ import { evaluate } from "@anivo/engine";
 import type { Element } from "@anivo/schema";
 import { Button, Divider, Slider, Field, Text, Tooltip, makeStyles, tokens } from "@fluentui/react-components";
 import {
+  AlignBottom20Regular,
+  AlignCenterHorizontal20Regular,
+  AlignCenterVertical20Regular,
+  AlignLeft20Regular,
+  AlignRight20Regular,
+  AlignTop20Regular,
+  AlignSpaceEvenlyHorizontal20Regular,
+  AlignSpaceEvenlyVertical20Regular,
+  Group20Regular,
+  GroupDismiss20Regular,
   ArrowDown20Regular,
   ArrowMaximizeVertical20Regular,
   ArrowMinimizeVertical20Regular,
@@ -10,7 +20,7 @@ import {
   Delete20Regular,
 } from "@fluentui/react-icons";
 import { useMemo } from "react";
-import { commitProps, commitSettings, deleteSelection, duplicateSelection, renameElement, reorderSelection, setElementText } from "../commands.js";
+import { type AlignKind, alignSelection, commitProps, commitSettings, deleteSelection, distributeSelection, duplicateSelection, groupSelection, renameElement, reorderSelection, setElementText, ungroupSelection } from "../commands.js";
 import { useEditor } from "../store.js";
 import { ColorField, NumberField, Row, SelectField, TextField } from "./fields.js";
 import { AddActionMenu, StepInspector } from "./StepInspector.js";
@@ -192,6 +202,77 @@ function ElementProperties({ el }: { el: Element }) {
   );
 }
 
+const ALIGN: { kind: AlignKind; label: string; icon: React.ReactElement }[] = [
+  { kind: "left", label: "Align left", icon: <AlignLeft20Regular /> },
+  { kind: "center", label: "Align center", icon: <AlignCenterVertical20Regular /> },
+  { kind: "right", label: "Align right", icon: <AlignRight20Regular /> },
+  { kind: "top", label: "Align top", icon: <AlignTop20Regular /> },
+  { kind: "middle", label: "Align middle", icon: <AlignCenterHorizontal20Regular /> },
+  { kind: "bottom", label: "Align bottom", icon: <AlignBottom20Regular /> },
+];
+
+function SelectionTools({ count }: { count: number }) {
+  const styles = useStyles();
+  return (
+    <>
+      <Text size={200} className={styles.muted}>
+        {count} elements selected.
+      </Text>
+      <Text size={200} weight="semibold" className={styles.heading}>
+        Align
+      </Text>
+      <div className={styles.actions}>
+        {ALIGN.map((a) => (
+          <Tooltip key={a.kind} content={a.label} relationship="label">
+            <Button size="small" appearance="subtle" icon={a.icon} onClick={() => alignSelection(a.kind)} aria-label={a.label} />
+          </Tooltip>
+        ))}
+        <Tooltip content="Distribute horizontally" relationship="label">
+          <Button size="small" appearance="subtle" icon={<AlignSpaceEvenlyHorizontal20Regular />} disabled={count < 3} onClick={() => distributeSelection("horizontal")} aria-label="Distribute horizontally" />
+        </Tooltip>
+        <Tooltip content="Distribute vertically" relationship="label">
+          <Button size="small" appearance="subtle" icon={<AlignSpaceEvenlyVertical20Regular />} disabled={count < 3} onClick={() => distributeSelection("vertical")} aria-label="Distribute vertically" />
+        </Tooltip>
+      </div>
+      <div className={styles.actions}>
+        <Button size="small" icon={<Group20Regular />} onClick={groupSelection}>
+          Group
+        </Button>
+        <Button size="small" appearance="subtle" icon={<Copy20Regular />} onClick={duplicateSelection}>
+          Duplicate
+        </Button>
+        <Button size="small" appearance="subtle" icon={<Delete20Regular />} onClick={deleteSelection}>
+          Delete
+        </Button>
+      </div>
+    </>
+  );
+}
+
+function GroupProperties({ el }: { el: Element }) {
+  const styles = useStyles();
+  const count = useEditor((s) => Object.values(s.scene.elements).filter((e) => e.parentId === el.id).length);
+  return (
+    <>
+      <TextField label="ID" value={el.id} onCommit={(v) => renameElement(el.id, v)} />
+      <Text size={200} className={styles.muted}>
+        Group of {count} elements. An action on the group applies to each element. Alt+click selects one element.
+      </Text>
+      <div className={styles.actions}>
+        <Button size="small" icon={<GroupDismiss20Regular />} onClick={ungroupSelection}>
+          Ungroup
+        </Button>
+        <Button size="small" appearance="subtle" icon={<Copy20Regular />} onClick={duplicateSelection}>
+          Duplicate
+        </Button>
+        <Button size="small" appearance="subtle" icon={<Delete20Regular />} onClick={deleteSelection}>
+          Delete
+        </Button>
+      </div>
+    </>
+  );
+}
+
 const VIDEO_SIZES = [
   { value: "1920x1080", text: "1920 × 1080 (16:9)" },
   { value: "1280x720", text: "1280 × 720 (16:9)" },
@@ -280,12 +361,21 @@ export function Inspector() {
         {el ? "Element" : selection.length > 1 ? "Selection" : step ? "Step" : "Scene"}
       </Text>
       {el ? (
-        <ElementProperties key={el.id} el={el} />
+        el.type === "group" ? (
+          <>
+            <GroupProperties key={el.id} el={el} />
+            {step && (
+              <div>
+                <AddActionMenu />
+              </div>
+            )}
+          </>
+        ) : (
+          <ElementProperties key={el.id} el={el} />
+        )
       ) : selection.length > 1 ? (
         <>
-          <Text size={200} className={styles.muted}>
-            {selection.length} elements selected.
-          </Text>
+          <SelectionTools count={selection.length} />
           {step && (
             <div>
               <AddActionMenu />

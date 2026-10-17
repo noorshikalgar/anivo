@@ -13,6 +13,7 @@ export interface El {
   pack?: string;
   name?: string;
   style?: Record<string, unknown>;
+  parentId?: string;
   start?: { kind: string; elementId?: string };
   end?: { kind: string; elementId?: string };
 }

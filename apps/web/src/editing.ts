@@ -192,3 +192,39 @@ export function geometryOps(
 export function routeMiddle(route: Polyline): Point {
   return pointAt(route, route.length / 2).point;
 }
+
+/** Descendants of a group that are not groups. */
+export function leafDescendants(scene: Scene, id: string): string[] {
+  const el = scene.elements[id];
+  if (!el) return [];
+  if (el.type !== "group") return [id];
+  return Object.values(scene.elements)
+    .filter((e) => e.parentId === id)
+    .flatMap((e) => leafDescendants(scene, e.id));
+}
+
+/** The top-most group that contains the element, or the element itself. */
+export function topLevel(scene: Scene, id: string): string {
+  let cur = scene.elements[id];
+  while (cur?.parentId && scene.elements[cur.parentId]) cur = scene.elements[cur.parentId];
+  return cur?.id ?? id;
+}
+
+/** Bounds of an element in a frame. A group uses the union of its elements. */
+export function boundsOf(scene: Scene, frame: FrameState, routes: Map<string, Polyline>, id: string): Box | undefined {
+  const byId = new Map(frame.elements.map((f) => [f.id, f]));
+  const ids = scene.elements[id]?.type === "group" ? leafDescendants(scene, id) : [id];
+  let box: Box | undefined;
+  for (const leaf of ids) {
+    const f = byId.get(leaf);
+    if (!f) continue;
+    const b = elementBounds(f, routes);
+    if (!box) box = b;
+    else {
+      const x = Math.min(box.x, b.x);
+      const y = Math.min(box.y, b.y);
+      box = { x, y, width: Math.max(box.x + box.width, b.x + b.width) - x, height: Math.max(box.y + box.height, b.y + b.height) - y };
+    }
+  }
+  return box;
+}

@@ -7,6 +7,8 @@ import { useEffect, useRef } from "react";
 import {
   type Box,
   HANDLES,
+  boundsOf,
+  topLevel,
   type Handle,
   elementBounds,
   elementsInRect,
@@ -19,7 +21,7 @@ import {
   toScene,
   toScreen,
 } from "../editing.js";
-import { addElement, commitGeometry } from "../commands.js";
+import { addElement, commitGeometry, movableIds } from "../commands.js";
 import { TextEditor } from "./TextEditor.js";
 import { ToolPalette } from "./ToolPalette.js";
 import { useEditor } from "../store.js";
@@ -149,9 +151,9 @@ export function CanvasView() {
       return { x: p.x * dpr, y: p.y * dpr, width: b.width * view.zoom * dpr, height: b.height * view.zoom * dpr };
     };
     const outline = (id: string, width: number, alpha: number) => {
-      const f = byId.get(id);
-      if (!f) return;
-      const b = screenBox(elementBounds(f, result.routes));
+      const bounds = boundsOf(scene, result.frame, result.routes, id);
+      if (!bounds) return;
+      const b = screenBox(bounds);
       ctx.strokeStyle = accent;
       ctx.globalAlpha = alpha;
       ctx.lineWidth = width * dpr;
@@ -162,7 +164,7 @@ export function CanvasView() {
     if (hover.current && !selection.includes(hover.current) && !drag.current) outline(hover.current, 1, 0.6);
     for (const id of selection) outline(id, 1.5, 1);
     const single = selection.length === 1 ? byId.get(selection[0]!) : undefined;
-    if (single && single.type !== "connector" && drag.current?.kind !== "move") {
+    if (single && single.type !== "connector" && single.type !== "group" && drag.current?.kind !== "move") {
       const b = elementBounds(single, result.routes);
       const pts = handlePoints(b);
       const size = 8 * dpr;
@@ -215,8 +217,7 @@ export function CanvasView() {
   }
 
   function currentBox(id: string): Box | undefined {
-    const f = last.current?.frame.elements.find((e) => e.id === id);
-    return f && last.current ? elementBounds(f, last.current.routes) : undefined;
+    return last.current ? boundsOf(useEditor.getState().scene, last.current.frame, last.current.routes, id) : undefined;
   }
 
   function scenePoint(e: { clientX: number; clientY: number }): Point {
@@ -251,16 +252,18 @@ export function CanvasView() {
       const box = currentBox(st.selection[0]!)!;
       drag.current = { kind: "resize", start: p, id: st.selection[0]!, handle: h, box, next: box };
     } else {
-      const hit = last.current ? hitTest(last.current.frame, last.current.routes, p, 4 / st.view.zoom, true) : null;
+      const leaf = last.current ? hitTest(last.current.frame, last.current.routes, p, 4 / st.view.zoom, true) : null;
+      // A click on an element in a group selects the group. Alt selects the element itself.
+      const hit = leaf && !e.altKey ? topLevel(st.scene, leaf) : leaf;
       if (hit) {
         let sel = st.selection;
         if (e.shiftKey) sel = sel.includes(hit) ? sel.filter((x) => x !== hit) : [...sel, hit];
         else if (!sel.includes(hit)) sel = [hit];
         st.setSelection(sel);
         const boxes = new Map<string, Box>();
-        for (const id of sel) {
+        for (const id of movableIds(sel)) {
           const b = currentBox(id);
-          if (b && st.scene.elements[id]?.type !== "connector") boxes.set(id, b);
+          if (b) boxes.set(id, b);
         }
         drag.current = { kind: "move", start: p, ids: sel, boxes, dx: 0, dy: 0, moved: false };
       } else {
@@ -296,7 +299,8 @@ export function CanvasView() {
       } else if (d.kind === "marquee") {
         d.end = q;
         if (last.current) {
-          const inside = elementsInRect(last.current.frame, last.current.routes, normalizeRect(d.start, d.end), true);
+          const sc = useEditor.getState().scene;
+          const inside = [...new Set(elementsInRect(last.current.frame, last.current.routes, normalizeRect(d.start, d.end), true).map((id) => topLevel(sc, id)))];
           useEditor.getState().setSelection([...new Set([...d.base, ...inside])]);
         }
       }
@@ -412,7 +416,8 @@ export function CanvasView() {
     const h = handleAt(p);
     const cursor: Record<Handle, string> = { nw: "nwse-resize", se: "nwse-resize", ne: "nesw-resize", sw: "nesw-resize", n: "ns-resize", s: "ns-resize", e: "ew-resize", w: "ew-resize" };
     const st = useEditor.getState();
-    const hit = !h && last.current ? hitTest(last.current.frame, last.current.routes, p, 4 / st.view.zoom, true) : null;
+    const leaf = !h && last.current ? hitTest(last.current.frame, last.current.routes, p, 4 / st.view.zoom, true) : null;
+    const hit = leaf ? topLevel(st.scene, leaf) : null;
     if (!spaceDown.current) e.currentTarget.style.cursor = h ? cursor[h] : hit ? "move" : "";
     if (hit !== hover.current) {
       hover.current = hit;

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { addStep, deleteSelection, duplicateSelection, nudgeSelection, selectAll } from "../commands.js";
+import { addStep, copySelection, deleteSelection, duplicateSelection, groupSelection, nudgeSelection, pasteFromClipboard, selectAll, ungroupSelection } from "../commands.js";
 import { openFile, saveFile, saveFileAs } from "../files.js";
 import { notify, withErrors } from "../notify.js";
 import { type Tool, useEditor } from "../store.js";
@@ -40,6 +40,17 @@ export function useShortcuts(): void {
       } else if (mod && e.key.toLowerCase() === "y") {
         e.preventDefault();
         st.redo();
+      } else if (mod && e.key.toLowerCase() === "g") {
+        e.preventDefault();
+        if (e.shiftKey) ungroupSelection();
+        else groupSelection();
+      } else if (mod && e.key.toLowerCase() === "c") {
+        void copySelection();
+      } else if (mod && e.key.toLowerCase() === "x") {
+        void copySelection(true);
+      } else if (mod && e.key.toLowerCase() === "v") {
+        e.preventDefault();
+        void pasteFromClipboard();
       } else if (mod && e.key.toLowerCase() === "d") {
         e.preventDefault();
         duplicateSelection();
