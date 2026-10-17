@@ -339,8 +339,10 @@ function flowParticles(step: TimedStep, t: number, opts: EvaluateOptions, out: P
  */
 export function evaluateAt(prepared: Prepared, timeMs: number, opts: EvaluateOptions = {}): FrameState {
   const { timeline, boundaries, base, order, scene } = prepared;
-  const t = Math.max(0, timeMs);
-  const i = stepIndexAt(timeline, t);
+  // A negative time gives the base state, before any action starts. At time 0,
+  // actions of step 1 have started at progress 0, so time 0 is not the base state.
+  const t = timeMs;
+  const i = timeMs < 0 ? -1 : stepIndexAt(timeline, t);
   const state: StateMap = { ...(i <= 0 ? base : boundaries[i - 1]!) };
   const particles: Particle[] = [];
 
@@ -354,7 +356,7 @@ export function evaluateAt(prepared: Prepared, timeMs: number, opts: EvaluateOpt
 
   const v = scene.settings.video;
   const camera = scene.settings.camera ?? { x: 0, y: 0, width: v.width, height: v.height };
-  return { timeMs: t, elements: order.map((id) => state[id]!), particles, camera };
+  return { timeMs: Math.max(0, t), elements: order.map((id) => state[id]!), particles, camera };
 }
 
 const preparedCache = new WeakMap<Scene, Prepared>();
