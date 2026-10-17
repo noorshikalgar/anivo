@@ -116,3 +116,59 @@ export function setElementText(id: string, text: string): void {
     st.apply({ label: "Edit label", ops: [{ op: "element.update", id, set: { label: text.trim() === "" ? null : { text } } }] });
   }
 }
+
+/** Properties that a morph can change (docs/06 "morph"). */
+const MORPHABLE = new Set(["x", "y", "width", "height", "rotation", "opacity", "fill", "stroke", "strokeWidth", "cornerRadius", "fontSize", "textColor", "label"]);
+const STYLE_KEYS = new Set(["fill", "stroke", "strokeWidth", "strokeStyle", "cornerRadius", "fontFamily", "fontSize", "fontWeight", "textColor", "textAlign", "roughness"]);
+
+/**
+ * Change properties of one element from the properties panel. In a step,
+ * morphable properties of a visible element become a morph in that step
+ * (FR-STEP-04). Other properties always change the element.
+ */
+export function commitProps(id: string, changes: Record<string, unknown>, label = "Change property"): void {
+  const st = useEditor.getState();
+  const el = st.scene.elements[id];
+  if (!el) return;
+  const inStep = st.selectedStep !== null && visibleAtStepStart()(id);
+  const morph: Record<string, unknown> = {};
+  const set: Record<string, unknown> = {};
+  const style: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(changes)) {
+    if (inStep && MORPHABLE.has(k)) morph[k] = v;
+    else if (STYLE_KEYS.has(k)) style[k] = v;
+    else if (k === "label") set["label"] = v === "" || v === null ? null : { text: v };
+    else set[k] = v;
+  }
+  if (Object.keys(style).length > 0) set["style"] = style;
+  const ops: OperationInput[] = [];
+  if (Object.keys(set).length > 0) ops.push({ op: "element.update", id, set });
+  if (Object.keys(morph).length > 0) {
+    const step = st.scene.steps.find((s) => s.id === st.selectedStep)!;
+    const existing = step.actions.find((a) => a.type === "morph" && a.targets.length === 1 && a.targets[0] === id);
+    if (existing && existing.type === "morph") ops.push({ op: "action.update", step: step.id, id: existing.id, set: { to: { ...existing.to, ...morph } } });
+    else ops.push({ op: "action.add", step: step.id, action: { type: "morph", targets: [id], to: morph } });
+  }
+  if (ops.length > 0) st.apply({ label, ops });
+}
+
+/** Rename an element. Returns an error message, or undefined if the rename worked. */
+export function renameElement(id: string, to: string): string | undefined {
+  const st = useEditor.getState();
+  if (id === to) return undefined;
+  const r = st.apply({ label: "Rename", ops: [{ op: "element.rename", id, to }] });
+  if (!r.ok) return r.error.message;
+  st.setSelection([to]);
+  return undefined;
+}
+
+export function reorderSelection(to: "front" | "back" | "forward" | "backward"): void {
+  const st = useEditor.getState();
+  const ops: OperationInput[] = st.selection.map((id) => ({ op: "element.reorder", id, to }));
+  if (ops.length > 0) st.apply({ label: "Change order", ops });
+}
+
+/** Change scene settings. */
+export function commitSettings(set: Record<string, unknown>, label = "Change scene settings"): void {
+  useEditor.getState().apply({ label, ops: [{ op: "scene.settings", set }] });
+}

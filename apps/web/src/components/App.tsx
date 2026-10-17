@@ -12,7 +12,6 @@ import { TopBar } from "./TopBar.js";
 import { useShortcuts } from "./shortcuts.js";
 
 const useStyles = makeStyles({
-  provider: { height: "100%" },
   root: {
     height: "100%",
     display: "grid",
@@ -66,8 +65,11 @@ export function App() {
     };
   }, []);
 
+  // No className on the provider: Fluent copies the provider class onto portal nodes (menus,
+  // dropdowns). A height of 100% on a portal node covers the page and blocks clicks.
+  // index.html sets the height of the root provider.
   return (
-    <FluentProvider theme={dark ? darkTheme : lightTheme} className={styles.provider}>
+    <FluentProvider theme={dark ? darkTheme : lightTheme}>
       {state === "loading" ? (
         <div className={styles.center}>
           <Spinner label="Loading Anivo" />
