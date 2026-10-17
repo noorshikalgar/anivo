@@ -10,7 +10,28 @@ Anivo animates the changes between the steps and exports a video.
 A person can use Anivo by hand. An AI agent can use Anivo through a CLI or an MCP server.
 Both use the same operations, so a person and an agent can work on the same scene.
 
-Status: **planning**. No code exists yet.
+Status: **phase 1 (MVP editor) in progress.** The editor, the animation engine, and video export work.
+
+## Run Anivo
+
+With Docker:
+
+```bash
+docker build -f docker/Dockerfile -t anivo .
+docker run -p 8080:8080 anivo
+```
+
+Then open http://localhost:8080.
+
+For development (Node 22 and pnpm 10):
+
+```bash
+pnpm install
+pnpm dev
+```
+
+Then open http://localhost:5173. Other commands: `pnpm test`, `pnpm test:e2e`, `pnpm typecheck`, `pnpm lint`,
+`pnpm render:template load-balancer out.mp4` (render a template with the Node engine).
 
 ## Read the documents in this sequence
 

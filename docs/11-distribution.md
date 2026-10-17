@@ -7,7 +7,7 @@ Anivo ships in **five forms from one codebase**. Version 1.0 has four of them. T
 | Form | For whom | How the user gets it | Phase |
 |---|---|---|---|
 | **Hosted web app** | Everyone. First contact | Open `anivo.<domain>` in a browser. No install | 1 |
-| **Docker image** | Teams, privacy users, offline networks | `docker run -p 8080:80 ghcr.io/noorshikalgar/anivo` | 1 |
+| **Docker image** | Teams, privacy users, offline networks | `docker run -p 8080:8080 ghcr.io/noorshikalgar/anivo` | 1 |
 | **CLI + MCP server** | Developers, agents, CI | `npm i -g @anivo/cli` or `npx @anivo/cli` | 2 |
 | **Desktop app** | Creators who export a lot, want native files and offline speech in one app | Download a signed installer from GitHub Releases. Also Homebrew cask, winget, Flatpak | 6 (deferred, adoption gate) |
 | **Player** | Docs sites, blogs | `npm i @anivo/player` or a `<script>` tag from a CDN | 3 |
@@ -48,8 +48,9 @@ Anivo ships in **five forms from one codebase**. Version 1.0 has four of them. T
 
 ### Image 1: `ghcr.io/noorshikalgar/anivo` (static)
 
-- Base: `nginx:alpine` or `caddy:alpine`, non-root user.
-- Contains the built web app only. Size target: less than 50 MB.
+- Base: `nginxinc/nginx-unprivileged:alpine` (non-root user, port 8080). Build: `docker build -f docker/Dockerfile -t anivo .`
+- Contains the built web app only (approximately 3 MB). Size target: less than 70 MB. (The NGINX base image is approximately 57 MB.)
+- Health check: `GET /healthz`.
 - Runtime configuration through environment variables, written to `/config.js` at container start:
 
 | Variable | Purpose | Default |
@@ -72,7 +73,7 @@ Anivo ships in **five forms from one codebase**. Version 1.0 has four of them. T
 services:
   web:
     image: ghcr.io/noorshikalgar/anivo:latest
-    ports: ["8080:80"]
+    ports: ["8080:8080"]
     environment:
       ANIVO_SERVER_URL: http://localhost:8081
   server:
