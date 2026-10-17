@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { mixOklch, parseHex } from "./color.js";
 import type { Ctx2D } from "./ctx.js";
 import { renderScene } from "./render.js";
-import { getTheme, resolveToken } from "./theme.js";
+import { THEMES, getTheme, resolveToken } from "./theme.js";
 
 const outDir = new URL("../../../tests/output/render/", import.meta.url);
 mkdirSync(outDir, { recursive: true });
@@ -42,6 +42,26 @@ describe("color", () => {
     expect(start.b).toBeCloseTo(0, 3);
     const end = mixOklch(a, b, 1);
     expect(end.b).toBeCloseTo(1, 3);
+  });
+
+  it("defines the same tokens in each theme, with text contrast of at least 4.5:1", () => {
+    const keys = Object.keys(THEMES["slate-dark"]!.tokens).sort();
+    const lum = (hex: string) => {
+      const c = parseHex(hex);
+      const f = (v: number) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+      return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+    };
+    const contrast = (a: string, b: string) => {
+      const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m);
+      return (x! + 0.05) / (y! + 0.05);
+    };
+    expect(Object.keys(THEMES).length).toBeGreaterThanOrEqual(4);
+    expect(Object.values(THEMES).filter((t) => t.dark)).toHaveLength(2);
+    for (const t of Object.values(THEMES)) {
+      expect(Object.keys(t.tokens).sort(), t.name).toEqual(keys);
+      expect(contrast(t.tokens["text"]!, t.tokens["surface"]!), `${t.name} text on surface`).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(t.tokens["text"]!, t.tokens["background"]!), `${t.name} text on background`).toBeGreaterThanOrEqual(4.5);
+    }
   });
 
   it("resolves theme tokens", () => {

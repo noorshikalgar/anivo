@@ -308,6 +308,8 @@ function SceneProperties() {
         options={[
           { value: "slate-dark", text: "Slate dark" },
           { value: "slate-light", text: "Slate light" },
+          { value: "paper-light", text: "Paper light" },
+          { value: "night-dark", text: "Night dark" },
         ]}
         onCommit={(v) => commitSettings({ theme: v }, "Change theme")}
       />

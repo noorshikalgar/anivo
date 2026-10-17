@@ -24,7 +24,10 @@ export function useShortcuts(): void {
         return;
       }
       const mod = e.ctrlKey || e.metaKey;
-      if (mod && e.key.toLowerCase() === "s") {
+      if (mod && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        useEditor.setState({ paletteOpen: true });
+      } else if (mod && e.key.toLowerCase() === "s") {
         e.preventDefault();
         void withErrors(async () => (await (e.shiftKey ? saveFileAs() : saveFile())) && notify("Saved", "success"));
       } else if (mod && e.key.toLowerCase() === "e") {
