@@ -1,0 +1,29 @@
+{
+  "name": "@anivo/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5173 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --port 5173 --strictPort"
+  },
+  "dependencies": {
+    "@anivo/engine": "workspace:*",
+    "@anivo/export-web": "workspace:*",
+    "@anivo/layout": "workspace:*",
+    "@anivo/ops": "workspace:*",
+    "@anivo/render": "workspace:*",
+    "@anivo/schema": "workspace:*",
+    "@fluentui/react-components": "9.74.9",
+    "@fluentui/react-icons": "2.0.344",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zustand": "5.0.15"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2"
+  }
+}

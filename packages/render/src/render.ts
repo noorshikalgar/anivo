@@ -15,6 +15,13 @@ export interface RenderOptions {
   style?: SceneStyle;
   /** Override the scene theme. */
   theme?: string;
+  /** Override the camera, for example the pan and zoom of the editor view. */
+  camera?: { x: number; y: number; width: number; height: number };
+  /**
+   * Draw elements that are not visible at this opacity (0..1). The editor
+   * uses it so the user can see and edit elements before they enter.
+   */
+  ghostHidden?: number;
 }
 
 interface DrawContext {
@@ -380,13 +387,20 @@ export function renderFrame(ctx: Ctx2D, scene: Scene, frame: FrameState, routes:
     style: opts.style ?? scene.settings.style,
     routes,
   };
-  drawBackground(dc, frame, opts);
-  const cam = frame.camera;
+  const view: FrameState = opts.camera ? { ...frame, camera: opts.camera } : frame;
+  drawBackground(dc, view, opts);
+  const cam = view.camera;
+  const ghost = opts.ghostHidden ?? 0;
   const sx = opts.width / cam.width;
   const sy = opts.height / cam.height;
 
-  for (const f of frame.elements) {
-    if (!f.visible || f.opacity <= 0) continue;
+  for (const frameEl of frame.elements) {
+    let f = frameEl;
+    if (!f.visible) {
+      if (ghost <= 0) continue;
+      f = { ...f, visible: true, opacity: ghost, strokeProgress: 1, fillProgress: 1, textReveal: 1 };
+    }
+    if (f.opacity <= 0) continue;
     const el = scene.elements[f.id];
     if (!el || el.type === "group") continue;
     ctx.save();
