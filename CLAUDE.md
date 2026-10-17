@@ -2,7 +2,7 @@
 
 Open-source tool that makes explainer videos from diagrams. People use the editor. Agents use the CLI and the MCP server.
 
-Status: planning. No code yet.
+Status: phase 0 (spike). See docs/13-roadmap.md.
 
 ## Read first
 
