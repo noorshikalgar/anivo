@@ -75,6 +75,7 @@ export function App() {
           const scene = await loadTemplate("load-balancer");
           if (cancelled) return;
           useEditor.getState().openScene(scene);
+          useEditor.setState({ dirty: false });
         }
         if (cancelled) return;
         setState("ready");
