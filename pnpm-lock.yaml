@@ -197,6 +197,25 @@ importers:
         specifier: workspace:*
         version: link:../schema
 
+  packages/lint:
+    dependencies:
+      '@anivo/engine':
+        specifier: workspace:*
+        version: link:../engine
+      '@anivo/layout':
+        specifier: workspace:*
+        version: link:../layout
+      '@anivo/render':
+        specifier: workspace:*
+        version: link:../render
+      '@anivo/schema':
+        specifier: workspace:*
+        version: link:../schema
+    devDependencies:
+      '@anivo/script':
+        specifier: workspace:*
+        version: link:../script
+
   packages/ops:
     dependencies:
       '@anivo/schema':
