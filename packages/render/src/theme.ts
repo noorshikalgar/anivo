@@ -52,12 +52,56 @@ const slateLightTokens = {
   teal: "#0E9F8E",
 };
 
+/** Warm paper look. Good with the sketch style. */
+const paperLightTokens = {
+  background: "#FBF8F1",
+  grid: "#ECE6D8",
+  surface: "#FFFFFF",
+  "surface-strong": "#F3EEE2",
+  text: "#2B2620",
+  muted: "#6E665B",
+  line: "#5E5649",
+  accent: "#C2571A",
+  "accent-soft": "#FBE4D3",
+  danger: "#C23A3A",
+  "danger-soft": "#F8DCDC",
+  success: "#3E7F3A",
+  "success-soft": "#E1F0DC",
+  warning: "#A86B00",
+  "warning-soft": "#FBEBC8",
+  purple: "#6D4BB8",
+  teal: "#13807A",
+};
+
+/** High contrast dark look. Good for small text on phones. */
+const nightDarkTokens = {
+  background: "#05070A",
+  grid: "#151A21",
+  surface: "#10151C",
+  "surface-strong": "#1B222C",
+  text: "#F5F7FA",
+  muted: "#A3ADBA",
+  line: "#8794A3",
+  accent: "#7C9CFF",
+  "accent-soft": "#1C2550",
+  danger: "#FF6B6B",
+  "danger-soft": "#4D1717",
+  success: "#5BE09B",
+  "success-soft": "#103B27",
+  warning: "#FFC861",
+  "warning-soft": "#4A3510",
+  purple: "#C3A6FF",
+  teal: "#4FE3CF",
+};
+
 const fonts = { clean: "Inter", sketch: "Kalam", code: "JetBrains Mono" };
 const defaults = { fill: "surface", stroke: "line", textColor: "text", strokeWidth: 2, cornerRadius: 12, fontSize: 32 };
 
 export const THEMES: Record<string, Theme> = {
   "slate-dark": { name: "slate-dark", dark: true, tokens: slateDarkTokens, fonts, defaults },
   "slate-light": { name: "slate-light", dark: false, tokens: slateLightTokens, fonts, defaults },
+  "paper-light": { name: "paper-light", dark: false, tokens: paperLightTokens, fonts, defaults },
+  "night-dark": { name: "night-dark", dark: true, tokens: nightDarkTokens, fonts, defaults: { ...defaults, strokeWidth: 2.5 } },
 };
 
 export function getTheme(name: string): Theme {

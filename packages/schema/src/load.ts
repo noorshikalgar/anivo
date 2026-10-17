@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { Element } from "./elements.js";
+import { type RawScene, migrate } from "./migrate.js";
 import { SCHEMA_VERSION, type Scene, SceneFile } from "./scene.js";
 
 export interface SchemaIssue {
@@ -30,6 +31,13 @@ function toIssues(error: z.ZodError, prefix = ""): SchemaIssue[] {
  * stays correct when operations add or remove actions.
  */
 export function loadScene(input: unknown): LoadResult {
+  if (input && typeof input === "object" && typeof (input as { schemaVersion?: unknown }).schemaVersion === "number") {
+    try {
+      input = migrate(input as RawScene, SCHEMA_VERSION);
+    } catch (err) {
+      return { ok: false, issues: [{ path: "schemaVersion", message: err instanceof Error ? err.message : String(err) }] };
+    }
+  }
   const file = SceneFile.safeParse(input);
   if (!file.success) return { ok: false, issues: toIssues(file.error) };
 

@@ -39,6 +39,8 @@ interface EditorState {
   fileName: string | null;
   /** True if the scene changed after the last save. */
   dirty: boolean;
+  /** True while the command palette is open. */
+  paletteOpen: boolean;
   /** True in present mode. */
   presenting: boolean;
   /** True while the export dialog is open. */
@@ -113,6 +115,7 @@ export const useEditor = create<EditorState>((set, get) => {
     notice: null,
     exportOpen: false,
     presenting: false,
+    paletteOpen: false,
 
     apply: (tx) => get().bus.apply(tx),
     undo: () => get().bus.undo(),
