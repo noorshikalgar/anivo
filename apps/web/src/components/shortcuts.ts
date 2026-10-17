@@ -16,6 +16,13 @@ export function useShortcuts(): void {
     const onKey = (e: KeyboardEvent) => {
       if (isTyping(e.target)) return;
       const st = useEditor.getState();
+      if (st.presenting) return;
+      if (e.key === "F5") {
+        e.preventDefault();
+        st.pause();
+        useEditor.setState({ presenting: true });
+        return;
+      }
       const mod = e.ctrlKey || e.metaKey;
       if (mod && e.key.toLowerCase() === "s") {
         e.preventDefault();

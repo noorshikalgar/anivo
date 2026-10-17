@@ -9,6 +9,7 @@ import { ExportDialog } from "./ExportDialog.js";
 import { IconPicker } from "./IconPicker.js";
 import { Inspector } from "./Inspector.js";
 import { PlaybackBar } from "./PlaybackBar.js";
+import { PresentMode } from "./PresentMode.js";
 import { StepsPanel } from "./StepsPanel.js";
 import { TopBar } from "./TopBar.js";
 import { useShortcuts } from "./shortcuts.js";
@@ -52,6 +53,7 @@ export function App() {
   const toasterId = useId("toaster");
   const { dispatchToast } = useToastController(toasterId);
   const notice = useEditor((s) => s.notice);
+  const presenting = useEditor((s) => s.presenting);
   useEffect(() => {
     if (!notice) return;
     dispatchToast(
@@ -119,6 +121,7 @@ export function App() {
           {/* Outside the canvas tree: React events from a dialog portal bubble to its React parents. */}
           <IconPicker />
           <ExportDialog />
+          {presenting && <PresentMode />}
         </div>
       )}
     </FluentProvider>
