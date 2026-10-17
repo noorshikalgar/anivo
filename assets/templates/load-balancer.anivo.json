@@ -1,0 +1,235 @@
+{
+  "schemaVersion": 1,
+  "id": "01JC8Q3X9ZK4M2N7P5R6T8V0W1",
+  "meta": {
+    "title": "How a load balancer works"
+  },
+  "settings": {
+    "style": "clean",
+    "theme": "slate-dark",
+    "video": {
+      "width": 1920,
+      "height": 1080,
+      "fps": 60
+    }
+  },
+  "elements": {
+    "user": {
+      "type": "icon",
+      "z": "a0",
+      "pack": "lucide",
+      "name": "user",
+      "x": 120,
+      "y": 480,
+      "width": 120,
+      "height": 120,
+      "label": {
+        "text": "User"
+      }
+    },
+    "lb": {
+      "type": "rectangle",
+      "z": "a1",
+      "x": 600,
+      "y": 490,
+      "width": 260,
+      "height": 100,
+      "style": {
+        "fill": "accent-soft"
+      },
+      "label": {
+        "text": "Load balancer"
+      }
+    },
+    "pod-1": {
+      "type": "rectangle",
+      "z": "a2",
+      "x": 1200,
+      "y": 240,
+      "width": 220,
+      "height": 90,
+      "label": {
+        "text": "pod-1"
+      }
+    },
+    "pod-2": {
+      "type": "rectangle",
+      "z": "a3",
+      "x": 1200,
+      "y": 495,
+      "width": 220,
+      "height": 90,
+      "label": {
+        "text": "pod-2"
+      }
+    },
+    "pod-3": {
+      "type": "rectangle",
+      "z": "a4",
+      "x": 1200,
+      "y": 750,
+      "width": 220,
+      "height": 90,
+      "label": {
+        "text": "pod-3"
+      }
+    },
+    "c-user-lb": {
+      "type": "connector",
+      "z": "a5",
+      "start": {
+        "kind": "bound",
+        "elementId": "user"
+      },
+      "end": {
+        "kind": "bound",
+        "elementId": "lb"
+      },
+      "endHead": "arrow"
+    },
+    "c-lb-1": {
+      "type": "connector",
+      "z": "a6",
+      "start": {
+        "kind": "bound",
+        "elementId": "lb"
+      },
+      "end": {
+        "kind": "bound",
+        "elementId": "pod-1"
+      },
+      "endHead": "arrow"
+    },
+    "c-lb-2": {
+      "type": "connector",
+      "z": "a7",
+      "start": {
+        "kind": "bound",
+        "elementId": "lb"
+      },
+      "end": {
+        "kind": "bound",
+        "elementId": "pod-2"
+      },
+      "endHead": "arrow"
+    },
+    "c-lb-3": {
+      "type": "connector",
+      "z": "a8",
+      "start": {
+        "kind": "bound",
+        "elementId": "lb"
+      },
+      "end": {
+        "kind": "bound",
+        "elementId": "pod-3"
+      },
+      "endHead": "arrow"
+    }
+  },
+  "steps": [
+    {
+      "id": "s-user",
+      "title": "User appears",
+      "actions": [
+        {
+          "id": "a1",
+          "type": "enter",
+          "effect": "draw-on",
+          "targets": [
+            "user"
+          ],
+          "durationMs": 800
+        }
+      ]
+    },
+    {
+      "id": "s-lb",
+      "title": "Load balancer",
+      "actions": [
+        {
+          "id": "a2",
+          "type": "enter",
+          "effect": "pop",
+          "targets": [
+            "lb"
+          ],
+          "durationMs": 500
+        },
+        {
+          "id": "a3",
+          "type": "enter",
+          "effect": "draw-on",
+          "targets": [
+            "c-user-lb"
+          ],
+          "delayMs": 300,
+          "durationMs": 600
+        }
+      ]
+    },
+    {
+      "id": "s-pods",
+      "title": "Pods fan out",
+      "actions": [
+        {
+          "id": "a4",
+          "type": "enter",
+          "effect": "draw-on",
+          "targets": [
+            "c-lb-1",
+            "c-lb-2",
+            "c-lb-3"
+          ],
+          "durationMs": 600
+        },
+        {
+          "id": "a5",
+          "type": "enter",
+          "effect": "pop",
+          "targets": [
+            "pod-1",
+            "pod-2",
+            "pod-3"
+          ],
+          "delayMs": 400,
+          "durationMs": 450,
+          "staggerMs": 150
+        }
+      ]
+    },
+    {
+      "id": "s-traffic",
+      "title": "Traffic flows",
+      "holdMs": 3000,
+      "actions": [
+        {
+          "id": "a6",
+          "type": "flow",
+          "targets": [
+            "c-user-lb"
+          ],
+          "durationMs": 3000,
+          "flow": {
+            "rate": 2
+          }
+        },
+        {
+          "id": "a7",
+          "type": "flow",
+          "targets": [
+            "c-lb-1",
+            "c-lb-2",
+            "c-lb-3"
+          ],
+          "durationMs": 3000,
+          "flow": {
+            "rate": 2,
+            "distribute": "round-robin",
+            "chainFrom": "c-user-lb"
+          }
+        }
+      ]
+    }
+  ]
+}
