@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { deleteSelection, duplicateSelection, nudgeSelection, selectAll } from "../commands.js";
+import { addStep, deleteSelection, duplicateSelection, nudgeSelection, selectAll } from "../commands.js";
 import { type Tool, useEditor } from "../store.js";
 
 const TOOL_KEYS: Record<string, Tool> = { v: "select", h: "hand", r: "rectangle", o: "ellipse", d: "diamond", a: "arrow", t: "text", i: "icon" };
@@ -34,6 +34,8 @@ export function useShortcuts(): void {
       } else if (e.key === "Escape") {
         st.setSelection([]);
         st.setTool("select");
+      } else if (!mod && !e.altKey && e.key.toLowerCase() === "n") {
+        addStep();
       } else if (!mod && !e.altKey && TOOL_KEYS[e.key.toLowerCase()]) {
         st.setTool(TOOL_KEYS[e.key.toLowerCase()]!);
       } else if (e.key === "Enter" && st.selection.length === 1 && st.scene.elements[st.selection[0]!]?.type !== "connector") {

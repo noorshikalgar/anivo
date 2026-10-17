@@ -172,3 +172,64 @@ export function reorderSelection(to: "front" | "back" | "forward" | "backward"):
 export function commitSettings(set: Record<string, unknown>, label = "Change scene settings"): void {
   useEditor.getState().apply({ label, ops: [{ op: "scene.settings", set }] });
 }
+
+// --- steps and actions --------------------------------------------------------
+
+/** Add a step after the selected step (or at the end) and select it. */
+export function addStep(): void {
+  const st = useEditor.getState();
+  const steps = st.scene.steps;
+  const at = st.selectedStep === null ? steps.length : steps.findIndex((s) => s.id === st.selectedStep) + 1;
+  const r = st.apply({ label: "Add step", ops: [{ op: "step.add", index: at, props: { title: `Step ${steps.length + 1}` } }] });
+  if (r.ok) {
+    st.selectStep(r.created[0]!);
+    st.setSelection([]);
+  }
+}
+
+export function duplicateStep(id: string): void {
+  const st = useEditor.getState();
+  const i = st.scene.steps.findIndex((s) => s.id === id);
+  const step = st.scene.steps[i];
+  if (!step) return;
+  const actions = step.actions.map((a) => {
+    const copy: Record<string, unknown> = { ...a };
+    delete copy["id"];
+    return copy;
+  });
+  const props: Record<string, unknown> = { ...step, title: `${step.title || step.id} (copy)`, actions };
+  delete props["id"];
+  const r = st.apply({ label: "Duplicate step", ops: [{ op: "step.add", index: i + 1, props }] });
+  if (r.ok) st.selectStep(r.created[0]!);
+}
+
+export function deleteStep(id: string): void {
+  const st = useEditor.getState();
+  const i = st.scene.steps.findIndex((s) => s.id === id);
+  const r = st.apply({ label: "Delete step", ops: [{ op: "step.remove", id }] });
+  if (r.ok) st.selectStep(i > 0 ? st.scene.steps[i - 1]!.id : null);
+}
+
+export function moveStep(id: string, index: number): void {
+  useEditor.getState().apply({ label: "Move step", ops: [{ op: "step.move", id, index }] });
+}
+
+export function updateStep(id: string, set: Record<string, unknown>, label = "Change step"): void {
+  useEditor.getState().apply({ label, ops: [{ op: "step.update", id, set }] });
+}
+
+/** Add an action for the selected elements to the selected step. */
+export function addAction(action: Record<string, unknown>, label = "Add action"): string | undefined {
+  const st = useEditor.getState();
+  if (st.selectedStep === null) return undefined;
+  const r = st.apply({ label, ops: [{ op: "action.add", step: st.selectedStep, action }] });
+  return r.ok ? r.created[0] : undefined;
+}
+
+export function updateAction(step: string, id: string, set: Record<string, unknown>, label = "Change action"): void {
+  useEditor.getState().apply({ label, ops: [{ op: "action.update", step, id, set }] });
+}
+
+export function removeAction(step: string, id: string): void {
+  useEditor.getState().apply({ label: "Remove action", ops: [{ op: "action.remove", step, id }] });
+}
