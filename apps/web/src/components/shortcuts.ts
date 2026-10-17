@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import { addStep, deleteSelection, duplicateSelection, nudgeSelection, selectAll } from "../commands.js";
+import { openFile, saveFile, saveFileAs } from "../files.js";
+import { notify, withErrors } from "../notify.js";
 import { type Tool, useEditor } from "../store.js";
 
 const TOOL_KEYS: Record<string, Tool> = { v: "select", h: "hand", r: "rectangle", o: "ellipse", d: "diamond", a: "arrow", t: "text", i: "icon" };
@@ -15,7 +17,13 @@ export function useShortcuts(): void {
       if (isTyping(e.target)) return;
       const st = useEditor.getState();
       const mod = e.ctrlKey || e.metaKey;
-      if (mod && e.key.toLowerCase() === "z") {
+      if (mod && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        void withErrors(async () => (await (e.shiftKey ? saveFileAs() : saveFile())) && notify("Saved", "success"));
+      } else if (mod && e.key.toLowerCase() === "o") {
+        e.preventDefault();
+        void withErrors(openFile);
+      } else if (mod && e.key.toLowerCase() === "z") {
         e.preventDefault();
         if (e.shiftKey) st.redo();
         else st.undo();
