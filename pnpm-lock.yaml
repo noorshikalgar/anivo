@@ -11,6 +11,12 @@ importers:
       '@anivo/export-node':
         specifier: workspace:*
         version: link:packages/export-node
+      '@anivo/fileio':
+        specifier: workspace:*
+        version: link:packages/fileio
+      '@anivo/ops':
+        specifier: workspace:*
+        version: link:packages/ops
       '@anivo/schema':
         specifier: workspace:*
         version: link:packages/schema

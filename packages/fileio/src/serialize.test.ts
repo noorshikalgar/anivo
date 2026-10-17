@@ -9,7 +9,7 @@ function load(input: unknown): Scene {
   if (!r.ok) throw new Error(JSON.stringify(r.issues));
   return r.scene;
 }
-const template = load(JSON.parse(readFileSync(new URL("../../../assets/templates/load-balancer.anivo.json", import.meta.url), "utf8")));
+const template = load(JSON.parse(readFileSync(new URL("../../schema/fixtures/v1-load-balancer.json", import.meta.url), "utf8")));
 
 describe("scene JSON", () => {
   it("round-trips the template", () => {

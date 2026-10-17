@@ -1,12 +1,9 @@
 import { expect, test } from "@playwright/test";
-
-const EDITOR = "http://localhost:5173/";
+import { openEditor } from "./helpers.js";
 
 test.describe("editor shell", () => {
   test.beforeEach(async ({ page }) => {
-    await page.setViewportSize({ width: 1400, height: 860 });
-    await page.goto(EDITOR);
-    await expect(page.getByRole("navigation", { name: "Steps" })).toBeVisible();
+    await openEditor(page);
   });
 
   test("loads the template and lists its steps", async ({ page }) => {

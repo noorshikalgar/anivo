@@ -18,6 +18,7 @@ import { newFromTemplate, newScene, openFile, saveFile, saveFileAs } from "../fi
 import { notify, withErrors } from "../notify.js";
 import { type Tool, useEditor } from "../store.js";
 import { TOOLS } from "./ToolPalette.js";
+import { TEMPLATES } from "./TopBar.js";
 
 const useStyles = makeStyles({
   surface: { maxWidth: "560px", width: "100%", padding: tokens.spacingVerticalS, alignSelf: "flex-start", marginTop: "12vh" },
@@ -52,7 +53,7 @@ function commands(): Command[] {
     { title: "Save as", keys: "Ctrl+Shift+S", run: () => void withErrors(saveFileAs) },
     { title: "Open", keys: "Ctrl+O", run: () => void withErrors(openFile) },
     { title: "New scene", run: newScene },
-    { title: "New from template: How a load balancer works", run: () => void withErrors(() => newFromTemplate("load-balancer")) },
+    ...TEMPLATES.map((t) => ({ title: `New from template: ${t.title}`, run: () => void withErrors(() => newFromTemplate(t.name)) })),
     { title: "Undo", keys: "Ctrl+Z", run: () => st.undo() },
     { title: "Redo", keys: "Ctrl+Shift+Z", run: () => st.redo() },
     { title: "Select all", keys: "Ctrl+A", run: selectAll },

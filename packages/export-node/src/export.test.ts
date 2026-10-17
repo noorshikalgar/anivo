@@ -14,7 +14,7 @@ function load(input: unknown): Scene {
   if (!r.ok) throw new Error(JSON.stringify(r.issues));
   return r.scene;
 }
-const template = load(JSON.parse(readFileSync(new URL("../../../assets/templates/load-balancer.anivo.json", import.meta.url), "utf8")));
+const template = load(JSON.parse(readFileSync(new URL("../../schema/fixtures/v1-load-balancer.json", import.meta.url), "utf8")));
 
 function probe(file: string): Record<string, string> {
   const text = execFileSync("ffprobe", ["-v", "error", "-select_streams", "v:0", "-count_frames", "-show_entries", "stream=codec_name,width,height,nb_read_frames,pix_fmt,r_frame_rate:stream_tags=alpha_mode", "-of", "default=nw=1", file]).toString();

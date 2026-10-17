@@ -6,20 +6,29 @@ import {
   AccordionItem,
   AccordionPanel,
   Button,
+  Field,
   Menu,
   MenuItem,
   MenuList,
   MenuPopover,
   MenuTrigger,
+  Tag,
+  TagPicker,
+  TagPickerControl,
+  TagPickerGroup,
+  TagPickerInput,
+  TagPickerList,
+  TagPickerOption,
   Text,
   Tooltip,
   makeStyles,
   tokens,
 } from "@fluentui/react-components";
 import { Add20Regular, Delete20Regular } from "@fluentui/react-icons";
+import { useMemo } from "react";
 import { addAction, removeAction, updateAction, updateStep } from "../commands.js";
 import { useEditor } from "../store.js";
-import { NumberField, Row, SelectField, TextField } from "./fields.js";
+import { ColorField, NumberField, Row, SelectField, TextField } from "./fields.js";
 
 const useStyles = makeStyles({
   heading: { color: tokens.colorNeutralForeground3, marginTop: tokens.spacingVerticalXS },
@@ -109,6 +118,10 @@ export function AddActionMenu({ appearance = "secondary" }: { appearance?: "seco
 
 function ActionEditor({ step, action }: { step: Step; action: Action }) {
   const styles = useStyles();
+  const theme = useEditor((s) => s.scene.settings.theme);
+  const elements = useEditor((s) => s.scene.elements);
+  // Derive the list outside the store selector: a new array from a selector re-renders without end.
+  const connectorIds = useMemo(() => Object.values(elements).filter((e) => e.type === "connector").map((e) => e.id), [elements]);
   const set = (s: Record<string, unknown>, name?: string) => updateAction(step.id, action.id, s, name);
   const duration = action.durationMs ?? defaultDurationMs(action);
   return (
@@ -117,6 +130,31 @@ function ActionEditor({ step, action }: { step: Step; action: Action }) {
         <SelectField label="Effect" value={action.effect} options={ENTER_EFFECTS.map((e) => ({ value: e, text: label(e) }))} onCommit={(v) => set({ effect: v }, "Change effect")} />
       )}
       {action.type === "emphasis" && <SelectField label="Effect" value={action.effect} options={EMPHASIS_EFFECTS.map((e) => ({ value: e, text: label(e) }))} onCommit={(v) => set({ effect: v }, "Change effect")} />}
+      {(action.type === "enter" || action.type === "exit") && (action.effect === "slide" || action.effect === "wipe") && (
+        <Row>
+          <SelectField
+            label="Direction"
+            value={action.params.direction ?? (action.effect === "slide" ? "up" : "right")}
+            options={[
+              { value: "up", text: "Up" },
+              { value: "down", text: "Down" },
+              { value: "left", text: "Left" },
+              { value: "right", text: "Right" },
+            ]}
+            onCommit={(v) => set({ params: { ...action.params, direction: v } }, "Change direction")}
+          />
+          {action.effect === "slide" ? <NumberField label="Distance (px)" value={action.params.distance ?? 80} min={0} step={10} onCommit={(v) => set({ params: { ...action.params, distance: v } }, "Change distance")} /> : <div />}
+        </Row>
+      )}
+      {(action.type === "enter" || action.type === "exit") && (action.effect === "pop" || action.effect === "scale") && (
+        <NumberField label="Start scale" value={action.params.fromScale ?? (action.effect === "pop" ? 0.6 : 0)} min={0} max={2} step={0.1} onCommit={(v) => set({ params: { ...action.params, fromScale: v } }, "Change scale")} />
+      )}
+      {action.type === "emphasis" && ["pulse", "shake", "wiggle"].includes(action.effect) && (
+        <NumberField label="Count" value={action.params.count ?? (action.effect === "pulse" ? 2 : action.effect === "shake" ? 4 : 3)} min={1} max={20} onCommit={(v) => set({ params: { ...action.params, count: Math.round(v) } }, "Change count")} />
+      )}
+      {action.type === "emphasis" && ["glow", "flash", "highlight"].includes(action.effect) && (
+        <ColorField label="Color" theme={theme} value={action.params.color} onCommit={(v) => set({ params: { ...action.params, color: v ?? undefined } }, "Change color")} />
+      )}
       <Row>
         <NumberField label="Delay (ms)" value={action.delayMs} min={0} step={50} onCommit={(v) => set({ delayMs: Math.round(v) }, "Change delay")} />
         <NumberField label="Duration (ms)" value={duration} min={0} step={50} onCommit={(v) => set({ durationMs: Math.round(v) }, "Change duration")} />
@@ -158,6 +196,37 @@ function ActionEditor({ step, action }: { step: Step; action: Action }) {
               onCommit={(v) => set({ flow: { ...action.flow, direction: v } }, "Change flow")}
             />
           </Row>
+          <Field label="Skip arrows" size="small" hint="Particles do not use these arrows, for example a failed connection.">
+            <TagPicker
+              size="medium"
+              selectedOptions={action.flow.skip}
+              onOptionSelect={(_, d) => set({ flow: { ...action.flow, skip: d.selectedOptions } }, "Change flow skip")}
+            >
+              <TagPickerControl>
+                <TagPickerGroup>
+                  {action.flow.skip.map((id) => (
+                    <Tag key={id} value={id} shape="rounded">
+                      {id}
+                    </Tag>
+                  ))}
+                </TagPickerGroup>
+                <TagPickerInput aria-label="Skip arrows" />
+              </TagPickerControl>
+              <TagPickerList>
+                {action.targets.filter((t) => !action.flow.skip.includes(t)).map((t) => (
+                  <TagPickerOption key={t} value={t}>
+                    {t}
+                  </TagPickerOption>
+                ))}
+              </TagPickerList>
+            </TagPicker>
+          </Field>
+          <SelectField
+            label="Continue from arrow"
+            value={action.flow.chainFrom ?? "none"}
+            options={[{ value: "none", text: "None" }, ...connectorIds.filter((c) => !action.targets.includes(c)).map((c) => ({ value: c, text: c }))]}
+            onCommit={(v) => set({ flow: { ...action.flow, chainFrom: v === "none" ? undefined : v } }, "Change flow chain")}
+          />
         </>
       )}
       <Button size="small" appearance="subtle" icon={<Delete20Regular />} onClick={() => removeAction(step.id, action.id)}>

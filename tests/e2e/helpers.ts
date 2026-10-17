@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import type { Page } from "@playwright/test";
 
 export const EDITOR = "http://localhost:5173/";
@@ -60,8 +61,14 @@ export async function drag(page: Page, from: { x: number; y: number }, to: { x: 
   await page.mouse.up();
 }
 
+/** The frozen v1 load balancer scene. Editor tests use it, so template changes do not break them. */
+const FIXTURE = JSON.parse(readFileSync(new URL("../../packages/schema/fixtures/v1-load-balancer.json", import.meta.url), "utf8")) as unknown;
+
 export async function openEditor(page: Page): Promise<void> {
   await page.setViewportSize({ width: 1400, height: 860 });
   await page.goto(EDITOR);
   await page.getByRole("navigation", { name: "Steps" }).waitFor();
+  const ok = await page.evaluate((json) => (window as unknown as { __anivoOpen(j: unknown): boolean }).__anivoOpen(json), FIXTURE);
+  if (!ok) throw new Error("The test fixture did not open.");
+  await page.getByRole("button", { name: /Traffic flows/ }).waitFor();
 }

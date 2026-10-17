@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { loadScene } from "./load.js";
 
 const template = JSON.parse(
-  readFileSync(new URL("../../../assets/templates/load-balancer.anivo.json", import.meta.url), "utf8"),
+  readFileSync(new URL("../fixtures/v1-load-balancer.json", import.meta.url), "utf8"),
 ) as Record<string, unknown>;
 
 function mustLoad(input: unknown) {

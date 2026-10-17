@@ -84,12 +84,16 @@ export function ExportDialog() {
   const width = even(v.width * Number(scale));
   const height = even(v.height * Number(scale));
   const stepOptions = scene.steps.map((s, i) => ({ value: String(i), text: `${i + 1}. ${s.title || s.id}` }));
+  // Clamp the step indexes: another scene can have fewer steps than the last selection.
+  const last = Math.max(0, timeline.steps.length - 1);
+  const fromIndex = Math.min(last, Math.max(0, Number(from) || 0));
+  const toIndex = Math.min(last, Math.max(0, Number(to) || 0));
   const range = useMemo(() => {
     if (timeline.steps.length === 0) return { startMs: 0, endMs: 0 };
-    const a = Math.min(Number(from), Number(to));
-    const b = Math.max(Number(from), Number(to));
+    const a = Math.min(fromIndex, toIndex);
+    const b = Math.max(fromIndex, toIndex);
     return { startMs: timeline.steps[a]!.startMs, endMs: timeline.steps[b]!.holdEndMs };
-  }, [timeline, from, to]);
+  }, [timeline, fromIndex, toIndex]);
   const seconds = (range.endMs - range.startMs) / 1000;
   const gifH = Math.round((Number(gifWidth) * v.height) / v.width);
   const gifEstimate = estimateGifBytes(Number(gifWidth), gifH, Math.ceil(seconds * Number(gifFps)));
@@ -121,8 +125,8 @@ export function ExportDialog() {
         download(await renderPngWeb(scene, t, width, height), `${name}.png`, "image/png");
       } else {
         const files: Record<string, Uint8Array> = {};
-        const a = Math.min(Number(from), Number(to));
-        const b = Math.max(Number(from), Number(to));
+        const a = Math.min(fromIndex, toIndex);
+        const b = Math.max(fromIndex, toIndex);
         for (let i = a; i <= b; i++) {
           const blob = await renderPngWeb(scene, timeline.steps[i]!.endMs, width, height);
           files[`${String(i + 1).padStart(2, "0")}-${scene.steps[i]!.id}.png`] = new Uint8Array(await blob.arrayBuffer());
@@ -196,8 +200,8 @@ export function ExportDialog() {
             )}
             {needsSteps && scene.steps.length > 0 && (
               <Row>
-                <SelectField label="From step" value={from} options={stepOptions} onCommit={setFrom} />
-                <SelectField label="To step" value={to} options={stepOptions} onCommit={setTo} />
+                <SelectField label="From step" value={String(fromIndex)} options={stepOptions} onCommit={setFrom} />
+                <SelectField label="To step" value={String(toIndex)} options={stepOptions} onCommit={setTo} />
               </Row>
             )}
             {format !== "png" && format !== "png-steps" && (
