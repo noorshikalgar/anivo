@@ -14,7 +14,7 @@ import {
   makeStyles,
   tokens,
 } from "@fluentui/react-components";
-import { ArrowExportUp20Regular, ArrowRedo20Regular, ArrowUndo20Regular, Document20Regular, FolderOpen20Regular, Save20Regular, ZoomFit20Regular } from "@fluentui/react-icons";
+import { ArrowExportUp20Regular, Play20Regular, ArrowRedo20Regular, ArrowUndo20Regular, Document20Regular, FolderOpen20Regular, Save20Regular, ZoomFit20Regular } from "@fluentui/react-icons";
 import { useState } from "react";
 import { hasFileSystemAccess, newFromTemplate, newScene, openFile, openRecent, recentFiles, saveFile, saveFileAs } from "../files.js";
 import { notify, withErrors } from "../notify.js";
@@ -124,6 +124,11 @@ export function TopBar() {
           <Button appearance="subtle" icon={<ZoomFit20Regular />} onClick={fitToVideo} />
         </Tooltip>
       </Toolbar>
+      <Tooltip content="Present step by step (F5)" relationship="label">
+        <Button appearance="secondary" size="small" icon={<Play20Regular />} onClick={() => (useEditor.getState().pause(), useEditor.setState({ presenting: true }))}>
+          Present
+        </Button>
+      </Tooltip>
       <Tooltip content="Export video or images (Ctrl+E)" relationship="label">
         <Button appearance="primary" size="small" icon={<ArrowExportUp20Regular />} onClick={() => useEditor.setState({ exportOpen: true })}>
           Export

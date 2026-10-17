@@ -39,6 +39,8 @@ interface EditorState {
   fileName: string | null;
   /** True if the scene changed after the last save. */
   dirty: boolean;
+  /** True in present mode. */
+  presenting: boolean;
   /** True while the export dialog is open. */
   exportOpen: boolean;
   /** The last message for the user (see notify.ts). */
@@ -110,6 +112,7 @@ export const useEditor = create<EditorState>((set, get) => {
     dirty: false,
     notice: null,
     exportOpen: false,
+    presenting: false,
 
     apply: (tx) => get().bus.apply(tx),
     undo: () => get().bus.undo(),
