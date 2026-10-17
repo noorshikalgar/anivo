@@ -3,6 +3,7 @@ import { type Polyline, evaluateWithLayout, frameBox, pointAt, slice } from "@an
 import type { ConnectorElement, Element, Point, Scene, SceneStyle } from "@anivo/schema";
 import { type Rgba, toCss, withAlpha } from "./color.js";
 import type { Ctx2D } from "./ctx.js";
+import { getIcon } from "./icons.js";
 import { type Box, type OutlineKind, cleanOutline, sketchOutline } from "./outline.js";
 import { type Theme, getTheme, resolveColor, resolveToken } from "./theme.js";
 
@@ -193,17 +194,55 @@ function drawShape(dc: DrawContext, f: ElementFrame, el: Element): void {
 }
 
 function drawIcon(dc: DrawContext, f: ElementFrame, el: Element): void {
-  // Phase 0 placeholder: a rounded square with the label below it. Lucide icons come in a later task.
   const { ctx, theme } = dc;
   const b = localBox(f);
-  const stroke = resolveColor(theme, f.stroke ?? "accent", "stroke", el.type);
-  const clean = cleanOutline("rectangle", b, Math.min(b.width, b.height) * 0.25);
-  ctx.strokeStyle = toCss(stroke);
-  ctx.lineWidth = 4;
+  const color = resolveColor(theme, f.stroke ?? "text", "stroke", el.type);
+  const shape = el.type === "icon" ? getIcon(el.pack, el.name) : undefined;
   ctx.setLineDash([]);
-  strokeProgressive(ctx, [clean], clean.length, f.strokeProgress);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  if (!shape) {
+    // The pack or the icon is not registered: draw a placeholder. Lint reports unknown icons.
+    const clean = cleanOutline("rectangle", b, Math.min(b.width, b.height) * 0.25);
+    ctx.strokeStyle = toCss(color);
+    ctx.lineWidth = 3;
+    strokeProgressive(ctx, [clean], clean.length, f.strokeProgress);
+  } else {
+    const [vx, vy, vw, vh] = shape.viewBox;
+    const sc = Math.min(b.width / vw, b.height / vh);
+    const ox = b.x + (b.width - vw * sc) / 2 - vx * sc;
+    const oy = b.y + (b.height - vh * sc) / 2 - vy * sc;
+    ctx.save();
+    ctx.translate(ox, oy);
+    ctx.scale(sc, sc);
+    ctx.strokeStyle = toCss(color);
+    if (shape.kind === "stroke") {
+      // Keep the line width of the pack design, or use the element override in scene pixels.
+      ctx.lineWidth = el.style.strokeWidth !== undefined ? el.style.strokeWidth / sc : shape.strokeWidth;
+      strokeProgressive(ctx, shape.strokes, shape.totalLength, f.strokeProgress);
+    } else {
+      if (f.fillProgress > 0) {
+        ctx.fillStyle = toCss(withAlpha(color, f.fillProgress));
+        ctx.beginPath();
+        for (const sp of shape.subpaths) {
+          ctx.moveTo(sp.points[0]!.x, sp.points[0]!.y);
+          for (let i = 1; i < sp.points.length; i++) ctx.lineTo(sp.points[i]!.x, sp.points[i]!.y);
+          ctx.closePath();
+        }
+        ctx.fill();
+      }
+      if (f.strokeProgress < 1) {
+        // Draw-on of a fill icon: trace the outline, then the fill fades in.
+        ctx.lineWidth = 1 / sc;
+        strokeProgressive(ctx, shape.strokes, shape.totalLength, f.strokeProgress);
+      }
+    }
+    ctx.restore();
+  }
+
   if (f.label) {
-    const labelBox = { x: b.x - 60, y: b.y + b.height + 4, width: b.width + 120, height: 48 };
+    const labelBox = { x: b.x - 80, y: b.y + b.height + 4, width: b.width + 160, height: 48 };
     drawLabel(dc, f, el, labelBox, f.fillProgress);
   }
 }

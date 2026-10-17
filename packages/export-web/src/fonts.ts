@@ -1,3 +1,5 @@
+import { type IconPack, registerIconPack } from "@anivo/render";
+
 /** Font files in `assets/fonts`, with their family and weight. */
 export const BUNDLED_FONTS = [
   { family: "Inter", weight: "400", file: "inter-latin-400-normal.woff2" },
@@ -23,6 +25,17 @@ export async function loadBundledFonts(baseUrl: string): Promise<void> {
     BUNDLED_FONTS.map(async ({ family, weight, file }) => {
       const face = new FontFace(family, `url(${new URL(file, baseUrl).href})`, { weight });
       fonts.add(await face.load());
+    }),
+  );
+}
+
+/** Load icon packs from `baseUrl` (the folder that serves `assets/icons`) and register them. */
+export async function loadIconPacks(baseUrl: string, names: string[] = ["lucide", "fluent"]): Promise<void> {
+  await Promise.all(
+    names.map(async (name) => {
+      const res = await fetch(new URL(`${name}.json`, baseUrl).href);
+      if (!res.ok) throw new Error(`The icon pack '${name}' did not load (HTTP ${res.status}).`);
+      registerIconPack((await res.json()) as IconPack);
     }),
   );
 }

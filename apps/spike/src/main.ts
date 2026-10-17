@@ -1,9 +1,9 @@
-import { exportVideoWeb, loadBundledFonts, supportedFormats, type WebExportFormat } from "@anivo/export-web";
+import { exportVideoWeb, loadBundledFonts, loadIconPacks, supportedFormats, type WebExportFormat } from "@anivo/export-web";
 import { type Ctx2D, renderScene } from "@anivo/render";
 import { type Scene, loadScene } from "@anivo/schema";
 import { resolveTimeline } from "@anivo/engine";
 
-const fontsReady = loadBundledFonts(new URL("/fonts/", location.href).href);
+const fontsReady = Promise.all([loadBundledFonts(new URL("/fonts/", location.href).href), loadIconPacks(new URL("/icons/", location.href).href)]);
 
 async function loadTemplate(): Promise<Scene> {
   const json: unknown = await (await fetch("/templates/load-balancer.anivo.json")).json();
