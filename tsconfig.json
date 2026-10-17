@@ -24,6 +24,9 @@
     },
     {
       "path": "packages/fileio"
+    },
+    {
+      "path": "packages/script"
     }
   ]
 }

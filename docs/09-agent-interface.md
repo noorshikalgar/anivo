@@ -147,7 +147,9 @@ step "Pod 3 crashes"
   flow lb->pod-* round-robin skip=lb->pod-3
 step "Self-healing"
   morph pod-3 fill=surface label="pod-3 (new)"
-  enter caption "Replaced automatically" below=pods
+  enter note fade
+
+caption note "Replaced automatically"
 ```
 
 ### Language rules
@@ -164,7 +166,8 @@ step "Self-healing"
 | Time values have units | `300ms`, `1.5s` |
 | `+300ms` after an action is its delay | |
 | Comments start with `#` | |
-| Coordinates are optional | `at=600,490` is allowed but not required |
+| Coordinates are optional | `at=600,490` is allowed but not required. With no `at`, the diagram is centered in the camera |
+| Declare elements at the top level, not inside a step | A step contains actions only |
 
 ### Element kinds in Anivo Script
 

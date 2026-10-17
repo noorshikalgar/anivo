@@ -1,0 +1,12 @@
+{
+  "name": "@anivo/script",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "license": "MIT",
+  "dependencies": {
+    "@anivo/ops": "workspace:*",
+    "@anivo/schema": "workspace:*"
+  }
+}
