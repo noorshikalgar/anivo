@@ -14,4 +14,9 @@ Record each bundled asset here before you add it. See docs/12-quality-and-securi
 
 ## Icons
 
-No icon packs are bundled yet.
+Built by `pnpm build:icons` (scripts/build-icon-packs.ts) from the npm packages below.
+
+| Pack | File | Icons | License | Source |
+|---|---|---|---|---|
+| Lucide | `icons/lucide.json` | 1,891 (stroke) | ISC | `lucide-static` 1.59.0 |
+| Fluent System Icons | `icons/fluent.json` | 2,476 (24 px regular, fill) | MIT | `@fluentui/svg-icons` 1.1.344 |
