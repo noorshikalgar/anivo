@@ -2,7 +2,7 @@ import type { FrameState } from "@anivo/engine";
 import { type Polyline, evaluateWithLayout } from "@anivo/layout";
 import { type Ctx2D, renderFrame } from "@anivo/render";
 import type { Point } from "@anivo/schema";
-import { makeStyles, tokens } from "@fluentui/react-components";
+import { makeStyles, mergeClasses, tokens } from "@fluentui/react-components";
 import { useEffect, useRef } from "react";
 import {
   type Box,
@@ -19,13 +19,17 @@ import {
   toScene,
   toScreen,
 } from "../editing.js";
-import { commitGeometry } from "../commands.js";
+import { addElement, commitGeometry } from "../commands.js";
+import { TextEditor } from "./TextEditor.js";
+import { ToolPalette } from "./ToolPalette.js";
 import { useEditor } from "../store.js";
 
 type Drag =
   | { kind: "move"; start: Point; ids: string[]; boxes: Map<string, Box>; dx: number; dy: number; moved: boolean }
   | { kind: "resize"; start: Point; id: string; handle: Handle; box: Box; next: Box }
-  | { kind: "marquee"; start: Point; end: Point; additive: boolean; base: string[] };
+  | { kind: "marquee"; start: Point; end: Point; additive: boolean; base: string[] }
+  | { kind: "create"; type: "rectangle" | "ellipse" | "diamond"; start: Point; end: Point }
+  | { kind: "arrow"; start: Point; end: Point; from: string | null; to: string | null };
 
 const useStyles = makeStyles({
   root: {
@@ -37,6 +41,8 @@ const useStyles = makeStyles({
     touchAction: "none",
   },
   canvas: { position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" },
+  // Crosshair for the draw tools.
+  draw: { cursor: "crosshair" },
 });
 
 /** Opacity of elements that are not visible yet, so the user can see and edit them. */
@@ -51,6 +57,7 @@ export function CanvasView() {
   const last = useRef<{ frame: FrameState; routes: Map<string, Polyline> } | null>(null);
   const drag = useRef<Drag | null>(null);
   const hover = useRef<string | null>(null);
+  const tool = useEditor((s) => s.tool);
 
   // Size the canvases to the container, in device pixels.
   useEffect(() => {
@@ -169,6 +176,34 @@ export function CanvasView() {
       }
     }
     const d = drag.current;
+    if (d?.kind === "create") {
+      const r = screenBox(normalizeRect(d.start, d.end));
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 1.5 * dpr;
+      ctx.setLineDash([6 * dpr, 4 * dpr]);
+      ctx.beginPath();
+      if (d.type === "ellipse") ctx.ellipse(r.x + r.width / 2, r.y + r.height / 2, r.width / 2, r.height / 2, 0, 0, Math.PI * 2);
+      else if (d.type === "diamond") {
+        ctx.moveTo(r.x + r.width / 2, r.y);
+        ctx.lineTo(r.x + r.width, r.y + r.height / 2);
+        ctx.lineTo(r.x + r.width / 2, r.y + r.height);
+        ctx.lineTo(r.x, r.y + r.height / 2);
+        ctx.closePath();
+      } else ctx.rect(r.x, r.y, r.width, r.height);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    if (d?.kind === "arrow") {
+      for (const id of [d.from, d.to]) if (id) outline(id, 2, 0.9);
+      const a = toScreen(view, d.start);
+      const b = toScreen(view, d.end);
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 2 * dpr;
+      ctx.beginPath();
+      ctx.moveTo(a.x * dpr, a.y * dpr);
+      ctx.lineTo(b.x * dpr, b.y * dpr);
+      ctx.stroke();
+    }
     if (d?.kind === "marquee") {
       const r = screenBox(normalizeRect(d.start, d.end));
       ctx.fillStyle = "rgba(63, 130, 240, 0.12)";
@@ -258,7 +293,7 @@ export function CanvasView() {
       } else if (d.kind === "resize") {
         const r = resizeBox(d.box, d.handle, q.x - d.start.x, q.y - d.start.y, ev.shiftKey);
         d.next = { x: snap(r.x, grid), y: snap(r.y, grid), width: Math.max(8, snap(r.width, grid)), height: Math.max(8, snap(r.height, grid)) };
-      } else {
+      } else if (d.kind === "marquee") {
         d.end = q;
         if (last.current) {
           const inside = elementsInRect(last.current.frame, last.current.routes, normalizeRect(d.start, d.end), true);
@@ -283,6 +318,92 @@ export function CanvasView() {
     };
     el.addEventListener("pointermove", move);
     el.addEventListener("pointerup", up);
+  }
+
+  /** Element (not a connector) at a scene point, for arrow bindings. */
+  function shapeAt(p: Point): string | null {
+    const st = useEditor.getState();
+    if (!last.current) return null;
+    const hit = hitTest(last.current.frame, last.current.routes, p, 2 / st.view.zoom, true);
+    return hit && st.scene.elements[hit]?.type !== "connector" ? hit : null;
+  }
+
+  function onDrawPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    const st = useEditor.getState();
+    if (st.playing) st.pause();
+    const p = scenePoint(e);
+    const grid = !e.altKey;
+    const start = { x: snap(p.x, grid), y: snap(p.y, grid) };
+    if (st.tool === "text") {
+      const id = addElement("text", { content: { text: "" }, x: start.x, y: start.y - 30, width: 360, height: 60 }, "Add text");
+      if (id) st.setEditingText(id);
+      st.setTool("select");
+      return;
+    }
+    if (st.tool === "icon") {
+      st.setIconPicker(start);
+      return;
+    }
+    const el = e.currentTarget;
+    el.setPointerCapture(e.pointerId);
+    if (st.tool === "arrow") drag.current = { kind: "arrow", start: p, end: p, from: shapeAt(p), to: null };
+    else drag.current = { kind: "create", type: st.tool as "rectangle" | "ellipse" | "diamond", start, end: start };
+    const move = (ev: PointerEvent) => {
+      const d = drag.current;
+      if (!d) return;
+      const q = scenePoint(ev);
+      if (d.kind === "create") {
+        let end = { x: snap(q.x, !ev.altKey), y: snap(q.y, !ev.altKey) };
+        if (ev.shiftKey) {
+          const size = Math.max(Math.abs(end.x - d.start.x), Math.abs(end.y - d.start.y));
+          end = { x: d.start.x + Math.sign(end.x - d.start.x || 1) * size, y: d.start.y + Math.sign(end.y - d.start.y || 1) * size };
+        }
+        d.end = end;
+      } else if (d.kind === "arrow") {
+        d.end = q;
+        const to = shapeAt(q);
+        d.to = to !== d.from ? to : null;
+      }
+      requestDraw();
+    };
+    const up = () => {
+      el.removeEventListener("pointermove", move);
+      el.removeEventListener("pointerup", up);
+      const d = drag.current;
+      drag.current = null;
+      if (d?.kind === "create") {
+        let r = normalizeRect(d.start, d.end);
+        // A click with no drag makes a shape with the default size.
+        if (r.width < 8 || r.height < 8) r = { x: d.start.x - 100, y: d.start.y - 50, width: 200, height: 100 };
+        addElement(d.type, { ...r }, `Add ${d.type}`);
+        useEditor.getState().setTool("select");
+      } else if (d?.kind === "arrow") {
+        const len = Math.hypot(d.end.x - d.start.x, d.end.y - d.start.y);
+        if (len * useEditor.getState().view.zoom > 6) {
+          const endOf = (id: string | null, pt: Point) => (id ? { kind: "bound", elementId: id } : { kind: "free", x: Math.round(pt.x), y: Math.round(pt.y) });
+          addElement("connector", { start: endOf(d.from, d.start), end: endOf(d.to, d.end), endHead: "arrow" }, "Add arrow");
+        }
+        useEditor.getState().setTool("select");
+      }
+      requestDraw();
+    };
+    el.addEventListener("pointermove", move);
+    el.addEventListener("pointerup", up);
+  }
+
+  function onDoubleClick(e: React.MouseEvent<HTMLDivElement>) {
+    const st = useEditor.getState();
+    if (st.tool !== "select" || !last.current) return;
+    const p = scenePoint(e);
+    const hit = hitTest(last.current.frame, last.current.routes, p, 4 / st.view.zoom, true);
+    if (hit && st.scene.elements[hit]?.type !== "connector") {
+      st.setSelection([hit]);
+      st.setEditingText(hit);
+    } else if (!hit) {
+      // Double-click on empty canvas adds a text element.
+      const id = addElement("text", { content: { text: "" }, x: Math.round(p.x - 180), y: Math.round(p.y - 30), width: 360, height: 60 }, "Add text");
+      if (id) st.setEditingText(id);
+    }
   }
 
   function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
@@ -333,6 +454,7 @@ export function CanvasView() {
     const pan = e.button === 1 || spaceDown.current || st.tool === "hand";
     if (!pan) {
       if (e.button === 0 && st.tool === "select") onSelectPointerDown(e);
+      else if (e.button === 0) onDrawPointerDown(e);
       return;
     }
     e.preventDefault();
@@ -354,9 +476,11 @@ export function CanvasView() {
   }
 
   return (
-    <div ref={rootRef} className={styles.root} onPointerDown={onPointerDown} onPointerMove={onPointerMove} data-testid="canvas-root">
+    <div ref={rootRef} className={mergeClasses(styles.root, tool !== "select" && tool !== "hand" && styles.draw)} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onDoubleClick={onDoubleClick} data-testid="canvas-root" data-tool={tool}>
       <canvas ref={sceneRef} className={styles.canvas} aria-label="Scene canvas" />
       <canvas ref={overlayRef} className={styles.canvas} aria-hidden="true" />
+      <ToolPalette />
+      <TextEditor />
     </div>
   );
 }

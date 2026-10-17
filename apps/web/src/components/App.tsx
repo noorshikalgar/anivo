@@ -4,6 +4,7 @@ import { loadAssets, loadTemplate } from "../assets.js";
 import { useEditor } from "../store.js";
 import { darkTheme, lightTheme } from "../theme.js";
 import { CanvasView } from "./CanvasView.js";
+import { IconPicker } from "./IconPicker.js";
 import { Inspector } from "./Inspector.js";
 import { PlaybackBar } from "./PlaybackBar.js";
 import { StepsPanel } from "./StepsPanel.js";
@@ -92,6 +93,8 @@ export function App() {
           <div className={styles.play}>
             <PlaybackBar />
           </div>
+          {/* Outside the canvas tree: React events from a dialog portal bubble to its React parents. */}
+          <IconPicker />
         </div>
       )}
     </FluentProvider>

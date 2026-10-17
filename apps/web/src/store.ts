@@ -31,6 +31,10 @@ interface EditorState {
   selectedStep: string | null;
   selection: string[];
   tool: Tool;
+  /** ID of the element whose text is in the inline editor. */
+  editingText: string | null;
+  /** Scene position for a new icon while the icon picker is open. */
+  iconPicker: { x: number; y: number } | null;
 
   apply(tx: TransactionInput): ReturnType<OperationBus["apply"]>;
   undo(): void;
@@ -46,6 +50,8 @@ interface EditorState {
   selectStep(id: string | null): void;
   setSelection(ids: string[]): void;
   setTool(tool: Tool): void;
+  setEditingText(id: string | null): void;
+  setIconPicker(at: { x: number; y: number } | null): void;
 }
 
 function emptyScene(): Scene {
@@ -90,6 +96,8 @@ export const useEditor = create<EditorState>((set, get) => {
     selectedStep: null,
     selection: [],
     tool: "select",
+    editingText: null,
+    iconPicker: null,
 
     apply: (tx) => get().bus.apply(tx),
     undo: () => get().bus.undo(),
@@ -157,5 +165,7 @@ export const useEditor = create<EditorState>((set, get) => {
 
     setSelection: (ids) => set({ selection: ids }),
     setTool: (tool) => set({ tool }),
+    setEditingText: (id) => set({ editingText: id }),
+    setIconPicker: (at) => set({ iconPicker: at }),
   };
 });

@@ -33,6 +33,11 @@ export function registerIconPack(pack: IconPack): void {
   for (const key of shapes.keys()) if (key.startsWith(`${pack.pack}:`)) shapes.delete(key);
 }
 
+/** A registered icon pack, for previews in the UI. */
+export function getIconPack(name: string): IconPack | undefined {
+  return packs.get(name);
+}
+
 export function iconPacks(): string[] {
   return [...packs.keys()];
 }

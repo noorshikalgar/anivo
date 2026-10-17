@@ -1,41 +1,8 @@
-import { type Page, expect, test } from "@playwright/test";
-
-const EDITOR = "http://localhost:5173/";
-
-type Store = {
-  getState(): {
-    scene: { elements: Record<string, { x: number; y: number; width: number; height: number }>; steps: { id: string; actions: { type: string; targets: string[]; to?: Record<string, number> }[] }[] };
-    selection: string[];
-    view: { x: number; y: number; zoom: number };
-  };
-};
-declare global {
-  interface Window {
-    __anivo: Store;
-  }
-}
-
-const state = (page: Page) => page.evaluate(() => window.__anivo.getState());
-
-/** Screen point (page pixels) of a scene point. */
-async function screen(page: Page, x: number, y: number) {
-  const box = (await page.getByTestId("canvas-root").boundingBox())!;
-  const { view } = await state(page);
-  return { x: box.x + (x - view.x) * view.zoom, y: box.y + (y - view.y) * view.zoom };
-}
-
-async function drag(page: Page, from: { x: number; y: number }, to: { x: number; y: number }) {
-  await page.mouse.move(from.x, from.y);
-  await page.mouse.down();
-  await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 4 });
-  await page.mouse.move(to.x, to.y, { steps: 4 });
-  await page.mouse.up();
-}
+import { expect, test } from "@playwright/test";
+import { drag, openEditor, screen, state } from "./helpers.js";
 
 test.beforeEach(async ({ page }) => {
-  await page.setViewportSize({ width: 1400, height: 860 });
-  await page.goto(EDITOR);
-  await expect(page.getByRole("navigation", { name: "Steps" })).toBeVisible();
+  await openEditor(page);
 });
 
 test("drag moves an element in the base state, and undo restores it", async ({ page }) => {

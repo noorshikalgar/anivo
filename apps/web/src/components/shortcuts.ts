@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { deleteSelection, duplicateSelection, nudgeSelection, selectAll } from "../commands.js";
-import { useEditor } from "../store.js";
+import { type Tool, useEditor } from "../store.js";
+
+const TOOL_KEYS: Record<string, Tool> = { v: "select", h: "hand", r: "rectangle", o: "ellipse", d: "diamond", a: "arrow", t: "text", i: "icon" };
 
 function isTyping(target: EventTarget | null): boolean {
   return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || (target instanceof HTMLElement && target.isContentEditable);
@@ -31,6 +33,12 @@ export function useShortcuts(): void {
         deleteSelection();
       } else if (e.key === "Escape") {
         st.setSelection([]);
+        st.setTool("select");
+      } else if (!mod && !e.altKey && TOOL_KEYS[e.key.toLowerCase()]) {
+        st.setTool(TOOL_KEYS[e.key.toLowerCase()]!);
+      } else if (e.key === "Enter" && st.selection.length === 1 && st.scene.elements[st.selection[0]!]?.type !== "connector") {
+        e.preventDefault();
+        st.setEditingText(st.selection[0]!);
       } else if (e.key.startsWith("Arrow") && st.selection.length > 0) {
         e.preventDefault();
         const d = e.shiftKey ? 10 : 1;

@@ -4,8 +4,8 @@ import type { OperationInput } from "@anivo/ops";
 import { type Box, elementBounds, geometryOps } from "./editing.js";
 import { useEditor } from "./store.js";
 
-/** Element boxes at the current playhead. */
-function currentBoxes(): (id: string) => Box | undefined {
+/** Element boxes at the current playhead (the base state in the Base view). */
+export function currentBoxes(): (id: string) => Box | undefined {
   const { scene, playhead, playing, selectedStep } = useEditor.getState();
   const t = !playing && selectedStep === null && playhead === 0 ? -1 : playhead;
   const { frame, routes } = evaluateWithLayout(scene, t);
@@ -76,4 +76,43 @@ export function duplicateSelection(): void {
 export function selectAll(): void {
   const st = useEditor.getState();
   st.setSelection(Object.keys(st.scene.elements));
+}
+
+/**
+ * Add an element. If a step is selected, the element enters in that step
+ * with the default enter effect, so it does not show before the step.
+ */
+export function addElement(type: string, props: Record<string, unknown>, label = "Add element"): string | undefined {
+  const st = useEditor.getState();
+  const start = props["start"] as { kind?: string; elementId?: string } | undefined;
+  const end = props["end"] as { kind?: string; elementId?: string } | undefined;
+  // A connector between two elements gets a readable ID: c-<from>-<to>.
+  const ops: OperationInput[] =
+    type === "connector" && start?.kind === "bound" && end?.kind === "bound"
+      ? [{ op: "element.connect", from: start.elementId!, to: end.elementId!, props: Object.fromEntries(Object.entries(props).filter(([k]) => k !== "start" && k !== "end")) }]
+      : [{ op: "element.add", type, props }];
+  const r = st.apply({ label, ops });
+  if (!r.ok) return undefined;
+  const id = r.created[0]!;
+  if (st.selectedStep !== null) {
+    const effect = type === "connector" ? "draw-on" : st.scene.settings.defaults.enterEffect;
+    st.apply({ label: "Enter in step", ops: [{ op: "action.add", step: st.selectedStep, action: { type: "enter", effect, targets: [id] } }] });
+  }
+  st.setSelection([id]);
+  return id;
+}
+
+/** Change the label of a shape, or the content of a text element. Empty text removes the label. */
+export function setElementText(id: string, text: string): void {
+  const st = useEditor.getState();
+  const el = st.scene.elements[id];
+  if (!el) return;
+  const current = el.type === "text" ? el.content.text : (el.label?.text ?? "");
+  if (current === text) return;
+  if (el.type === "text") {
+    if (text.trim() === "") st.apply({ label: "Delete text", ops: [{ op: "element.remove", ids: [id] }] });
+    else st.apply({ label: "Edit text", ops: [{ op: "element.update", id, set: { content: { text } } }] });
+  } else {
+    st.apply({ label: "Edit label", ops: [{ op: "element.update", id, set: { label: text.trim() === "" ? null : { text } } }] });
+  }
 }
