@@ -1,6 +1,7 @@
 import { type Polyline, polyline } from "@anivo/layout";
 import type { Point } from "@anivo/schema";
-import { RoughGenerator } from "roughjs/bin/generator.js";
+// Import the bundled build. The files in roughjs/bin use import paths that Node ESM cannot resolve.
+import rough from "roughjs";
 
 export interface Box {
   x: number;
@@ -49,7 +50,7 @@ export function cleanOutline(kind: OutlineKind, b: Box, radius: number): Polylin
   return polyline(pts);
 }
 
-const generator = new RoughGenerator();
+const generator = rough.generator();
 
 /** Sampled cubic Bézier, without the start point. */
 function sampleBezier(p0: Point, p1: Point, p2: Point, p3: Point, n: number, out: Point[]): void {
