@@ -60,6 +60,18 @@ function dashFor(el: Element, width: number): number[] {
 
 /** Draw the first `progress` of a stroke made of polylines in sequence. */
 function strokeProgressive(ctx: Ctx2D, strokes: Polyline[], total: number, progress: number): void {
+  if (progress >= 1) {
+    // Full stroke: one path and one stroke call for all polylines (faster than one call each).
+    ctx.beginPath();
+    for (const line of strokes) {
+      const pts = line.points;
+      if (pts.length < 2) continue;
+      ctx.moveTo(pts[0]!.x, pts[0]!.y);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i]!.x, pts[i]!.y);
+    }
+    ctx.stroke();
+    return;
+  }
   let remaining = total * progress;
   for (const line of strokes) {
     if (remaining <= 0) break;
