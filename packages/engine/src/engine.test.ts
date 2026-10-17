@@ -129,6 +129,13 @@ describe("evaluate", () => {
     for (const t of times) expect(JSON.stringify(evaluateAt(scrub, t))).toBe(sequential.get(t));
   });
 
+  it("gives the base state for a negative time", () => {
+    const f = evaluate(template, -1);
+    expect(el(f, "user").visible).toBe(false);
+    expect(el(f, "user").strokeProgress).toBe(1);
+    expect(f.timeMs).toBe(0);
+  });
+
   it("keeps an element visible when its first action is not enter", () => {
     const s = scene([{ id: "s1", actions: [{ id: "x1", type: "emphasis", effect: "pulse", targets: ["a"] }] }]);
     expect(el(evaluate(s, 0), "a").visible).toBe(true);
