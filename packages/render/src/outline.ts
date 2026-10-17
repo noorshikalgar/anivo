@@ -12,8 +12,20 @@ export interface Box {
 
 export type OutlineKind = "rectangle" | "ellipse" | "diamond" | "line";
 
-/** Closed outline of a shape as one polyline (clean style). */
+const outlineCache = new Map<string, Polyline>();
+
+/** Closed outline of a shape as one polyline (clean style). Cached by shape, size, and position. */
 export function cleanOutline(kind: OutlineKind, b: Box, radius: number): Polyline {
+  const key = `${kind}|${b.x}|${b.y}|${b.width}|${b.height}|${radius}`;
+  const hit = outlineCache.get(key);
+  if (hit) return hit;
+  const line = cleanOutlineUncached(kind, b, radius);
+  if (outlineCache.size > 5000) outlineCache.clear();
+  outlineCache.set(key, line);
+  return line;
+}
+
+function cleanOutlineUncached(kind: OutlineKind, b: Box, radius: number): Polyline {
   const pts: Point[] = [];
   if (kind === "ellipse") {
     const n = 72;

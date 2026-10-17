@@ -12,7 +12,7 @@ function load(input: unknown): Scene {
 }
 
 const template = load(
-  JSON.parse(readFileSync(new URL("../../../assets/templates/load-balancer.anivo.json", import.meta.url), "utf8")),
+  JSON.parse(readFileSync(new URL("../../schema/fixtures/v1-load-balancer.json", import.meta.url), "utf8")),
 );
 
 const el = (frame: ReturnType<typeof evaluate>, id: string) => {

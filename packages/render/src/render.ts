@@ -75,7 +75,20 @@ function fontFor(dc: DrawContext, f: ElementFrame, el: Element): string {
   return `${weight} ${size}px "${family}"`;
 }
 
+/** Text layout cache (docs/06 "Cache rules"): font, text, and width give the same lines. */
+const wrapCache = new Map<string, string[]>();
+
 function wrapText(ctx: Ctx2D, text: string, maxWidth: number): string[] {
+  const key = `${ctx.font}|${Math.round(maxWidth)}|${text}`;
+  const hit = wrapCache.get(key);
+  if (hit) return hit;
+  const lines = wrapTextUncached(ctx, text, maxWidth);
+  if (wrapCache.size > 5000) wrapCache.clear();
+  wrapCache.set(key, lines);
+  return lines;
+}
+
+function wrapTextUncached(ctx: Ctx2D, text: string, maxWidth: number): string[] {
   const out: string[] = [];
   for (const para of text.split("\n")) {
     const words = para.split(/\s+/).filter(Boolean);

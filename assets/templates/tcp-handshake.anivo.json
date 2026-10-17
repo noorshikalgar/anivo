@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 1,
+  "id": "",
+  "meta": {
+    "title": "TCP three-way handshake"
+  },
+  "settings": {},
+  "elements": {
+    "client": {
+      "height": 110,
+      "label": {
+        "text": "Client"
+      },
+      "seed": 261266463,
+      "type": "rectangle",
+      "width": 280,
+      "x": 200,
+      "y": 160,
+      "z": "V"
+    },
+    "server": {
+      "height": 110,
+      "label": {
+        "text": "Server"
+      },
+      "seed": 1085029842,
+      "type": "rectangle",
+      "width": 280,
+      "x": 1440,
+      "y": 160,
+      "z": "l"
+    },
+    "client-time": {
+      "end": {
+        "kind": "free",
+        "x": 340,
+        "y": 980
+      },
+      "endHead": "none",
+      "seed": 323678689,
+      "start": {
+        "kind": "free",
+        "x": 340,
+        "y": 300
+      },
+      "style": {
+        "stroke": "muted",
+        "strokeStyle": "dashed"
+      },
+      "type": "connector",
+      "z": "t"
+    },
+    "server-time": {
+      "end": {
+        "kind": "free",
+        "x": 1580,
+        "y": 980
+      },
+      "endHead": "none",
+      "seed": 866258220,
+      "start": {
+        "kind": "free",
+        "x": 1580,
+        "y": 300
+      },
+      "style": {
+        "stroke": "muted",
+        "strokeStyle": "dashed"
+      },
+      "type": "connector",
+      "z": "x"
+    },
+    "syn": {
+      "end": {
+        "kind": "free",
+        "x": 1568,
+        "y": 500
+      },
+      "label": {
+        "text": "SYN"
+      },
+      "seed": 1079548510,
+      "start": {
+        "kind": "free",
+        "x": 352,
+        "y": 400
+      },
+      "style": {
+        "stroke": "accent",
+        "strokeWidth": 3
+      },
+      "type": "connector",
+      "z": "z"
+    },
+    "syn-ack": {
+      "end": {
+        "kind": "free",
+        "x": 352,
+        "y": 680
+      },
+      "label": {
+        "text": "SYN-ACK"
+      },
+      "seed": 981194802,
+      "start": {
+        "kind": "free",
+        "x": 1568,
+        "y": 580
+      },
+      "style": {
+        "stroke": "purple",
+        "strokeWidth": 3
+      },
+      "type": "connector",
+      "z": "zV"
+    },
+    "ack": {
+      "end": {
+        "kind": "free",
+        "x": 1568,
+        "y": 860
+      },
+      "label": {
+        "text": "ACK"
+      },
+      "seed": 977951234,
+      "start": {
+        "kind": "free",
+        "x": 352,
+        "y": 760
+      },
+      "style": {
+        "stroke": "accent",
+        "strokeWidth": 3
+      },
+      "type": "connector",
+      "z": "zl"
+    },
+    "connected": {
+      "content": {
+        "text": "Connected"
+      },
+      "height": 80,
+      "seed": 1424938192,
+      "style": {
+        "fontSize": 48,
+        "fontWeight": 700,
+        "textColor": "success"
+      },
+      "type": "text",
+      "width": 400,
+      "x": 760,
+      "y": 930,
+      "z": "zt"
+    }
+  },
+  "steps": [
+    {
+      "actions": [
+        {
+          "effect": "pop",
+          "id": "a1",
+          "staggerMs": 150,
+          "targets": [
+            "client",
+            "server"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 400,
+          "durationMs": 900,
+          "effect": "draw-on",
+          "id": "a2",
+          "targets": [
+            "client-time",
+            "server-time"
+          ],
+          "type": "enter"
+        }
+      ],
+      "id": "s1",
+      "title": "Client and server"
+    },
+    {
+      "actions": [
+        {
+          "durationMs": 1000,
+          "effect": "draw-on",
+          "id": "a3",
+          "targets": [
+            "syn"
+          ],
+          "type": "enter"
+        }
+      ],
+      "id": "s2",
+      "title": "SYN"
+    },
+    {
+      "actions": [
+        {
+          "durationMs": 1000,
+          "effect": "draw-on",
+          "id": "a4",
+          "targets": [
+            "syn-ack"
+          ],
+          "type": "enter"
+        }
+      ],
+      "id": "s3",
+      "title": "SYN-ACK"
+    },
+    {
+      "actions": [
+        {
+          "durationMs": 1000,
+          "effect": "draw-on",
+          "id": "a5",
+          "targets": [
+            "ack"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 900,
+          "id": "a6",
+          "targets": [
+            "client",
+            "server"
+          ],
+          "to": {
+            "fill": "success-soft",
+            "stroke": "success"
+          },
+          "type": "morph"
+        },
+        {
+          "delayMs": 1100,
+          "effect": "pop",
+          "id": "a7",
+          "targets": [
+            "connected"
+          ],
+          "type": "enter"
+        }
+      ],
+      "holdMs": 1500,
+      "id": "s4",
+      "title": "ACK: connected"
+    }
+  ]
+}

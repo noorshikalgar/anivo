@@ -35,7 +35,11 @@ const useStyles = makeStyles({
   spacer: { flexGrow: 1 },
 });
 
-export const TEMPLATES = [{ name: "load-balancer", title: "How a load balancer works" }];
+export const TEMPLATES = [
+  { name: "load-balancer", title: "How a load balancer works" },
+  { name: "tcp-handshake", title: "TCP three-way handshake" },
+  { name: "docker-layers", title: "Docker image layers" },
+];
 
 export function TopBar() {
   const styles = useStyles();

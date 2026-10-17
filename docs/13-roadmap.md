@@ -47,8 +47,8 @@ Scope: FR-CANVAS 01–11, 17. FR-STYLE 01, 02, 04, 05. FR-STEP 01–06, 10–13,
 **Exit gate:**
 
 - [ ] A new tester makes Example A in less than 15 minutes, with no help (5 testers, 4 must pass).
-- [ ] Examples A, C, and D are possible with the editor only.
-- [ ] Performance budgets for preview and drag pass.
+- [x] Examples A, C, and D are possible with the editor only. (`pnpm build:templates` builds them with editor operations only: `assets/templates/`.)
+- [ ] Performance budgets for preview and drag pass. (Node CPU raster, `pnpm bench`, 300 elements at 1080p: evaluate 0.1 ms, clean frame 8.7 ms, sketch frame 11.4 ms. The budget is for Chrome on an Apple M1; measure there before the gate closes.)
 - [ ] `docker run` serves a working app.
 
 ## Phase 2 — Agent ready (5 weeks)

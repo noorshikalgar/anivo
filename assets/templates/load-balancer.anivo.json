@@ -1,235 +1,361 @@
 {
   "schemaVersion": 1,
-  "id": "01JC8Q3X9ZK4M2N7P5R6T8V0W1",
+  "id": "",
   "meta": {
     "title": "How a load balancer works"
   },
-  "settings": {
-    "style": "clean",
-    "theme": "slate-dark",
-    "video": {
-      "width": 1920,
-      "height": 1080,
-      "fps": 60
-    }
-  },
+  "settings": {},
   "elements": {
     "user": {
-      "type": "icon",
-      "z": "a0",
-      "pack": "lucide",
-      "name": "user",
-      "x": 120,
-      "y": 480,
-      "width": 120,
       "height": 120,
       "label": {
         "text": "User"
-      }
+      },
+      "name": "user",
+      "pack": "lucide",
+      "seed": 1618501362,
+      "type": "icon",
+      "width": 120,
+      "x": 120,
+      "y": 480,
+      "z": "V"
     },
     "lb": {
-      "type": "rectangle",
-      "z": "a1",
-      "x": 600,
-      "y": 490,
-      "width": 260,
       "height": 100,
+      "label": {
+        "text": "Load balancer"
+      },
+      "seed": 1194444875,
       "style": {
         "fill": "accent-soft"
       },
-      "label": {
-        "text": "Load balancer"
-      }
+      "type": "rectangle",
+      "width": 260,
+      "x": 600,
+      "y": 490,
+      "z": "l"
     },
     "pod-1": {
-      "type": "rectangle",
-      "z": "a2",
-      "x": 1200,
-      "y": 240,
-      "width": 220,
       "height": 90,
       "label": {
         "text": "pod-1"
-      }
+      },
+      "seed": 589335750,
+      "type": "rectangle",
+      "width": 220,
+      "x": 1200,
+      "y": 240,
+      "z": "t"
     },
     "pod-2": {
-      "type": "rectangle",
-      "z": "a3",
-      "x": 1200,
-      "y": 495,
-      "width": 220,
       "height": 90,
       "label": {
         "text": "pod-2"
-      }
+      },
+      "seed": 572558131,
+      "type": "rectangle",
+      "width": 220,
+      "x": 1200,
+      "y": 495,
+      "z": "x"
     },
     "pod-3": {
-      "type": "rectangle",
-      "z": "a4",
-      "x": 1200,
-      "y": 750,
-      "width": 220,
       "height": 90,
       "label": {
         "text": "pod-3"
-      }
+      },
+      "seed": 555780512,
+      "type": "rectangle",
+      "width": 220,
+      "x": 1200,
+      "y": 750,
+      "z": "z"
     },
     "c-user-lb": {
-      "type": "connector",
-      "z": "a5",
-      "start": {
-        "kind": "bound",
-        "elementId": "user"
-      },
       "end": {
-        "kind": "bound",
-        "elementId": "lb"
+        "elementId": "lb",
+        "kind": "bound"
       },
-      "endHead": "arrow"
+      "seed": 73885660,
+      "start": {
+        "elementId": "user",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zV"
     },
-    "c-lb-1": {
-      "type": "connector",
-      "z": "a6",
-      "start": {
-        "kind": "bound",
-        "elementId": "lb"
-      },
+    "c-lb-pod-1": {
       "end": {
-        "kind": "bound",
-        "elementId": "pod-1"
+        "elementId": "pod-1",
+        "kind": "bound"
       },
-      "endHead": "arrow"
+      "seed": 1181783419,
+      "start": {
+        "elementId": "lb",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zl"
     },
-    "c-lb-2": {
-      "type": "connector",
-      "z": "a7",
-      "start": {
-        "kind": "bound",
-        "elementId": "lb"
-      },
+    "c-lb-pod-2": {
       "end": {
-        "kind": "bound",
-        "elementId": "pod-2"
+        "elementId": "pod-2",
+        "kind": "bound"
       },
-      "endHead": "arrow"
+      "seed": 1198561038,
+      "start": {
+        "elementId": "lb",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zt"
     },
-    "c-lb-3": {
-      "type": "connector",
-      "z": "a8",
-      "start": {
-        "kind": "bound",
-        "elementId": "lb"
-      },
+    "c-lb-pod-3": {
       "end": {
-        "kind": "bound",
-        "elementId": "pod-3"
+        "elementId": "pod-3",
+        "kind": "bound"
       },
-      "endHead": "arrow"
+      "seed": 1215338657,
+      "start": {
+        "elementId": "lb",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zx"
+    },
+    "caption": {
+      "content": {
+        "text": "Kubernetes replaces the failed pod"
+      },
+      "height": 70,
+      "seed": 1863523430,
+      "style": {
+        "fontSize": 40,
+        "textColor": "muted"
+      },
+      "type": "text",
+      "width": 1000,
+      "x": 460,
+      "y": 930,
+      "z": "zz"
     }
   },
   "steps": [
     {
-      "id": "s-user",
-      "title": "User appears",
       "actions": [
         {
-          "id": "a1",
-          "type": "enter",
           "effect": "draw-on",
+          "id": "a1",
           "targets": [
             "user"
           ],
-          "durationMs": 800
+          "type": "enter"
         }
-      ]
+      ],
+      "id": "s1",
+      "title": "User appears"
     },
     {
-      "id": "s-lb",
-      "title": "Load balancer",
       "actions": [
         {
-          "id": "a2",
-          "type": "enter",
           "effect": "pop",
+          "id": "a2",
           "targets": [
             "lb"
           ],
-          "durationMs": 500
+          "type": "enter"
         },
         {
-          "id": "a3",
-          "type": "enter",
+          "delayMs": 300,
+          "durationMs": 600,
           "effect": "draw-on",
+          "id": "a3",
           "targets": [
             "c-user-lb"
           ],
-          "delayMs": 300,
-          "durationMs": 600
+          "type": "enter"
         }
-      ]
+      ],
+      "id": "s2",
+      "title": "Load balancer"
     },
     {
-      "id": "s-pods",
-      "title": "Pods fan out",
       "actions": [
         {
-          "id": "a4",
-          "type": "enter",
+          "durationMs": 600,
           "effect": "draw-on",
+          "id": "a4",
           "targets": [
-            "c-lb-1",
-            "c-lb-2",
-            "c-lb-3"
+            "c-lb-pod-1",
+            "c-lb-pod-2",
+            "c-lb-pod-3"
           ],
-          "durationMs": 600
+          "type": "enter"
         },
         {
-          "id": "a5",
-          "type": "enter",
+          "delayMs": 400,
           "effect": "pop",
+          "id": "a5",
+          "staggerMs": 150,
           "targets": [
             "pod-1",
             "pod-2",
             "pod-3"
           ],
-          "delayMs": 400,
-          "durationMs": 450,
-          "staggerMs": 150
+          "type": "enter"
         }
-      ]
+      ],
+      "id": "s3",
+      "title": "Pods fan out"
     },
     {
-      "id": "s-traffic",
-      "title": "Traffic flows",
-      "holdMs": 3000,
       "actions": [
         {
+          "durationMs": 3000,
+          "flow": {
+            "rate": 3
+          },
           "id": "a6",
-          "type": "flow",
           "targets": [
             "c-user-lb"
           ],
-          "durationMs": 3000,
-          "flow": {
-            "rate": 2
-          }
+          "type": "flow"
         },
         {
-          "id": "a7",
-          "type": "flow",
-          "targets": [
-            "c-lb-1",
-            "c-lb-2",
-            "c-lb-3"
-          ],
           "durationMs": 3000,
           "flow": {
-            "rate": 2,
+            "chainFrom": "c-user-lb",
             "distribute": "round-robin",
-            "chainFrom": "c-user-lb"
-          }
+            "rate": 3
+          },
+          "id": "a7",
+          "targets": [
+            "c-lb-pod-1",
+            "c-lb-pod-2",
+            "c-lb-pod-3"
+          ],
+          "type": "flow"
         }
-      ]
+      ],
+      "holdMs": 0,
+      "id": "s4",
+      "title": "Traffic flows"
+    },
+    {
+      "actions": [
+        {
+          "durationMs": 400,
+          "id": "a8",
+          "targets": [
+            "pod-3"
+          ],
+          "to": {
+            "fill": "danger-soft",
+            "label": "pod-3 crashed",
+            "stroke": "danger"
+          },
+          "type": "morph"
+        },
+        {
+          "delayMs": 200,
+          "effect": "shake",
+          "id": "a9",
+          "targets": [
+            "pod-3"
+          ],
+          "type": "emphasis"
+        },
+        {
+          "durationMs": 3000,
+          "flow": {
+            "rate": 3
+          },
+          "id": "a10",
+          "targets": [
+            "c-user-lb"
+          ],
+          "type": "flow"
+        },
+        {
+          "durationMs": 3000,
+          "flow": {
+            "chainFrom": "c-user-lb",
+            "distribute": "round-robin",
+            "rate": 3,
+            "skip": [
+              "c-lb-pod-3"
+            ]
+          },
+          "id": "a11",
+          "targets": [
+            "c-lb-pod-1",
+            "c-lb-pod-2",
+            "c-lb-pod-3"
+          ],
+          "type": "flow"
+        }
+      ],
+      "holdMs": 0,
+      "id": "s5",
+      "title": "Pod 3 crashes"
+    },
+    {
+      "actions": [
+        {
+          "durationMs": 300,
+          "effect": "fade",
+          "id": "a12",
+          "targets": [
+            "c-lb-pod-3"
+          ],
+          "type": "exit"
+        },
+        {
+          "delayMs": 300,
+          "durationMs": 600,
+          "id": "a13",
+          "targets": [
+            "pod-3"
+          ],
+          "to": {
+            "fill": "success-soft",
+            "label": "pod-3 (new)",
+            "stroke": "success"
+          },
+          "type": "morph"
+        },
+        {
+          "delayMs": 900,
+          "durationMs": 500,
+          "effect": "draw-on",
+          "id": "a14",
+          "targets": [
+            "c-lb-pod-3"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 900,
+          "effect": "pulse",
+          "id": "a15",
+          "targets": [
+            "pod-3"
+          ],
+          "type": "emphasis"
+        },
+        {
+          "delayMs": 600,
+          "effect": "fade",
+          "id": "a16",
+          "targets": [
+            "caption"
+          ],
+          "type": "enter"
+        }
+      ],
+      "holdMs": 1500,
+      "id": "s6",
+      "title": "Self-healing"
     }
   ]
 }
