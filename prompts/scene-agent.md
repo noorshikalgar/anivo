@@ -87,7 +87,7 @@ step "<title>" [hold=<time>] [cue=<time>]
   morph <targets> key=value…
   pulse|shake|glow|flash|highlight|focus <targets>
   flow <connectors> [rate=<n>] [round-robin] [chain=<connector>] [skip=<connector>]
-  camera zoom-to <targets> | camera reset
+  camera zoom-to <targets> [padding=80] | camera pan at=x,y size=WxH | camera reset
   count <target> from=<n> to=<n> format="{n} <unit>"
   code <target> highlight=<a>-<b> | type=<a>-<b>
   wait <time>

@@ -19,7 +19,7 @@ const ELEMENT_KINDS = new Set(["box", "ellipse", "diamond", "text", "icon", "cap
 const CONTAINERS = new Set(["row", "column", "grid", "group"]);
 const ENTER_EFFECTS = new Set(["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter"]);
 const EMPHASIS = new Set(["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus"]);
-const ACTIONS = new Set(["enter", "exit", "morph", "flow", "wait", ...EMPHASIS]);
+const ACTIONS = new Set(["enter", "exit", "morph", "flow", "wait", "camera", "count", ...EMPHASIS]);
 
 const DEFAULT_SIZE: Record<string, [number, number]> = {
   box: [220, 90],
@@ -661,7 +661,7 @@ function readArrow(line: Line, errors: ScriptError[]): ArrowDecl | undefined {
 function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => string[], errors: ScriptError[]): Record<string, unknown> | undefined {
   const head = line.tokens[0];
   if (!head || head.t !== "word" || !ACTIONS.has(head.v)) {
-    errors.push(err(line.pos, `The action '${head && "v" in head ? head.v : ""}' is not known.`, "Use: enter, exit, morph, flow, wait, pulse, shake, wiggle, glow, flash, highlight, focus."));
+    errors.push(err(line.pos, `The action '${head && "v" in head ? head.v : ""}' is not known.`, "Use: enter, exit, morph, flow, wait, camera, count, pulse, shake, wiggle, glow, flash, highlight, focus."));
     return undefined;
   }
   const verb = head.v;
@@ -682,6 +682,59 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
       } else if (verb === "flow" && ["all", "round-robin", "random", "forward", "reverse", "both"].includes(t.v)) kv.set(["forward", "reverse", "both"].includes(t.v) ? "direction" : "distribute", { v: t.v === "random" ? "random-seeded" : t.v, pos: t.pos });
       else words.push(t);
     }
+  }
+  if (verb === "camera") {
+    const op = words[0] && "v" in words[0] ? words[0].v : "";
+    if (!["zoom-to", "pan", "reset"].includes(op)) {
+      errors.push(err(line.pos, "The camera action needs zoom-to, pan, or reset.", "Write: camera zoom-to lb, pods  or  camera reset"));
+      return undefined;
+    }
+    const a: Record<string, unknown> = { type: "camera", camera: { op } };
+    if (delay !== undefined) a["delayMs"] = delay;
+    const cam = a["camera"] as Record<string, unknown>;
+    if (op === "zoom-to") {
+      a["targets"] = resolveTargets(words.slice(1), line.pos);
+    }
+    for (const [k, { v, pos }] of kv) {
+      if (k === "dur" || k === "duration") a["durationMs"] = parseTime(v);
+      else if (k === "easing" || k === "ease") a["easing"] = v;
+      else if (k === "id") a["id"] = v;
+      else if (k === "padding") cam["padding"] = Number(v);
+      else if (k === "at" || k === "size") continue;
+      else errors.push(err(pos, `The property '${k}' is not known for camera.`, "Use: dur, easing, padding, at, size."));
+    }
+    if (op === "pan") {
+      const at = kv.get("at")?.v.split(",").map(Number);
+      const size = kv.get("size")?.v.split("x").map(Number);
+      if (!at || !size || at.length !== 2 || size.length !== 2 || [...at, ...size].some((n) => !Number.isFinite(n))) {
+        errors.push(err(line.pos, "camera pan needs at=x,y and size=WxH.", "Write: camera pan at=0,0 size=960x540"));
+        return undefined;
+      }
+      cam["rect"] = { x: at[0], y: at[1], width: size[0], height: size[1] };
+    }
+    return a;
+  }
+  if (verb === "count") {
+    const targets = resolveTargets(words, line.pos);
+    const from = num(kv.get("from")?.v ?? "");
+    const to = num(kv.get("to")?.v ?? "");
+    if (from === undefined || to === undefined) {
+      errors.push(err(line.pos, "The count needs from= and to=.", 'Write: count rps from=0 to=1200 format="{n} req/s"'));
+      return undefined;
+    }
+    const counter: Record<string, unknown> = { from, to };
+    const format = kv.get("format")?.v;
+    if (format !== undefined) counter["format"] = format;
+    const decimals = kv.get("decimals")?.v;
+    if (decimals !== undefined) counter["decimals"] = Number(decimals);
+    const a: Record<string, unknown> = { type: "counter", targets, counter };
+    if (delay !== undefined) a["delayMs"] = delay;
+    for (const [k, { v }] of kv) {
+      if (k === "dur" || k === "duration") a["durationMs"] = parseTime(v);
+      else if (k === "easing") a["easing"] = v;
+      else if (k === "id") a["id"] = v;
+    }
+    return a;
   }
   if (verb === "wait") {
     const d = words[0] && "v" in words[0] ? parseTime(words[0].v) : undefined;

@@ -9,6 +9,8 @@ export const DEFAULT_DURATION_MS = {
   emphasis: 800,
   flow: 2000,
   wait: 1000,
+  camera: 1000,
+  counter: 1200,
 } as const;
 
 /** Typewriter duration: 40 ms per character, maximum 2000 ms. */
@@ -22,6 +24,8 @@ export const DEFAULT_EASING: Record<Action["type"], EasingName> = {
   emphasis: "ease-in-out",
   flow: "linear",
   wait: "linear",
+  camera: "ease-in-out",
+  counter: "ease-out",
 };
 
 /** Default duration of an action when `durationMs` is not set. */

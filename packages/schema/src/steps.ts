@@ -95,7 +95,29 @@ export const EmphasisAction = z.object({ ...actionBase, type: z.literal("emphasi
 export const FlowAction = z.object({ ...actionBase, type: z.literal("flow"), flow: FlowParams.default(FlowParams.parse({})) });
 export const WaitAction = z.object({ ...actionBase, targets: z.array(ElementId).default([]), type: z.literal("wait") });
 
-export const Action = z.discriminatedUnion("type", [EnterAction, ExitAction, MorphAction, EmphasisAction, FlowAction, WaitAction]);
+export const CameraParams = z.object({
+  op: z.enum(["zoom-to", "pan", "reset"]).describe("zoom-to: fit the targets. pan: move to a rectangle. reset: go back to the scene camera."),
+  padding: z.number().nonnegative().default(80).describe("Space around the targets for zoom-to, in scene pixels."),
+  rect: z.object({ x: z.number(), y: z.number(), width: z.number().positive(), height: z.number().positive() }).optional().describe("Camera rectangle for pan."),
+});
+export type CameraParams = z.infer<typeof CameraParams>;
+
+/** Moves or zooms the camera (docs/06 "camera"). The targets are the elements to fit (zoom-to). */
+export const CameraAction = z.object({ ...actionBase, targets: z.array(ElementId).default([]), type: z.literal("camera"), camera: CameraParams });
+
+/** Counts a number in a text element, for example "{n} req/s" (docs/06 "counter"). */
+export const CounterAction = z.object({
+  ...actionBase,
+  type: z.literal("counter"),
+  counter: z.object({
+    from: z.number(),
+    to: z.number(),
+    format: z.string().default("{n}").describe("Text with {n} for the number, for example '{n} req/s'."),
+    decimals: z.number().int().min(0).max(6).default(0),
+  }),
+});
+
+export const Action = z.discriminatedUnion("type", [EnterAction, ExitAction, MorphAction, EmphasisAction, FlowAction, WaitAction, CameraAction, CounterAction]);
 export type Action = z.infer<typeof Action>;
 export type ActionInput = z.input<typeof Action>;
 export type ActionType = Action["type"];

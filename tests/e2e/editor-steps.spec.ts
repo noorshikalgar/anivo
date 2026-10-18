@@ -56,3 +56,13 @@ test("N adds a step", async ({ page }) => {
   await page.keyboard.press("n");
   expect(await stepIds(page)).toHaveLength(5);
 });
+
+test("Add action adds a camera zoom to the selection", async ({ page }) => {
+  await page.getByRole("button", { name: "Add step" }).click();
+  await page.evaluate(() => (window as unknown as { __anivo: { getState(): { setSelection(ids: string[]): void } } }).__anivo.getState().setSelection(["pod-1", "pod-2"]));
+  await page.getByRole("button", { name: "Add action" }).first().click();
+  await page.getByRole("menuitem", { name: "Camera: zoom to selection" }).click();
+  const s = await state(page);
+  const step = s.scene.steps.find((st) => st.id === s.selectedStep)!;
+  expect(step.actions[0]).toMatchObject({ type: "camera", targets: ["pod-1", "pod-2"] });
+});

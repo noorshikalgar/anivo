@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyScript } from "./apply.js";
 import { compile } from "./compile.js";
+import { printScene } from "./print.js";
 
 const EXAMPLE_A = `
 scene "How a load balancer works" style=clean theme=slate-dark size=1920x1080 fps=60
@@ -117,6 +118,16 @@ describe("Anivo Script", () => {
     expect(e["db"]!.x).toBe(e["cache"]!.x);
     const bad = compile(`box a "A"\nlayout a, b row\n`);
     expect(bad.ok).toBe(false);
+  });
+
+  it("supports camera and count actions and prints them back", () => {
+    const text = `box a "A" at=100,100\ntext rps "0 req/s" at=600,100\nstep "Zoom"\n  camera zoom-to a padding=40 dur=800ms\n  count rps from=0 to=1200 format="{n} req/s"\nstep "Back"\n  camera pan at=0,0 size=960x540\n  camera reset +500ms\n`;
+    const scene = ok(text);
+    expect(scene.steps[0]!.actions[0]).toMatchObject({ type: "camera", targets: ["a"], camera: { op: "zoom-to", padding: 40 }, durationMs: 800 });
+    expect(scene.steps[0]!.actions[1]).toMatchObject({ type: "counter", targets: ["rps"], counter: { from: 0, to: 1200, format: "{n} req/s" } });
+    expect(scene.steps[1]!.actions[0]).toMatchObject({ camera: { op: "pan", rect: { x: 0, y: 0, width: 960, height: 540 } } });
+    const again = ok(printScene(scene));
+    expect(again.steps).toEqual(scene.steps);
   });
 
   it("supports grid, row, captions, text, wait, click steps, and times", () => {

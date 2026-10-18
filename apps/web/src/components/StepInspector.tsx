@@ -46,6 +46,8 @@ const label = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g
 function describe(a: Action): string {
   if (a.type === "enter" || a.type === "exit" || a.type === "emphasis") return `${label(a.type)} · ${a.effect}`;
   if (a.type === "morph") return `Morph · ${Object.keys(a.to).join(", ")}`;
+  if (a.type === "camera") return `Camera · ${a.camera.op}`;
+  if (a.type === "counter") return `Count · ${a.counter.from} to ${a.counter.to}`;
   return label(a.type);
 }
 
@@ -54,20 +56,23 @@ export function AddActionMenu({ appearance = "secondary" }: { appearance?: "seco
   const selection = useEditor((s) => s.selection);
   const elements = useEditor((s) => s.scene.elements);
   const connectors = selection.filter((id) => elements[id]?.type === "connector");
+  const texts = selection.filter((id) => elements[id]?.type === "text");
   const none = selection.length === 0;
   const add = (action: Record<string, unknown>, name: string) => addAction({ targets: selection, ...action }, name);
+  const step = useEditor((s) => s.selectedStep);
   return (
     <Menu>
       <MenuTrigger disableButtonEnhancement>
-        <Button size="small" appearance={appearance} icon={<Add20Regular />} disabled={none}>
+        <Button size="small" appearance={appearance} icon={<Add20Regular />} disabled={none && step === null}>
           Add action
         </Button>
       </MenuTrigger>
       <MenuPopover>
         <MenuList>
+          <MenuItem onClick={() => addAction({ type: "camera", camera: { op: "reset" } }, "Add camera reset")}>Camera: reset to the full view</MenuItem>
           <Menu>
             <MenuTrigger disableButtonEnhancement>
-              <MenuItem>Enter</MenuItem>
+              <MenuItem disabled={none}>Enter</MenuItem>
             </MenuTrigger>
             <MenuPopover>
               <MenuList>
@@ -81,7 +86,7 @@ export function AddActionMenu({ appearance = "secondary" }: { appearance?: "seco
           </Menu>
           <Menu>
             <MenuTrigger disableButtonEnhancement>
-              <MenuItem>Exit</MenuItem>
+              <MenuItem disabled={none}>Exit</MenuItem>
             </MenuTrigger>
             <MenuPopover>
               <MenuList>
@@ -95,7 +100,7 @@ export function AddActionMenu({ appearance = "secondary" }: { appearance?: "seco
           </Menu>
           <Menu>
             <MenuTrigger disableButtonEnhancement>
-              <MenuItem>Emphasis</MenuItem>
+              <MenuItem disabled={none}>Emphasis</MenuItem>
             </MenuTrigger>
             <MenuPopover>
               <MenuList>
@@ -109,6 +114,12 @@ export function AddActionMenu({ appearance = "secondary" }: { appearance?: "seco
           </Menu>
           <MenuItem disabled={connectors.length === 0} onClick={() => addAction({ type: "flow", targets: connectors, flow: connectors.length > 1 ? { distribute: "round-robin" } : {} }, "Add flow")}>
             Flow {connectors.length === 0 ? "(select an arrow)" : ""}
+          </MenuItem>
+          <MenuItem disabled={none} onClick={() => addAction({ type: "camera", targets: selection, camera: { op: "zoom-to" } }, "Add camera zoom")}>
+            Camera: zoom to selection
+          </MenuItem>
+          <MenuItem disabled={texts.length === 0} onClick={() => addAction({ type: "counter", targets: texts, counter: { from: 0, to: 100 } }, "Add count")}>
+            Count {texts.length === 0 ? "(select a text)" : ""}
           </MenuItem>
         </MenuList>
       </MenuPopover>
@@ -168,6 +179,21 @@ function ActionEditor({ step, action }: { step: Step; action: Action }) {
         />
         {action.targets.length > 1 ? <NumberField label="Stagger (ms)" value={action.staggerMs} min={0} step={20} onCommit={(v) => set({ staggerMs: Math.round(v) }, "Change stagger")} /> : <div />}
       </Row>
+      {action.type === "camera" && action.camera.op === "zoom-to" && (
+        <NumberField label="Padding (px)" value={action.camera.padding} min={0} step={20} onCommit={(v) => set({ camera: { ...action.camera, padding: v } }, "Change camera padding")} />
+      )}
+      {action.type === "counter" && (
+        <>
+          <Row>
+            <NumberField label="From" value={action.counter.from} onCommit={(v) => set({ counter: { ...action.counter, from: v } }, "Change count")} />
+            <NumberField label="To" value={action.counter.to} onCommit={(v) => set({ counter: { ...action.counter, to: v } }, "Change count")} />
+          </Row>
+          <Row>
+            <TextField label="Format" value={action.counter.format} placeholder="{n} req/s" onCommit={(v) => void set({ counter: { ...action.counter, format: v.includes("{n}") ? v : `{n} ${v}`.trim() } }, "Change count format")} />
+            <NumberField label="Decimals" value={action.counter.decimals} min={0} max={6} onCommit={(v) => set({ counter: { ...action.counter, decimals: Math.round(v) } }, "Change count decimals")} />
+          </Row>
+        </>
+      )}
       {action.type === "flow" && (
         <>
           <Row>
