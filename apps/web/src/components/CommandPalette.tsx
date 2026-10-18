@@ -98,6 +98,8 @@ function commands(): Command[] {
     { title: "Style: clean", run: () => commitSettings({ style: "clean" }, "Change style") },
     { title: "Style: sketch", run: () => commitSettings({ style: "sketch" }, "Change style") },
     ...["slate-dark", "slate-light", "paper-light", "night-dark"].map((t) => ({ title: `Theme: ${t}`, run: () => commitSettings({ theme: t }, "Change theme") })),
+    { title: "Keyboard shortcuts", keys: "?", run: () => useEditor.setState({ helpOpen: true }) },
+    { title: "History of changes", run: () => useEditor.setState({ historyOpen: true }) },
     { title: "AI panel", run: () => useEditor.setState((s) => ({ aiOpen: !s.aiOpen })) },
     { title: "Connect agent", run: () => useEditor.setState({ connectOpen: true }) },
     { title: "Show the tour", run: () => useEditor.setState({ tourOpen: true }) },

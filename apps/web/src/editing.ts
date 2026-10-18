@@ -253,3 +253,33 @@ export function boundsOf(scene: Scene, frame: FrameState, routes: Map<string, Po
   }
   return box;
 }
+
+export interface GuideLine {
+  axis: "x" | "y";
+  /** Scene coordinate of the line. */
+  at: number;
+  from: number;
+  to: number;
+}
+
+/**
+ * Smart guides (FR-CANVAS-08): align the edges or centers of a moving box with
+ * other boxes. Returns the change of the move on each axis (0 if no guide) and
+ * the guide lines to draw.
+ */
+export function smartGuides(moving: Box, others: Box[], threshold: number): { dx: number | null; dy: number | null; lines: GuideLine[] } {
+  const xs = (b: Box) => [b.x, b.x + b.width / 2, b.x + b.width];
+  const ys = (b: Box) => [b.y, b.y + b.height / 2, b.y + b.height];
+  let best = { x: { d: Infinity, at: 0, other: null as Box | null }, y: { d: Infinity, at: 0, other: null as Box | null } };
+  for (const o of others) {
+    for (const a of xs(moving)) for (const b of xs(o)) if (Math.abs(b - a) < Math.abs(best.x.d) && Math.abs(b - a) <= threshold) best = { ...best, x: { d: b - a, at: b, other: o } };
+    for (const a of ys(moving)) for (const b of ys(o)) if (Math.abs(b - a) < Math.abs(best.y.d) && Math.abs(b - a) <= threshold) best = { ...best, y: { d: b - a, at: b, other: o } };
+  }
+  const lines: GuideLine[] = [];
+  const dx = best.x.other ? best.x.d : null;
+  const dy = best.y.other ? best.y.d : null;
+  const m = { ...moving, x: moving.x + (dx ?? 0), y: moving.y + (dy ?? 0) };
+  if (best.x.other) lines.push({ axis: "x", at: best.x.at, from: Math.min(m.y, best.x.other.y) - 16, to: Math.max(m.y + m.height, best.x.other.y + best.x.other.height) + 16 });
+  if (best.y.other) lines.push({ axis: "y", at: best.y.at, from: Math.min(m.x, best.y.other.x) - 16, to: Math.max(m.x + m.width, best.y.other.x + best.y.other.width) + 16 });
+  return { dx, dy, lines };
+}

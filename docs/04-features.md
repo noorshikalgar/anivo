@@ -25,7 +25,7 @@ All features must be available to agents unless the table says "UI only".
 | FR-CANVAS-05 | Binding of connector ends to elements | P0 | If a bound element moves, the connector updates in the same frame. The binding survives copy and paste of both elements. |
 | FR-CANVAS-06 | Groups | P0 | Ctrl/Cmd+G groups. Ctrl/Cmd+Shift+G ungroups. A group can be a target of an action. |
 | FR-CANVAS-07 | Selection, multi-select, marquee select, align, distribute | P0 | Align left, center, right, top, middle, bottom. Distribute horizontal and vertical. |
-| FR-CANVAS-08 | Snap to grid and smart guides | P0 | Grid size 8 px by default. Guides show at edges and centers of near elements. |
+| FR-CANVAS-08 | Snap to grid and smart guides | P0 | Grid size 8 px by default. Guides show at edges and centers of near elements. A guide wins over the grid on its axis. Alt turns off both. |
 | FR-CANVAS-09 | Undo and redo | P0 | Undo removes one transaction. 200 transactions of history minimum. |
 | FR-CANVAS-10 | Copy, paste, duplicate. Paste of SVG and PNG from the clipboard | P0 | Pasted SVG is sanitized (see [12](12-quality-and-security.md)). |
 | FR-CANVAS-11 | Icon library with search | P0 | Search by name and tag. Only free open-source packs. Packs at MVP: Lucide (ISC, default) and Fluent System Icons (MIT). The icon picker has a pack selector. The scene setting `defaultIconPack` selects the pack for new icons. P1 optional packs: Tabler (MIT), Simple Icons (CC0), Kubernetes community icons (CC BY 4.0, with attribution). No vendor packs with restrictive terms (see [12](12-quality-and-security.md#third-party-assets)). |
@@ -33,7 +33,7 @@ All features must be available to agents unless the table says "UI only".
 | FR-CANVAS-13 | Image element (PNG, JPEG, SVG, WebP) | P1 | Images are stored as assets in the scene file. Maximum 20 MB for each image. |
 | FR-CANVAS-14 | Freehand draw (pen) | P2 | Uses `perfect-freehand`. |
 | FR-CANVAS-15 | Table element (rows and columns of text) | P1 | Needed for Example E. Each cell is a child element with a stable ID. |
-| FR-CANVAS-16 | Auto layout of a selection: row, column, grid, tree, layered graph | P1 | Uses ELK.js for the layered graph. One undo removes the full layout. |
+| FR-CANVAS-16 | Auto layout of a selection: row, column, grid, tree, layered graph | P1 | A built-in layered layout ([decision 0004](decisions/0004-auto-layout.md)). One undo removes the full layout. |
 | FR-CANVAS-17 | Element ID editor | P0 | The user can see and change the ID of an element. IDs are unique in a scene. Agents use these IDs. |
 | FR-CANVAS-18 | Element lock and hide in the editor | P1 | A locked element cannot be selected on the canvas. Hidden in editor does not mean hidden in video. |
 

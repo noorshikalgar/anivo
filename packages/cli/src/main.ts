@@ -138,7 +138,8 @@ program
 
 program
   .command("render")
-  .description("Export a video or images")
+  .alias("export")
+  .description("Export a video or images (alias: export)")
   .argument("<scene>")
   .requiredOption("--out <file>", "Output file (.mp4, .webm, .gif, .mov) or folder for PNG frames")
   .addOption(new Option("--format <format>", "Output format (default from the file extension)").choices(["mp4", "webm", "gif", "prores", "png-seq"]))

@@ -373,10 +373,10 @@ export async function copySelection(cut = false): Promise<void> {
 
 let internalClipboard = "";
 
-export async function pasteFromClipboard(): Promise<void> {
+export async function pasteFromClipboard(systemText?: string): Promise<void> {
   let text = internalClipboard;
   try {
-    const sys = await navigator.clipboard?.readText();
+    const sys = systemText ?? (await navigator.clipboard?.readText());
     if (sys?.startsWith(CLIP_PREFIX)) text = sys;
   } catch {
     // No clipboard permission: use the copy from this page.
