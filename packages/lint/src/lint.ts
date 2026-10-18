@@ -177,7 +177,7 @@ export function lintScene(scene: Scene): LintResult[] {
         const inter = intersection(ba, bb);
         const small = Math.min(area(ba), area(bb));
         // A shape fully inside a large background shape is a frame, not an overlap.
-        const inside = inter >= small * 0.99 && Math.max(area(ba), area(bb)) > small * 3;
+        const inside = inter >= small * 0.99 && Math.max(area(ba), area(bb)) > small * 1.25;
         if (small > 0 && inter > small * 0.1 && !inside) {
           add({ code: "overlap", level: "warning", ids: [a.id, b.id], ...(stepId ? { step: stepId } : {}), message: `'${a.id}' and '${b.id}' overlap${where}.`, hint: `Move one of them, for example: element.place with rightOf or below, or use a row or column.` });
         }
