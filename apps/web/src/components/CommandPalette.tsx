@@ -15,7 +15,7 @@ import {
   selectAll,
   ungroupSelection,
 } from "../commands.js";
-import { importAudio } from "../audio.js";
+import { cueAllSteps, importAudio } from "../audio.js";
 import { newFromTemplate, newScene, openFile, saveFile, saveFileAs } from "../files.js";
 import { notify, withErrors } from "../notify.js";
 import { type Tool, useEditor } from "../store.js";
@@ -54,6 +54,8 @@ function commands(): Command[] {
     { title: "Add voiceover", run: () => void withErrors(() => importAudio("voiceover")) },
     { title: "Add music", run: () => void withErrors(() => importAudio("music")) },
     { title: "Add sound effect", run: () => void withErrors(() => importAudio("sfx")) },
+    { title: "Edit script", run: () => useEditor.setState({ scriptOpen: true }) },
+    { title: "Start all steps at voiceover cues", run: cueAllSteps },
     { title: "Save", keys: "Ctrl+S", run: () => void withErrors(async () => (await saveFile()) && notify("Saved", "success")) },
     { title: "Save as", keys: "Ctrl+Shift+S", run: () => void withErrors(saveFileAs) },
     { title: "Open", keys: "Ctrl+O", run: () => void withErrors(openFile) },

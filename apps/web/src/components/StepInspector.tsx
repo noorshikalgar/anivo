@@ -27,6 +27,7 @@ import {
 import { Add20Regular, Delete20Regular } from "@fluentui/react-icons";
 import { useMemo } from "react";
 import { addAction, removeAction, updateAction, updateStep } from "../commands.js";
+import { setCue, setStepLine } from "../audio.js";
 import { useEditor } from "../store.js";
 import { ColorField, NumberField, Row, SelectField, TextField } from "./fields.js";
 
@@ -284,21 +285,29 @@ function ActionEditor({ step, action }: { step: Step; action: Action }) {
 
 export function StepInspector({ step }: { step: Step }) {
   const styles = useStyles();
+  const hasVoice = useEditor((s) => s.scene.audio.some((t) => t.kind === "voiceover"));
+  const startMs = useEditor((s) => s.timeline.steps.find((t) => t.id === step.id)?.startMs ?? 0);
+  const line = useEditor((s) => s.scene.script.find((l) => l.stepId === step.id));
   return (
     <>
       <TextField label="Title" value={step.title} onCommit={(v) => updateStep(step.id, { title: v }, "Rename step")} />
       <Row>
         <SelectField
           label="Start"
-          value={step.trigger.kind === "cue" ? "auto" : step.trigger.kind}
+          value={step.trigger.kind}
           options={[
             { value: "auto", text: "Automatic" },
             { value: "click", text: "On click" },
+            ...(hasVoice || step.trigger.kind === "cue" ? [{ value: "cue" as const, text: "At voiceover cue" }] : []),
           ]}
-          onCommit={(v) => updateStep(step.id, { trigger: { kind: v } }, "Change step start")}
+          onCommit={(v) => (v === "cue" ? setCue(step.id, startMs, "Change step start") : updateStep(step.id, { trigger: { kind: v } }, "Change step start"))}
         />
         <NumberField label="Hold (ms)" value={step.holdMs} min={0} step={100} onCommit={(v) => updateStep(step.id, { holdMs: Math.round(v) }, "Change hold")} />
       </Row>
+      {step.trigger.kind === "cue" && (
+        <NumberField label="Cue time (ms)" value={step.trigger.atMs} min={0} step={100} onCommit={(v) => setCue(step.id, v, "Move cue")} />
+      )}
+      <TextField label="Script line" multiline value={line?.text ?? ""} placeholder="The words of the voiceover for this step" onCommit={(v) => setStepLine(step.id, v)} />
       <TextField label="Speaker notes" multiline value={step.notes ?? ""} placeholder="Notes for present mode" onCommit={(v) => updateStep(step.id, { notes: v === "" ? null : v }, "Change notes")} />
 
       <div className={styles.headerRow}>

@@ -3,7 +3,7 @@
  * The bytes are in the store (`assets`); the scene has only the references.
  */
 import { assetId } from "@anivo/fileio";
-import { type AudioTrack, audioSegments } from "@anivo/schema";
+import { type AudioTrack, type ScriptLine, audioSegments } from "@anivo/schema";
 import { useEditor } from "./store.js";
 
 const MIME: Record<string, string> = { mp3: "audio/mpeg", wav: "audio/wav", m4a: "audio/mp4", aac: "audio/aac", ogg: "audio/ogg", oga: "audio/ogg", opus: "audio/ogg", flac: "audio/flac", webm: "audio/webm" };
@@ -143,4 +143,65 @@ export function startAudioSync(): () => void {
     if (s.playing && (!prev.playing || s.scene.audio !== prev.scene.audio || s.assets !== prev.assets)) void start(s.playhead);
     else if (!s.playing && prev.playing) stop();
   });
+}
+
+// --- cues and script (docs/08) --------------------------------------------------
+
+/** The voiceover track, if the scene has one. */
+export const voiceover = () => useEditor.getState().scene.audio.find((t) => t.kind === "voiceover");
+
+/** Start a step at a voiceover time. */
+export function setCue(stepId: string, atMs: number, label = "Set cue"): boolean {
+  const vo = voiceover();
+  if (!vo) return false;
+  return useEditor.getState().apply({ label, ops: [{ op: "step.update", id: stepId, set: { trigger: { kind: "cue", audioId: vo.id, atMs: Math.max(0, Math.round(atMs)) } } }] }).ok;
+}
+
+/**
+ * Put a cue at the playhead for the next step that has not started (key M during play).
+ * Returns the step ID, or null if no step is after the playhead.
+ */
+export function cueAtPlayhead(): string | null {
+  const { timeline, playhead } = useEditor.getState();
+  const next = timeline.steps.find((s) => s.startMs > playhead);
+  if (!next || !setCue(next.id, playhead, "Set cue at playhead")) return null;
+  return next.id;
+}
+
+/** Set the script from text: one line for each step, in order. Empty lines are skipped. */
+export function setScriptText(text: string): void {
+  const { scene, apply } = useEditor.getState();
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  // Line IDs are given again in order (line-1, line-2, ...).
+  const r = apply({ label: "Set script", ops: [{ op: "script.set", lines: lines.map((t, i) => ({ text: t, ...(scene.steps[i] ? { stepId: scene.steps[i]!.id } : {}) })) }] });
+  if (!r.ok) throw new AudioError(r.error.message);
+}
+
+/** A script line with no ID: script.set gives the IDs again in order. */
+function withoutId(l: ScriptLine): Omit<ScriptLine, "id"> {
+  const out: Partial<ScriptLine> = { ...l };
+  delete out.id;
+  return out as Omit<ScriptLine, "id">;
+}
+
+/** Set the script line of one step. An empty text removes the line. */
+export function setStepLine(stepId: string, text: string): void {
+  const { scene, apply } = useEditor.getState();
+  const has = scene.script.some((l) => l.stepId === stepId);
+  const t = text.trim();
+  const lines = has
+    ? scene.script.flatMap((l) => (l.stepId !== stepId ? [withoutId(l)] : t ? [{ ...withoutId(l), text: t }] : []))
+    : [...scene.script.map(withoutId), ...(t ? [{ text: t, stepId }] : [])];
+  // Keep the script in step order.
+  const order = new Map(scene.steps.map((s, i) => [s.id, i]));
+  lines.sort((a, b) => (order.get(a.stepId ?? "") ?? 1e9) - (order.get(b.stepId ?? "") ?? 1e9));
+  apply({ label: "Change script line", ops: [{ op: "script.set", lines }] });
+}
+
+/** Change each step to start at a voiceover cue, at its current start time. */
+export function cueAllSteps(): void {
+  const vo = voiceover();
+  const { timeline, apply } = useEditor.getState();
+  if (!vo) return;
+  apply({ label: "Cue all steps", ops: timeline.steps.map((s) => ({ op: "step.update" as const, id: s.id, set: { trigger: { kind: "cue", audioId: vo.id, atMs: Math.round(s.startMs) } } })) });
 }
