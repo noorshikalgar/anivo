@@ -1,5 +1,5 @@
-import { Button, Slider, Text, Tooltip, makeStyles, tokens } from "@fluentui/react-components";
-import { Pause20Regular, Play20Regular, Previous20Regular } from "@fluentui/react-icons";
+import { Button, Slider, Text, ToggleButton, Tooltip, makeStyles, tokens } from "@fluentui/react-components";
+import { Pause20Regular, Play20Regular, Previous20Regular, GanttChart20Regular } from "@fluentui/react-icons";
 import { useEditor } from "../store.js";
 
 const useStyles = makeStyles({
@@ -26,6 +26,7 @@ export function PlaybackBar() {
   const playhead = useEditor((s) => s.playhead);
   const total = useEditor((s) => s.timeline.totalMs);
   const playing = useEditor((s) => s.playing);
+  const timelineOpen = useEditor((s) => s.timelineOpen);
   const { play, pause, setPlayhead } = useEditor.getState();
 
   return (
@@ -47,6 +48,9 @@ export function PlaybackBar() {
       <Text className={styles.time} size={200}>
         {formatTime(playhead)} / {formatTime(total)}
       </Text>
+      <Tooltip content={timelineOpen ? "Hide the timeline" : "Show the timeline"} relationship="label">
+        <ToggleButton appearance="subtle" icon={<GanttChart20Regular />} checked={timelineOpen} onClick={() => useEditor.setState({ timelineOpen: !timelineOpen })} />
+      </Tooltip>
     </div>
   );
 }

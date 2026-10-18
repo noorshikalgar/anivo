@@ -57,6 +57,7 @@ function commands(): Command[] {
     { title: "Add sound effect", run: () => void withErrors(() => importAudio("sfx")) },
     { title: "Record voiceover", run: () => void withErrors(startRecording) },
     { title: "Align script to voiceover", run: () => useEditor.setState({ alignOpen: true }) },
+    { title: "Show or hide the timeline", run: () => useEditor.setState({ timelineOpen: !useEditor.getState().timelineOpen }) },
     { title: "Edit script", run: () => useEditor.setState({ scriptOpen: true }) },
     { title: "Start all steps at voiceover cues", run: cueAllSteps },
     { title: "Save", keys: "Ctrl+S", run: () => void withErrors(async () => (await saveFile()) && notify("Saved", "success")) },
