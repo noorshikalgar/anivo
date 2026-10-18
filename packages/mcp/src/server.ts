@@ -1,6 +1,6 @@
-import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
-import { resolveTimeline } from "@anivo/engine";
+import { resolveTimeline, sceneCaptions, toSrt, toVtt } from "@anivo/engine";
 import { exportVideo, homePath, registerBundledAssets } from "@anivo/export-node";
 import { formatLint, lintScene, lintSummary } from "@anivo/lint";
 import { OperationBus } from "@anivo/ops";
@@ -252,6 +252,7 @@ export function createAnivoServer(opts: ServerOptions): McpServer {
         size: z.string().regex(/^\d+x\d+$/).optional().describe("For example 1280x720."),
         fps: z.union([z.literal(24), z.literal(30), z.literal(60)]).optional(),
         steps: z.string().regex(/^\d+(-\d+)?$/).optional().describe("Step range, for example 2-4."),
+        captions: z.enum(["bottom", "top"]).optional().describe("Burn the script captions into the video at this edge."),
         overwrite: z.boolean().default(false),
       },
     },
@@ -270,8 +271,34 @@ export function createAnivoServer(opts: ServerOptions): McpServer {
           range = { startMs: tl.steps[x - 1]!.startMs, endMs: tl.steps[b - 1]!.holdEndMs };
         }
         const size = a.size?.split("x").map(Number);
-        const r = await exportVideo(scene, { out, format, assets: assetCache, ...(size ? { width: size[0]! - (size[0]! % 2), height: size[1]! - (size[1]! % 2) } : {}), ...(a.fps ? { fps: a.fps } : {}), ...(range ? { range } : {}) });
+        const r = await exportVideo(scene, { out, format, assets: assetCache, ...(size ? { width: size[0]! - (size[0]! % 2), height: size[1]! - (size[1]! % 2) } : {}), ...(a.fps ? { fps: a.fps } : {}), ...(range ? { range } : {}), ...(a.captions ? { captions: a.captions } : {}) });
         return text(`Exported ${relative(root, r.out)}: ${r.frames} frames, ${(r.durationMs / 1000).toFixed(1)} s${r.bytes ? `, ${(r.bytes / 1e6).toFixed(2)} MB` : ""}.`);
+      }),
+  );
+
+  server.registerTool(
+    "anivo_captions",
+    {
+      title: "Captions",
+      description: "Make SRT or WebVTT captions from the script lines that link to steps. Returns the text. With out, it also writes the file inside the scene folder.",
+      inputSchema: {
+        scene: sceneArg,
+        format: z.enum(["srt", "vtt"]).default("srt"),
+        out: z.string().optional().describe("Output path, for example 'out/auth.srt'."),
+        overwrite: z.boolean().default(false),
+      },
+    },
+    async (a) =>
+      run(() => {
+        const caps = sceneCaptions(readSceneFile(sceneFile(a.scene)));
+        if (caps.length === 0) throw new ToolError("The scene has no captions.", "Set the script with the script.set operation, and link each line to a step.");
+        const body = a.format === "vtt" ? toVtt(caps) : toSrt(caps);
+        if (a.out) {
+          const out = inside(a.out);
+          if (existsSync(out) && !a.overwrite) throw new ToolError(`The file '${a.out}' exists already.`, "Use another path, or set overwrite to true.");
+          writeFileSync(out, body);
+        }
+        return text(body);
       }),
   );
 

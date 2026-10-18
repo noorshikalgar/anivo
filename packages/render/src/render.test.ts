@@ -99,3 +99,22 @@ describe("renderScene", () => {
     expect(Buffer.from(a).equals(Buffer.from(b))).toBe(true);
   });
 });
+
+describe("burned-in captions", () => {
+  it("draws white text on a dark box at the bottom, only while the caption is on", () => {
+    const canvas = createCanvas(W, H);
+    const ctx = canvas.getContext("2d") as unknown as Ctx2D;
+    const list = [{ startMs: 0, endMs: 1000, lines: ["Requests go to the load balancer"] }];
+    const bottomRow = () => {
+      const d = canvas.getContext("2d").getImageData(0, Math.round(H * 0.9), W, 1).data;
+      let white = 0;
+      for (let i = 0; i < d.length; i += 4) if (d[i]! > 230 && d[i + 1]! > 230 && d[i + 2]! > 230) white++;
+      return white;
+    };
+    renderScene(ctx, template, 500, { width: W, height: H, captions: { list } });
+    writeFileSync(new URL("caption.png", outDir), canvas.toBuffer("image/png"));
+    expect(bottomRow()).toBeGreaterThan(5);
+    renderScene(ctx, template, 1500, { width: W, height: H, captions: { list } });
+    expect(bottomRow()).toBe(0);
+  });
+});

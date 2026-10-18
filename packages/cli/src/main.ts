@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { resolveTimeline } from "@anivo/engine";
+import { resolveTimeline, sceneCaptions, toSrt, toVtt } from "@anivo/engine";
 import { type NodeExportFormat, exportVideo } from "@anivo/export-node";
 import { formatLint, lintScene, lintSummary } from "@anivo/lint";
 import { OperationBus } from "@anivo/ops";
@@ -145,7 +145,9 @@ program
   .option("--steps <a-b>", "Step range, for example 2-4")
   .addOption(new Option("--quality <q>", "Quality").choices(["draft", "standard", "high"]).default("standard"))
   .addOption(new Option("--style <style>", "Override the style").choices(["clean", "sketch"]))
-  .action(async (f: string, o: { out: string; format?: NodeExportFormat; size?: string; fps?: string; steps?: string; quality: "draft" | "standard" | "high"; style?: "clean" | "sketch" }) => {
+  .addOption(new Option("--captions <where>", "Burn the script captions into the video").choices(["bottom", "top"]))
+  .option("--no-audio", "Export with no audio")
+  .action(async (f: string, o: { out: string; format?: NodeExportFormat; size?: string; fps?: string; steps?: string; quality: "draft" | "standard" | "high"; style?: "clean" | "sketch"; captions?: "bottom" | "top"; audio: boolean }) => {
     const scene = readSceneFile(f);
     const format: NodeExportFormat = o.format ?? (o.out.endsWith(".webm") ? "webm" : o.out.endsWith(".gif") ? "gif" : o.out.endsWith(".mov") ? "prores" : o.out.endsWith(".mp4") ? "mp4" : "png-seq");
     let range: { startMs: number; endMs: number } | undefined;
@@ -169,6 +171,8 @@ program
       ...(o.fps ? { fps: Number(o.fps) as 24 | 30 | 60 } : {}),
       ...(range ? { range } : {}),
       ...(o.style ? { style: o.style } : {}),
+      ...(o.captions ? { captions: o.captions } : {}),
+      ...(o.audio === false ? { audio: false } : {}),
       onProgress: (d, n) => {
         const pct = Math.floor((d / n) * 100);
         if (!json() && process.stderr.isTTY && pct !== last) process.stderr.write(`\rRendering ${pct}%`);
@@ -262,6 +266,27 @@ program
     writeSceneFile(f, bus.scene);
     const extra = lines.length - scene.steps.length;
     print(`Set ${lines.length} script lines.${extra > 0 ? ` ${extra} lines have no step.` : ""}${extra < 0 ? ` ${-extra} steps have no line.` : ""}`);
+  });
+
+program
+  .command("captions")
+  .description("Write the script captions as SRT or WebVTT")
+  .argument("<scene>")
+  .option("--out <file>", "Output file (.srt or .vtt). Default: print to stdout")
+  .addOption(new Option("--format <format>", "Caption format (default from the file extension, else srt)").choices(["srt", "vtt"]))
+  .action((f: string, o: { out?: string; format?: "srt" | "vtt" }) => {
+    const scene = readSceneFile(f);
+    const caps = sceneCaptions(scene);
+    if (caps.length === 0) throw new ToolError("The scene has no captions.", "Set the script with 'anivo script', and link each line to a step.");
+    const format = o.format ?? (o.out?.endsWith(".vtt") ? "vtt" : "srt");
+    const text = format === "vtt" ? toVtt(caps) : toSrt(caps);
+    if (!o.out) {
+      if (json()) print("", { format, captions: caps });
+      else process.stdout.write(text);
+      return;
+    }
+    writeFileSync(o.out, text);
+    print(`Wrote ${o.out}: ${caps.length} captions.`, { out: o.out, format, captions: caps.length });
   });
 
 program

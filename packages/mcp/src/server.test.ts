@@ -35,7 +35,7 @@ describe("Anivo MCP server", () => {
   it("lists all tools from docs/09", async () => {
     const names = (await client.listTools()).tools.map((t) => t.name).sort();
     expect(names).toEqual(
-      ["anivo_contact_sheet", "anivo_export", "anivo_guide", "anivo_icons_search", "anivo_lint", "anivo_ops_apply", "anivo_preview", "anivo_scene_create", "anivo_scene_get", "anivo_scene_summary", "anivo_schema", "anivo_script_apply", "anivo_templates_list", "anivo_undo"].sort(),
+      ["anivo_captions", "anivo_contact_sheet", "anivo_export", "anivo_guide", "anivo_icons_search", "anivo_lint", "anivo_ops_apply", "anivo_preview", "anivo_scene_create", "anivo_scene_get", "anivo_scene_summary", "anivo_schema", "anivo_script_apply", "anivo_templates_list", "anivo_undo"].sort(),
     );
   });
 
@@ -67,6 +67,16 @@ describe("Anivo MCP server", () => {
     expect(textOf(bad)).toContain("Use one of:");
     expect(textOf(await call("anivo_undo", { scene: "t.anivo" }))).toContain("Undid");
     expect(textOf(await call("anivo_scene_summary", { scene: "t.anivo" }))).not.toContain("extra");
+  });
+
+  it("makes captions from the script", async () => {
+    const empty = await call("anivo_captions", { scene: "t.anivo" });
+    expect(empty.isError).toBe(true);
+    const scene = JSON.parse(textOf(await call("anivo_scene_get", { scene: "t.anivo", format: "json" }))) as { steps: { id: string }[] };
+    await call("anivo_ops_apply", { scene: "t.anivo", transaction: { label: "Script", ops: [{ op: "script.set", lines: [{ text: "First line.", stepId: scene.steps[0]!.id }] }] } });
+    const vtt = textOf(await call("anivo_captions", { scene: "t.anivo", format: "vtt" }));
+    expect(vtt).toMatch(/^WEBVTT\n\n00:00:00\.000 --> /);
+    expect(vtt).toContain("First line.");
   });
 
   it("returns preview and contact sheet images", async () => {

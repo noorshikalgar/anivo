@@ -235,7 +235,8 @@ Global flags: `--json` (machine output for all commands), `--quiet`, `--no-color
 | `anivo_lint` | `scene` | List of problems |
 | `anivo_preview` | `scene`, `step`, `at?`, `debug?`, `width?` | PNG image (MCP image content) |
 | `anivo_contact_sheet` | `scene` | PNG image |
-| `anivo_export` | `scene`, `format`, `out`, `size?`, `fps?`, `range?` | File path, size, duration |
+| `anivo_export` | `scene`, `format`, `out`, `size?`, `fps?`, `range?`, `captions?` (`bottom`, `top`) | File path, size, duration |
+| `anivo_captions` | `scene`, `format: "srt" \| "vtt"`, `out?` | Caption text |
 | `anivo_icons_search` | `query`, `pack?` (`lucide`, `fluent`, …), `limit?` | Icon names with packs |
 | `anivo_templates_list` | — | Template names and descriptions |
 | `anivo_schema` | `kind: "ops" \| "scene"` | JSON Schema |
