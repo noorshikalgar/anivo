@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { addStep, copySelection, deleteSelection, duplicateSelection, groupSelection, nudgeSelection, pasteFromClipboard, selectAll, ungroupSelection } from "../commands.js";
 import { cueAtPlayhead } from "../audio.js";
+import { cancelRecording, nextStep } from "../record.js";
 import { openFile, saveFile, saveFileAs } from "../files.js";
 import { notify, withErrors } from "../notify.js";
 import { type Tool, useEditor } from "../store.js";
@@ -18,6 +19,14 @@ export function useShortcuts(): void {
       if (isTyping(e.target)) return;
       const st = useEditor.getState();
       if (st.presenting) return;
+      if (st.recording) {
+        // While a record runs, only these keys work.
+        if (e.key.toLowerCase() === "m" || e.key === "ArrowRight") {
+          e.preventDefault();
+          nextStep();
+        } else if (e.key === "Escape") cancelRecording();
+        return;
+      }
       if (e.key === "F5") {
         e.preventDefault();
         st.pause();

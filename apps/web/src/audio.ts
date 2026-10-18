@@ -3,6 +3,7 @@
  * The bytes are in the store (`assets`); the scene has only the references.
  */
 import { assetId } from "@anivo/fileio";
+import type { OperationInput } from "@anivo/ops";
 import { type AudioTrack, type ScriptLine, audioSegments } from "@anivo/schema";
 import { useEditor } from "./store.js";
 
@@ -41,7 +42,14 @@ export function mimeOf(name: string, type: string): string {
  * Add an audio file to the scene. A new voiceover replaces the old voiceover.
  * Returns the track ID.
  */
-export async function addAudio(bytes: Uint8Array, name: string, type: string, kind: AudioTrack["kind"]): Promise<string> {
+export async function addAudio(
+  bytes: Uint8Array,
+  name: string,
+  type: string,
+  kind: AudioTrack["kind"],
+  /** More operations in the same transaction (one undo step), for the new track ID. */
+  more: (trackId: string) => OperationInput[] = () => [],
+): Promise<string> {
   const mime = mimeOf(name, type);
   let buffer: AudioBuffer;
   try {
@@ -57,16 +65,18 @@ export async function addAudio(bytes: Uint8Array, name: string, type: string, ki
   const old = kind === "voiceover" ? st.scene.audio.find((t) => t.kind === "voiceover") : undefined;
   // The bytes go into the store before the operation, so the asset is never missing.
   useEditor.setState({ assets: new Map(st.assets).set(id, bytes) });
+  const trackId = kind === "voiceover" ? (old?.id ?? "voiceover") : undefined;
   const r = st.apply({
     label: kind === "voiceover" ? "Add voiceover" : "Add audio",
     ops: [
       ...(old ? [{ op: "audio.remove" as const, id: old.id }] : []),
       { op: "asset.add", asset: { id, mime, bytes: bytes.length, name } },
-      { op: "audio.add", track: { ...(old ? { id: old.id } : {}), kind, assetId: id, durationMs, startMs: old?.startMs ?? 0 } },
+      { op: "audio.add", track: { ...(trackId ? { id: trackId } : {}), kind, assetId: id, durationMs, startMs: old?.startMs ?? 0 } },
+      ...(trackId ? more(trackId) : []),
     ],
   });
   if (!r.ok) throw new AudioError(r.error.message);
-  return r.created[0] ?? old?.id ?? "";
+  return trackId ?? r.created[0] ?? "";
 }
 
 /** Ask the user for an audio file and add it. Returns false if the user cancelled. */

@@ -118,3 +118,57 @@ test("M during play puts a cue for the next step at the playhead", async ({ page
   expect(cued[0]!.id).toBe(s.scene.steps[1]!.id);
   expect(cued[0]!.trigger.atMs!).toBeGreaterThan(100);
 });
+
+/** A fake microphone: a 440 Hz tone from Web Audio. Real devices and permission prompts differ by machine. */
+async function fakeMicrophone(page: import("@playwright/test").Page) {
+  await page.evaluate(() => {
+    navigator.mediaDevices.getUserMedia = async () => {
+      const ac = new AudioContext();
+      const osc = ac.createOscillator();
+      const dest = ac.createMediaStreamDestination();
+      osc.connect(dest);
+      osc.start();
+      return dest.stream;
+    };
+  });
+}
+
+test("record a voiceover: M starts each step and records its cue", async ({ page }) => {
+  await fakeMicrophone(page);
+  await page.getByRole("button", { name: "Audio", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Record voiceover…" }).click();
+  const bar = page.getByRole("region", { name: "Voiceover record" });
+  await expect(bar.getByText(/The record starts in/)).toBeVisible();
+  await expect(bar.getByText(/Press M or → to start step 1/)).toBeVisible({ timeout: 6000 });
+  await page.waitForTimeout(400);
+  await page.keyboard.press("m");
+  await page.waitForTimeout(600);
+  await page.keyboard.press("ArrowRight");
+  await page.waitForTimeout(300);
+  await bar.getByRole("button", { name: "Stop" }).click();
+  await expect(bar).toHaveCount(0, { timeout: 10_000 });
+  const s = (await state(page)) as unknown as { scene: { audio: { id: string; kind: string; durationMs: number }[]; steps: { trigger: { kind: string; atMs?: number; audioId?: string } }[] } };
+  expect(s.scene.audio).toEqual([expect.objectContaining({ id: "voiceover", kind: "voiceover" })]);
+  expect(s.scene.audio[0]!.durationMs).toBeGreaterThan(1000);
+  const [a, b, c] = s.scene.steps.map((x) => x.trigger);
+  expect(a).toMatchObject({ kind: "cue", audioId: "voiceover" });
+  expect(b).toMatchObject({ kind: "cue", audioId: "voiceover" });
+  expect(c!.kind).toBe("auto");
+  expect(a!.atMs!).toBeGreaterThan(200);
+  expect(b!.atMs! - a!.atMs!).toBeGreaterThan(400);
+  // One undo removes the record and its cues.
+  await page.keyboard.press("Control+z");
+  const u = (await state(page)) as unknown as { scene: { audio: unknown[]; steps: { trigger: { kind: string } }[] } };
+  expect(u.scene.audio).toHaveLength(0);
+  expect(u.scene.steps[0]!.trigger.kind).not.toBe("cue");
+});
+
+test("Escape cancels the record with no change", async ({ page }) => {
+  await fakeMicrophone(page);
+  await page.getByRole("button", { name: "Audio", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Record voiceover…" }).click();
+  await expect(page.getByRole("region", { name: "Voiceover record" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("region", { name: "Voiceover record" })).toHaveCount(0);
+  expect(((await state(page)) as unknown as { scene: { audio: unknown[] } }).scene.audio).toHaveLength(0);
+});
