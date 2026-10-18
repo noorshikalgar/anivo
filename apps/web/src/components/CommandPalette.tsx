@@ -14,7 +14,10 @@ import {
   insertTable,
   pasteFromClipboard,
   selectAll,
+  toggleHideSelection,
+  toggleLockSelection,
   ungroupSelection,
+  unlockAndShowAll,
 } from "../commands.js";
 import { cueAllSteps, importAudio } from "../audio.js";
 import { pickImage } from "../images.js";
@@ -77,6 +80,9 @@ function commands(): Command[] {
     { title: "Duplicate", keys: "Ctrl+D", run: duplicateSelection },
     { title: "Delete", keys: "Delete", run: deleteSelection },
     { title: "Group", keys: "Ctrl+G", run: groupSelection },
+    { title: "Lock or unlock", keys: "Ctrl+Shift+L", run: toggleLockSelection },
+    { title: "Hide or show in editor", keys: "Ctrl+Shift+H", run: toggleHideSelection },
+    { title: "Unlock and show all elements", run: unlockAndShowAll },
     { title: "Ungroup", keys: "Ctrl+Shift+G", run: ungroupSelection },
     { title: "Align left", run: () => alignSelection("left") },
     { title: "Align center", run: () => alignSelection("center") },

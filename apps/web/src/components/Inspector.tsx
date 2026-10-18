@@ -1,6 +1,6 @@
 import { evaluate } from "@anivo/engine";
 import type { Element } from "@anivo/schema";
-import { Button, Divider, Slider, Field, Text, Tooltip, makeStyles, tokens } from "@fluentui/react-components";
+import { Button, Divider, Slider, Field, Switch, Text, Tooltip, makeStyles, tokens } from "@fluentui/react-components";
 import {
   AlignBottom20Regular,
   AlignCenterHorizontal20Regular,
@@ -67,6 +67,12 @@ function ElementProperties({ el }: { el: Element }) {
   return (
     <>
       <TextField label="ID" value={el.id} onCommit={(v) => renameElement(el.id, v)} />
+      <Row>
+        <Switch label="Locked" checked={el.locked} onChange={(_, d) => set({ locked: d.checked }, d.checked ? "Lock" : "Unlock")} />
+        <Tooltip content="Hide in the editor only. The video still shows it." relationship="description">
+          <Switch label="Hidden in editor" checked={el.editorHidden} onChange={(_, d) => set({ editorHidden: d.checked }, d.checked ? "Hide in editor" : "Show in editor")} />
+        </Tooltip>
+      </Row>
       <Text size={200} className={styles.muted}>
         {el.type}
         {el.type === "icon" ? ` · ${el.pack}:${el.name}` : ""}

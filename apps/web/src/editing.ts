@@ -59,11 +59,34 @@ export function elementBounds(f: ElementFrame, routes: Map<string, Polyline>): B
 /** Is the frame element drawn in the editor (visible, or a ghost while paused)? */
 const shown = (f: ElementFrame, ghosts: boolean) => f.type !== "group" && (f.visible || ghosts);
 
+/**
+ * Elements that the canvas does not pick: hidden in the editor, and locked if `locked` is true.
+ * A flag on a group or a table applies to its children.
+ */
+export function editorSkip(scene: Scene, locked: boolean): (id: string) => boolean {
+  const cache = new Map<string, boolean>();
+  const skip = (id: string): boolean => {
+    const known = cache.get(id);
+    if (known !== undefined) return known;
+    const el = scene.elements[id];
+    const v = !!el && (el.editorHidden || (locked && el.locked) || (el.parentId !== undefined && skip(el.parentId)));
+    cache.set(id, v);
+    return v;
+  };
+  return skip;
+}
+
+/** IDs of the elements that are hidden in the editor (with their children). */
+export function editorHiddenIds(scene: Scene): Set<string> {
+  const skip = editorSkip(scene, false);
+  return new Set(Object.keys(scene.elements).filter(skip));
+}
+
 /** Top-most element at a scene point. `tolerance` is in scene pixels. */
-export function hitTest(frame: FrameState, routes: Map<string, Polyline>, p: Point, tolerance: number, ghosts: boolean): string | null {
+export function hitTest(frame: FrameState, routes: Map<string, Polyline>, p: Point, tolerance: number, ghosts: boolean, skip?: (id: string) => boolean): string | null {
   for (let i = frame.elements.length - 1; i >= 0; i--) {
     const f = frame.elements[i]!;
-    if (!shown(f, ghosts)) continue;
+    if (!shown(f, ghosts) || skip?.(f.id)) continue;
     if (f.type === "connector") {
       const route = routes.get(f.id);
       if (route && distToPolyline(p, route) <= tolerance + 4) return f.id;
@@ -77,10 +100,10 @@ export function hitTest(frame: FrameState, routes: Map<string, Polyline>, p: Poi
 }
 
 /** Elements fully inside a scene rectangle. */
-export function elementsInRect(frame: FrameState, routes: Map<string, Polyline>, r: Box, ghosts: boolean): string[] {
+export function elementsInRect(frame: FrameState, routes: Map<string, Polyline>, r: Box, ghosts: boolean, skip?: (id: string) => boolean): string[] {
   const out: string[] = [];
   for (const f of frame.elements) {
-    if (!shown(f, ghosts)) continue;
+    if (!shown(f, ghosts) || skip?.(f.id)) continue;
     const b = elementBounds(f, routes);
     if (b.x >= r.x && b.y >= r.y && b.x + b.width <= r.x + r.width && b.y + b.height <= r.y + r.height) out.push(f.id);
   }

@@ -24,6 +24,8 @@ export interface RenderOptions {
    * uses it so the user can see and edit elements before they enter.
    */
   ghostHidden?: number;
+  /** Elements that the editor does not draw ("hidden in editor"). Exports do not set it. */
+  skipIds?: ReadonlySet<string>;
   /** Burned-in captions (docs/08 "Captions"). Make the list one time with `sceneCaptions`. */
   captions?: { list: Caption[]; position?: "bottom" | "top" };
 }
@@ -621,7 +623,7 @@ export function renderFrame(ctx: Ctx2D, scene: Scene, frame: FrameState, routes:
     }
     if (f.opacity <= 0) continue;
     const el = scene.elements[f.id];
-    if (!el || el.type === "group") continue;
+    if (!el || el.type === "group" || opts.skipIds?.has(f.id)) continue;
     ctx.save();
     ctx.setTransform(sx, 0, 0, sy, -cam.x * sx, -cam.y * sy);
     ctx.globalAlpha = f.opacity;

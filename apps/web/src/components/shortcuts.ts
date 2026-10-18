@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { addStep, copySelection, deleteSelection, duplicateSelection, groupSelection, nudgeSelection, pasteFromClipboard, selectAll, ungroupSelection } from "../commands.js";
+import { addStep, copySelection, deleteSelection, duplicateSelection, groupSelection, nudgeSelection, pasteFromClipboard, selectAll, toggleHideSelection, toggleLockSelection, ungroupSelection } from "../commands.js";
 import { cueAtPlayhead } from "../audio.js";
 import { cancelRecording, nextStep } from "../record.js";
 import { openFile, saveFile, saveFileAs } from "../files.js";
@@ -53,6 +53,12 @@ export function useShortcuts(): void {
       } else if (mod && e.key.toLowerCase() === "y") {
         e.preventDefault();
         st.redo();
+      } else if (mod && e.shiftKey && e.key.toLowerCase() === "l") {
+        e.preventDefault();
+        toggleLockSelection();
+      } else if (mod && e.shiftKey && e.key.toLowerCase() === "h") {
+        e.preventDefault();
+        toggleHideSelection();
       } else if (mod && e.key.toLowerCase() === "g") {
         e.preventDefault();
         if (e.shiftKey) ungroupSelection();

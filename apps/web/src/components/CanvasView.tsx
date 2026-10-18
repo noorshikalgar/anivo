@@ -12,6 +12,8 @@ import {
   boundsOf,
   topLevel,
   type Handle,
+  editorHiddenIds,
+  editorSkip,
   elementBounds,
   elementsInRect,
   handlePoints,
@@ -115,7 +117,7 @@ export function CanvasView() {
     } else if (d && d.kind === "resize") {
       result = previewFrame(scene, result.frame, new Map([[d.id, d.next]]));
     }
-    renderFrame(ctx as unknown as Ctx2D, scene, result.frame, result.routes, { width: canvas.width, height: canvas.height, camera, ghostHidden: playing ? 0 : GHOST });
+    renderFrame(ctx as unknown as Ctx2D, scene, result.frame, result.routes, { width: canvas.width, height: canvas.height, camera, ghostHidden: playing ? 0 : GHOST, skipIds: editorHiddenIds(scene) });
     drawOverlay(overlay, camera, result);
   }
 
@@ -255,7 +257,7 @@ export function CanvasView() {
       const box = currentBox(st.selection[0]!)!;
       drag.current = { kind: "resize", start: p, id: st.selection[0]!, handle: h, box, next: box };
     } else {
-      const leaf = last.current ? hitTest(last.current.frame, last.current.routes, p, 4 / st.view.zoom, true) : null;
+      const leaf = last.current ? hitTest(last.current.frame, last.current.routes, p, 4 / st.view.zoom, true, editorSkip(st.scene, true)) : null;
       // A click on an element in a group selects the group. Alt selects the element itself.
       const hit = leaf && !e.altKey ? topLevel(st.scene, leaf) : leaf;
       if (hit) {
@@ -303,7 +305,7 @@ export function CanvasView() {
         d.end = q;
         if (last.current) {
           const sc = useEditor.getState().scene;
-          const inside = [...new Set(elementsInRect(last.current.frame, last.current.routes, normalizeRect(d.start, d.end), true).map((id) => topLevel(sc, id)))];
+          const inside = [...new Set(elementsInRect(last.current.frame, last.current.routes, normalizeRect(d.start, d.end), true, editorSkip(sc, true)).map((id) => topLevel(sc, id)))];
           useEditor.getState().setSelection([...new Set([...d.base, ...inside])]);
         }
       }
@@ -331,7 +333,7 @@ export function CanvasView() {
   function shapeAt(p: Point): string | null {
     const st = useEditor.getState();
     if (!last.current) return null;
-    const hit = hitTest(last.current.frame, last.current.routes, p, 2 / st.view.zoom, true);
+    const hit = hitTest(last.current.frame, last.current.routes, p, 2 / st.view.zoom, true, editorSkip(st.scene, false));
     return hit && st.scene.elements[hit]?.type !== "connector" ? hit : null;
   }
 
@@ -407,7 +409,7 @@ export function CanvasView() {
     const st = useEditor.getState();
     if (st.tool !== "select" || !last.current) return;
     const p = scenePoint(e);
-    const hit = hitTest(last.current.frame, last.current.routes, p, 4 / st.view.zoom, true);
+    const hit = hitTest(last.current.frame, last.current.routes, p, 4 / st.view.zoom, true, editorSkip(st.scene, true));
     if (hit && st.scene.elements[hit]?.type !== "connector") {
       st.setSelection([hit]);
       st.setEditingText(hit);
@@ -424,7 +426,7 @@ export function CanvasView() {
     const h = handleAt(p);
     const cursor: Record<Handle, string> = { nw: "nwse-resize", se: "nwse-resize", ne: "nesw-resize", sw: "nesw-resize", n: "ns-resize", s: "ns-resize", e: "ew-resize", w: "ew-resize" };
     const st = useEditor.getState();
-    const leaf = !h && last.current ? hitTest(last.current.frame, last.current.routes, p, 4 / st.view.zoom, true) : null;
+    const leaf = !h && last.current ? hitTest(last.current.frame, last.current.routes, p, 4 / st.view.zoom, true, editorSkip(st.scene, true)) : null;
     const hit = leaf ? topLevel(st.scene, leaf) : null;
     if (!spaceDown.current) e.currentTarget.style.cursor = h ? cursor[h] : hit ? "move" : "";
     if (hit !== hover.current) {
