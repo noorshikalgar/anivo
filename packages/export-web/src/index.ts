@@ -2,3 +2,4 @@ export * from "./export.js";
 export * from "./fonts.js";
 export * from "./gif.js";
 export * from "./images.js";
+export * from "./svg.js";

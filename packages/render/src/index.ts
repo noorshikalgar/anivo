@@ -8,3 +8,4 @@ export * from "./svgpath.js";
 export * from "./highlight.js";
 export * from "./images.js";
 export * from "./svgpack.js";
+export * from "./svgctx.js";

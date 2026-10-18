@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { basename, join, resolve as resolvePath } from "node:path";
 import { resolveTimeline, sceneCaptions, toSrt, toVtt } from "@anivo/engine";
-import { type NodeExportFormat, exportHtml, exportVideo } from "@anivo/export-node";
+import { type NodeExportFormat, exportHtml, exportVideo, renderSvg } from "@anivo/export-node";
 import { formatLint, lintScene, lintSummary } from "@anivo/lint";
 import { OperationBus } from "@anivo/ops";
 import { getIconPack, iconName, iconPackFromSvgs, iconPacks, searchIcons } from "@anivo/render";
@@ -142,7 +142,7 @@ program
   .description("Export a video or images (alias: export)")
   .argument("<scene>")
   .requiredOption("--out <file>", "Output file (.mp4, .webm, .gif, .mov) or folder for PNG frames")
-  .addOption(new Option("--format <format>", "Output format (default from the file extension)").choices(["mp4", "webm", "gif", "prores", "png-seq"]))
+  .addOption(new Option("--format <format>", "Output format (default from the file extension)").choices(["mp4", "webm", "gif", "prores", "png-seq", "svg-steps"]))
   .option("--size <WxH>", "Video size, for example 1280x720")
   .addOption(new Option("--fps <fps>", "Frame rate").choices(["24", "30", "60"]))
   .option("--steps <a-b>", "Step range, for example 2-4")
@@ -164,6 +164,20 @@ program
     }
     const size = o.size ? /^(\d+)x(\d+)$/.exec(o.size) : null;
     if (o.size && !size) throw new ToolError(`The size '${o.size}' is not valid.`, "Write: 1920x1080");
+    if ((o.format as string) === "svg-steps") {
+      // End state of each step as SVG files (FR-EXPORT-13).
+      mkdirSync(o.out, { recursive: true });
+      const tl = resolveTimeline(scene);
+      const files: string[] = [];
+      tl.steps.forEach((s, i) => {
+        if (range && (s.startMs < range.startMs || s.holdEndMs > range.endMs)) return;
+        const file = join(o.out, `${String(i + 1).padStart(2, "0")}-${s.id}.svg`);
+        writeFileSync(file, renderSvg(scene, Math.max(s.startMs, s.holdEndMs - 1), { assets: assetCache, ...(size ? { width: Number(size[1]), height: Number(size[2]) } : {}) }));
+        files.push(file);
+      });
+      print(`Wrote ${files.length} SVG files to ${o.out}.`, { out: o.out, files });
+      return;
+    }
     let last = -1;
     const r = await exportVideo(scene, {
       out: o.out,

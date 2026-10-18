@@ -83,6 +83,16 @@ describe("anivo CLI", () => {
     expect(anivo("image", "add", sc, join(dir, "s.anivo.txt")).err).toContain("Use a PNG, JPEG, WebP, or SVG file.");
   });
 
+  it("writes an SVG file for each step", () => {
+    const folder = join(dir, "svgs");
+    const r = anivo("export", scene, "--format", "svg-steps", "--out", folder);
+    expect(r.code, r.err).toBe(0);
+    expect(r.out).toMatch(/Wrote 2 SVG files/);
+    const svg = readFileSync(join(folder, "01-s-one.svg"), "utf8");
+    expect(svg).toMatch(/^<svg xmlns/);
+    expect(svg).toContain(">A</text>");
+  });
+
   it("writes a self-contained HTML player file", () => {
     const out = join(dir, "s.html");
     const r = anivo("html", scene, "--out", out, "--loop");

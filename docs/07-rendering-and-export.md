@@ -127,5 +127,5 @@ The optional server has a render queue. It uses the Node engine. Use it for:
 
 ## Static export
 
-- **PNG** or **SVG** of the end state of each step. Use it for docs and slides.
+- **PNG** or **SVG** of the end state of each step. Use it for docs and slides. The SVG comes from the same renderer: `SvgContext` (packages/render) is a `Ctx2D` that writes SVG paths and text. The file embeds the used fonts and images. A test rasterizes the SVG and compares it with the canvas frame (less than 2% different pixels). Editor: Export › SVG of each step (ZIP). CLI: `anivo export <scene> --format svg-steps --out <folder>`. MCP: `anivo_export` with format `svg-steps`.
 - The SVG export uses a separate SVG writer with the same `FrameState` input. The `sketch` style uses Rough.js SVG output with the same seeds.

@@ -1,4 +1,4 @@
-import { estimateGifBytes, exportGifWeb, exportVideoWeb, renderPngWeb, supportedFormats } from "@anivo/export-web";
+import { estimateGifBytes, exportGifWeb, exportVideoWeb, renderPngWeb, renderSvgWeb, supportedFormats } from "@anivo/export-web";
 import { sceneCaptions, toSrt, toVtt } from "@anivo/engine";
 import {
   Button,
@@ -19,7 +19,7 @@ import {
   tokens,
 } from "@fluentui/react-components";
 import { zipSync } from "fflate";
-import { exportHtml } from "../html.js";
+import { exportHtml, loadFontBytes } from "../html.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { notify } from "../notify.js";
 import { useEditor } from "../store.js";
@@ -32,7 +32,7 @@ const useStyles = makeStyles({
   muted: { color: tokens.colorNeutralForeground3 },
 });
 
-type Format = "mp4" | "webm" | "gif" | "png" | "png-steps" | "html";
+type Format = "mp4" | "webm" | "gif" | "png" | "png-steps" | "svg-steps" | "html";
 
 const FORMATS: { value: Format; text: string; note: string }[] = [
   { value: "mp4", text: "MP4 video", note: "H.264. Works in all video editors." },
@@ -40,6 +40,7 @@ const FORMATS: { value: Format; text: string; note: string }[] = [
   { value: "gif", text: "GIF", note: "For a README or docs. Large for long videos." },
   { value: "png", text: "PNG image", note: "The frame at the playhead." },
   { value: "png-steps", text: "PNG of each step", note: "End state of each step, in one ZIP file." },
+  { value: "svg-steps", text: "SVG of each step", note: "End state of each step as vector files, in one ZIP file. For docs and slides." },
   { value: "html", text: "HTML player", note: "One HTML file that plays the scene in a browser, with no network. Small, and the text stays sharp." },
 ];
 
@@ -138,6 +139,17 @@ export function ExportDialog() {
         const st = useEditor.getState();
         const html = await exportHtml(scene, st.assets, captions === "bottom" || captions === "top" ? captions : undefined);
         download(html, `${name}.html`, "text/html");
+      } else if (format === "svg-steps") {
+        const files: Record<string, Uint8Array> = {};
+        const a = Math.min(fromIndex, toIndex);
+        const b = Math.max(fromIndex, toIndex);
+        const fonts = await loadFontBytes(scene);
+        for (let i = a; i <= b; i++) {
+          const svg = await renderSvgWeb(scene, Math.max(timeline.steps[i]!.startMs, timeline.steps[i]!.holdEndMs - 1), { width, height, assets: useEditor.getState().assets, fonts });
+          files[`${String(i + 1).padStart(2, "0")}-${scene.steps[i]!.id}.svg`] = new TextEncoder().encode(svg);
+          setProgress((i - a + 1) / (b - a + 1));
+        }
+        download(zipSync(files, { level: 6 }) as BlobPart, `${name}-steps-svg.zip`, "application/zip");
       } else if (format === "png") {
         const st = useEditor.getState();
         const t = !st.playing && st.selectedStep === null && st.playhead === 0 ? -1 : st.playhead;
@@ -243,7 +255,7 @@ export function ExportDialog() {
                 <SelectField label="To step" value={String(toIndex)} options={stepOptions} onCommit={setTo} />
               </Row>
             )}
-            {format !== "png" && format !== "png-steps" && (
+            {format !== "png" && format !== "png-steps" && format !== "svg-steps" && (
               <Text size={200} className={styles.muted}>
                 {seconds.toFixed(1)} s of video
                 {format === "gif" ? ` · about ${(gifEstimate / 1e6).toFixed(1)} MB` : ""}
