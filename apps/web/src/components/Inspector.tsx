@@ -1,6 +1,6 @@
 import { evaluate } from "@anivo/engine";
 import type { Element } from "@anivo/schema";
-import { Button, Divider, Slider, Field, Switch, Text, Tooltip, makeStyles, tokens } from "@fluentui/react-components";
+import { Button, Divider, Slider, Field, MessageBar, MessageBarActions, MessageBarBody, Switch, Text, Tooltip, makeStyles, tokens } from "@fluentui/react-components";
 import {
   AlignBottom20Regular,
   AlignCenterHorizontal20Regular,
@@ -60,10 +60,26 @@ function ElementProperties({ el }: { el: Element }) {
     const t = !playing && selectedStep === null && playhead === 0 ? -1 : playhead;
     return evaluate(scene, t).elements.find((e) => e.id === el.id);
   }, [scene, playhead, selectedStep, playing, el.id]);
+  const timeline = useEditor((s) => s.timeline);
+  // Base edits: morphs of earlier steps can set the same properties at the playhead, so the change does not show here.
+  const overrides = useMemo(() => {
+    if (selectedStep !== null || playing || playhead <= 0) return [];
+    // The last morph of each property wins.
+    const last = new Map<string, string>();
+    for (const s of timeline.steps) for (const ta of s.actions) if (ta.action.type === "morph" && ta.target === el.id && ta.startMs <= playhead) for (const k of Object.keys(ta.action.to)) last.set(k, s.id);
+    const out: { stepId: string; title: string; keys: string[] }[] = [];
+    for (const [k, stepId] of last) {
+      const o = out.find((x) => x.stepId === stepId);
+      if (o) o.keys.push(k);
+      else out.push({ stepId, title: scene.steps.find((x) => x.id === stepId)?.title ?? stepId, keys: [k] });
+    }
+    return out;
+  }, [timeline, scene.steps, selectedStep, playing, playhead, el.id]);
   if (!f) return null;
   const theme = scene.settings.theme;
   const set = (changes: Record<string, unknown>, label?: string) => commitProps(el.id, changes, label);
-  const text = el.type === "text" ? el.content.text : (f.label ?? "");
+  // The text at the playhead: in a step, a morph can change it.
+  const text = f.label ?? "";
 
   return (
     <>
@@ -78,9 +94,23 @@ function ElementProperties({ el }: { el: Element }) {
         {el.type}
         {el.type === "icon" ? ` · ${el.pack}:${el.name}` : ""}
       </Text>
+      {overrides.length > 0 && (
+        <MessageBar intent="warning" layout="multiline">
+          <MessageBarBody>
+            At this time, {overrides.map((o) => `step "${o.title}" sets ${o.keys.join(", ")}`).join("; ")}. Your change to {overrides.length > 1 ? "these properties" : overrides[0]!.keys.length > 1 ? "these properties" : "it"} changes the element before that step only.
+          </MessageBarBody>
+          <MessageBarActions>
+            <Button size="small" onClick={() => useEditor.getState().selectStep(overrides.at(-1)!.stepId)}>
+              Go to step "{overrides.at(-1)!.title}"
+            </Button>
+          </MessageBarActions>
+        </MessageBar>
+      )}
       {selectedStep !== null && (
         <>
-          <Text className={styles.note}>Changes to position, size, color, and label in a step become a morph in that step.</Text>
+          <MessageBar intent="info" layout="multiline">
+            <MessageBarBody>Changes to position, size, color, and label animate in this step (a morph). To change the element in all steps, select Base in the step list.</MessageBarBody>
+          </MessageBar>
           <div>
             <AddActionMenu />
           </div>
@@ -132,7 +162,7 @@ function ElementProperties({ el }: { el: Element }) {
           multiline
           value={text}
           placeholder="No label"
-          onCommit={(v) => (el.type === "text" ? setElementText(el.id, v) : set({ label: v }, "Edit label"))}
+          onCommit={(v) => (el.type === "text" && selectedStep === null ? setElementText(el.id, v) : set({ label: v }, el.type === "text" ? "Edit text" : "Edit label"))}
         />
       )}
 
