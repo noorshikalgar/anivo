@@ -11,3 +11,4 @@ tests/output/
 *.tsbuildinfo
 test-results/
 playwright-report/
+packages/cli/dist/

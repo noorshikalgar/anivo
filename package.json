@@ -17,7 +17,8 @@
     "dev": "pnpm --filter @anivo/web dev",
     "build:templates": "tsx scripts/build-templates.ts",
     "bench": "tsx scripts/bench.ts",
-    "anivo": "node packages/cli/bin/anivo.js"
+    "anivo": "node packages/cli/bin/anivo.js",
+    "build:cli": "tsx scripts/build-cli.ts"
   },
   "devDependencies": {
     "@anivo/export-node": "workspace:*",
@@ -30,6 +31,7 @@
     "@playwright/test": "1.64.1",
     "@types/node": "22.20.5",
     "@types/pngjs": "6.0.5",
+    "esbuild": "0.28.2",
     "eslint": "10.13.0",
     "lucide-static": "1.59.0",
     "pixelmatch": "8.0.0",
