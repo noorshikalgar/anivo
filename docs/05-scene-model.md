@@ -24,12 +24,13 @@ interface Scene {
   audio: AudioTrack[];            // 0..n; kind "voiceover" maximum 1
   script: ScriptLine[];           // 0..n
   assets: Record<AssetId, AssetRef>;
-  themes?: Record<string, Theme>; // custom themes in this scene
 }
 
 interface SceneSettings {
   style: "sketch" | "clean";
-  theme: string;                  // built-in name or key of `themes`
+  theme: string;                  // built-in name, or the name of `customTheme`
+  customTheme?: { name: string; base: string; dark?: boolean; tokens: Record<string, string>; strokeWidth?: number; cornerRadius?: number };
+                                  // a built-in theme with changed colors; also the theme file format
   background: { kind: "solid" | "grid" | "dots" | "transparent"; color?: string };
   video: { width: number; height: number; fps: 24 | 30 | 60 };
   camera: { x: number; y: number; width: number; height: number }; // base camera

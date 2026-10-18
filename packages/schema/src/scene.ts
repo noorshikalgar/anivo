@@ -16,9 +16,21 @@ export const VideoSettings = z.object({
   fps: z.union([z.literal(24), z.literal(30), z.literal(60)]).default(60),
 });
 
+/** A custom theme (FR-STYLE-03): a built-in theme with changed colors. Also the theme file format. */
+export const CustomTheme = z.object({
+  name: z.string().regex(/^[a-z][a-z0-9-]{0,39}$/).describe("Theme name. Set settings.theme to this name to use the theme."),
+  base: z.string().default("slate-dark").describe("Built-in theme that gives the values that the custom theme does not change."),
+  dark: z.boolean().optional(),
+  tokens: z.record(z.string().regex(/^[a-z][a-z0-9-]*$/), z.string().regex(/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/)).default({}).describe("Color tokens, for example { accent: '#FF5A1F' }."),
+  strokeWidth: z.number().positive().optional(),
+  cornerRadius: z.number().nonnegative().optional(),
+});
+export type CustomTheme = z.infer<typeof CustomTheme>;
+
 export const SceneSettings = z.object({
   style: SceneStyle.default("clean"),
   theme: z.string().default("slate-dark"),
+  customTheme: CustomTheme.optional(),
   background: z
     .object({ kind: z.enum(["solid", "grid", "dots", "transparent"]).default("solid"), color: Color.optional() })
     .default({ kind: "solid" }),

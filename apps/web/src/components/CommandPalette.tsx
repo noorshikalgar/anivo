@@ -98,6 +98,7 @@ function commands(): Command[] {
     { title: "Style: clean", run: () => commitSettings({ style: "clean" }, "Change style") },
     { title: "Style: sketch", run: () => commitSettings({ style: "sketch" }, "Change style") },
     ...["slate-dark", "slate-light", "paper-light", "night-dark"].map((t) => ({ title: `Theme: ${t}`, run: () => commitSettings({ theme: t }, "Change theme") })),
+    { title: "Edit custom theme", run: () => useEditor.setState({ themeEditorOpen: true }) },
     { title: "Fit video to screen", keys: "Shift+1", run: () => st.fitToVideo() },
     ...tools,
   ];

@@ -7,7 +7,7 @@ import { TOKEN_COLORS, diffLines, highlightLine } from "./highlight.js";
 import { getIcon } from "./icons.js";
 import { fitRect, getImage } from "./images.js";
 import { type Box, type OutlineKind, cleanOutline, sketchOutline } from "./outline.js";
-import { type Theme, getTheme, resolveColor, resolveToken } from "./theme.js";
+import { type Theme, resolveColor, resolveToken, sceneTheme } from "./theme.js";
 
 export interface RenderOptions {
   /** Output size in device pixels. */
@@ -604,7 +604,7 @@ export function renderFrame(ctx: Ctx2D, scene: Scene, frame: FrameState, routes:
   const dc: DrawContext = {
     ctx,
     scene,
-    theme: getTheme(opts.theme ?? scene.settings.theme),
+    theme: sceneTheme(scene, opts.theme ?? scene.settings.theme),
     style: opts.style ?? scene.settings.style,
     routes,
   };
@@ -658,7 +658,7 @@ export function renderFrame(ctx: Ctx2D, scene: Scene, frame: FrameState, routes:
 export function drawCaption(ctx: Ctx2D, scene: Scene, timeMs: number, opts: RenderOptions): void {
   const cap = opts.captions && captionAt(opts.captions.list, timeMs);
   if (!cap) return;
-  const theme = getTheme(opts.theme ?? scene.settings.theme);
+  const theme = sceneTheme(scene, opts.theme ?? scene.settings.theme);
   const size = Math.max(12, Math.round(opts.height * 0.042));
   const lineH = Math.round(size * 1.3);
   const padX = Math.round(size * 0.6);

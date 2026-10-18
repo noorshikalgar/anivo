@@ -366,9 +366,13 @@ function SceneProperties() {
           { value: "slate-light", text: "Slate light" },
           { value: "paper-light", text: "Paper light" },
           { value: "night-dark", text: "Night dark" },
+          ...(settings.customTheme ? [{ value: settings.customTheme.name, text: `${settings.customTheme.name} (custom)` }] : []),
         ]}
         onCommit={(v) => commitSettings({ theme: v }, "Change theme")}
       />
+      <Button size="small" appearance="subtle" onClick={() => useEditor.setState({ themeEditorOpen: true })}>
+        Edit custom theme…
+      </Button>
       <SelectField
         label="Background"
         value={settings.background.kind}

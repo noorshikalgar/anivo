@@ -17,6 +17,7 @@ import { PlaybackBar } from "./PlaybackBar.js";
 import { RecordBar } from "./RecordBar.js";
 import { ScriptDialog } from "./ScriptDialog.js";
 import { TemplateGallery } from "./TemplateGallery.js";
+import { ThemeEditor } from "./ThemeEditor.js";
 import { TimelinePanel } from "./TimelinePanel.js";
 import { PresentMode } from "./PresentMode.js";
 import { StepsPanel } from "./StepsPanel.js";
@@ -146,6 +147,7 @@ export function App() {
           <ScriptDialog />
           <AlignDialog />
           <TemplateGallery />
+          <ThemeEditor />
           <CommandPalette />
           {presenting && <PresentMode />}
         </div>

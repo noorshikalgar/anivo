@@ -1,4 +1,5 @@
-import { THEMES } from "@anivo/render";
+import { sceneTheme } from "@anivo/render";
+import { useEditor } from "../store.js";
 import {
   ColorSwatch,
   Dropdown,
@@ -98,7 +99,8 @@ const COLOR_TOKENS = ["default", "transparent", "surface", "surface-strong", "te
 
 export function ColorField({ label, value, theme, onCommit }: { label: string; value: string | undefined; theme: string; onCommit: (v: string | null) => void }) {
   const styles = useStyles();
-  const t = THEMES[theme] ?? THEMES["slate-dark"]!;
+  const custom = useEditor((s) => s.scene.settings.customTheme);
+  const t = sceneTheme({ settings: { theme, ...(custom ? { customTheme: custom } : {}) } });
   const selected = value ?? "default";
   return (
     <Field label={label} size="small">

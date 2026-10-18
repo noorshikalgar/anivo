@@ -1,6 +1,6 @@
 import { type ElementFrame, evaluate, resolveTimeline } from "@anivo/engine";
 import { type Polyline, connectorRoutes, frameBox } from "@anivo/layout";
-import { THEMES, getIcon, getTheme, resolveColor } from "@anivo/render";
+import { getIcon, resolveColor, sceneTheme } from "@anivo/render";
 import type { ConnectorElement, Element, Scene } from "@anivo/schema";
 
 export type LintLevel = "error" | "warning" | "info";
@@ -95,7 +95,7 @@ export function lintScene(scene: Scene): LintResult[] {
     seen.add(key);
     out.push(r);
   };
-  const theme = getTheme(scene.settings.theme);
+  const theme = sceneTheme(scene);
   const v = scene.settings.video;
   const camera = scene.settings.camera ?? { x: 0, y: 0, width: v.width, height: v.height };
   const timeline = resolveTimeline(scene);
@@ -110,7 +110,7 @@ export function lintScene(scene: Scene): LintResult[] {
     for (const key of ["fill", "stroke", "textColor"] as const) {
       const c = el.style[key];
       if (c && c !== "default" && c !== "transparent" && !COLOR_RE.test(c) && !(c in theme.tokens)) {
-        add({ code: "unknown-color", level: "warning", ids: [el.id], message: `The color '${c}' is not a token of the theme '${theme.name}'.`, hint: `Use one of: ${Object.keys(THEMES[theme.name]?.tokens ?? {}).join(", ")}, or a hex color.` });
+        add({ code: "unknown-color", level: "warning", ids: [el.id], message: `The color '${c}' is not a token of the theme '${theme.name}'.`, hint: `Use one of: ${Object.keys(theme.tokens).join(", ")}, or a hex color.` });
       }
     }
   }

@@ -53,6 +53,8 @@ interface EditorState {
   imagesVersion: number;
   /** True while the timeline panel shows. */
   timelineOpen: boolean;
+  /** True while the theme editor is open. */
+  themeEditorOpen: boolean;
   /** True while the templates gallery is open. */
   galleryOpen: boolean;
   /** True while the align dialog is open. */
@@ -132,6 +134,7 @@ export const useEditor = create<EditorState>((set, get) => {
     scriptOpen: false,
     alignOpen: false,
     galleryOpen: false,
+    themeEditorOpen: false,
     timelineOpen: false,
     imagesVersion: 0,
     recording: null,
