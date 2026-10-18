@@ -48,6 +48,27 @@ describe.skipIf(!hasFfmpeg)("exportVideo", () => {
     expect(p["alpha_mode"]).toBe("1");
   }, 60_000);
 
+  it("mixes the voiceover into the MP4 at its start time", async () => {
+    const wav = `${out}tone.wav`;
+    execFileSync("ffmpeg", ["-v", "error", "-y", "-f", "lavfi", "-i", "sine=frequency=440:duration=2", wav]);
+    const bytes = new Uint8Array(readFileSync(wav));
+    const id = "00000000000000aa";
+    const scene = { ...template, assets: { [id]: { id, mime: "audio/wav", bytes: bytes.length } }, audio: [{ id: "voiceover", kind: "voiceover" as const, assetId: id, durationMs: 2000, startMs: 500, gainDb: 0, trimStartMs: 0 }] };
+    const file = `${out}lb-audio.mp4`;
+    await exportVideo(scene, { out: file, format: "mp4", width: 320, height: 180, fps: 24, range: { startMs: 0, endMs: 3000 }, quality: "draft", assets: new Map([[id, bytes]]) });
+    const info = execFileSync("ffprobe", ["-v", "error", "-show_entries", "stream=codec_type,codec_name:format=duration", "-of", "default=nw=1", file]).toString();
+    expect(info).toContain("codec_name=aac");
+    expect(info).toContain("codec_type=audio");
+    expect(Number(/duration=([\d.]+)/.exec(info)?.[1])).toBeCloseTo(3, 0);
+    // Silence before 0.5 s, the tone after it.
+    const level = (from: number) => {
+      const r = spawnSync("ffmpeg", ["-v", "info", "-ss", String(from), "-t", "0.3", "-i", file, "-vn", "-af", "volumedetect", "-f", "null", "-"], { encoding: "utf8" });
+      return Number(/mean_volume: (-?[\d.]+) dB/.exec(r.stderr)?.[1] ?? "-100");
+    };
+    expect(level(0.05)).toBeLessThan(-60);
+    expect(level(1.2)).toBeGreaterThan(-30);
+  }, 60_000);
+
   it("exports a PNG sequence", async () => {
     const dir = `${out}seq`;
     await exportVideo(template, { out: dir, format: "png-seq", width: 160, height: 90, fps: 24, range: { startMs: 0, endMs: 500 } });

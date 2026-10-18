@@ -7,7 +7,7 @@ import { OperationBus } from "@anivo/ops";
 import { searchIcons } from "@anivo/render";
 import { type Scene, loadScene } from "@anivo/schema";
 import { applyScript, printScene } from "@anivo/script";
-import { ToolError, contactSheetPng, jsonSchema, previewPng, readSceneFile, sceneSummary, writeSceneFile } from "@anivo/tools";
+import { ToolError, assetCache, contactSheetPng, jsonSchema, previewPng, readSceneFile, sceneSummary, writeSceneFile } from "@anivo/tools";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
@@ -270,7 +270,7 @@ export function createAnivoServer(opts: ServerOptions): McpServer {
           range = { startMs: tl.steps[x - 1]!.startMs, endMs: tl.steps[b - 1]!.holdEndMs };
         }
         const size = a.size?.split("x").map(Number);
-        const r = await exportVideo(scene, { out, format, ...(size ? { width: size[0]! - (size[0]! % 2), height: size[1]! - (size[1]! % 2) } : {}), ...(a.fps ? { fps: a.fps } : {}), ...(range ? { range } : {}) });
+        const r = await exportVideo(scene, { out, format, assets: assetCache, ...(size ? { width: size[0]! - (size[0]! % 2), height: size[1]! - (size[1]! % 2) } : {}), ...(a.fps ? { fps: a.fps } : {}), ...(range ? { range } : {}) });
         return text(`Exported ${relative(root, r.out)}: ${r.frames} frames, ${(r.durationMs / 1000).toFixed(1)} s${r.bytes ? `, ${(r.bytes / 1e6).toFixed(2)} MB` : ""}.`);
       }),
   );

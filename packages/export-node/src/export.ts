@@ -1,9 +1,10 @@
 import { spawn } from "node:child_process";
-import { mkdirSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { resolveTimeline } from "@anivo/engine";
 import { type Ctx2D, type RenderOptions, renderScene } from "@anivo/render";
-import type { Scene } from "@anivo/schema";
+import { type AudioSegment, type Scene, audioSegments } from "@anivo/schema";
 import { createCanvas } from "@napi-rs/canvas";
 import { registerBundledAssets } from "./fonts.js";
 
@@ -22,6 +23,10 @@ export interface NodeExportOptions {
   /** `draft` is fast with a low bitrate. `high` is slow with a high bitrate. */
   quality?: "draft" | "standard" | "high";
   ffmpegPath?: string;
+  /** Bytes of the scene assets (audio). Without them, the export has no audio. */
+  assets?: Map<string, Uint8Array>;
+  /** Set false to export with no audio. */
+  audio?: boolean;
   onProgress?: (done: number, total: number) => void;
   signal?: AbortSignal;
 }
@@ -58,17 +63,34 @@ function crf(quality: NodeExportOptions["quality"], codec: "x264" | "vp9"): stri
   return table[codec][quality ?? "standard"];
 }
 
-function ffmpegArgs(o: Required<Pick<NodeExportOptions, "format" | "out">> & { width: number; height: number; fps: number; quality: NodeExportOptions["quality"] }): string[] {
-  const input = ["-hide_banner", "-loglevel", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgba", "-s", `${o.width}x${o.height}`, "-r", String(o.fps), "-i", "-"];
+/**
+ * FFmpeg arguments. Input 0 is the raw video on standard input. Inputs 1..n
+ * are the audio files. The filter trims, delays, and sets the gain of each
+ * piece, mixes them, and limits the sum to -1 dBFS (docs/08).
+ */
+function ffmpegArgs(o: Required<Pick<NodeExportOptions, "format" | "out">> & { width: number; height: number; fps: number; quality: NodeExportOptions["quality"]; audio: { file: string; seg: AudioSegment }[]; durationMs: number }): string[] {
+  const args = ["-hide_banner", "-loglevel", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgba", "-s", `${o.width}x${o.height}`, "-r", String(o.fps), "-i", "-"];
+  const withAudio = o.audio.length > 0 && o.format !== "gif";
+  if (withAudio) for (const a of o.audio) args.push("-i", a.file);
+  const filters: string[] = [];
+  if (withAudio) {
+    o.audio.forEach(({ seg }, k) => {
+      const delay = Math.round(seg.atMs);
+      filters.push(`[${k + 1}:a]atrim=start=${seg.fromMs / 1000}:end=${seg.toMs / 1000},asetpts=PTS-STARTPTS,aresample=48000,aformat=channel_layouts=stereo,adelay=${delay}|${delay},volume=${seg.gainDb}dB[a${k}]`);
+    });
+    const ins = o.audio.map((_, k) => `[a${k}]`).join("");
+    filters.push(`${ins}amix=inputs=${o.audio.length}:normalize=0:duration=longest,alimiter=limit=0.891:level=false[aout]`);
+  }
+  const audioOut = (codec: string[]) => (withAudio ? ["-filter_complex", filters.join(";"), "-map", "0:v", "-map", "[aout]", ...codec, "-t", String(o.durationMs / 1000)] : []);
   switch (o.format) {
     case "mp4":
-      return [...input, "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", crf(o.quality, "x264"), "-preset", o.quality === "draft" ? "veryfast" : "medium", "-movflags", "+faststart", o.out];
+      return [...args, ...audioOut(["-c:a", "aac", "-b:a", "192k"]), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", crf(o.quality, "x264"), "-preset", o.quality === "draft" ? "veryfast" : "medium", "-movflags", "+faststart", o.out];
     case "webm":
-      return [...input, "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p", "-b:v", "0", "-crf", crf(o.quality, "vp9"), "-row-mt", "1", o.out];
+      return [...args, ...audioOut(["-c:a", "libopus", "-b:a", "128k"]), "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p", "-b:v", "0", "-crf", crf(o.quality, "vp9"), "-row-mt", "1", o.out];
     case "prores":
-      return [...input, "-c:v", "prores_ks", "-profile:v", "4444", "-pix_fmt", "yuva444p10le", o.out];
+      return [...args, ...audioOut(["-c:a", "pcm_s16le"]), "-c:v", "prores_ks", "-profile:v", "4444", "-pix_fmt", "yuva444p10le", o.out];
     case "gif":
-      return [...input, "-filter_complex", "[0:v]split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=sierra2_4a", "-loop", "0", o.out];
+      return [...args, "-filter_complex", "[0:v]split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=sierra2_4a", "-loop", "0", o.out];
     case "png-seq":
       throw new Error("png-seq does not use FFmpeg");
   }
@@ -108,7 +130,15 @@ export async function exportVideo(scene: Scene, opts: NodeExportOptions): Promis
   }
 
   const ffmpeg = opts.ffmpegPath ?? process.env["ANIVO_FFMPEG"] ?? "ffmpeg";
-  const args = ffmpegArgs({ format: opts.format, out: opts.out, width, height, fps, quality: opts.quality });
+  // Write the audio pieces that the range uses to temporary files for FFmpeg.
+  const segments = opts.audio === false || !opts.assets ? [] : audioSegments(scene, startMs, endMs).filter((s) => opts.assets!.has(s.assetId));
+  const tmp = segments.length ? mkdtempSync(join(tmpdir(), "anivo-audio-")) : undefined;
+  const audio = segments.map((seg) => {
+    const file = join(tmp!, `${seg.assetId}`);
+    writeFileSync(file, opts.assets!.get(seg.assetId)!);
+    return { file, seg };
+  });
+  const args = ffmpegArgs({ format: opts.format, out: opts.out, width, height, fps, quality: opts.quality, audio, durationMs: endMs - startMs });
   const proc = spawn(ffmpeg, args, { stdio: ["pipe", "ignore", "pipe"] });
   let stderr = "";
   proc.stderr.on("data", (d: Buffer) => (stderr += d.toString()));
@@ -131,6 +161,7 @@ export async function exportVideo(scene: Scene, opts: NodeExportOptions): Promis
     for (let i = 0; i < frames; i++) {
       if (opts.signal?.aborted) {
         proc.kill("SIGKILL");
+        if (tmp) rmSync(tmp, { recursive: true, force: true });
         throw new ExportError("The export was cancelled.", "cancelled");
       }
       if (exitCode !== undefined) break;
@@ -146,6 +177,7 @@ export async function exportVideo(scene: Scene, opts: NodeExportOptions): Promis
   }
 
   const code = await exited;
+  if (tmp) rmSync(tmp, { recursive: true, force: true });
   if (code !== 0) throw new ExportError(`FFmpeg stopped with code ${code}. ${stderr.trim().split("\n").slice(-3).join(" ")}`, "ffmpeg-failed");
   return { out: opts.out, frames, durationMs: endMs - startMs, bytes: statSync(opts.out).size };
 }

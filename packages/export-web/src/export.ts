@@ -1,7 +1,8 @@
 import { resolveTimeline } from "@anivo/engine";
 import { type Ctx2D, type RenderOptions, renderScene } from "@anivo/render";
-import type { Scene } from "@anivo/schema";
+import { type Scene, audioSegments } from "@anivo/schema";
 import {
+  AudioBufferSource,
   BufferTarget,
   CanvasSource,
   Mp4OutputFormat,
@@ -10,6 +11,7 @@ import {
   QUALITY_LOW,
   QUALITY_MEDIUM,
   WebMOutputFormat,
+  canEncodeAudio,
   canEncodeVideo,
 } from "mediabunny";
 
@@ -23,6 +25,10 @@ export interface WebExportOptions {
   range?: { startMs: number; endMs: number };
   style?: RenderOptions["style"];
   quality?: "draft" | "standard" | "high";
+  /** Asset bytes by asset ID. Audio tracks with bytes here are mixed into the video. */
+  assets?: Map<string, Uint8Array>;
+  /** Set false to export with no sound. Default true. */
+  audio?: boolean;
   onProgress?: (done: number, total: number) => void;
   signal?: AbortSignal;
 }
@@ -91,7 +97,17 @@ export async function exportVideoWeb(scene: Scene, opts: WebExportOptions): Prom
     alpha: opts.format === "webm" && transparent ? "keep" : "discard",
   });
   output.addVideoTrack(source, { frameRate: fps });
+  const mix = opts.audio === false ? null : await mixAudio(scene, opts.assets, startMs, endMs);
+  let audioSource: AudioBufferSource | null = null;
+  if (mix) {
+    const audioCodec = opts.format === "mp4" ? "aac" : "opus";
+    if (await canEncodeAudio(audioCodec)) {
+      audioSource = new AudioBufferSource({ codec: audioCodec, bitrate: opts.format === "mp4" ? 192_000 : 128_000 });
+      output.addAudioTrack(audioSource);
+    }
+  }
   await output.start();
+  if (audioSource && mix) await audioSource.add(mix);
 
   const frames = Math.ceil(((endMs - startMs) * fps) / 1000);
   const renderOpts: RenderOptions = { width, height, ...(opts.style ? { style: opts.style } : {}) };
@@ -112,4 +128,41 @@ export async function exportVideoWeb(scene: Scene, opts: WebExportOptions): Prom
   const buffer = target.buffer;
   if (!buffer) throw new Error("The encoder did not give any data.");
   return { data: new Uint8Array(buffer), mimeType: output.format.mimeType, frames, durationMs: endMs - startMs };
+}
+
+const SAMPLE_RATE = 48_000;
+
+/**
+ * Mix the audio tracks of the range into one stereo buffer (trim, delay, gain),
+ * with a soft limit at -1 dBFS. Gives null when no track has sound in the range.
+ */
+export async function mixAudio(scene: Scene, assets: Map<string, Uint8Array> | undefined, startMs: number, endMs: number): Promise<AudioBuffer | null> {
+  if (!assets || typeof OfflineAudioContext === "undefined") return null;
+  const segs = audioSegments(scene, startMs, endMs).filter((s) => assets.has(s.assetId));
+  if (segs.length === 0) return null;
+  const length = Math.ceil(((endMs - startMs) / 1000) * SAMPLE_RATE);
+  const ctx = new OfflineAudioContext({ numberOfChannels: 2, length, sampleRate: SAMPLE_RATE });
+  const decoded = new Map<string, AudioBuffer>();
+  for (const seg of segs) {
+    if (!decoded.has(seg.assetId)) {
+      const bytes = assets.get(seg.assetId)!;
+      decoded.set(seg.assetId, await ctx.decodeAudioData(bytes.slice().buffer));
+    }
+  }
+  const limiter = ctx.createDynamicsCompressor();
+  limiter.threshold.value = -1;
+  limiter.knee.value = 0;
+  limiter.ratio.value = 20;
+  limiter.attack.value = 0.003;
+  limiter.release.value = 0.1;
+  limiter.connect(ctx.destination);
+  for (const seg of segs) {
+    const node = ctx.createBufferSource();
+    node.buffer = decoded.get(seg.assetId)!;
+    const gain = ctx.createGain();
+    gain.gain.value = 10 ** (seg.gainDb / 20);
+    node.connect(gain).connect(limiter);
+    node.start(seg.atMs / 1000, seg.fromMs / 1000, (seg.toMs - seg.fromMs) / 1000);
+  }
+  return ctx.startRendering();
 }
