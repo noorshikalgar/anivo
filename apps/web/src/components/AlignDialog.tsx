@@ -15,7 +15,7 @@ import {
 } from "@fluentui/react-components";
 import { parseTranscriptJson } from "@anivo/ops";
 import { useRef, useState } from "react";
-import { ASR_MODELS, transcribeInBrowser } from "../asr/index.js";
+import { ASR_MODELS, transcribeInBrowser, voiceOnsets } from "../asr/index.js";
 import { notify } from "../notify.js";
 import { useEditor } from "../store.js";
 import { SelectField } from "./fields.js";
@@ -57,8 +57,10 @@ export function AlignDialog() {
     useEditor.setState({ alignOpen: false });
   };
 
-  const align = (words?: Words) => {
-    const r = useEditor.getState().apply({ label: "Align script", ops: [{ op: "script.align", ...(words ? { words } : {}) }] });
+  const align = async (words?: Words) => {
+    // Speech onsets make the cues exact when the word times are late.
+    const onsets = vo ? await voiceOnsets(vo.assetId).catch(() => undefined) : undefined;
+    const r = useEditor.getState().apply({ label: "Align script", ops: [{ op: "script.align", ...(words ? { words } : {}), ...(onsets?.length ? { onsets } : {}) }] });
     if (!r.ok) {
       setError(r.error.hint ? `${r.error.message} ${r.error.hint}` : r.error.message);
       return;
@@ -85,7 +87,7 @@ export function AlignDialog() {
         },
       });
       if (words.length === 0) throw new Error("The speech recognition found no words in the voiceover.");
-      align(words);
+      await align(words);
     } catch (err) {
       if (!ac.signal.aborted) setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -106,7 +108,7 @@ export function AlignDialog() {
     });
     if (!file) return;
     try {
-      align(parseTranscriptJson(JSON.parse(await file.text())));
+      await align(parseTranscriptJson(JSON.parse(await file.text())));
     } catch (err) {
       setError((err instanceof Error ? err.message : String(err)).replace(" | ", " "));
     }
@@ -162,7 +164,7 @@ export function AlignDialog() {
                         Import transcript…
                       </Button>
                       {hasTranscript && (
-                        <Button disabled={busy} onClick={() => align()}>
+                        <Button disabled={busy} onClick={() => void align()}>
                           Align again
                         </Button>
                       )}

@@ -8,7 +8,7 @@ import { getIconPack, iconName, iconPackFromSvgs, iconPacks, searchIcons } from 
 import { CustomTheme, type Scene, TEMPLATES, loadScene } from "@anivo/schema";
 import { importText } from "@anivo/import";
 import { applyScript, printScene } from "@anivo/script";
-import { ToolError, assetCache, audioMime, imageMime, parseTranscript, transcribe, contactSheetPng, importAsset, probeDurationMs, jsonSchema, previewPng, readSceneFile, sceneSummary, stepTime, writeSceneFile } from "@anivo/tools";
+import { ToolError, assetCache, audioMime, audioOnsets, imageMime, parseTranscript, transcribe, contactSheetPng, importAsset, probeDurationMs, jsonSchema, previewPng, readSceneFile, sceneSummary, stepTime, writeSceneFile } from "@anivo/tools";
 import { homePath, imageSize, registerBundledAssets, userIconsDir } from "@anivo/export-node";
 import { Command, Option } from "commander";
 
@@ -384,7 +384,10 @@ program
 
 /** Apply script.align and print one line for each script line. */
 function alignAndReport(f: string, bus: OperationBus, words?: { text: string; startMs: number; endMs: number }[]): void {
-  const r = bus.apply({ label: "Align script", ops: [{ op: "script.align", ...(words ? { words } : {}) }] });
+  const vo = bus.scene.audio.find((t) => t.kind === "voiceover");
+  const bytes = vo ? assetCache.get(vo.assetId) : undefined;
+  const onsets = bytes ? audioOnsets(bytes) : [];
+  const r = bus.apply({ label: "Align script", ops: [{ op: "script.align", ...(words ? { words } : {}), ...(onsets.length ? { onsets } : {}) }] });
   if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
   writeSceneFile(f, bus.scene);
   const steps = new Map(bus.scene.steps.map((s, i) => [s.id, { s, i }]));

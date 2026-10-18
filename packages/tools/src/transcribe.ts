@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { parseTranscriptJson } from "@anivo/ops";
+import { type Onset, parseTranscriptJson, speechOnsets } from "@anivo/ops";
 import { ToolError } from "./files.js";
 
 export interface TranscriptWord {
@@ -46,6 +46,22 @@ export function transcribe(bytes: Uint8Array, opts: { model?: string; language?:
     if (r.error) throw new ToolError("whisper.cpp was not found.", "Install whisper.cpp (the whisper-cli program), or set ANIVO_WHISPER to its path.");
     if (r.status !== 0) throw new ToolError("whisper.cpp did not transcribe the voiceover.", r.stderr.toString().trim().split("\n").pop());
     return parseTranscript(JSON.parse(readFileSync(join(dir, "out.json"), "utf8")));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+/** Speech onsets of audio bytes (FFmpeg decodes them), for the alignment. Empty if FFmpeg cannot read them. */
+export function audioOnsets(bytes: Uint8Array): Onset[] {
+  const ffmpeg = process.env["ANIVO_FFMPEG"] ?? "ffmpeg";
+  const dir = mkdtempSync(join(tmpdir(), "anivo-onsets-"));
+  try {
+    const src = join(dir, "in");
+    writeFileSync(src, bytes);
+    const r = spawnSync(ffmpeg, ["-v", "error", "-i", src, "-f", "f32le", "-ac", "1", "-ar", "16000", "-"], { maxBuffer: 1 << 30 });
+    if (r.status !== 0 || !r.stdout) return [];
+    const b = r.stdout as Buffer;
+    return speechOnsets(new Float32Array(b.buffer, b.byteOffset, Math.floor(b.byteLength / 4)), 16000);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

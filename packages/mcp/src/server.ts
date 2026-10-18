@@ -8,7 +8,7 @@ import { searchIcons } from "@anivo/render";
 import { type Scene, TEMPLATES, loadScene } from "@anivo/schema";
 import { importText } from "@anivo/import";
 import { applyScript, printScene } from "@anivo/script";
-import { ToolError, assetCache, contactSheetPng, imageMime, importAsset, transcribe, jsonSchema, previewPng, readSceneFile, sceneSummary, writeSceneFile } from "@anivo/tools";
+import { ToolError, assetCache, audioOnsets, contactSheetPng, imageMime, importAsset, transcribe, jsonSchema, previewPng, readSceneFile, sceneSummary, writeSceneFile } from "@anivo/tools";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
@@ -362,7 +362,8 @@ export function createAnivoServer(opts: ServerOptions): McpServer {
         const words = transcribe(bytes, a.language ? { language: a.language } : {});
         const bus = new OperationBus(scene);
         const align = a.align && scene.script.length > 0;
-        const r = bus.apply({ label: "Transcribe", ops: align ? [{ op: "script.align", words }] : [{ op: "audio.update", id: vo.id, set: { transcript: { words } } }] });
+        const onsets = align ? audioOnsets(bytes) : [];
+        const r = bus.apply({ label: "Transcribe", ops: align ? [{ op: "script.align", words, ...(onsets.length ? { onsets } : {}) }] : [{ op: "audio.update", id: vo.id, set: { transcript: { words } } }] });
         if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
         writeSceneFile(path, bus.scene);
         const unmatched = bus.scene.script.filter((l) => l.unmatched).length;

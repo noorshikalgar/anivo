@@ -1,3 +1,4 @@
+import { type Onset, speechOnsets } from "@anivo/ops";
 import { useEditor } from "../store.js";
 import type { AsrMessage, AsrRequest } from "./worker.js";
 
@@ -16,6 +17,11 @@ export const ASR_MODELS: AsrModel[] = [
 ];
 
 const SAMPLE_RATE = 16_000;
+
+/** Speech onsets of an audio asset, for the alignment (cues snap to them). */
+export async function voiceOnsets(assetId: string): Promise<Onset[]> {
+  return speechOnsets(await audio16k(assetId), SAMPLE_RATE);
+}
 
 /** Decode an asset to 16 kHz mono, the input of Whisper. */
 async function audio16k(assetId: string): Promise<Float32Array> {
