@@ -120,6 +120,13 @@ describe("Anivo Script", () => {
     expect(bad.ok).toBe(false);
   });
 
+  it("supports a sound on an action and prints it back", () => {
+    const text = `box a "A" at=100,100\nstep "S"\n  enter a pop sound=pop sound-gain=-10\n`;
+    const scene = ok(text);
+    expect(scene.steps[0]!.actions[0]).toMatchObject({ sound: "pop", soundGainDb: -10 });
+    expect(printScene(scene)).toContain("enter a pop sound=pop sound-gain=-10");
+  });
+
   it("supports camera and count actions and prints them back", () => {
     const text = `box a "A" at=100,100\ntext rps "0 req/s" at=600,100\nstep "Zoom"\n  camera zoom-to a padding=40 dur=800ms\n  count rps from=0 to=1200 format="{n} req/s"\nstep "Back"\n  camera pan at=0,0 size=960x540\n  camera reset +500ms\n`;
     const scene = ok(text);

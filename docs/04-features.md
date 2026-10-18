@@ -86,7 +86,7 @@ See [08 — Audio and captions](08-audio-and-captions.md).
 | FR-AUDIO-07 | Record a voiceover in the app with the microphone | P1 | |
 | FR-AUDIO-08 | Text to speech provider (plugin) | P2 | Local (Piper) or cloud (user's own key). |
 | FR-AUDIO-09 | Captions: show in the video and export SRT and WebVTT | P1 | Caption text comes from the script lines. Caption times come from the cues. |
-| FR-AUDIO-10 | Sound effects on actions (whoosh, click, pop) | P2 | |
+| FR-AUDIO-10 | Sound effects on actions (whoosh, click, pop) | P2 | Done: `sound` (pop, click, whoosh, ding, thud) and `soundGainDb` on each action. The sounds are synthesized (no sound files). Script: `enter a pop sound=pop`. |
 
 ## 5. Export (`FR-EXPORT`)
 

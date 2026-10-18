@@ -149,6 +149,8 @@ function printAction(a: Action, index: number): string {
     if (a.durationMs !== undefined) parts.push(`dur=${a.durationMs}ms`);
     if (a.staggerMs) parts.push(`stagger=${a.staggerMs}ms`);
     if (typeof a.easing === "string") parts.push(`easing=${a.easing}`);
+    if (a.sound) parts.push(`sound=${a.sound}`);
+    if (a.soundGainDb !== undefined) parts.push(`sound-gain=${a.soundGainDb}`);
     if (a.id !== `a${index}`) parts.push(`id=${a.id}`);
   };
   if (a.type === "wait") {

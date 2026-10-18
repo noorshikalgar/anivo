@@ -831,6 +831,8 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
     else if (k === "easing" || k === "ease") a["easing"] = v;
     else if (k === "delay") a["delayMs"] = parseTime(v);
     else if (k === "id") a["id"] = v;
+    else if (k === "sound") a["sound"] = v;
+    else if (k === "sound-gain") a["soundGainDb"] = Number(v);
     else return false;
     return true;
   };

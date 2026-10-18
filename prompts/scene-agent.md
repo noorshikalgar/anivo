@@ -94,6 +94,7 @@ step "<title>" [hold=<time>] [cue=<time>]
   count <target> from=<n> to=<n> format="{n} <unit>"
   code <target> highlight=<a>-<b> | type=<a>-<b>
   wait <time>
+  (any action) sound=pop|click|whoosh|ding|thud [sound-gain=<dB>]   (a short sound when the action starts)
 ```
 
 - `<targets>` is an ID, a list of IDs separated by commas, or a prefix with `*` (`pod-*`).

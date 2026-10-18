@@ -1,4 +1,5 @@
 import { defaultDurationMs } from "@anivo/schema";
+import { SOUNDS } from "@anivo/engine";
 import type { Action, Step } from "@anivo/schema";
 import {
   Accordion,
@@ -191,6 +192,12 @@ function ActionEditor({ step, action }: { step: Step; action: Action }) {
         />
         {action.targets.length > 1 ? <NumberField label="Stagger (ms)" value={action.staggerMs} min={0} step={20} onCommit={(v) => set({ staggerMs: Math.round(v) }, "Change stagger")} /> : <div />}
       </Row>
+      <SelectField
+        label="Sound"
+        value={action.sound ?? "none"}
+        options={[{ value: "none", text: "No sound" }, ...SOUNDS.map((x) => ({ value: x, text: label(x) }))]}
+        onCommit={(v) => set({ sound: v === "none" ? null : v }, "Change sound")}
+      />
       {action.type === "camera" && action.camera.op === "zoom-to" && (
         <NumberField label="Padding (px)" value={action.camera.padding} min={0} step={20} onCommit={(v) => set({ camera: { ...action.camera, padding: v } }, "Change camera padding")} />
       )}

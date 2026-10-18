@@ -1,8 +1,8 @@
 import { spawn, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { resolveTimeline, sceneCaptions } from "@anivo/engine";
+import { resolveTimeline, sceneCaptions, soundCues, synthSound, wavBytes } from "@anivo/engine";
 import { type Ctx2D, type RenderOptions, renderScene } from "@anivo/render";
 import { type AudioSegment, DUCK_ATTACK_MS, DUCK_RELEASE_MS, type Scene, audioSegments, speechInOutput } from "@anivo/schema";
 import { speechIntervals } from "@anivo/ops";
@@ -165,12 +165,21 @@ export async function exportVideo(scene: Scene, opts: NodeExportOptions): Promis
   const ffmpeg = opts.ffmpegPath ?? process.env["ANIVO_FFMPEG"] ?? "ffmpeg";
   // Write the audio pieces that the range uses to temporary files for FFmpeg.
   const segments = opts.audio === false || !opts.assets ? [] : audioSegments(scene, startMs, endMs).filter((s) => opts.assets!.has(s.assetId));
-  const tmp = segments.length ? mkdtempSync(join(tmpdir(), "anivo-audio-")) : undefined;
+  // Sound effects of the actions (FR-AUDIO-10): synthesized WAV files.
+  const cues = opts.audio === false ? [] : soundCues(scene).filter((c) => c.atMs >= startMs && c.atMs < endMs);
+  const tmp = segments.length || cues.length ? mkdtempSync(join(tmpdir(), "anivo-audio-")) : undefined;
   const audio = segments.map((seg) => {
     const file = join(tmp!, `${seg.assetId}`);
     writeFileSync(file, opts.assets!.get(seg.assetId)!);
     return { file, seg };
   });
+  for (const c of cues) {
+    const file = join(tmp!, `sfx-${c.sound}.wav`);
+    const samples = synthSound(c.sound, 48000);
+    if (!existsSync(file)) writeFileSync(file, wavBytes(samples, 48000));
+    const ms = Math.round((samples.length / 48000) * 1000);
+    audio.push({ file, seg: { trackId: "sfx", assetId: c.sound, mime: "audio/wav", atMs: c.atMs - startMs, fromMs: 0, toMs: ms, gainDb: c.gainDb } });
+  }
   const speech = segments.some((sg) => sg.duckDb !== undefined) ? voiceSpeech(scene, audio, ffmpeg) : [];
   const args = ffmpegArgs({ format: opts.format, out: opts.out, width, height, fps, quality: opts.quality, audio, durationMs: endMs - startMs, speech });
   const proc = spawn(ffmpeg, args, { stdio: ["pipe", "ignore", "pipe"] });

@@ -6,6 +6,7 @@ import { assetId } from "@anivo/fileio";
 import type { OperationInput } from "@anivo/ops";
 import { type AudioTrack, type ScriptLine, audioSegments, speechInOutput } from "@anivo/schema";
 import { speechIntervals } from "@anivo/ops";
+import { type SoundName, soundCues, synthSound } from "@anivo/engine";
 import { duck, monoAt16k } from "@anivo/export-web";
 import { useEditor } from "./store.js";
 
@@ -115,6 +116,18 @@ export function peaks(buffer: AudioBuffer, count: number): Float32Array {
 
 let playing: AudioScheduledSourceNode[] = [];
 
+const soundBuffers = new Map<string, AudioBuffer>();
+function soundBuffer(ac: AudioContext, name: SoundName): AudioBuffer {
+  let b = soundBuffers.get(name);
+  if (!b) {
+    const samples = synthSound(name, ac.sampleRate);
+    b = ac.createBuffer(1, samples.length, ac.sampleRate);
+    b.copyToChannel(samples as Float32Array<ArrayBuffer>, 0);
+    soundBuffers.set(name, b);
+  }
+  return b;
+}
+
 const speechIntervalsCache = new Map<string, { fromMs: number; toMs: number }[]>();
 function speechCache(assetId: string, b: AudioBuffer) {
   let v = speechIntervalsCache.get(assetId);
@@ -131,7 +144,8 @@ async function start(fromMs: number): Promise<void> {
   stop();
   const { scene, timeline } = useEditor.getState();
   const segs = audioSegments(scene, fromMs, timeline.totalMs);
-  if (segs.length === 0) return;
+  const cues = soundCues(scene, timeline).filter((c) => c.atMs >= fromMs);
+  if (segs.length === 0 && cues.length === 0) return;
   const ac = audioContext();
   if (ac.state === "suspended") await ac.resume();
   const buffers = await Promise.all(segs.map((s) => decode(s.assetId)?.catch(() => null) ?? null));
@@ -160,6 +174,18 @@ async function start(fromMs: number): Promise<void> {
     node.start(t0 + Math.max(0, at) / 1000, (seg.fromMs + skip) / 1000, (seg.toMs - seg.fromMs - skip) / 1000);
     playing.push(node);
   });
+  // Sound effects of the actions.
+  for (const c of cues) {
+    const at = c.atMs - fromMs - lag;
+    if (at < 0) continue;
+    const node = ac.createBufferSource();
+    node.buffer = soundBuffer(ac, c.sound);
+    const gain = ac.createGain();
+    gain.gain.value = 10 ** (c.gainDb / 20);
+    node.connect(gain).connect(ac.destination);
+    node.start(t0 + at / 1000);
+    playing.push(node);
+  }
 }
 
 /** Play the audio when the editor plays. A scene change while it plays starts the audio again. */
