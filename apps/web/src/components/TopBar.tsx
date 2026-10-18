@@ -14,7 +14,7 @@ import {
   makeStyles,
   tokens,
 } from "@fluentui/react-components";
-import { ArrowExportUp20Regular, Play20Regular, ArrowRedo20Regular, ArrowUndo20Regular, Document20Regular, FolderOpen20Regular, Bot20Regular, Mic20Regular, MusicNote220Regular, Record20Regular, Save20Regular, ZoomFit20Regular } from "@fluentui/react-icons";
+import { ArrowExportUp20Regular, Play20Regular, ArrowRedo20Regular, ArrowUndo20Regular, Document20Regular, FolderOpen20Regular, Bot20Regular, Mic20Regular, Sparkle20Regular, MusicNote220Regular, Record20Regular, Save20Regular, ZoomFit20Regular } from "@fluentui/react-icons";
 import { useState } from "react";
 import { hasFileSystemAccess, newScene, openFile, runImport, openRecent, recentFiles, saveFile, saveFileAs } from "../files.js";
 import { notify, withErrors } from "../notify.js";
@@ -145,6 +145,9 @@ export function TopBar() {
           <Button appearance="subtle" icon={<ZoomFit20Regular />} onClick={fitToVideo} />
         </Tooltip>
       </Toolbar>
+      <Button appearance="subtle" size="small" icon={<Sparkle20Regular />} onClick={() => useEditor.setState((s) => ({ aiOpen: !s.aiOpen }))}>
+        AI
+      </Button>
       {!agentOn && (
         <Button appearance="subtle" size="small" icon={<Bot20Regular />} onClick={() => useEditor.setState({ connectOpen: true })}>
           Connect agent

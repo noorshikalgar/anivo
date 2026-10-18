@@ -179,7 +179,9 @@ export function PresentMode() {
       next: n ? n.title || n.id : "",
     };
   };
-  useEffect(() => notesWin.current?.update(notesView()), [step]);
+  useEffect(() => {
+    notesWin.current?.update(notesView());
+  }, [step]);
   useEffect(() => () => notesWin.current?.close(), []);
 
   const openNotes = () => {

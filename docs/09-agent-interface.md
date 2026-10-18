@@ -298,7 +298,9 @@ Rules for tools:
 2. The panel sends the scene summary, the current Anivo Script, the user message, and the scene-agent system prompt to the model.
 3. The model uses the same tools as the MCP server (the panel calls them in-process).
 4. The panel shows each tool call in a compact form.
-5. Default model: the latest Claude Sonnet model. The user can change it.
+5. Default model: the latest Claude Sonnet model (`claude-sonnet-5-5`, adaptive thinking). The user can change it. Ollama uses its OpenAI-compatible endpoint (`http://localhost:11434/v1`).
+6. Tools of the panel: `scene_summary`, `scene_get`, `script_apply`, `ops_apply`, `lint`, `preview` (an image for Anthropic; text only for Chat Completions), `undo`, `icons_search`. Each change has the author "AI panel" and goes into the undo history. The canvas outlines the changed elements.
+7. The provider code loads only when the user sends the first message.
 
 > **WARNING:** Store API keys only on the user's device. In the desktop app, store them in the OS keychain. In the web app, store them in IndexedDB and tell the user that other browser extensions can read them. Never write a key to a scene file, a log, or a share link.
 
