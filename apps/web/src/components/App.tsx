@@ -12,6 +12,7 @@ import { Inspector } from "./Inspector.js";
 import { startAudioSync } from "../audio.js";
 import { AudioLane } from "./AudioLane.js";
 import { PlaybackBar } from "./PlaybackBar.js";
+import { RecordBar } from "./RecordBar.js";
 import { ScriptDialog } from "./ScriptDialog.js";
 import { PresentMode } from "./PresentMode.js";
 import { StepsPanel } from "./StepsPanel.js";
@@ -59,6 +60,7 @@ export function App() {
   const { dispatchToast } = useToastController(toasterId);
   const notice = useEditor((s) => s.notice);
   const presenting = useEditor((s) => s.presenting);
+  const recording = useEditor((s) => s.recording !== null);
   useEffect(() => {
     if (!notice) return;
     dispatchToast(
@@ -121,8 +123,14 @@ export function App() {
             <Inspector />
           </div>
           <div className={styles.play}>
-            <AudioLane />
-            <PlaybackBar />
+            {recording ? (
+              <RecordBar />
+            ) : (
+              <>
+                <AudioLane />
+                <PlaybackBar />
+              </>
+            )}
           </div>
           <Toaster toasterId={toasterId} />
           {/* Outside the canvas tree: React events from a dialog portal bubble to its React parents. */}

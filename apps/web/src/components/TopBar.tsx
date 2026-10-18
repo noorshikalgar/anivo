@@ -14,11 +14,12 @@ import {
   makeStyles,
   tokens,
 } from "@fluentui/react-components";
-import { ArrowExportUp20Regular, Play20Regular, ArrowRedo20Regular, ArrowUndo20Regular, Document20Regular, FolderOpen20Regular, Mic20Regular, MusicNote220Regular, Save20Regular, ZoomFit20Regular } from "@fluentui/react-icons";
+import { ArrowExportUp20Regular, Play20Regular, ArrowRedo20Regular, ArrowUndo20Regular, Document20Regular, FolderOpen20Regular, Mic20Regular, MusicNote220Regular, Record20Regular, Save20Regular, ZoomFit20Regular } from "@fluentui/react-icons";
 import { useState } from "react";
 import { hasFileSystemAccess, newFromTemplate, newScene, openFile, openRecent, recentFiles, saveFile, saveFileAs } from "../files.js";
 import { notify, withErrors } from "../notify.js";
 import { cueAllSteps, importAudio } from "../audio.js";
+import { startRecording } from "../record.js";
 import { useEditor } from "../store.js";
 
 const useStyles = makeStyles({
@@ -127,6 +128,9 @@ export function TopBar() {
               Add music…
             </MenuItem>
             <MenuItem onClick={() => void withErrors(() => importAudio("sfx"))}>Add sound effect…</MenuItem>
+            <MenuItem icon={<Record20Regular />} onClick={() => void withErrors(startRecording)}>
+              Record voiceover…
+            </MenuItem>
             <MenuDivider />
             <MenuItem onClick={() => useEditor.setState({ scriptOpen: true })}>Edit script…</MenuItem>
             <MenuItem disabled={!hasVoice} onClick={cueAllSteps}>

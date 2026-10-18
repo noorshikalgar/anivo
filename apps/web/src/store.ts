@@ -45,6 +45,8 @@ interface EditorState {
   presenting: boolean;
   /** True while the export dialog is open. */
   exportOpen: boolean;
+  /** The voiceover record, while it runs (see record.ts). */
+  recording: import("./record.js").RecordingState | null;
   /** True while the script dialog is open. */
   scriptOpen: boolean;
   /** Bytes of the scene assets (audio files), by asset ID. The scene has only the references. */
@@ -120,6 +122,7 @@ export const useEditor = create<EditorState>((set, get) => {
     assets: new Map(),
     exportOpen: false,
     scriptOpen: false,
+    recording: null,
     presenting: false,
     paletteOpen: false,
 
