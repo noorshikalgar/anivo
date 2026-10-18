@@ -62,3 +62,13 @@ test("align left and distribute vertically", async ({ page }) => {
   const ys = ["pod-1", "pod-2", "pod-3"].map((id) => s.scene.elements[id]!.y);
   expect(ys[1]! - ys[0]!).toBeCloseTo(ys[2]! - ys[1]!, 5);
 });
+
+test("auto layout places the selection in a row", async ({ page }) => {
+  await page.evaluate(() => (window as unknown as { __anivo: { getState(): { setSelection(ids: string[]): void } } }).__anivo.getState().setSelection(["pod-1", "pod-2", "pod-3"]));
+  await page.getByRole("button", { name: "Row", exact: true }).click();
+  const s = await state(page);
+  const ys = ["pod-1", "pod-2", "pod-3"].map((id) => s.scene.elements[id]!.y);
+  expect(new Set(ys).size).toBe(1);
+  const xs = ["pod-1", "pod-2", "pod-3"].map((id) => s.scene.elements[id]!.x);
+  expect(xs[0]!).toBeLessThan(xs[1]!);
+});

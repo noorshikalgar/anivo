@@ -44,7 +44,7 @@ Each operation is a JSON object with an `op` field. Operations are versioned wit
 | `element.group` / `element.ungroup` | Group operations. |
 | `element.reorder` | Change `z`: `front`, `back`, `forward`, `backward`, or `{ above: id }`. |
 | `element.rename` | Change an ID. Updates all references (bindings, actions, groups). |
-| `layout.apply` | Auto layout: `{ ids, kind: "row" \| "column" \| "grid" \| "tree" \| "layered", gap, direction }`. |
+| `layout.apply` | Auto layout: `{ ids, kind: "row" \| "column" \| "grid" \| "tree" \| "layered", gap, cols, direction }`. Arrows between the elements give the order for `tree` and `layered`. The top-left corner of the elements stays in place. In Anivo Script: `layout web, api, db layered`. |
 
 ### Step and action operations
 

@@ -110,6 +110,15 @@ describe("Anivo Script", () => {
     expect(r.scene.steps[0]!.actions[0]).toMatchObject({ targets: ["c-a-b"] });
   });
 
+  it("places elements with a layout statement", () => {
+    const scene = ok(`box web "Web"\nbox api "API"\nbox db "DB"\nbox cache "Cache"\narrow web -> api\narrow api -> db, cache\nlayout web, api, db, cache layered gap=120\n`);
+    const e = scene.elements as Record<string, { x: number; y: number }>;
+    expect(e["web"]!.x).toBeLessThan(e["api"]!.x);
+    expect(e["db"]!.x).toBe(e["cache"]!.x);
+    const bad = compile(`box a "A"\nlayout a, b row\n`);
+    expect(bad.ok).toBe(false);
+  });
+
   it("supports grid, row, captions, text, wait, click steps, and times", () => {
     const scene = ok(`grid g cols=2 spacing=20\n  box a "A"\n  box b "B"\n  box c "C"\ncaption cap "Hello" top\nstep "S" click hold=1.5s\n  wait 2s\n  pulse a count=3 color=accent +100ms\n`);
     const { a, b, c } = scene.elements as Record<string, { x: number; y: number }>;

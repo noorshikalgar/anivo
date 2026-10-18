@@ -126,6 +126,22 @@ describe("OperationBus", () => {
     expect(lb.y).toBe(-10);
   });
 
+  it("applies an automatic layout to elements", () => {
+    const bus = busWith([
+      ...base,
+      { op: "element.add", type: "rectangle", props: { label: "Pod", x: 50, y: 900, width: 100, height: 60 } },
+      { op: "element.connect", from: "load-balancer", to: "pod" },
+    ]);
+    const r = bus.apply({ ops: [{ op: "layout.apply", ids: ["user", "load-balancer", "pod"], kind: "layered", gap: 100 }] });
+    expect(r.ok).toBe(true);
+    const e = bus.scene.elements;
+    expect(e["user"]!.x).toBeLessThan(e["load-balancer"]!.x);
+    expect(e["load-balancer"]!.x).toBeLessThan(e["pod"]!.x);
+    expect(Math.min(e["user"]!.x, e["load-balancer"]!.x, e["pod"]!.x)).toBe(0);
+    bus.undo();
+    expect(bus.scene.elements["pod"]!.y).toBe(900);
+  });
+
   it("reorders elements", () => {
     const bus = busWith(base);
     bus.apply({ ops: [{ op: "element.reorder", id: "user", to: "front" }] });

@@ -58,6 +58,15 @@ export const ElementPlace = z.object({
   align: z.enum(["start", "center", "end"]).default("center"),
 });
 
+export const LayoutApply = z.object({
+  op: z.literal("layout.apply"),
+  ids: z.array(Id).min(1).describe("Elements to place. Connectors between them give the order for layered and tree layouts."),
+  kind: z.enum(["row", "column", "grid", "tree", "layered"]).describe("row, column, grid, tree (top to bottom), or layered (left to right by connections)."),
+  gap: z.number().optional().describe("Space between elements in scene pixels."),
+  cols: z.number().int().positive().optional().describe("Columns for a grid."),
+  direction: z.enum(["right", "down"]).optional().describe("Flow direction for tree and layered layouts."),
+});
+
 export const StepAdd = z.object({
   op: z.literal("step.add"),
   id: z.string().optional().describe("Optional. If missing, Anivo makes an ID from the title."),
@@ -106,6 +115,7 @@ export const Operation = z.discriminatedUnion("op", [
   ElementReorder,
   ElementConnect,
   ElementPlace,
+  LayoutApply,
   StepAdd,
   StepUpdate,
   StepRemove,

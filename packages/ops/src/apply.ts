@@ -1,6 +1,7 @@
 import { Action, type ConnectorElement, Element, ElementId, type Scene, SceneSettings, Step } from "@anivo/schema";
 import type { z } from "zod";
 import type { Operation } from "./operations.js";
+import { autoLayout } from "@anivo/layout";
 import { keyBetween } from "./order.js";
 
 export interface OpError {
@@ -226,6 +227,26 @@ export class Draft {
       case "element.place":
         this.place(op, path);
         return;
+      case "layout.apply": {
+        const els = op.ids.map((id, i) => this.requireElement(id, `${path}.ids.${i}`)).filter((e) => e.type !== "connector" && e.type !== "group");
+        if (els.length === 0) fail({ code: "invalid-op", message: "layout.apply needs elements that are not connectors or groups.", path: `${path}.ids` });
+        const set = new Set(els.map((e) => e.id));
+        const edges = Object.values(this.elements).flatMap((c) =>
+          c.type === "connector" && c.start.kind === "bound" && c.end.kind === "bound" && set.has(c.start.elementId) && set.has(c.end.elementId) ? [{ from: c.start.elementId, to: c.end.elementId }] : [],
+        );
+        // The top-left corner of the selection stays in place.
+        const origin = { x: Math.min(...els.map((e) => e.x)), y: Math.min(...els.map((e) => e.y)) };
+        const result = autoLayout(
+          els.map((e) => ({ id: e.id, width: e.width, height: e.height })),
+          edges,
+          { kind: op.kind, origin, ...(op.gap !== undefined ? { gap: op.gap } : {}), ...(op.cols !== undefined ? { cols: op.cols } : {}), ...(op.direction ? { direction: op.direction } : {}) },
+        );
+        for (const [id, p] of result) {
+          this.touch(id);
+          this.elements[id] = { ...this.elements[id]!, x: Math.round(p.x * 100) / 100, y: Math.round(p.y * 100) / 100 };
+        }
+        return;
+      }
       case "step.add": {
         const props = { ...op.props };
         const title = typeof props["title"] === "string" ? props["title"] : "";
