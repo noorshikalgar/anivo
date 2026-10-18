@@ -133,6 +133,9 @@ export function TopBar() {
             </MenuItem>
             <MenuDivider />
             <MenuItem onClick={() => useEditor.setState({ scriptOpen: true })}>Edit script…</MenuItem>
+            <MenuItem disabled={!hasVoice} onClick={() => useEditor.setState({ alignOpen: true })}>
+              Align script to voiceover…
+            </MenuItem>
             <MenuItem disabled={!hasVoice} onClick={cueAllSteps}>
               Start all steps at voiceover cues
             </MenuItem>

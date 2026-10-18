@@ -6,6 +6,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { parseTranscriptJson } from "@anivo/ops";
 import { ToolError } from "./files.js";
 
 export interface TranscriptWord {
@@ -14,31 +15,14 @@ export interface TranscriptWord {
   endMs: number;
 }
 
-/**
- * Read transcript words from JSON: a list of { text, startMs, endMs }, an object
- * with "words", or the JSON output of whisper.cpp (`-oj` with `-ml 1`).
- */
+/** Read transcript words from JSON (see `parseTranscript` in @anivo/ops). Errors are tool errors. */
 export function parseTranscript(json: unknown): TranscriptWord[] {
-  const list = Array.isArray(json) ? json : (json as { words?: unknown })?.words;
-  if (Array.isArray(list)) {
-    return list.map((w, i) => {
-      const x = w as Partial<TranscriptWord>;
-      if (typeof x.text !== "string" || typeof x.startMs !== "number" || typeof x.endMs !== "number") throw new ToolError(`Transcript word ${i + 1} is not valid.`, "Each word must have text, startMs, and endMs.");
-      return { text: x.text, startMs: x.startMs, endMs: x.endMs };
-    });
+  try {
+    return parseTranscriptJson(json);
+  } catch (err) {
+    const [message, hint] = (err instanceof Error ? err.message : String(err)).split(" | ");
+    throw new ToolError(message!, hint);
   }
-  const segs = (json as { transcription?: { text?: string; offsets?: { from?: number; to?: number } }[] })?.transcription;
-  if (Array.isArray(segs)) {
-    const out: TranscriptWord[] = [];
-    for (const s of segs) {
-      const text = (s.text ?? "").trim();
-      // Special tokens such as [BLANK_AUDIO] and lone punctuation are not words.
-      if (!text || /^\[.*\]$/.test(text) || !/[\p{L}\p{N}]/u.test(text)) continue;
-      out.push({ text, startMs: s.offsets?.from ?? 0, endMs: s.offsets?.to ?? s.offsets?.from ?? 0 });
-    }
-    return out;
-  }
-  throw new ToolError("The transcript has an unknown format.", "Use a JSON list of { text, startMs, endMs }, or whisper.cpp JSON output.");
 }
 
 /** Transcribe audio bytes with whisper.cpp. Returns words with times in the source file. */

@@ -172,3 +172,42 @@ test("Escape cancels the record with no change", async ({ page }) => {
   await expect(page.getByRole("region", { name: "Voiceover record" })).toHaveCount(0);
   expect(((await state(page)) as unknown as { scene: { audio: unknown[] } }).scene.audio).toHaveLength(0);
 });
+
+test("align: an imported transcript sets the cues and shows unmatched lines", async ({ page }) => {
+  await addAudio(page, 12, "voiceover");
+  await page.evaluate(() => {
+    const st = (window as unknown as { __anivo: { getState(): { scene: { steps: { id: string }[] }; apply(tx: unknown): unknown } } }).__anivo.getState();
+    const ids = st.scene.steps.map((s) => s.id);
+    st.apply({ label: "Script", ops: [{ op: "script.set", lines: [
+      { text: "A user sends a request.", stepId: ids[0] },
+      { text: "The load balancer gets it.", stepId: ids[1] },
+      { text: "Words that nobody said here.", stepId: ids[2] },
+    ] }] });
+  });
+  await page.getByRole("button", { name: "Audio", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Align script to voiceover…" }).click();
+  const words = ["a", "user", "sends", "a", "request", "the", "load", "balancer", "gets", "it"].map((text, i) => ({ text, startMs: 1000 + i * 400 + (i >= 5 ? 2000 : 0), endMs: 1300 + i * 400 + (i >= 5 ? 2000 : 0) }));
+  const chooser = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: "Import transcript…" }).click();
+  await (await chooser).setFiles({ name: "words.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(words)) });
+  const list = page.getByLabel("Script lines");
+  await expect(list.getByText("No match")).toBeVisible();
+  const s = (await state(page)) as unknown as { scene: { steps: { trigger: { kind: string; atMs?: number } }[] } };
+  expect(s.scene.steps[0]!.trigger).toMatchObject({ kind: "cue", atMs: 1000 });
+  expect(s.scene.steps[1]!.trigger).toMatchObject({ kind: "cue", atMs: 5000 });
+  expect(s.scene.steps[2]!.trigger.kind).not.toBe("cue");
+});
+
+test("align: transcribe asks before it downloads the model", async ({ page }) => {
+  await addAudio(page, 2, "voiceover");
+  await page.evaluate(() => {
+    const st = (window as unknown as { __anivo: { getState(): { scene: { steps: { id: string }[] }; apply(tx: unknown): unknown } } }).__anivo.getState();
+    st.apply({ label: "Script", ops: [{ op: "script.set", lines: [{ text: "Hello.", stepId: st.scene.steps[0]!.id }] }] });
+  });
+  await page.getByRole("button", { name: "Audio", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Align script to voiceover…" }).click();
+  await page.getByRole("button", { name: "Transcribe in this browser" }).click();
+  await expect(page.getByText(/will download the speech model \(about 80 MB\)/)).toBeVisible();
+  await page.getByRole("button", { name: "Cancel", exact: true }).first().click();
+  await expect(page.getByRole("button", { name: "Transcribe in this browser" })).toBeVisible();
+});

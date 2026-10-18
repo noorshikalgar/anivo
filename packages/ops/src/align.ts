@@ -151,3 +151,32 @@ export function alignScript(lines: string[], transcript: AlignWord[]): LineAlign
   }
   return out;
 }
+
+/**
+ * Read transcript words from JSON: a list of { text, startMs, endMs }, an object
+ * with "words", or the JSON output of whisper.cpp (`-oj` with `-ml 1`).
+ * An error message has the form "message | hint".
+ */
+export function parseTranscriptJson(json: unknown): AlignWord[] {
+  const list = Array.isArray(json) ? json : (json as { words?: unknown })?.words;
+  if (Array.isArray(list)) {
+    return list.map((w, i) => {
+      const x = w as Partial<AlignWord>;
+      if (typeof x.text !== "string" || typeof x.startMs !== "number" || typeof x.endMs !== "number") throw new Error(`Transcript word ${i + 1} is not valid. | Each word must have text, startMs, and endMs.`);
+      return { text: x.text, startMs: x.startMs, endMs: x.endMs };
+    });
+  }
+  const segs = (json as { transcription?: { text?: string; offsets?: { from?: number; to?: number } }[] })?.transcription;
+  if (Array.isArray(segs)) {
+    const out: AlignWord[] = [];
+    for (const s of segs) {
+      const text = (s.text ?? "").trim();
+      // Special tokens such as [BLANK_AUDIO] and lone punctuation are not words.
+      if (!text || /^\[.*\]$/.test(text) || !/[\p{L}\p{N}]/u.test(text)) continue;
+      out.push({ text, startMs: s.offsets?.from ?? 0, endMs: s.offsets?.to ?? s.offsets?.from ?? 0 });
+    }
+    return out;
+  }
+  throw new Error("The transcript has an unknown format. | Use a JSON list of { text, startMs, endMs }, or whisper.cpp JSON output.");
+}
+

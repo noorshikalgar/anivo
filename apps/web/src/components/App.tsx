@@ -10,6 +10,7 @@ import { ExportDialog } from "./ExportDialog.js";
 import { IconPicker } from "./IconPicker.js";
 import { Inspector } from "./Inspector.js";
 import { startAudioSync } from "../audio.js";
+import { AlignDialog } from "./AlignDialog.js";
 import { AudioLane } from "./AudioLane.js";
 import { PlaybackBar } from "./PlaybackBar.js";
 import { RecordBar } from "./RecordBar.js";
@@ -137,6 +138,7 @@ export function App() {
           <IconPicker />
           <ExportDialog />
           <ScriptDialog />
+          <AlignDialog />
           <CommandPalette />
           {presenting && <PresentMode />}
         </div>
