@@ -505,6 +505,20 @@ program
   });
 
 program
+  .command("serve")
+  .description("Run the MCP server over Streamable HTTP, for agents that connect with HTTP. Each request needs the token")
+  .option("--root <dir>", "Folder for scene files and exports", ".")
+  .option("--port <port>", "Port", "8765")
+  .option("--host <host>", "Address to listen on. Use 0.0.0.0 only on a trusted network", "127.0.0.1")
+  .option("--token <token>", "Bearer token (default: ANIVO_TOKEN, or a new random token)")
+  .action(async (o: { root: string; port: string; host: string; token?: string }) => {
+    const { startHttpServer } = await import("@anivo/mcp");
+    const token = o.token ?? process.env["ANIVO_TOKEN"];
+    const r = await startHttpServer({ root: o.root, port: Number(o.port), host: o.host, ...(token ? { token } : {}) });
+    process.stderr.write(`Anivo MCP server: ${r.url}\nToken: ${r.token}\nAgents send the header "Authorization: Bearer <token>". Press Ctrl+C to stop.\n`);
+  });
+
+program
   .command("time")
   .description("Print the time of a step position in milliseconds")
   .argument("<scene>")

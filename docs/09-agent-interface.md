@@ -218,6 +218,7 @@ Global flags: `--json` (machine output for all commands), `--quiet`, `--no-color
 | Mode | Command | Use |
 |---|---|---|
 | stdio, file mode | `anivo mcp --root ./videos` | Headless agents. Scenes are files under `--root`. |
+| Streamable HTTP | `anivo serve [--port 8765] [--host 127.0.0.1] [--token <t>]` | The same tools as stdio, at `http://127.0.0.1:8765/mcp`. Each request needs `Authorization: Bearer <token>` (printed at start, or `ANIVO_TOKEN`). The server checks the Host header against DNS rebinding. |
 | stdio, attach mode | `anivo mcp --attach` | The MCP server connects to a running editor through the bridge. The agent edits the scene that the user sees. |
 | Streamable HTTP | `anivo-server` (remote MCP endpoint), or the desktop app after phase 6 | Clients that do not run local commands. The desktop app binds to `127.0.0.1` only. |
 
