@@ -6,7 +6,7 @@ import { OperationBus } from "@anivo/ops";
 import { searchIcons } from "@anivo/render";
 import { type Scene, loadScene } from "@anivo/schema";
 import { applyScript, printScene } from "@anivo/script";
-import { ToolError, audioMime, contactSheetPng, importAsset, probeDurationMs, jsonSchema, previewPng, readSceneFile, sceneSummary, stepTime, writeSceneFile } from "@anivo/tools";
+import { ToolError, assetCache, audioMime, contactSheetPng, importAsset, probeDurationMs, jsonSchema, previewPng, readSceneFile, sceneSummary, stepTime, writeSceneFile } from "@anivo/tools";
 import { homePath, registerBundledAssets } from "@anivo/export-node";
 import { Command, Option } from "commander";
 
@@ -164,6 +164,7 @@ program
       out: o.out,
       format,
       quality: o.quality,
+      assets: assetCache,
       ...(size ? { width: Number(size[1]) - (Number(size[1]) % 2), height: Number(size[2]) - (Number(size[2]) % 2) } : {}),
       ...(o.fps ? { fps: Number(o.fps) as 24 | 30 | 60 } : {}),
       ...(range ? { range } : {}),

@@ -43,3 +43,34 @@ export function trackSpan(t: AudioTrack): { startMs: number; endMs: number } {
   const end = t.trimEndMs ?? t.durationMs;
   return { startMs: t.startMs, endMs: t.startMs + Math.max(0, end - t.trimStartMs) };
 }
+
+/** One audio piece of an export: which part of a source plays at which output time. */
+export interface AudioSegment {
+  trackId: string;
+  assetId: string;
+  mime: string;
+  /** Output time where the piece starts, from the start of the export range. */
+  atMs: number;
+  /** Part of the source file that plays. */
+  fromMs: number;
+  toMs: number;
+  gainDb: number;
+}
+
+/**
+ * The audio pieces for an export of [startMs, endMs) (docs/08 "Audio mix for
+ * export"). Tracks that do not overlap the range are left out.
+ */
+export function audioSegments(scene: { audio: AudioTrack[]; assets: Record<string, AssetRef> }, startMs: number, endMs: number): AudioSegment[] {
+  const out: AudioSegment[] = [];
+  for (const t of scene.audio) {
+    const span = trackSpan(t);
+    const a = Math.max(span.startMs, startMs);
+    const b = Math.min(span.endMs, endMs);
+    if (b <= a) continue;
+    const asset = scene.assets[t.assetId];
+    if (!asset) continue;
+    out.push({ trackId: t.id, assetId: t.assetId, mime: asset.mime, atMs: a - startMs, fromMs: t.trimStartMs + (a - span.startMs), toMs: t.trimStartMs + (b - span.startMs), gainDb: t.gainDb });
+  }
+  return out;
+}
