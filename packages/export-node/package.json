@@ -10,6 +10,7 @@
   "dependencies": {
     "@anivo/engine": "workspace:*",
     "@anivo/layout": "workspace:*",
+    "@anivo/ops": "workspace:*",
     "@anivo/player": "workspace:*",
     "@anivo/render": "workspace:*",
     "@anivo/schema": "workspace:*",

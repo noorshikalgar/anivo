@@ -69,6 +69,37 @@ describe.skipIf(!hasFfmpeg)("exportVideo", () => {
     expect(level(1.2)).toBeGreaterThan(-30);
   }, 60_000);
 
+  it("ducks the music while the voiceover speaks", async () => {
+    // Voice: 1 kHz from 1 s to 2 s. Music: 220 Hz for 4 s, ducked by 20 dB.
+    const voice = `${out}voice.wav`;
+    const music = `${out}music.wav`;
+    execFileSync("ffmpeg", ["-v", "error", "-y", "-f", "lavfi", "-i", "sine=frequency=1000:duration=1", "-af", "adelay=1000,apad=whole_dur=3", voice]);
+    execFileSync("ffmpeg", ["-v", "error", "-y", "-f", "lavfi", "-i", "sine=frequency=220:duration=4", music]);
+    const vb = new Uint8Array(readFileSync(voice));
+    const mb = new Uint8Array(readFileSync(music));
+    const vid = "00000000000000b1";
+    const mid = "00000000000000b2";
+    const scene = {
+      ...template,
+      assets: { [vid]: { id: vid, mime: "audio/wav", bytes: vb.length }, [mid]: { id: mid, mime: "audio/wav", bytes: mb.length } },
+      audio: [
+        { id: "voiceover", kind: "voiceover" as const, assetId: vid, durationMs: 3000, startMs: 0, gainDb: 0, trimStartMs: 0 },
+        { id: "music", kind: "music" as const, assetId: mid, durationMs: 4000, startMs: 0, gainDb: 0, trimStartMs: 0, duckDb: -20 },
+      ],
+    };
+    const file = `${out}ducked.mp4`;
+    await exportVideo(scene, { out: file, format: "mp4", width: 320, height: 180, fps: 24, range: { startMs: 0, endMs: 3500 }, quality: "draft", assets: new Map([[vid, vb], [mid, mb]]) });
+    const music220 = (from: number) => {
+      const r = spawnSync("ffmpeg", ["-v", "info", "-ss", String(from), "-t", "0.3", "-i", file, "-vn", "-af", "bandpass=f=220:width_type=h:w=60,volumedetect", "-f", "null", "-"], { encoding: "utf8" });
+      return Number(/mean_volume: (-?[\d.]+) dB/.exec(r.stderr)?.[1] ?? "-100");
+    };
+    const before = music220(0.3);
+    const during = music220(1.4);
+    const after = music220(3.0);
+    expect(before - during).toBeGreaterThan(14);
+    expect(Math.abs(before - after)).toBeLessThan(3);
+  }, 60_000);
+
   it("exports a PNG sequence", async () => {
     const dir = `${out}seq`;
     await exportVideo(template, { out: dir, format: "png-seq", width: 160, height: 90, fps: 24, range: { startMs: 0, endMs: 500 } });

@@ -352,7 +352,8 @@ audio
   .addOption(new Option("--kind <kind>", "Track kind").choices(["voiceover", "music", "sfx"]).default("voiceover"))
   .option("--start <ms>", "Start time in the video, in milliseconds", "0")
   .option("--gain <db>", "Volume change in dB", "0")
-  .action((f: string, file: string, o: { kind: "voiceover" | "music" | "sfx"; start: string; gain: string }) => {
+  .option("--duck <db>", "Music and sound: the volume change while the voiceover speaks, for example -12")
+  .action((f: string, file: string, o: { kind: "voiceover" | "music" | "sfx"; start: string; gain: string; duck?: string }) => {
     const scene = readSceneFile(f);
     const asset = importAsset(file, audioMime(file));
     const durationMs = probeDurationMs(file);
@@ -361,7 +362,7 @@ audio
       label: "Add audio",
       ops: [
         { op: "asset.add", asset },
-        { op: "audio.add", track: { kind: o.kind, assetId: asset.id, durationMs, startMs: Number(o.start), gainDb: Number(o.gain) } },
+        { op: "audio.add", track: { kind: o.kind, assetId: asset.id, durationMs, startMs: Number(o.start), gainDb: Number(o.gain), ...(o.duck !== undefined ? { duckDb: Number(o.duck) } : {}) } },
       ],
     });
     if (!r.ok) throw new ToolError(r.error.message, r.error.hint);

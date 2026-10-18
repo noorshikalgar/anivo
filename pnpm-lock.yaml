@@ -254,6 +254,9 @@ importers:
       '@anivo/layout':
         specifier: workspace:*
         version: link:../layout
+      '@anivo/ops':
+        specifier: workspace:*
+        version: link:../ops
       '@anivo/player':
         specifier: workspace:*
         version: link:../player
@@ -275,6 +278,9 @@ importers:
       '@anivo/layout':
         specifier: workspace:*
         version: link:../layout
+      '@anivo/ops':
+        specifier: workspace:*
+        version: link:../ops
       '@anivo/render':
         specifier: workspace:*
         version: link:../render

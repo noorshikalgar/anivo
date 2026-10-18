@@ -22,6 +22,7 @@ export const AudioTrack = z.object({
   durationMs: Ms,
   startMs: Ms.default(0).describe("Time in the video when the track starts."),
   gainDb: z.number().min(-60).max(12).default(0),
+  duckDb: z.number().min(-40).max(0).optional().describe("Music and sound: the volume change while the voiceover speaks (ducking), for example -12. Omit for no ducking."),
   trimStartMs: Ms.default(0),
   trimEndMs: Ms.optional(),
   transcript: z.object({ words: z.array(TranscriptWord) }).optional(),
@@ -55,6 +56,8 @@ export interface AudioSegment {
   fromMs: number;
   toMs: number;
   gainDb: number;
+  /** Ducking under the voiceover, in dB (music and sound effects). */
+  duckDb?: number;
 }
 
 /**
@@ -70,7 +73,20 @@ export function audioSegments(scene: { audio: AudioTrack[]; assets: Record<strin
     if (b <= a) continue;
     const asset = scene.assets[t.assetId];
     if (!asset) continue;
-    out.push({ trackId: t.id, assetId: t.assetId, mime: asset.mime, atMs: a - startMs, fromMs: t.trimStartMs + (a - span.startMs), toMs: t.trimStartMs + (b - span.startMs), gainDb: t.gainDb });
+    out.push({ trackId: t.id, assetId: t.assetId, mime: asset.mime, atMs: a - startMs, fromMs: t.trimStartMs + (a - span.startMs), toMs: t.trimStartMs + (b - span.startMs), gainDb: t.gainDb, ...(t.duckDb !== undefined && t.duckDb < 0 && t.kind !== "voiceover" ? { duckDb: t.duckDb } : {}) });
   }
   return out;
 }
+
+/** Times (ms, output time) when the voiceover speaks, from speech intervals in the voiceover source. */
+export function speechInOutput(voice: AudioSegment, intervals: { fromMs: number; toMs: number }[]): { fromMs: number; toMs: number }[] {
+  return intervals.flatMap((iv) => {
+    const a = Math.max(iv.fromMs, voice.fromMs);
+    const b = Math.min(iv.toMs, voice.toMs);
+    return b > a ? [{ fromMs: voice.atMs + (a - voice.fromMs), toMs: voice.atMs + (b - voice.fromMs) }] : [];
+  });
+}
+
+/** Ducking ramps: the volume goes down 150 ms before speech and back up in 400 ms after it. */
+export const DUCK_ATTACK_MS = 150;
+export const DUCK_RELEASE_MS = 400;

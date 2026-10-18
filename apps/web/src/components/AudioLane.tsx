@@ -1,4 +1,4 @@
-import { Button, SpinButton, Text, Tooltip, makeStyles, tokens } from "@fluentui/react-components";
+import { Button, Checkbox, SpinButton, Text, Tooltip, makeStyles, tokens } from "@fluentui/react-components";
 import { Delete20Regular, MicRegular, MusicNote2Regular } from "@fluentui/react-icons";
 import { type AudioTrack, trackSpan } from "@anivo/schema";
 import { useEffect, useRef, useState } from "react";
@@ -211,6 +211,15 @@ function TrackRow({ track }: { track: AudioTrack }) {
           if (Number.isFinite(v)) useEditor.getState().apply({ label: "Change gain", ops: [{ op: "audio.update", id: track.id, set: { gainDb: Math.max(-60, Math.min(12, v)) } }] });
         }}
       />
+      {track.kind !== "voiceover" && (
+        <Tooltip content="Lower this track while the voiceover speaks (ducking, -12 dB)" relationship="description">
+          <Checkbox
+            label="Duck"
+            checked={track.duckDb !== undefined}
+            onChange={(_, d) => useEditor.getState().apply({ label: d.checked ? "Duck under voice" : "No ducking", ops: [{ op: "audio.update", id: track.id, set: { duckDb: d.checked ? -12 : null } }] })}
+          />
+        </Tooltip>
+      )}
       <Tooltip content="Remove audio" relationship="label">
         <Button appearance="subtle" icon={<Delete20Regular />} onClick={() => useEditor.getState().apply({ label: "Remove audio", ops: [{ op: "audio.remove", id: track.id }] })} />
       </Tooltip>

@@ -104,6 +104,35 @@ export function speechOnsets(samples: Float32Array, rate: number, minSilenceMs =
   return out;
 }
 
+/**
+ * Parts of the audio with speech (ms): energy in 20 ms frames, pauses shorter
+ * than `joinMs` join, parts shorter than 150 ms are dropped. For music ducking.
+ */
+export function speechIntervals(samples: Float32Array, rate: number, joinMs = 400): { fromMs: number; toMs: number }[] {
+  const onsets = speechOnsets(samples, rate, joinMs);
+  if (onsets.length === 0) return [];
+  // The end of each part: the last loud frame before the next onset.
+  const frame = Math.max(1, Math.round(rate * 0.02));
+  const n = Math.floor(samples.length / frame);
+  const rms = new Float32Array(n);
+  for (let f = 0; f < n; f++) {
+    let sum = 0;
+    for (let k = f * frame; k < (f + 1) * frame; k++) sum += samples[k]! * samples[k]!;
+    rms[f] = Math.sqrt(sum / frame);
+  }
+  const sorted = [...rms].sort((a, b) => a - b);
+  const threshold = Math.max(sorted[Math.floor(n * 0.1)]! * 4, sorted[Math.floor(n * 0.98)]! * 0.06, 1e-4);
+  const out: { fromMs: number; toMs: number }[] = [];
+  onsets.forEach((o, i) => {
+    const limit = Math.floor((onsets[i + 1]?.atMs ?? n * 20) / 20);
+    let last = Math.floor(o.atMs / 20);
+    for (let f = last; f < limit && f < n; f++) if (rms[f]! >= threshold) last = f;
+    const toMs = (last + 1) * 20;
+    if (toMs - o.atMs >= 150) out.push({ fromMs: o.atMs, toMs });
+  });
+  return out;
+}
+
 export function alignScript(lines: string[], transcript: AlignWord[], opts: { onsets?: Onset[] } = {}): LineAlignment[] {
   const sw: { w: string; line: number }[] = [];
   lines.forEach((t, line) => normalizeWords(t).forEach((w) => sw.push({ w, line })));

@@ -82,7 +82,7 @@ See [08 — Audio and captions](08-audio-and-captions.md).
 | FR-AUDIO-03 | Script: paste text, one line for each step | P1 | |
 | FR-AUDIO-04 | Automatic alignment of script lines to the voiceover | P1 | Uses speech recognition with word times. If a line has no match, show it in amber and keep the old cue. |
 | FR-AUDIO-05 | Background music track with volume | P1 | |
-| FR-AUDIO-06 | Volume ducking of music under speech | P2 | |
+| FR-AUDIO-06 | Volume ducking of music under speech | P2 | Done: `duckDb` on music and sound tracks (docs/08 "Ducking"). |
 | FR-AUDIO-07 | Record a voiceover in the app with the microphone | P1 | |
 | FR-AUDIO-08 | Text to speech provider (plugin) | P2 | Local (Piper) or cloud (user's own key). |
 | FR-AUDIO-09 | Captions: show in the video and export SRT and WebVTT | P1 | Caption text comes from the script lines. Caption times come from the cues. |

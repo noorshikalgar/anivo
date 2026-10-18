@@ -12,6 +12,7 @@
   "dependencies": {
     "@anivo/engine": "workspace:*",
     "@anivo/layout": "workspace:*",
+    "@anivo/ops": "workspace:*",
     "@anivo/render": "workspace:*",
     "@anivo/schema": "workspace:*",
     "gifenc": "1.0.3",
