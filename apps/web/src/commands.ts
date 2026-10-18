@@ -262,6 +262,31 @@ export function updateAction(step: string, id: string, set: Record<string, unkno
   useEditor.getState().apply({ label, ops: [{ op: "action.update", step, id, set }] });
 }
 
+/** Action types that split into one action for each target. A camera or a flow uses all its targets together. */
+const SPLITTABLE = new Set(["enter", "exit", "morph", "emphasis", "motion"]);
+
+export function canSplitAction(a: { type: string; targets: string[] }): boolean {
+  return SPLITTABLE.has(a.type) && a.targets.length > 1;
+}
+
+/**
+ * Split an action with more than one target into one action for each target,
+ * so that each element can have its own delay and duration. The stagger
+ * becomes a delay of each new action, so the animation does not change.
+ */
+export function splitAction(stepId: string, actionId: string): void {
+  const st = useEditor.getState();
+  const step = st.scene.steps.find((s) => s.id === stepId);
+  const index = step?.actions.findIndex((a) => a.id === actionId) ?? -1;
+  const action = step?.actions[index];
+  if (!step || !action || !canSplitAction(action)) return;
+  const rest: Record<string, unknown> = { ...action };
+  delete rest["id"];
+  const ops: OperationInput[] = [{ op: "action.remove", step: stepId, id: actionId }];
+  action.targets.forEach((t, k) => ops.push({ op: "action.add", step: stepId, index: index + k, action: { ...rest, targets: [t], delayMs: action.delayMs + k * action.staggerMs, staggerMs: 0 } }));
+  st.apply({ label: "Split action", ops });
+}
+
 export function removeAction(step: string, id: string): void {
   useEditor.getState().apply({ label: "Remove action", ops: [{ op: "action.remove", step, id }] });
 }

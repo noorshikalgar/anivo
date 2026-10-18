@@ -87,3 +87,21 @@ test("the flow editor sets an icon particle, one particle, and a trail", async (
   const s2 = (await state(page)) as unknown as typeof s;
   expect(s2.scene.steps.find((st) => st.id === "s-traffic")!.actions.find((a) => a.type === "flow")!.flow!["count"]).toBeUndefined();
 });
+
+test("Split per element gives each element its own action and keeps the timing", async ({ page }) => {
+  await page.getByRole("button", { name: /Pods fan out/ }).click();
+  await page.getByRole("button", { name: /Enter · pop/ }).click();
+  await page.getByRole("button", { name: "Split per element" }).click();
+  type S = { scene: { steps: { id: string; actions: { type: string; targets: string[]; delayMs: number; staggerMs: number; durationMs?: number }[] }[] } };
+  const step = ((await state(page)) as unknown as S).scene.steps.find((s) => s.id === "s-pods")!;
+  const pops = step.actions.filter((a) => a.type === "enter" && a.targets[0]!.startsWith("pod-"));
+  expect(pops.map((a) => [a.targets, a.delayMs, a.staggerMs, a.durationMs])).toEqual([
+    [["pod-1"], 400, 0, 450],
+    [["pod-2"], 550, 0, 450],
+    [["pod-3"], 700, 0, 450],
+  ]);
+  // A flow keeps its targets together: no split button.
+  await page.getByRole("button", { name: /Traffic flows/ }).click();
+  await page.getByRole("button", { name: /^Flow/ }).nth(1).click();
+  await expect(page.getByRole("button", { name: "Split per element" })).toHaveCount(0);
+});
