@@ -35,7 +35,7 @@ describe("Anivo MCP server", () => {
   it("lists all tools from docs/09", async () => {
     const names = (await client.listTools()).tools.map((t) => t.name).sort();
     expect(names).toEqual(
-      ["anivo_captions", "anivo_contact_sheet", "anivo_export", "anivo_guide", "anivo_icons_search", "anivo_image_add", "anivo_lint", "anivo_ops_apply", "anivo_preview", "anivo_scene_create", "anivo_scene_get", "anivo_scene_summary", "anivo_schema", "anivo_script_apply", "anivo_templates_list", "anivo_transcribe", "anivo_undo"].sort(),
+      ["anivo_captions", "anivo_contact_sheet", "anivo_export", "anivo_guide", "anivo_icons_search", "anivo_image_add", "anivo_import", "anivo_lint", "anivo_ops_apply", "anivo_preview", "anivo_scene_create", "anivo_scene_get", "anivo_scene_summary", "anivo_schema", "anivo_script_apply", "anivo_templates_list", "anivo_transcribe", "anivo_undo"].sort(),
     );
   });
 
@@ -75,6 +75,13 @@ describe("Anivo MCP server", () => {
     const bad = await call("anivo_image_add", { scene: "t.anivo", file: "t.anivo" });
     expect(bad.isError).toBe(true);
     expect(textOf(bad)).toContain("PNG, JPEG, WebP, or SVG");
+  });
+
+  it("imports Mermaid text into a new scene with steps", async () => {
+    const r = await call("anivo_import", { scene: "flow.anivo", mermaid: "flowchart LR\n  a[A] --> b[B]\n" });
+    expect(r.isError, textOf(r)).toBeFalsy();
+    expect(textOf(r)).toMatch(/Imported mermaid: 3 elements, 2 steps/);
+    expect((await call("anivo_import", { scene: "flow.anivo", mermaid: "flowchart LR\n a-->b" })).isError).toBe(true);
   });
 
   it("makes captions from the script", async () => {

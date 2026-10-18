@@ -1,7 +1,9 @@
+import { importText } from "@anivo/import";
 import { type AssetStore, packArchive, packJson, sceneToJson, unpack } from "@anivo/fileio";
 import { type Scene, loadScene } from "@anivo/schema";
 import { loadTemplate } from "./assets.js";
 import { idbGet, idbSet } from "./idb.js";
+import { notify } from "./notify.js";
 import { useEditor } from "./store.js";
 
 /** File System Access API types (Chromium). Other browsers download and upload files. */
@@ -149,6 +151,34 @@ export async function saveFile(): Promise<boolean> {
   await writeHandle(currentHandle, useEditor.getState().scene);
   useEditor.setState({ dirty: false });
   return true;
+}
+
+/** Make a new scene from an Excalidraw file or Mermaid text (FR-FILE-05, FR-FILE-06). Returns the warnings, or null if the user cancelled. */
+export async function importDiagram(): Promise<string[] | null> {
+  const file = await new Promise<File | null>((resolve) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".excalidraw,.json,.mmd,.mermaid,.md,.txt";
+    input.onchange = () => resolve(input.files?.[0] ?? null);
+    input.oncancel = () => resolve(null);
+    input.click();
+  });
+  if (!file) return null;
+  let r: ReturnType<typeof importText>;
+  try {
+    r = importText(file.name, await file.text());
+  } catch (err) {
+    throw new FileError(err instanceof Error ? err.message : String(err));
+  }
+  openScene({ scene: r.scene, assets: r.assets }, null, null);
+  return r.warnings;
+}
+
+/** Import, then tell the user what did not convert. */
+export async function runImport(): Promise<void> {
+  const warnings = await importDiagram();
+  if (warnings === null) return;
+  notify(warnings.length ? `Imported. ${warnings.length} parts did not convert: ${warnings.slice(0, 2).join(" ")}` : "Imported", warnings.length ? "info" : "success");
 }
 
 export function newScene(): void {

@@ -12,6 +12,7 @@
     "@anivo/engine": "workspace:*",
     "@anivo/export-web": "workspace:*",
     "@anivo/fileio": "workspace:*",
+    "@anivo/import": "workspace:*",
     "@anivo/layout": "workspace:*",
     "@anivo/ops": "workspace:*",
     "@anivo/player": "workspace:*",

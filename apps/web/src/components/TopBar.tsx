@@ -16,7 +16,7 @@ import {
 } from "@fluentui/react-components";
 import { ArrowExportUp20Regular, Play20Regular, ArrowRedo20Regular, ArrowUndo20Regular, Document20Regular, FolderOpen20Regular, Mic20Regular, MusicNote220Regular, Record20Regular, Save20Regular, ZoomFit20Regular } from "@fluentui/react-icons";
 import { useState } from "react";
-import { hasFileSystemAccess, newFromTemplate, newScene, openFile, openRecent, recentFiles, saveFile, saveFileAs } from "../files.js";
+import { hasFileSystemAccess, newFromTemplate, newScene, openFile, runImport, openRecent, recentFiles, saveFile, saveFileAs } from "../files.js";
 import { notify, withErrors } from "../notify.js";
 import { cueAllSteps, importAudio } from "../audio.js";
 import { startRecording } from "../record.js";
@@ -83,6 +83,7 @@ export function TopBar() {
                 </MenuList>
               </MenuPopover>
             </Menu>
+            <MenuItem onClick={() => void withErrors(runImport)}>Import Excalidraw or Mermaid…</MenuItem>
             <MenuDivider />
             <MenuItem icon={<FolderOpen20Regular />} secondaryContent="Ctrl+O" onClick={() => void withErrors(openFile)}>
               Open…

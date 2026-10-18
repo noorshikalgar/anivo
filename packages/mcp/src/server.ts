@@ -6,6 +6,7 @@ import { formatLint, lintScene, lintSummary } from "@anivo/lint";
 import { OperationBus } from "@anivo/ops";
 import { searchIcons } from "@anivo/render";
 import { type Scene, loadScene } from "@anivo/schema";
+import { importText } from "@anivo/import";
 import { applyScript, printScene } from "@anivo/script";
 import { ToolError, assetCache, contactSheetPng, imageMime, importAsset, transcribe, jsonSchema, previewPng, readSceneFile, sceneSummary, writeSceneFile } from "@anivo/tools";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -277,6 +278,36 @@ export function createAnivoServer(opts: ServerOptions): McpServer {
         const size = a.size?.split("x").map(Number);
         const r = await exportVideo(scene, { out, format, assets: assetCache, ...(size ? { width: size[0]! - (size[0]! % 2), height: size[1]! - (size[1]! % 2) } : {}), ...(a.fps ? { fps: a.fps } : {}), ...(range ? { range } : {}), ...(a.captions ? { captions: a.captions } : {}) });
         return text(`Exported ${relative(root, r.out)}: ${r.frames} frames, ${(r.durationMs / 1000).toFixed(1)} s${r.bytes ? `, ${(r.bytes / 1e6).toFixed(2)} MB` : ""}.`);
+      }),
+  );
+
+  server.registerTool(
+    "anivo_import",
+    {
+      title: "Import Excalidraw or Mermaid",
+      description: "Make a new scene from an Excalidraw file or Mermaid text (flowchart or sequence diagram). Give 'file' (inside the scene folder) or 'mermaid' text. A Mermaid import makes steps: one for each flowchart layer, or one for each message.",
+      inputSchema: {
+        scene: sceneArg.describe("New scene file path, for example 'videos/flow.anivo'. It must not exist."),
+        file: z.string().optional().describe("An .excalidraw or .mmd file inside the scene folder."),
+        mermaid: z.string().optional().describe("Mermaid text, for example 'flowchart LR\\n  a --> b'."),
+        steps: z.boolean().default(true),
+      },
+    },
+    async (a) =>
+      run(() => {
+        const path = sceneFile(a.scene);
+        if (existsSync(path)) throw new ToolError(`The file '${a.scene}' exists already.`, "Use another path.");
+        if (!a.file === !a.mermaid) throw new ToolError("Give 'file' or 'mermaid', not both and not neither.");
+        let r: ReturnType<typeof importText>;
+        try {
+          r = a.file ? importText(a.file, readFileSync(inside(a.file), "utf8"), { steps: a.steps }) : importText("diagram.mmd", a.mermaid!, { steps: a.steps });
+        } catch (err) {
+          throw new ToolError(err instanceof Error ? err.message : String(err));
+        }
+        for (const [id, b] of r.assets) assetCache.set(id, b);
+        writeSceneFile(path, r.scene);
+        const s = lintSummary(lintScene(r.scene));
+        return text([`Imported ${r.format}: ${Object.keys(r.scene.elements).length} elements, ${r.scene.steps.length} steps. Lint: ${s.errors} errors, ${s.warnings} warnings.`, ...r.warnings.map((w) => `Warning: ${w}`), "", sceneSummary(r.scene)].join("\n"));
       }),
   );
 

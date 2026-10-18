@@ -91,6 +91,17 @@ describe("anivo CLI", () => {
     expect(html).toContain('<script type="module">');
   });
 
+  it("imports Mermaid from a Markdown file", () => {
+    const md = join(dir, "flow.md");
+    writeFileSync(md, "# Flow\n\n```mermaid\nflowchart LR\n  a[Client] --> b[Server]\n```\n");
+    const out = join(dir, "flow.anivo");
+    const r = anivo("import", md, "--out", out);
+    expect(r.code, r.err).toBe(0);
+    expect(r.out).toContain("Imported mermaid: 3 elements, 2 steps.");
+    expect(anivo("import", md, "--out", out).err).toContain("exists already");
+    expect(anivo("print", out).out).toContain('box a "Client"');
+  });
+
   it("writes a preview and a contact sheet", () => {
     expect(anivo("preview", scene, "--step", "1", "--debug", "--out", join(dir, "p.png")).code).toBe(0);
     expect(readFileSync(join(dir, "p.png")).subarray(1, 4).toString()).toBe("PNG");

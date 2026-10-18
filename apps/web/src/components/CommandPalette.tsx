@@ -22,7 +22,7 @@ import {
 import { cueAllSteps, importAudio } from "../audio.js";
 import { pickImage } from "../images.js";
 import { startRecording } from "../record.js";
-import { newFromTemplate, newScene, openFile, saveFile, saveFileAs } from "../files.js";
+import { newFromTemplate, newScene, openFile, runImport, saveFile, saveFileAs } from "../files.js";
 import { notify, withErrors } from "../notify.js";
 import { type Tool, useEditor } from "../store.js";
 import { TOOLS } from "./ToolPalette.js";
@@ -71,6 +71,7 @@ function commands(): Command[] {
     { title: "Save as", keys: "Ctrl+Shift+S", run: () => void withErrors(saveFileAs) },
     { title: "Open", keys: "Ctrl+O", run: () => void withErrors(openFile) },
     { title: "New scene", run: newScene },
+    { title: "Import Excalidraw or Mermaid", run: () => void withErrors(runImport) },
     ...TEMPLATES.map((t) => ({ title: `New from template: ${t.title}`, run: () => void withErrors(() => newFromTemplate(t.name)) })),
     { title: "Undo", keys: "Ctrl+Z", run: () => st.undo() },
     { title: "Redo", keys: "Ctrl+Shift+Z", run: () => st.redo() },
