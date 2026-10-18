@@ -125,6 +125,10 @@ export const ScriptAlign = z.object({
     .array(z.object({ text: z.string(), startMs: z.number().nonnegative(), endMs: z.number().nonnegative() }))
     .optional()
     .describe("Transcript words with times in the voiceover file. Omit to use the transcript of the voiceover track."),
+  onsets: z
+    .array(z.object({ atMs: z.number().nonnegative(), pauseMs: z.number().nonnegative() }))
+    .optional()
+    .describe("Speech onsets in the voiceover file (time and the pause before it), from speechOnsets. Cues snap to them."),
 }).describe("Align the script lines to the voiceover transcript. Each matched line sets a cue trigger on its step. Unmatched lines keep the old start.");
 
 export const SceneSettingsOp = z.object({

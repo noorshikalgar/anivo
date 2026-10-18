@@ -81,3 +81,36 @@ describe("script.align operation", () => {
     if (!res.ok) expect(res.error.hint).toMatch(/words/);
   });
 });
+
+describe("speech onsets", () => {
+  /** 16 kHz: silence and tone parts, as [ms, on]. */
+  function audio(parts: [number, boolean][]): Float32Array {
+    const total = parts.reduce((s, [ms]) => s + ms, 0);
+    const out = new Float32Array((total * 16000) / 1000);
+    let at = 0;
+    for (const [ms, on] of parts) {
+      const n = (ms * 16000) / 1000;
+      if (on) for (let i = 0; i < n; i++) out[at + i] = Math.sin(i / 3) * 0.5;
+      at += n;
+    }
+    return out;
+  }
+
+  it("finds the starts of speech after pauses, with the pause lengths", async () => {
+    const { speechOnsets } = await import("./align.js");
+    const o = speechOnsets(audio([[400, false], [1000, true], [100, false], [500, true], [800, false], [600, true]]), 16000);
+    expect(o.map((x) => x.atMs)).toEqual([400, 2800]);
+    expect(o[1]!.pauseMs).toBe(800);
+  });
+
+  it("moves a late word time to the speech onset with the longest pause", () => {
+    const words = [...speak("one two three", 400), ...speak("four five", 3200)];
+    const onsets = [
+      { atMs: 400, pauseMs: 400 },
+      { atMs: 2500, pauseMs: 900 },
+      { atMs: 2900, pauseMs: 160 },
+    ];
+    const r = alignScript(["One two three.", "Four five."], words, { onsets });
+    expect(r.map((x) => x.startMs)).toEqual([400, 2500]);
+  });
+});

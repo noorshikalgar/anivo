@@ -433,7 +433,7 @@ export class Draft {
         const words = vo.transcript?.words ?? [];
         if (words.length === 0) fail({ code: "invalid-audio", message: "The voiceover has no transcript.", path, hint: "Give the transcript words in 'words'." });
         if (this.script.length === 0) fail({ code: "invalid-op", message: "The scene has no script.", path, hint: "Set the script with script.set first." });
-        const result = alignScript(this.script.map((l) => l.text), words);
+        const result = alignScript(this.script.map((l) => l.text), words, op.onsets ? { onsets: op.onsets } : {});
         this.before.script ??= this.script;
         this.script = this.script.map((l, k) => {
           const next: ScriptLine = { ...l };

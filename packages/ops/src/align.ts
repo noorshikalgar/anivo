@@ -67,7 +67,44 @@ const GAP = -1;
  * Align script lines to transcript words: a global alignment of the word
  * sequences (Needleman–Wunsch) with a fuzzy word match.
  */
-export function alignScript(lines: string[], transcript: AlignWord[]): LineAlignment[] {
+/**
+ * Times (ms) where speech starts after a pause of `minSilenceMs` or more.
+ * Energy in 20 ms frames; the threshold follows the quiet level of the file.
+ */
+export interface Onset {
+  /** Time in ms where speech starts. */
+  atMs: number;
+  /** Length of the pause before it. */
+  pauseMs: number;
+}
+
+export function speechOnsets(samples: Float32Array, rate: number, minSilenceMs = 150): Onset[] {
+  const frame = Math.max(1, Math.round(rate * 0.02));
+  const n = Math.floor(samples.length / frame);
+  if (n === 0) return [];
+  const rms = new Float32Array(n);
+  for (let f = 0; f < n; f++) {
+    let sum = 0;
+    for (let k = f * frame; k < (f + 1) * frame; k++) sum += samples[k]! * samples[k]!;
+    rms[f] = Math.sqrt(sum / frame);
+  }
+  const sorted = [...rms].sort((a, b) => a - b);
+  const floor = sorted[Math.floor(n * 0.1)]!;
+  const peak = sorted[Math.floor(n * 0.98)]!;
+  const threshold = Math.max(floor * 4, peak * 0.06, 1e-4);
+  const out: Onset[] = [];
+  let quiet = 10_000; // the start of the file counts as a long pause
+  for (let f = 0; f < n; f++) {
+    if (rms[f]! < threshold) quiet += 20;
+    else {
+      if (quiet >= minSilenceMs) out.push({ atMs: f * 20, pauseMs: quiet });
+      quiet = 0;
+    }
+  }
+  return out;
+}
+
+export function alignScript(lines: string[], transcript: AlignWord[], opts: { onsets?: Onset[] } = {}): LineAlignment[] {
   const sw: { w: string; line: number }[] = [];
   lines.forEach((t, line) => normalizeWords(t).forEach((w) => sw.push({ w, line })));
   const tw: { w: string; word: AlignWord }[] = [];
@@ -119,26 +156,63 @@ export function alignScript(lines: string[], transcript: AlignWord[]): LineAlign
 
   // Walk back and collect the matched transcript word of each script word.
   const matchOf: (AlignWord | null)[] = new Array(n).fill(null);
+  /** Index of the matched transcript token of each script word, or -1. */
+  const matchJ: number[] = new Array(n).fill(-1);
   let i = n;
   let j = m;
   while (i > 0 || j > 0) {
     const idx = i * (m + 1) + j;
     const t = i === 0 ? 2 : j === 0 ? 1 : trace[idx]!;
     if (t === 0) {
-      if (kind[idx]) matchOf[i - 1] = tw[j - 1]!.word;
+      if (kind[idx]) {
+        matchOf[i - 1] = tw[j - 1]!.word;
+        matchJ[i - 1] = j - 1;
+      }
       i--;
       j--;
     } else if (t === 1) i--;
     else j--;
   }
 
+  let prevLastJ = -1;
   const out: LineAlignment[] = lines.map((_, line) => {
     const idx = sw.flatMap((x, k) => (x.line === line ? [k] : []));
     const hits = idx.map((k) => matchOf[k]).filter((w): w is AlignWord => w !== null);
     const matched = idx.length ? hits.length / idx.length : 0;
     const ok = matched >= 0.5;
-    return { line, startMs: ok ? hits[0]!.startMs : null, endMs: ok ? hits[hits.length - 1]!.endMs : null, matched, unmatched: !ok };
+    const js = idx.map((k) => matchJ[k]!).filter((x) => x >= 0);
+    let startMs = ok ? hits[0]!.startMs : null;
+    if (ok) {
+      // The first words of the line can be heard differently (for example "128" and
+      // "one hundred twenty eight"). Then the line starts at the first transcript word
+      // after the previous line, if it is not far before the first match.
+      const lead = idx.findIndex((k) => matchJ[k]! >= 0);
+      const firstJ = js[0]!;
+      if (lead > 0 && prevLastJ + 1 < firstJ) {
+        const from = Math.max(prevLastJ + 1, firstJ - lead * 2);
+        startMs = tw[from]!.word.startMs;
+      }
+      prevLastJ = js[js.length - 1]!;
+    }
+    return { line, startMs, endMs: ok ? hits[hits.length - 1]!.endMs : null, matched, unmatched: !ok };
   });
+  // Speech recognition word times can be late, and word ends often run into the pause.
+  // With the speech onsets of the audio, a line starts at the onset with the longest pause
+  // before it, between the previous line start and the word time.
+  if (opts.onsets?.length) {
+    let prevStart = -Infinity;
+    for (const a of out) {
+      if (a.startMs === null) continue;
+      const s = a.startMs;
+      let best: Onset | undefined;
+      for (const o of opts.onsets) {
+        if (o.atMs <= prevStart + 300 || o.atMs > s + 150 || o.atMs < s - 2500) continue;
+        if (!best || o.pauseMs > best.pauseMs || (o.pauseMs === best.pauseMs && o.atMs > best.atMs)) best = o;
+      }
+      if (best) a.startMs = best.atMs;
+      prevStart = a.startMs;
+    }
+  }
   // Cue times must increase. A line that starts before the previous matched line is unmatched.
   let last = -1;
   for (const a of out) {

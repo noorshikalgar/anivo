@@ -46,6 +46,8 @@ Input: script lines and transcript words with times. Output: a start time for ea
 3. The start of a line is the start time of the first matched word of that line.
 4. If a line has fewer than 50% matched words, mark the line `unmatched`. Keep its old cue. Show the line in amber.
 5. Make sure the cue times increase. If a cue is earlier than the previous cue, mark it `unmatched`.
+6. Speech recognition word times can be late, and word ends often run into the pause. Find the speech onsets in the audio (energy in 20 ms frames; a pause is 150 ms or more). Move each line start to the onset with the longest pause before it, between the previous line start (+300 ms) and the word time (+150 ms, at most 2.5 s before).
+7. Measure: `pnpm eval:align` (macOS) speaks 5 scripts with 5 voices, transcribes them in the browser, and compares the cues to the true starts.
 
 ## Step duration with cues
 

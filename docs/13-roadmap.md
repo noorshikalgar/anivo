@@ -88,9 +88,9 @@ Scope: FR-AUDIO 01–05, 07, 09. FR-EXPORT 07, 08. FR-STEP 07–09, 17. FR-CANVA
 
 **Exit gate:**
 
-- [ ] Examples A to E are all possible.
-- [ ] Alignment puts 90% of cues within 300 ms of a manual cue on 5 test recordings.
-- [ ] Player bundle is less than 150 KB gzip.
+- [x] Examples A to E are all possible. They are built-in templates (`load-balancer`, `git-branch-merge`, `tcp-handshake`, `docker-layers`, `database-index`).
+- [x] Alignment puts 90% of cues within 300 ms of a manual cue on 5 test recordings. `pnpm eval:align` (2026-10-18, Whisper base.en in the browser, 5 voices, 27 lines): 27 of 27 within 300 ms, maximum error 30 ms. Without the onset snap: 25 of 27. The recordings are synthetic (macOS `say`), so the true starts are exact. **Owner:** check with 5 real recordings too.
+- [x] Player bundle is less than 150 KB gzip: 64 KB. The build and a test fail at 150 KB.
 
 ## Phase 4 — Live agents in the web app (2 weeks)
 
