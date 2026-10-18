@@ -2,6 +2,8 @@ import { FluentProvider, Spinner, Text, Toast, ToastTitle, Toaster, makeStyles, 
 import { useEffect, useState } from "react";
 import { loadAssets, loadTemplate } from "../assets.js";
 import { restoreAutosave, startAutosave } from "../files.js";
+import { openShareFromUrl } from "../share.js";
+import { notify } from "../notify.js";
 import { useEditor } from "../store.js";
 import { darkTheme, lightTheme } from "../theme.js";
 import { CanvasView } from "./CanvasView.js";
@@ -14,6 +16,7 @@ import { startImageSync } from "../images.js";
 import { AgentPanel, ConnectAgentDialog } from "./AgentPanel.js";
 import { AiPanel } from "./AiPanel.js";
 import { HistoryDialog, ShortcutHelp } from "./HelpDialogs.js";
+import { ShareDialog } from "./ShareDialog.js";
 import { AlignDialog } from "./AlignDialog.js";
 import { AudioLane } from "./AudioLane.js";
 import { PlaybackBar } from "./PlaybackBar.js";
@@ -96,6 +99,8 @@ export function App() {
           useEditor.setState({ dirty: false });
         }
         if (cancelled) return;
+        // A share link (#share=…) opens the shared scene (FR-SHARE-01).
+        await openShareFromUrl().catch((e: unknown) => notify(e instanceof Error ? e.message : String(e), "error"));
         setState("ready");
       } catch (err) {
         setState({ error: err instanceof Error ? err.message : String(err) });
@@ -157,6 +162,7 @@ export function App() {
           <Tour />
           <ConnectAgentDialog />
           <ShortcutHelp />
+          <ShareDialog />
           <HistoryDialog />
           <CommandPalette />
           {presenting && <PresentMode />}

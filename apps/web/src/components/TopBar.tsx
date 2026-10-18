@@ -20,6 +20,7 @@ import { hasFileSystemAccess, newScene, openFile, runImport, openRecent, recentF
 import { notify, withErrors } from "../notify.js";
 import { cueAllSteps, importAudio } from "../audio.js";
 import { startRecording } from "../record.js";
+import { shareServer } from "../share.js";
 import { useEditor } from "../store.js";
 
 const useStyles = makeStyles({
@@ -95,6 +96,12 @@ export function TopBar() {
             <MenuItem secondaryContent="Ctrl+Shift+S" onClick={() => void withErrors(async () => (await saveFileAs()) && notify("Saved", "success"))}>
               Save as…
             </MenuItem>
+            {shareServer() && (
+              <>
+                <MenuDivider />
+                <MenuItem onClick={() => useEditor.setState({ shareOpen: true })}>Share link…</MenuItem>
+              </>
+            )}
           </MenuList>
         </MenuPopover>
       </Menu>

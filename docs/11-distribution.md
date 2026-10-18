@@ -63,9 +63,12 @@ Anivo ships in **five forms from one codebase**. Version 1.0 has four of them. T
 
 ### Image 2: `ghcr.io/noorshikalgar/anivo-server` (optional)
 
-- Node 22 + FFmpeg + fonts. Contains `apps/server`.
-- Services: share-link storage (encrypted blobs), collaboration relay (P2), render queue, remote MCP endpoint (Streamable HTTP, with API tokens).
-- Storage: local disk volume or an S3-compatible bucket.
+- Node 22 (alpine), non-root, port 8081. Contains `apps/server` as one bundled file. Build: `docker build -f docker/server.Dockerfile -t anivo-server .`
+- Now: share-link storage (encrypted blobs). Later: collaboration relay (P2), render queue, remote MCP endpoint (Streamable HTTP, with API tokens).
+- Storage: a local disk volume (`ANIVO_STORAGE=file:///data`). An S3-compatible bucket comes later.
+- API: `POST /api/shares` (encrypted bytes, maximum 64 MB) gives `{ id, deleteToken }`; `GET /api/shares/<id>`; `DELETE /api/shares/<id>` with the header `X-Delete-Token`; `GET /healthz`.
+- Settings: `ANIVO_ALLOWED_ORIGINS` (upload origins, default `*`), `ANIVO_API_TOKENS` (comma-separated; then uploads need `Authorization: Bearer <token>`), `ANIVO_SHARE_TTL_DAYS` (default 30), `ANIVO_MAX_SHARE_MB` (default 64). A client can upload 60 times in each hour.
+- Share link: `https://<web app>/#share=<id>.<key>`. The editor encrypts with AES-GCM (256-bit key, new for each share). The key is in the fragment and never goes to the server.
 
 ### `compose.yaml` (example)
 

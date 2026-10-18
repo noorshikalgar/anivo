@@ -24,6 +24,7 @@ import { pickImage } from "../images.js";
 import { startRecording } from "../record.js";
 import { newFromTemplate, newScene, openFile, runImport, saveFile, saveFileAs } from "../files.js";
 import { notify, withErrors } from "../notify.js";
+import { shareServer } from "../share.js";
 import { type Tool, useEditor } from "../store.js";
 import { TOOLS } from "./ToolPalette.js";
 import { TEMPLATES } from "./TopBar.js";
@@ -98,6 +99,7 @@ function commands(): Command[] {
     { title: "Style: clean", run: () => commitSettings({ style: "clean" }, "Change style") },
     { title: "Style: sketch", run: () => commitSettings({ style: "sketch" }, "Change style") },
     ...["slate-dark", "slate-light", "paper-light", "night-dark"].map((t) => ({ title: `Theme: ${t}`, run: () => commitSettings({ theme: t }, "Change theme") })),
+    ...(shareServer() ? [{ title: "Share link", run: () => useEditor.setState({ shareOpen: true }) }] : []),
     { title: "Keyboard shortcuts", keys: "?", run: () => useEditor.setState({ helpOpen: true }) },
     { title: "History of changes", run: () => useEditor.setState({ historyOpen: true }) },
     { title: "AI panel", run: () => useEditor.setState((s) => ({ aiOpen: !s.aiOpen })) },
