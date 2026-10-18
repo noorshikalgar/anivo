@@ -104,6 +104,17 @@ export function lintScene(scene: Scene): LintResult[] {
   // The short side is the 1080 of "1080p", also for a portrait (9:16) video.
   const scale1080 = 1080 / Math.min(v.width, v.height);
 
+  // Icon particles of flows.
+  for (const st of scene.steps) {
+    for (const a of st.actions) {
+      if (a.type !== "flow" || a.flow.shape !== "icon") continue;
+      const [pack, name] = (a.flow.icon ?? "").split(":");
+      if (!a.flow.icon || !pack || !name || !getIcon(pack, name)) {
+        add({ code: "unknown-icon", level: "warning", ids: a.targets, step: st.id, message: a.flow.icon ? `The flow particle icon '${a.flow.icon}' does not exist.` : `A flow in step '${st.id}' has shape=icon but no icon.`, hint: "Call anivo_icons_search, then set icon=pack:name on the flow." });
+      }
+    }
+  }
+
   // Static checks on elements.
   for (const el of Object.values(scene.elements)) {
     if (el.type === "icon" && !getIcon(el.pack, el.name)) {

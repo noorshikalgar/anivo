@@ -733,6 +733,7 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
         effect = "slide";
         kv.set("direction", { v: t.v.slice(6), pos: t.pos });
       } else if (verb === "move" && (t.v === "curve" || t.v === "orient")) kv.set(t.v, { v: "true", pos: t.pos });
+      else if (verb === "flow" && (t.v === "orient" || t.v === "once")) kv.set(t.v === "once" ? "count" : "orient", { v: t.v === "once" ? "1" : "true", pos: t.pos });
       else if (verb === "flow" && ["all", "round-robin", "random", "forward", "reverse", "both"].includes(t.v)) kv.set(["forward", "reverse", "both"].includes(t.v) ? "direction" : "distribute", { v: t.v === "random" ? "random-seeded" : t.v, pos: t.pos });
       else words.push(t);
     }
@@ -883,13 +884,21 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
     const flow: Record<string, unknown> = {};
     for (const [k, { v, pos }] of kv) {
       if (common(k, v, pos)) continue;
-      if (k === "rate" || k === "speed" || k === "size" || k === "trail") flow[k] = Number(v);
+      if (k === "rate" || k === "speed" || k === "size" || k === "trail" || k === "count") flow[k] = Number(v);
       else if (k === "color" || k === "shape" || k === "distribute" || k === "direction") flow[k] = v;
+      else if (k === "orient") flow["orient"] = v !== "false";
+      else if (k === "icon") {
+        flow["icon"] = v;
+        flow["shape"] ??= "icon";
+      } else if (k === "image") {
+        flow["assetId"] = v;
+        flow["shape"] ??= "image";
+      }
       else if (k === "chain") {
         const ids = resolveTargets([{ t: "word", v, pos }], pos);
         if (ids[0]) flow["chainFrom"] = ids[0];
       } else if (k === "skip") flow["skip"] = resolveTargets(v.split(",").map((x) => ({ t: "word", v: x, pos }) as Token), pos);
-      else errors.push(err(pos, `The property '${k}' is not known for flow.`, "Use: rate, speed, size, color, shape, chain, skip, dur, round-robin, reverse."));
+      else errors.push(err(pos, `The property '${k}' is not known for flow.`, "Use: rate, speed, size, color, shape, icon, image, count, once, orient, trail, chain, skip, dur, round-robin, reverse."));
     }
     a["flow"] = flow;
   } else {

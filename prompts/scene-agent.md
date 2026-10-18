@@ -89,7 +89,9 @@ step "<title>" [hold=<time>] [cue=<time>]
   exit <targets> <effect>
   morph <targets> key=value…
   pulse|shake|glow|flash|highlight|focus <targets>
-  flow <connectors> [rate=<n>] [round-robin] [chain=<connector>] [skip=<connector>]
+  flow <connectors> [rate=<n>] [speed=<px/s>] [round-robin] [chain=<connector>] [skip=<connector>]
+       [size=<px>] [color=<token>] [shape=dot|square|pill] [icon=<pack:name>] [image=<assetId>]
+       [once | count=<n>] [orient] [trail=<0..1>]   (once: one particle travels the arrow; icon: an icon moves, for example icon=lucide:mail size=32)
   camera zoom-to <targets> [padding=80] | camera pan at=x,y size=WxH | camera reset
   count <target> from=<n> to=<n> format="{n} <unit>"
   code <target> highlight=<a>-<b> | type=<a>-<b>

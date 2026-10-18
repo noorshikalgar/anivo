@@ -67,6 +67,13 @@ describe("lintScene", () => {
     expect(codes(same)).toContain("overlap");
   });
 
+  it("finds an unknown flow particle icon", () => {
+    const s = script(`box a "A" at=100,100\nbox b "B" at=600,100\narrow a -> b\nstep "S"\n  enter a, b, a->b fade\n  flow a->b icon=nope:nothing\n`);
+    expect(lintScene(s).find((r) => r.code === "unknown-icon")?.message).toMatch(/flow particle icon 'nope:nothing'/);
+    const good = script(`box a "A" at=100,100\nbox b "B" at=600,100\narrow a -> b\nstep "S"\n  enter a, b, a->b fade\n  flow a->b icon=lucide:mail\n`);
+    expect(codes(good)).not.toContain("unknown-icon");
+  });
+
   it("finds an empty step, an unused element, an unknown icon, and an unknown color", () => {
     const s = script(`box a "A" at=100,100 fill=pinkish\nicon i nope:nothing "X" at=600,100\nbox z "Z" at=900,600\nstep "Empty"\nstep "S"\n  enter a, i fade\n  exit z fade\n`);
     const c = codes(s);

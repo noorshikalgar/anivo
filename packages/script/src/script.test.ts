@@ -135,6 +135,15 @@ describe("Anivo Script", () => {
     expect(!bad.ok && bad.errors[0]!.message).toBe("The path needs 2 or more points.");
   });
 
+  it("supports icon particles, one particle, orient, and a trail, and prints them back", () => {
+    const text = `box a "A" at=100,100\nbox b "B" at=600,100\narrow a -> b\nstep "S"\n  flow a->b icon=lucide:mail size=32 once orient trail=0.5 color=success\n`;
+    const scene = ok(text);
+    expect(scene.steps[0]!.actions[0]).toMatchObject({ type: "flow", flow: { shape: "icon", icon: "lucide:mail", size: 32, count: 1, orient: true, trail: 0.5, color: "success" } });
+    expect(printScene(scene)).toContain("flow c-a-b size=32 color=success icon=lucide:mail trail=0.5 once orient");
+    const again = ok(printScene(scene).replace(/^scene.*\n/, ""));
+    expect(again.steps[0]!.actions[0]).toMatchObject({ flow: { shape: "icon", count: 1, orient: true } });
+  });
+
   it("supports a sound on an action and prints it back", () => {
     const text = `box a "A" at=100,100\nstep "S"\n  enter a pop sound=pop sound-gain=-10\n`;
     const scene = ok(text);

@@ -208,8 +208,15 @@ function printAction(a: Action, index: number): string {
     if (f.speed !== 400) parts.push(`speed=${f.speed}`);
     if (f.size !== 8) parts.push(`size=${f.size}`);
     if (f.color !== "accent") parts.push(`color=${f.color}`);
-    if (f.shape !== "dot") parts.push(`shape=${f.shape}`);
+    if (f.shape === "icon" && f.icon) parts.push(`icon=${f.icon}`);
+    else if (f.shape === "image" && f.assetId) parts.push(`image=${f.assetId}`);
+    else if (f.shape !== "dot") parts.push(`shape=${f.shape}`);
+    if (f.shape !== "icon" && f.icon) parts.push(`icon=${f.icon}`);
+    if (f.shape !== "image" && f.assetId) parts.push(`image=${f.assetId}`);
     if (f.trail) parts.push(`trail=${f.trail}`);
+    if (f.count === 1) parts.push("once");
+    else if (f.count !== undefined) parts.push(`count=${f.count}`);
+    if (f.orient) parts.push("orient");
     if (f.chainFrom) parts.push(`chain=${f.chainFrom}`);
     if (f.skip.length) parts.push(`skip=${f.skip.join(",")}`);
     common();

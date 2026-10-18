@@ -76,10 +76,16 @@ export interface Particle {
   distance: number;
   /** True if the particle moves from the end to the start. */
   reverse: boolean;
-  shape: "dot" | "square" | "pill";
+  shape: "dot" | "square" | "pill" | "icon" | "image";
+  /** Icon particle: pack:name. */
+  icon?: string;
+  /** Image particle: the asset. */
+  assetId?: string;
   size: number;
   color: Color;
   trail: number;
+  /** Turn the particle in the direction of travel. */
+  orient: boolean;
 }
 
 export interface FrameState {
