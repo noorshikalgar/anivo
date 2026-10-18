@@ -94,14 +94,26 @@ function endAnchor(end: ConnectorEnd, frames: Map<string, ElementFrame>): { poin
  * Route of a connector in a frame. The route is calculated from the bound
  * element boxes, so it follows the elements when they move (FR-CANVAS-05).
  */
-export function connectorRoute(c: ConnectorElement, frames: Map<string, ElementFrame>): Polyline {
-  const s = endAnchor(c.start, frames);
-  const e = endAnchor(c.end, frames);
+export function connectorRoute(c: ConnectorElement, frames: Map<string, ElementFrame>, sideOffset = 0): Polyline {
+  const s0 = endAnchor(c.start, frames);
+  const e0 = endAnchor(c.end, frames);
+  // A side offset moves the line parallel to itself, so two arrows between the same elements do not cover each other.
+  let s = s0;
+  let e = e0;
+  if (sideOffset !== 0) {
+    const dx = e0.point.x - s0.point.x;
+    const dy = e0.point.y - s0.point.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = (-dy / len) * sideOffset;
+    const ny = (dx / len) * sideOffset;
+    s = { ...s0, point: { x: s0.point.x + nx, y: s0.point.y + ny } };
+    e = { ...e0, point: { x: e0.point.x + nx, y: e0.point.y + ny } };
+  }
   const via = c.waypoints ?? [];
   const firstToward = via[0] ?? e.point;
   const lastToward = via[via.length - 1] ?? s.point;
-  const start = s.frame ? boundaryPoint(s.frame, firstToward) : s.point;
-  const end = e.frame ? boundaryPoint(e.frame, lastToward) : e.point;
+  const start = s.frame ? offsetBoundary(s.frame, firstToward, s.point) : s.point;
+  const end = e.frame ? offsetBoundary(e.frame, lastToward, e.point) : e.point;
 
   if (c.route === "elbow" && via.length === 0) {
     const midX = (start.x + end.x) / 2;
@@ -125,11 +137,45 @@ export function connectorRoute(c: ConnectorElement, frames: Map<string, ElementF
   return polyline([start, ...via, end]);
 }
 
+/**
+ * The boundary point of a box for a line that starts at `from` (which can be
+ * off the box center because of a side offset) and goes toward `toward`.
+ */
+function offsetBoundary(f: ElementFrame, toward: Point, from: Point): Point {
+  const b = frameBox(f);
+  if (from.x === b.cx && from.y === b.cy) return boundaryPoint(f, toward);
+  // Move the center by the offset, find the boundary, and keep the offset.
+  const shifted = { ...f, offsetX: f.offsetX + (from.x - b.cx), offsetY: f.offsetY + (from.y - b.cy) };
+  // `toward` is already the shifted point of the other end, so it is used as it is.
+  return boundaryPoint(shifted, toward);
+}
+
+const PARALLEL_GAP = 44;
+
 /** Connector routes for all connectors in a frame, keyed by connector ID. */
 export function connectorRoutes(connectors: ConnectorElement[], frames: ElementFrame[]): Map<string, Polyline> {
   const map = new Map(frames.map((f) => [f.id, f]));
+  // Group straight connectors that join the same two elements, in either direction.
+  const groups = new Map<string, ConnectorElement[]>();
+  for (const c of connectors) {
+    if (c.start.kind !== "bound" || c.end.kind !== "bound" || c.waypoints?.length || c.route !== "straight") continue;
+    const key = [c.start.elementId, c.end.elementId].sort().join("|");
+    const list = groups.get(key) ?? [];
+    list.push(c);
+    groups.set(key, list);
+  }
+  const offsets = new Map<string, number>();
+  for (const [key, list] of groups) {
+    if (list.length < 2) continue;
+    const first = key.split("|")[0];
+    list.forEach((c, i) => {
+      // The sign keeps the offset on the same side for both directions.
+      const forward = c.start.kind === "bound" && c.start.elementId === first ? 1 : -1;
+      offsets.set(c.id, (i - (list.length - 1) / 2) * PARALLEL_GAP * forward);
+    });
+  }
   const out = new Map<string, Polyline>();
-  for (const c of connectors) out.set(c.id, connectorRoute(c, map));
+  for (const c of connectors) out.set(c.id, connectorRoute(c, map, offsets.get(c.id) ?? 0));
   return out;
 }
 

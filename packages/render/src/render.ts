@@ -346,9 +346,18 @@ function drawConnector(dc: DrawContext, f: ElementFrame, el: ConnectorElement): 
     const start = pointAt(route, 0);
     drawArrowHead(ctx, start.point, { x: -start.dir.x, y: -start.dir.y }, headSize, el.startHead, css);
   }
-  if (f.label) {
+  if (f.label && f.strokeProgress >= 1) {
+    // The label sits on the line with a background pill, so the line does not cross the text.
     const mid = pointAt(route, route.length / 2).point;
-    drawLabel(dc, f, el, { x: mid.x - 150, y: mid.y - 40, width: 300, height: 36 }, f.strokeProgress >= 1 ? 1 : 0);
+    ctx.font = fontFor(dc, { ...f, fontSize: f.fontSize ?? el.style.fontSize ?? 24 }, el);
+    const lines = wrapText(ctx, f.label, 320);
+    const size = f.fontSize ?? el.style.fontSize ?? 24;
+    const w = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 20;
+    const h = lines.length * size * 1.25 + 10;
+    const bg = resolveToken(theme, dc.scene.settings.background.color ?? "background", "fill", "rectangle");
+    ctx.fillStyle = toCss(bg.a > 0 ? bg : resolveToken(theme, "surface", "fill", "rectangle"));
+    fillPolyline(ctx, cleanOutline("rectangle", { x: mid.x - w / 2, y: mid.y - h / 2, width: w, height: h }, Math.min(h / 2, 10)).points);
+    drawLabel(dc, { ...f, fontSize: size }, el, { x: mid.x - w / 2 - 2, y: mid.y - h / 2, width: w + 4, height: h }, 1);
   }
 }
 
