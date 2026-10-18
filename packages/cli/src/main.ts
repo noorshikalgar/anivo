@@ -3,7 +3,7 @@ import { basename, join, resolve as resolvePath } from "node:path";
 import { resolveTimeline, sceneCaptions, toSrt, toVtt, wavBytes } from "@anivo/engine";
 import { type NodeExportFormat, exportHtml, exportVideo, renderSvg } from "@anivo/export-node";
 import { formatLint, lintScene, lintSummary } from "@anivo/lint";
-import { OperationBus, planTake, spliceTake, trimTake, voiceParts } from "@anivo/ops";
+import { OperationBus, planFit, planTake, speechIntervals, spliceTake, trimTake, voiceParts } from "@anivo/ops";
 import { assetId } from "@anivo/fileio";
 import { getIconPack, iconName, iconPackFromSvgs, iconPacks, searchIcons } from "@anivo/render";
 import { CustomTheme, type Scene, TEMPLATES, loadScene } from "@anivo/schema";
@@ -426,6 +426,50 @@ audio
     writeSceneFile(f, bus.scene);
     const part = voiceParts(bus.scene).find((p) => p.stepId === step.id)!;
     print(`Step '${step.id}': take ${(takeMs / 1000).toFixed(1)} s, part ${((part.toMs - part.fromMs) / 1000).toFixed(1)} s from ${(part.fromMs / 1000).toFixed(2)} s.${plan.silenceAfterMs > 0 ? " The animation is longer than the take, so silence fills the rest." : ""}`, { stepId: step.id, takeMs, fromMs: part.fromMs, toMs: part.toMs });
+  });
+
+audio
+  .command("fit")
+  .description("Make the animation of a step faster, so that it ends with the speech of its voice take")
+  .argument("<scene>")
+  .argument("<step>", "Step ID or number (1 is the first step)")
+  .action((f: string, stepArg: string) => {
+    const scene = readSceneFile(f);
+    const step = /^\d+$/.test(stepArg) ? scene.steps[Number(stepArg) - 1] : scene.steps.find((s) => s.id === stepArg);
+    if (!step) throw new ToolError(`Step '${stepArg}' does not exist.`, "Use a step ID or a number from 'anivo summary'.");
+    const vo = scene.audio.find((t) => t.kind === "voiceover");
+    const part = voiceParts(scene).find((p) => p.stepId === step.id);
+    const bytes = vo ? assetCache.get(vo.assetId) : undefined;
+    if (!vo || !part || !bytes) throw new ToolError(`Step '${step.id}' has no voice take.`, "Add one with 'anivo audio take'.");
+    const RATE = 48000;
+    const old = decodePcm(bytes, RATE);
+    const at = (ms: number) => Math.max(0, Math.round(((ms - vo.startMs + vo.trimStartMs) / 1000) * RATE));
+    const samples = old.slice(at(part.fromMs), at(part.toMs));
+    const speech = speechIntervals(samples, RATE);
+    const voiceMs = speech.length ? Math.min(part.toMs - part.fromMs, Math.round(speech.at(-1)!.toMs + 250)) : part.toMs - part.fromMs;
+    const fit = planFit(scene, step.id, voiceMs);
+    if (fit.ops.length === 0) return print(`The animation of step '${step.id}' is not longer than its voice. No change.`, { factor: 1 });
+    const tmp = new OperationBus(scene);
+    const t = tmp.apply({ ops: fit.ops });
+    if (!t.ok) throw new ToolError(t.error.message, t.error.hint);
+    const plan = planTake(tmp.scene, step.id, voiceMs);
+    const out = wavBytes(spliceTake(old, samples.slice(0, Math.round((voiceMs / 1000) * RATE)), RATE, plan), RATE);
+    const id = assetId(out);
+    assetCache.set(id, out);
+    const bus = new OperationBus(scene);
+    const r = bus.apply({
+      label: "Fit animation to voice",
+      ops: [
+        ...fit.ops,
+        { op: "audio.remove", id: vo.id },
+        { op: "asset.add", asset: { id, mime: "audio/wav", bytes: out.length, name: "voiceover-takes.wav" } },
+        { op: "audio.add", track: { id: plan.trackId, kind: "voiceover", assetId: id, durationMs: Math.round(((out.length - 44) / 2 / RATE) * 1000), startMs: plan.trackStartMs, gainDb: vo.gainDb } },
+        ...plan.ops,
+      ],
+    });
+    if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
+    writeSceneFile(f, bus.scene);
+    print(`Step '${step.id}': the animation is ${Math.round(fit.factor * 100)}% of its old length and ends with the voice (${(voiceMs / 1000).toFixed(1)} s).`, { factor: fit.factor, voiceMs });
   });
 
 program

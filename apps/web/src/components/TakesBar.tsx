@@ -4,7 +4,7 @@ import { ArrowLeft20Regular, ArrowRight20Regular, Checkmark20Regular, Dismiss20R
 import { useEffect } from "react";
 import { withErrors } from "../notify.js";
 import { useEditor } from "../store.js";
-import { cancelTake, closeTakes, goToTake, previewTake, recordTake, saveTake } from "../takes.js";
+import { cancelTake, closeTakes, fitAnimationToVoice, goToTake, previewTake, recordTake, saveTake } from "../takes.js";
 import { formatTime } from "./PlaybackBar.js";
 
 const useStyles = makeStyles({
@@ -34,6 +34,9 @@ export function TakesBar() {
   const steps = scene.steps;
   const step = steps[t.stepIndex];
   const part = voiceParts(scene).find((p) => p.stepId === step?.id);
+  const timed = useEditor((s) => s.timeline.steps[s.takes?.stepIndex ?? 0]);
+  // The part is as long as the animation: the take is shorter, or exactly as long.
+  const canFit = !!part && !!timed && part.toMs - part.fromMs <= timed.holdEndMs - timed.startMs + 50;
   const line = scene.script.find((l) => l.stepId === step?.id)?.text;
   const busy = t.phase === "countdown" || t.phase === "recording" || t.phase === "saving";
 
@@ -97,6 +100,13 @@ export function TakesBar() {
           <Tooltip content="Play this step with its voice (Space)" relationship="label">
             <Button icon={<Play20Regular />} disabled={busy || !part} onClick={previewTake} />
           </Tooltip>
+          {canFit && (
+            <Tooltip content="Make the animation of this step faster, so that it ends with the voice" relationship="description">
+              <Button disabled={busy} onClick={() => void withErrors(fitAnimationToVoice)}>
+                Fit animation to voice
+              </Button>
+            </Tooltip>
+          )}
           <Tooltip content="Next step (→)" relationship="label">
             <Button icon={<ArrowRight20Regular />} disabled={busy || t.stepIndex >= steps.length - 1} onClick={() => goToTake(t.stepIndex + 1)} />
           </Tooltip>

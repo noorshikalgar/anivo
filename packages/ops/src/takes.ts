@@ -111,3 +111,28 @@ export function spliceTake(old: Float32Array, take: Float32Array, rate: number, 
   out.set(after, out.length - after.length);
   return out;
 }
+
+/**
+ * Make the animation of a step faster, so that the step ends with its voice
+ * (`voiceMs`: the length of the speech of its take). The animation and the
+ * hold get faster by the same factor (at most `1 / minFactor` times). The
+ * operations set the delay, the duration, and the stagger of each action, and the hold.
+ * Empty when the animation is not longer than the voice.
+ */
+export function planFit(scene: Scene, stepId: string, voiceMs: number, minFactor = 0.25): { factor: number; ops: OperationInput[] } {
+  const timeline = resolveTimeline(scene);
+  const t = timeline.steps.find((s) => s.id === stepId);
+  const step = scene.steps.find((s) => s.id === stepId);
+  if (!t || !step) throw new Error(`Step '${stepId}' does not exist.`);
+  const contentMs = t.endMs - t.startMs;
+  const holdMs = t.holdEndMs - t.endMs;
+  if (contentMs <= 0 || contentMs + holdMs <= voiceMs) return { factor: 1, ops: [] };
+  const factor = Math.max(minFactor, voiceMs / (contentMs + holdMs));
+  const ops: OperationInput[] = step.actions.map((a) => {
+    const first = t.actions.find((x) => x.action.id === a.id && x.targetIndex === 0);
+    const durationMs = first ? first.endMs - first.startMs : (a.durationMs ?? 0);
+    return { op: "action.update", step: stepId, id: a.id, set: { delayMs: Math.round(a.delayMs * factor), durationMs: Math.round(durationMs * factor), staggerMs: Math.round(a.staggerMs * factor) } };
+  });
+  ops.push({ op: "step.update", id: stepId, set: { holdMs: Math.round(step.holdMs * factor), ...(step.durationMs !== undefined ? { durationMs: Math.round(step.durationMs * factor) } : {}) } });
+  return { factor, ops };
+}

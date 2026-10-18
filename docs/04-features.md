@@ -84,7 +84,7 @@ See [08 — Audio and captions](08-audio-and-captions.md).
 | FR-AUDIO-05 | Background music track with volume | P1 | |
 | FR-AUDIO-06 | Volume ducking of music under speech | P2 | Done: `duckDb` on music and sound tracks (docs/08 "Ducking"). |
 | FR-AUDIO-07 | Record a voiceover in the app with the microphone | P1 | |
-| FR-AUDIO-11 | Record the voiceover step by step: one take for each step, record a step again, the step fits the voice | P2 | Done: Audio › Record voiceover step by step, and `anivo audio take`. docs/08 "Record step by step". |
+| FR-AUDIO-11 | Record the voiceover step by step: one take for each step, record a step again, the step fits the voice | P2 | Done: Audio › Record voiceover step by step, `anivo audio take`, and `anivo audio fit`. docs/08 "Record step by step". |
 | FR-AUDIO-08 | Text to speech provider (plugin) | P2 | Done: Audio › Make voiceover from script. An OpenAI-compatible `/audio/speech` service (cloud with the user's key, or a local Piper or Kokoro server with the same API). Each step gets a cue at the start of its line. |
 | FR-AUDIO-09 | Captions: show in the video and export SRT and WebVTT | P1 | Caption text comes from the script lines. Caption times come from the cues. |
 | FR-AUDIO-10 | Sound effects on actions (whoosh, click, pop) | P2 | Done: `sound` (pop, click, whoosh, ding, thud) and `soundGainDb` on each action. The sounds are synthesized (no sound files). Script: `enter a pop sound=pop`. |
