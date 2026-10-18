@@ -1,0 +1,33 @@
+scene "What happens when you open a URL" style=clean theme=slate-dark size=1920x1080 fps=60
+
+icon browser lucide:monitor "Browser" at=160,460 size=140x140
+icon dns lucide:globe "DNS" at=760,140 size=120x120
+icon server lucide:server "Web server" at=1000,460 size=140x140
+icon db lucide:database "Database" at=1600,460 size=140x140
+caption note "Type example.com and press Enter"
+
+arrow browser -> dns "1. Where is example.com?" font-size=30
+arrow browser -> server "2. GET /" font-size=30
+arrow server -> db "3. Query" font-size=30
+
+step "DNS lookup"
+  enter browser draw-on
+  enter dns pop +300ms
+  enter browser->dns draw-on +500ms
+  flow browser->dns rate=1.5 +900ms
+  enter note fade
+step "Connect"
+  enter server pop
+  enter browser->server draw-on +300ms
+  glow server +800ms
+  morph note label="TCP and TLS handshake"
+step "Request and data"
+  flow browser->server rate=2
+  enter db pop +400ms
+  enter server->db draw-on +600ms
+  flow server->db rate=2 +1000ms
+  morph note label="The server reads the data"
+step "Response"
+  flow browser->server reverse rate=3
+  pulse browser +800ms
+  morph note label="The browser renders the page"

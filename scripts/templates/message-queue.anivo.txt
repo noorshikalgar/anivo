@@ -1,0 +1,41 @@
+scene "Message queue" style=clean theme=slate-dark size=1920x1080 fps=60
+
+icon producer lucide:package "Producer" at=140,470 size=140x140
+row queue at=560,480 spacing=16
+  box m1 "msg 1" size=150x100 fill=accent-soft
+  box m2 "msg 2" size=150x100 fill=accent-soft
+  box m3 "msg 3" size=150x100 fill=accent-soft
+  box m4 "msg 4" size=150x100 fill=accent-soft
+text queue-label "orders queue" at=560,610 size=650x60 color=muted
+box broker "Broker" at=1250,480 size=150x100
+column workers at=1480,220 spacing=120
+  box w1 "Worker 1" size=260x100
+  box w2 "Worker 2" size=260x100
+  box w3 "Worker 3" size=260x100
+caption note "The producer does not wait for the workers"
+
+arrow producer -> m1
+arrow m4 -> broker
+arrow broker -> w1, w2, w3
+
+step "Publish"
+  enter producer draw-on
+  enter queue-label fade
+  enter m1, m2, m3, m4 slide-left +300ms stagger=200ms
+  enter broker pop +900ms
+  enter m4->broker draw-on +1100ms
+  enter producer->m1 draw-on +300ms
+step "Subscribe"
+  enter w1, w2, w3 pop stagger=150ms
+  enter broker->w1, broker->w2, broker->w3 draw-on +400ms
+  enter note fade
+step "Consume"
+  flow broker->w* round-robin rate=2
+  exit m4, m3 fade +600ms stagger=600ms
+  morph m4->broker opacity=0 +1800ms
+  morph note label="Each message goes to one worker"
+step "A worker fails"
+  morph w2 fill=danger-soft stroke=danger label="Worker 2 down"
+  shake w2
+  flow broker->w* round-robin skip=broker->w2 rate=2
+  morph note label="The queue keeps the messages until a worker is free"

@@ -1,0 +1,310 @@
+{
+  "schemaVersion": 1,
+  "id": "",
+  "meta": {
+    "title": "Cache-aside pattern"
+  },
+  "settings": {},
+  "elements": {
+    "app": {
+      "height": 140,
+      "label": {
+        "text": "App"
+      },
+      "name": "server",
+      "pack": "lucide",
+      "seed": 527074092,
+      "type": "icon",
+      "width": 140,
+      "x": 200,
+      "y": 470,
+      "z": "V"
+    },
+    "cache": {
+      "height": 110,
+      "label": {
+        "text": "Cache (Redis)"
+      },
+      "seed": 643674085,
+      "style": {
+        "fill": "accent-soft"
+      },
+      "type": "rectangle",
+      "width": 320,
+      "x": 820,
+      "y": 220,
+      "z": "l"
+    },
+    "db": {
+      "height": 140,
+      "label": {
+        "text": "Database"
+      },
+      "name": "database",
+      "pack": "lucide",
+      "seed": 1461503683,
+      "type": "icon",
+      "width": 140,
+      "x": 1560,
+      "y": 600,
+      "z": "t"
+    },
+    "latency": {
+      "content": {
+        "text": "120 ms"
+      },
+      "height": 80,
+      "seed": 1929085786,
+      "style": {
+        "fontSize": 56,
+        "textColor": "warning"
+      },
+      "type": "text",
+      "width": 360,
+      "x": 1300,
+      "y": 140,
+      "z": "x"
+    },
+    "note": {
+      "content": {
+        "text": "1. Look in the cache first"
+      },
+      "height": 64,
+      "seed": 295308350,
+      "style": {
+        "fontSize": 40,
+        "textColor": "muted"
+      },
+      "type": "text",
+      "width": 1600,
+      "x": 160,
+      "y": 956,
+      "z": "z"
+    },
+    "c-app-cache": {
+      "end": {
+        "elementId": "cache",
+        "kind": "bound"
+      },
+      "label": {
+        "text": "get user:42"
+      },
+      "seed": 1720878559,
+      "start": {
+        "elementId": "app",
+        "kind": "bound"
+      },
+      "style": {
+        "fontSize": 30
+      },
+      "type": "connector",
+      "z": "zV"
+    },
+    "c-app-db": {
+      "end": {
+        "elementId": "db",
+        "kind": "bound"
+      },
+      "label": {
+        "text": "SELECT"
+      },
+      "seed": 1386937966,
+      "start": {
+        "elementId": "app",
+        "kind": "bound"
+      },
+      "style": {
+        "fontSize": 30
+      },
+      "type": "connector",
+      "z": "zl"
+    }
+  },
+  "steps": [
+    {
+      "actions": [
+        {
+          "effect": "pop",
+          "id": "a1",
+          "staggerMs": 200,
+          "targets": [
+            "app",
+            "cache"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 400,
+          "effect": "draw-on",
+          "id": "a2",
+          "targets": [
+            "c-app-cache"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 700,
+          "id": "a3",
+          "targets": [
+            "c-app-cache"
+          ],
+          "type": "flow"
+        },
+        {
+          "delayMs": 1200,
+          "effect": "flash",
+          "id": "a4",
+          "targets": [
+            "cache"
+          ],
+          "type": "emphasis"
+        },
+        {
+          "effect": "fade",
+          "id": "a5",
+          "targets": [
+            "note"
+          ],
+          "type": "enter"
+        }
+      ],
+      "id": "s-cache-miss",
+      "title": "Cache miss"
+    },
+    {
+      "actions": [
+        {
+          "effect": "pop",
+          "id": "a6",
+          "targets": [
+            "db"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 300,
+          "effect": "draw-on",
+          "id": "a7",
+          "targets": [
+            "c-app-db"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 700,
+          "id": "a8",
+          "targets": [
+            "c-app-db"
+          ],
+          "type": "flow"
+        },
+        {
+          "delayMs": 700,
+          "effect": "fade",
+          "id": "a9",
+          "targets": [
+            "latency"
+          ],
+          "type": "enter"
+        },
+        {
+          "id": "a10",
+          "targets": [
+            "note"
+          ],
+          "to": {
+            "label": "2. Miss: read from the database"
+          },
+          "type": "morph"
+        }
+      ],
+      "id": "s-read-from-the-database",
+      "title": "Read from the database"
+    },
+    {
+      "actions": [
+        {
+          "flow": {
+            "rate": 3
+          },
+          "id": "a11",
+          "targets": [
+            "c-app-cache"
+          ],
+          "type": "flow"
+        },
+        {
+          "delayMs": 500,
+          "id": "a12",
+          "targets": [
+            "cache"
+          ],
+          "to": {
+            "fill": "success-soft"
+          },
+          "type": "morph"
+        },
+        {
+          "id": "a13",
+          "targets": [
+            "note"
+          ],
+          "to": {
+            "label": "3. Write the result to the cache"
+          },
+          "type": "morph"
+        }
+      ],
+      "id": "s-fill-the-cache",
+      "title": "Fill the cache"
+    },
+    {
+      "actions": [
+        {
+          "flow": {
+            "rate": 3
+          },
+          "id": "a14",
+          "targets": [
+            "c-app-cache"
+          ],
+          "type": "flow"
+        },
+        {
+          "delayMs": 300,
+          "effect": "glow",
+          "id": "a15",
+          "targets": [
+            "cache"
+          ],
+          "type": "emphasis"
+        },
+        {
+          "counter": {
+            "format": "{n} ms",
+            "from": 120,
+            "to": 2
+          },
+          "durationMs": 1200,
+          "id": "a16",
+          "targets": [
+            "latency"
+          ],
+          "type": "counter"
+        },
+        {
+          "id": "a17",
+          "targets": [
+            "note"
+          ],
+          "to": {
+            "label": "Next time: a cache hit in 2 ms"
+          },
+          "type": "morph"
+        }
+      ],
+      "id": "s-cache-hit",
+      "title": "Cache hit"
+    }
+  ]
+}

@@ -14,12 +14,21 @@ importers:
       '@anivo/fileio':
         specifier: workspace:*
         version: link:packages/fileio
+      '@anivo/import':
+        specifier: workspace:*
+        version: link:packages/import
+      '@anivo/lint':
+        specifier: workspace:*
+        version: link:packages/lint
       '@anivo/ops':
         specifier: workspace:*
         version: link:packages/ops
       '@anivo/schema':
         specifier: workspace:*
         version: link:packages/schema
+      '@anivo/script':
+        specifier: workspace:*
+        version: link:packages/script
       '@anthropic-ai/sdk':
         specifier: 0.135.0
         version: 0.135.0(zod@4.6.7)

@@ -1,0 +1,39 @@
+scene "Git branch and merge" style=clean theme=slate-dark size=1920x1080 fps=60
+
+text main-label "main" at=120,575 size=160x60 color=muted font-size=40
+text feature-label "feature" at=120,305 size=200x60 color=muted font-size=40
+ellipse c1 at=320,580 size=50x50 fill=accent
+ellipse c2 at=560,580 size=50x50 fill=accent
+ellipse c3 at=800,580 size=50x50 fill=accent
+ellipse f1 at=800,310 size=50x50 fill=success
+ellipse f2 at=1040,310 size=50x50 fill=success
+ellipse f3 at=1280,310 size=50x50 fill=success
+ellipse merge at=1500,575 size=60x60 fill=warning
+text cmd "git merge feature" at=1180,760 size=560x70 font-size=44
+
+arrow c1 -> c2 no-head
+arrow c2 -> c3 no-head
+arrow c3 -> merge no-head
+arrow c2 -> f1 curved no-head
+arrow f1 -> f2 no-head
+arrow f2 -> f3 no-head
+arrow f3 -> merge curved no-head
+
+step "Commits on main"
+  enter main-label fade
+  enter c1, c2, c3 pop stagger=250ms
+  enter c1->c2, c2->c3 draw-on +250ms stagger=250ms
+step "Create a branch"
+  enter c2->f1 draw-on
+  enter feature-label fade
+  enter f1 pop +500ms
+step "Work on the branch"
+  enter f2, f3 pop stagger=300ms
+  enter f1->f2, f2->f3 draw-on stagger=300ms
+step "Merge"
+  enter c3->merge, f3->merge draw-on
+  enter merge pop +600ms
+  pulse merge +1000ms
+step "git merge feature"
+  camera zoom-to merge, cmd padding=220
+  enter cmd typewriter +400ms

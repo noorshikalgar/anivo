@@ -1,0 +1,584 @@
+{
+  "schemaVersion": 1,
+  "id": "",
+  "meta": {
+    "title": "How a database index works"
+  },
+  "settings": {},
+  "elements": {
+    "query": {
+      "content": {
+        "text": "SELECT * FROM users WHERE id = 96"
+      },
+      "height": 70,
+      "seed": 2026796516,
+      "style": {
+        "fontSize": 40
+      },
+      "type": "text",
+      "width": 1100,
+      "x": 120,
+      "y": 40,
+      "z": "V"
+    },
+    "rows": {
+      "seed": 708293528,
+      "type": "group",
+      "z": "l"
+    },
+    "row-42": {
+      "height": 64,
+      "label": {
+        "text": "id 42 · Ana"
+      },
+      "parentId": "rows",
+      "seed": 600563952,
+      "style": {
+        "fontSize": 28
+      },
+      "type": "rectangle",
+      "width": 440,
+      "x": 160,
+      "y": 150,
+      "z": "t"
+    },
+    "row-7": {
+      "height": 64,
+      "label": {
+        "text": "id 7 · Bo"
+      },
+      "parentId": "rows",
+      "seed": 359722960,
+      "style": {
+        "fontSize": 28
+      },
+      "type": "rectangle",
+      "width": 440,
+      "x": 160,
+      "y": 230,
+      "z": "x"
+    },
+    "row-19": {
+      "height": 64,
+      "label": {
+        "text": "id 19 · Cy"
+      },
+      "parentId": "rows",
+      "seed": 717514417,
+      "style": {
+        "fontSize": 28
+      },
+      "type": "rectangle",
+      "width": 440,
+      "x": 160,
+      "y": 310,
+      "z": "z"
+    },
+    "row-88": {
+      "height": 64,
+      "label": {
+        "text": "id 88 · Dee"
+      },
+      "parentId": "rows",
+      "seed": 903201059,
+      "style": {
+        "fontSize": 28
+      },
+      "type": "rectangle",
+      "width": 440,
+      "x": 160,
+      "y": 390,
+      "z": "zV"
+    },
+    "row-3": {
+      "height": 64,
+      "label": {
+        "text": "id 3 · Eli"
+      },
+      "parentId": "rows",
+      "seed": 292612484,
+      "style": {
+        "fontSize": 28
+      },
+      "type": "rectangle",
+      "width": 440,
+      "x": 160,
+      "y": 470,
+      "z": "zl"
+    },
+    "row-64": {
+      "height": 64,
+      "label": {
+        "text": "id 64 · Fay"
+      },
+      "parentId": "rows",
+      "seed": 902215321,
+      "style": {
+        "fontSize": 28
+      },
+      "type": "rectangle",
+      "width": 440,
+      "x": 160,
+      "y": 550,
+      "z": "zt"
+    },
+    "row-25": {
+      "height": 64,
+      "label": {
+        "text": "id 25 · Gus"
+      },
+      "parentId": "rows",
+      "seed": 649911071,
+      "style": {
+        "fontSize": 28
+      },
+      "type": "rectangle",
+      "width": 440,
+      "x": 160,
+      "y": 630,
+      "z": "zx"
+    },
+    "row-51": {
+      "height": 64,
+      "label": {
+        "text": "id 51 · Hal"
+      },
+      "parentId": "rows",
+      "seed": 718154380,
+      "style": {
+        "fontSize": 28
+      },
+      "type": "rectangle",
+      "width": 440,
+      "x": 160,
+      "y": 710,
+      "z": "zz"
+    },
+    "row-12": {
+      "height": 64,
+      "label": {
+        "text": "id 12 · Ivy"
+      },
+      "parentId": "rows",
+      "seed": 902068226,
+      "style": {
+        "fontSize": 28
+      },
+      "type": "rectangle",
+      "width": 440,
+      "x": 160,
+      "y": 790,
+      "z": "zzV"
+    },
+    "row-96": {
+      "height": 64,
+      "label": {
+        "text": "id 96 · Jo"
+      },
+      "parentId": "rows",
+      "seed": 702068309,
+      "style": {
+        "fontSize": 28
+      },
+      "type": "rectangle",
+      "width": 440,
+      "x": 160,
+      "y": 870,
+      "z": "zzl"
+    },
+    "counter": {
+      "content": {
+        "text": "0 lookups"
+      },
+      "height": 80,
+      "seed": 481091108,
+      "style": {
+        "fontSize": 56,
+        "textColor": "warning"
+      },
+      "type": "text",
+      "width": 480,
+      "x": 1300,
+      "y": 160,
+      "z": "zzt"
+    },
+    "c-row-42-row-19": {
+      "end": {
+        "elementId": "row-19",
+        "kind": "bound"
+      },
+      "seed": 667451135,
+      "start": {
+        "elementId": "row-42",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zzx"
+    },
+    "c-row-42-row-88": {
+      "end": {
+        "elementId": "row-88",
+        "kind": "bound"
+      },
+      "seed": 584695873,
+      "start": {
+        "elementId": "row-42",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zzz"
+    },
+    "c-row-19-row-7": {
+      "end": {
+        "elementId": "row-7",
+        "kind": "bound"
+      },
+      "seed": 2030907669,
+      "start": {
+        "elementId": "row-19",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zzzV"
+    },
+    "c-row-19-row-25": {
+      "end": {
+        "elementId": "row-25",
+        "kind": "bound"
+      },
+      "seed": 867667898,
+      "start": {
+        "elementId": "row-19",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zzzl"
+    },
+    "c-row-88-row-64": {
+      "end": {
+        "elementId": "row-64",
+        "kind": "bound"
+      },
+      "seed": 500061176,
+      "start": {
+        "elementId": "row-88",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zzzt"
+    },
+    "c-row-88-row-96": {
+      "end": {
+        "elementId": "row-96",
+        "kind": "bound"
+      },
+      "seed": 299862581,
+      "start": {
+        "elementId": "row-88",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zzzx"
+    },
+    "c-row-7-row-3": {
+      "end": {
+        "elementId": "row-3",
+        "kind": "bound"
+      },
+      "seed": 1232565722,
+      "start": {
+        "elementId": "row-7",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zzzz"
+    },
+    "c-row-7-row-12": {
+      "end": {
+        "elementId": "row-12",
+        "kind": "bound"
+      },
+      "seed": 118049010,
+      "start": {
+        "elementId": "row-7",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zzzzV"
+    },
+    "c-row-64-row-51": {
+      "end": {
+        "elementId": "row-51",
+        "kind": "bound"
+      },
+      "seed": 876770674,
+      "start": {
+        "elementId": "row-64",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zzzzl"
+    }
+  },
+  "steps": [
+    {
+      "actions": [
+        {
+          "effect": "fade",
+          "id": "a1",
+          "targets": [
+            "query"
+          ],
+          "type": "enter"
+        },
+        {
+          "effect": "fade",
+          "id": "a2",
+          "staggerMs": 60,
+          "targets": [
+            "rows"
+          ],
+          "type": "enter"
+        },
+        {
+          "effect": "fade",
+          "id": "a3",
+          "targets": [
+            "counter"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 600,
+          "effect": "highlight",
+          "id": "a4",
+          "staggerMs": 250,
+          "targets": [
+            "row-42",
+            "row-7",
+            "row-19",
+            "row-88",
+            "row-3",
+            "row-64",
+            "row-25",
+            "row-51",
+            "row-12",
+            "row-96"
+          ],
+          "type": "emphasis"
+        },
+        {
+          "counter": {
+            "format": "{n} lookups",
+            "from": 0,
+            "to": 10
+          },
+          "delayMs": 600,
+          "durationMs": 2500,
+          "id": "a5",
+          "targets": [
+            "counter"
+          ],
+          "type": "counter"
+        }
+      ],
+      "id": "s-full-table-scan",
+      "title": "Full table scan"
+    },
+    {
+      "actions": [
+        {
+          "id": "a6",
+          "targets": [
+            "row-42"
+          ],
+          "to": {
+            "label": "42",
+            "width": 180,
+            "x": 860,
+            "y": 170
+          },
+          "type": "morph"
+        },
+        {
+          "id": "a7",
+          "targets": [
+            "row-19"
+          ],
+          "to": {
+            "label": "19",
+            "width": 180,
+            "x": 520,
+            "y": 400
+          },
+          "type": "morph"
+        },
+        {
+          "id": "a8",
+          "targets": [
+            "row-88"
+          ],
+          "to": {
+            "label": "88",
+            "width": 180,
+            "x": 1200,
+            "y": 400
+          },
+          "type": "morph"
+        },
+        {
+          "id": "a9",
+          "targets": [
+            "row-7"
+          ],
+          "to": {
+            "label": "7",
+            "width": 180,
+            "x": 340,
+            "y": 630
+          },
+          "type": "morph"
+        },
+        {
+          "id": "a10",
+          "targets": [
+            "row-25"
+          ],
+          "to": {
+            "label": "25",
+            "width": 180,
+            "x": 700,
+            "y": 630
+          },
+          "type": "morph"
+        },
+        {
+          "id": "a11",
+          "targets": [
+            "row-64"
+          ],
+          "to": {
+            "label": "64",
+            "width": 180,
+            "x": 1020,
+            "y": 630
+          },
+          "type": "morph"
+        },
+        {
+          "id": "a12",
+          "targets": [
+            "row-96"
+          ],
+          "to": {
+            "label": "96",
+            "width": 180,
+            "x": 1380,
+            "y": 630
+          },
+          "type": "morph"
+        },
+        {
+          "id": "a13",
+          "targets": [
+            "row-3"
+          ],
+          "to": {
+            "label": "3",
+            "width": 180,
+            "x": 220,
+            "y": 860
+          },
+          "type": "morph"
+        },
+        {
+          "id": "a14",
+          "targets": [
+            "row-12"
+          ],
+          "to": {
+            "label": "12",
+            "width": 180,
+            "x": 460,
+            "y": 860
+          },
+          "type": "morph"
+        },
+        {
+          "id": "a15",
+          "targets": [
+            "row-51"
+          ],
+          "to": {
+            "label": "51",
+            "width": 180,
+            "x": 900,
+            "y": 860
+          },
+          "type": "morph"
+        },
+        {
+          "id": "a16",
+          "targets": [
+            "counter"
+          ],
+          "to": {
+            "x": 1300,
+            "y": 40
+          },
+          "type": "morph"
+        },
+        {
+          "delayMs": 900,
+          "effect": "draw-on",
+          "id": "a17",
+          "staggerMs": 80,
+          "targets": [
+            "c-row-42-row-19",
+            "c-row-42-row-88",
+            "c-row-19-row-7",
+            "c-row-19-row-25",
+            "c-row-88-row-64",
+            "c-row-88-row-96",
+            "c-row-7-row-3",
+            "c-row-7-row-12",
+            "c-row-64-row-51"
+          ],
+          "type": "enter"
+        }
+      ],
+      "id": "s-build-an-index",
+      "title": "Build an index"
+    },
+    {
+      "actions": [
+        {
+          "effect": "highlight",
+          "id": "a18",
+          "staggerMs": 500,
+          "targets": [
+            "row-42",
+            "row-88",
+            "row-96"
+          ],
+          "type": "emphasis"
+        },
+        {
+          "counter": {
+            "format": "{n} lookups",
+            "from": 10,
+            "to": 3
+          },
+          "durationMs": 1500,
+          "id": "a19",
+          "targets": [
+            "counter"
+          ],
+          "type": "counter"
+        }
+      ],
+      "id": "s-index-lookup",
+      "title": "Index lookup"
+    }
+  ]
+}

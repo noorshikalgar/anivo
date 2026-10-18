@@ -1,0 +1,319 @@
+{
+  "schemaVersion": 1,
+  "id": "",
+  "meta": {
+    "title": "What happens when you open a URL"
+  },
+  "settings": {},
+  "elements": {
+    "browser": {
+      "height": 140,
+      "label": {
+        "text": "Browser"
+      },
+      "name": "monitor",
+      "pack": "lucide",
+      "seed": 122887567,
+      "type": "icon",
+      "width": 140,
+      "x": 160,
+      "y": 460,
+      "z": "V"
+    },
+    "dns": {
+      "height": 120,
+      "label": {
+        "text": "DNS"
+      },
+      "name": "globe",
+      "pack": "lucide",
+      "seed": 1516955837,
+      "type": "icon",
+      "width": 120,
+      "x": 760,
+      "y": 140,
+      "z": "l"
+    },
+    "server": {
+      "height": 140,
+      "label": {
+        "text": "Web server"
+      },
+      "name": "server",
+      "pack": "lucide",
+      "seed": 1085029842,
+      "type": "icon",
+      "width": 140,
+      "x": 1000,
+      "y": 460,
+      "z": "t"
+    },
+    "db": {
+      "height": 140,
+      "label": {
+        "text": "Database"
+      },
+      "name": "database",
+      "pack": "lucide",
+      "seed": 1461503683,
+      "type": "icon",
+      "width": 140,
+      "x": 1600,
+      "y": 460,
+      "z": "x"
+    },
+    "note": {
+      "content": {
+        "text": "Type example.com and press Enter"
+      },
+      "height": 64,
+      "seed": 295308350,
+      "style": {
+        "fontSize": 40,
+        "textColor": "muted"
+      },
+      "type": "text",
+      "width": 1600,
+      "x": 160,
+      "y": 956,
+      "z": "z"
+    },
+    "c-browser-dns": {
+      "end": {
+        "elementId": "dns",
+        "kind": "bound"
+      },
+      "label": {
+        "text": "1. Where is example.com?"
+      },
+      "seed": 464933306,
+      "start": {
+        "elementId": "browser",
+        "kind": "bound"
+      },
+      "style": {
+        "fontSize": 30
+      },
+      "type": "connector",
+      "z": "zV"
+    },
+    "c-browser-server": {
+      "end": {
+        "elementId": "server",
+        "kind": "bound"
+      },
+      "label": {
+        "text": "2. GET /"
+      },
+      "seed": 1010684105,
+      "start": {
+        "elementId": "browser",
+        "kind": "bound"
+      },
+      "style": {
+        "fontSize": 30
+      },
+      "type": "connector",
+      "z": "zl"
+    },
+    "c-server-db": {
+      "end": {
+        "elementId": "db",
+        "kind": "bound"
+      },
+      "label": {
+        "text": "3. Query"
+      },
+      "seed": 1250770484,
+      "start": {
+        "elementId": "server",
+        "kind": "bound"
+      },
+      "style": {
+        "fontSize": 30
+      },
+      "type": "connector",
+      "z": "zt"
+    }
+  },
+  "steps": [
+    {
+      "actions": [
+        {
+          "effect": "draw-on",
+          "id": "a1",
+          "targets": [
+            "browser"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 300,
+          "effect": "pop",
+          "id": "a2",
+          "targets": [
+            "dns"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 500,
+          "effect": "draw-on",
+          "id": "a3",
+          "targets": [
+            "c-browser-dns"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 900,
+          "flow": {
+            "rate": 1.5
+          },
+          "id": "a4",
+          "targets": [
+            "c-browser-dns"
+          ],
+          "type": "flow"
+        },
+        {
+          "effect": "fade",
+          "id": "a5",
+          "targets": [
+            "note"
+          ],
+          "type": "enter"
+        }
+      ],
+      "id": "s-dns-lookup",
+      "title": "DNS lookup"
+    },
+    {
+      "actions": [
+        {
+          "effect": "pop",
+          "id": "a6",
+          "targets": [
+            "server"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 300,
+          "effect": "draw-on",
+          "id": "a7",
+          "targets": [
+            "c-browser-server"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 800,
+          "effect": "glow",
+          "id": "a8",
+          "targets": [
+            "server"
+          ],
+          "type": "emphasis"
+        },
+        {
+          "id": "a9",
+          "targets": [
+            "note"
+          ],
+          "to": {
+            "label": "TCP and TLS handshake"
+          },
+          "type": "morph"
+        }
+      ],
+      "id": "s-connect",
+      "title": "Connect"
+    },
+    {
+      "actions": [
+        {
+          "id": "a10",
+          "targets": [
+            "c-browser-server"
+          ],
+          "type": "flow"
+        },
+        {
+          "delayMs": 400,
+          "effect": "pop",
+          "id": "a11",
+          "targets": [
+            "db"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 600,
+          "effect": "draw-on",
+          "id": "a12",
+          "targets": [
+            "c-server-db"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 1000,
+          "id": "a13",
+          "targets": [
+            "c-server-db"
+          ],
+          "type": "flow"
+        },
+        {
+          "id": "a14",
+          "targets": [
+            "note"
+          ],
+          "to": {
+            "label": "The server reads the data"
+          },
+          "type": "morph"
+        }
+      ],
+      "id": "s-request-and-data",
+      "title": "Request and data"
+    },
+    {
+      "actions": [
+        {
+          "flow": {
+            "direction": "reverse",
+            "rate": 3
+          },
+          "id": "a15",
+          "targets": [
+            "c-browser-server"
+          ],
+          "type": "flow"
+        },
+        {
+          "delayMs": 800,
+          "effect": "pulse",
+          "id": "a16",
+          "targets": [
+            "browser"
+          ],
+          "type": "emphasis"
+        },
+        {
+          "id": "a17",
+          "targets": [
+            "note"
+          ],
+          "to": {
+            "label": "The browser renders the page"
+          },
+          "type": "morph"
+        }
+      ],
+      "id": "s-response",
+      "title": "Response"
+    }
+  ]
+}

@@ -71,6 +71,7 @@ function commands(): Command[] {
     { title: "Save as", keys: "Ctrl+Shift+S", run: () => void withErrors(saveFileAs) },
     { title: "Open", keys: "Ctrl+O", run: () => void withErrors(openFile) },
     { title: "New scene", run: newScene },
+    { title: "Templates gallery", run: () => useEditor.setState({ galleryOpen: true }) },
     { title: "Import Excalidraw or Mermaid", run: () => void withErrors(runImport) },
     ...TEMPLATES.map((t) => ({ title: `New from template: ${t.title}`, run: () => void withErrors(() => newFromTemplate(t.name)) })),
     { title: "Undo", keys: "Ctrl+Z", run: () => st.undo() },

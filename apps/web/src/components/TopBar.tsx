@@ -16,7 +16,7 @@ import {
 } from "@fluentui/react-components";
 import { ArrowExportUp20Regular, Play20Regular, ArrowRedo20Regular, ArrowUndo20Regular, Document20Regular, FolderOpen20Regular, Mic20Regular, MusicNote220Regular, Record20Regular, Save20Regular, ZoomFit20Regular } from "@fluentui/react-icons";
 import { useState } from "react";
-import { hasFileSystemAccess, newFromTemplate, newScene, openFile, runImport, openRecent, recentFiles, saveFile, saveFileAs } from "../files.js";
+import { hasFileSystemAccess, newScene, openFile, runImport, openRecent, recentFiles, saveFile, saveFileAs } from "../files.js";
 import { notify, withErrors } from "../notify.js";
 import { cueAllSteps, importAudio } from "../audio.js";
 import { startRecording } from "../record.js";
@@ -37,11 +37,7 @@ const useStyles = makeStyles({
   spacer: { flexGrow: 1 },
 });
 
-export const TEMPLATES = [
-  { name: "load-balancer", title: "How a load balancer works" },
-  { name: "tcp-handshake", title: "TCP three-way handshake" },
-  { name: "docker-layers", title: "Docker image layers" },
-];
+export { TEMPLATES } from "@anivo/schema";
 
 export function TopBar() {
   const styles = useStyles();
@@ -69,20 +65,7 @@ export function TopBar() {
             <MenuItem icon={<Document20Regular />} onClick={newScene}>
               New scene
             </MenuItem>
-            <Menu>
-              <MenuTrigger disableButtonEnhancement>
-                <MenuItem>New from template</MenuItem>
-              </MenuTrigger>
-              <MenuPopover>
-                <MenuList>
-                  {TEMPLATES.map((t) => (
-                    <MenuItem key={t.name} onClick={() => void withErrors(() => newFromTemplate(t.name))}>
-                      {t.title}
-                    </MenuItem>
-                  ))}
-                </MenuList>
-              </MenuPopover>
-            </Menu>
+            <MenuItem onClick={() => useEditor.setState({ galleryOpen: true })}>New from template…</MenuItem>
             <MenuItem onClick={() => void withErrors(runImport)}>Import Excalidraw or Mermaid…</MenuItem>
             <MenuDivider />
             <MenuItem icon={<FolderOpen20Regular />} secondaryContent="Ctrl+O" onClick={() => void withErrors(openFile)}>

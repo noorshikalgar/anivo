@@ -1,0 +1,13 @@
+sequenceDiagram
+  participant U as User
+  participant App
+  participant Auth as Auth server
+  participant API
+  U->>App: Click "Log in"
+  App->>Auth: Redirect to log in
+  U->>Auth: Enter password
+  Auth-->>App: Authorization code
+  App->>Auth: Code + secret
+  Auth-->>App: Access token
+  App->>API: Request + token
+  API-->>App: Data

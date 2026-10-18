@@ -1,0 +1,34 @@
+scene "CI/CD pipeline" style=clean theme=slate-dark size=1920x1080 fps=60
+
+row stages at=140,460 spacing=120
+  box commit "Commit" size=260x110
+  box build "Build" size=260x110
+  box test "Test" size=260x110
+  box deploy "Deploy" size=260x110
+text tests "0 tests passed" at=780,640 size=520x70 font-size=40 color=muted
+icon prod lucide:rocket "Production" at=1660,200 size=120x120
+
+arrow commit -> build
+arrow build -> test
+arrow test -> deploy
+arrow deploy -> prod
+
+step "Push a commit"
+  enter commit pop
+  enter build, test, deploy fade +300ms stagger=150ms
+  enter commit->build, build->test, test->deploy draw-on +600ms stagger=150ms
+step "Build"
+  flow commit->build rate=2
+  pulse build +500ms
+  morph build fill=success-soft +1200ms
+step "Test"
+  flow build->test rate=2
+  enter tests fade +300ms
+  count tests from=0 to=128 format="{n} tests passed" +300ms dur=2000ms
+  morph test fill=success-soft +2300ms
+step "Deploy"
+  flow test->deploy rate=2
+  morph deploy fill=success-soft +600ms
+  enter prod pop +900ms
+  enter deploy->prod draw-on +700ms
+  glow prod +1500ms

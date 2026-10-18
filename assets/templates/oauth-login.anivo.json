@@ -1,0 +1,471 @@
+{
+  "schemaVersion": 1,
+  "id": "",
+  "meta": {
+    "title": "OAuth 2.0 login"
+  },
+  "settings": {
+    "camera": {
+      "height": 1110,
+      "width": 1973,
+      "x": -397,
+      "y": -80
+    }
+  },
+  "elements": {
+    "u": {
+      "height": 80,
+      "label": {
+        "text": "User"
+      },
+      "seed": 1879850001,
+      "type": "rectangle",
+      "visible": false,
+      "width": 220,
+      "z": "V"
+    },
+    "life-u": {
+      "end": {
+        "kind": "free",
+        "x": 110,
+        "y": 950
+      },
+      "endHead": "none",
+      "seed": 92607545,
+      "start": {
+        "kind": "free",
+        "x": 110,
+        "y": 100
+      },
+      "style": {
+        "stroke": "muted",
+        "strokeStyle": "dashed"
+      },
+      "type": "connector",
+      "visible": false,
+      "z": "l"
+    },
+    "app": {
+      "height": 80,
+      "label": {
+        "text": "App"
+      },
+      "seed": 527074092,
+      "type": "rectangle",
+      "visible": false,
+      "width": 220,
+      "x": 320,
+      "z": "t"
+    },
+    "life-app": {
+      "end": {
+        "kind": "free",
+        "x": 430,
+        "y": 950
+      },
+      "endHead": "none",
+      "seed": 1742248894,
+      "start": {
+        "kind": "free",
+        "x": 430,
+        "y": 100
+      },
+      "style": {
+        "stroke": "muted",
+        "strokeStyle": "dashed"
+      },
+      "type": "connector",
+      "visible": false,
+      "z": "x"
+    },
+    "auth": {
+      "height": 80,
+      "label": {
+        "text": "Auth server"
+      },
+      "seed": 356493392,
+      "type": "rectangle",
+      "visible": false,
+      "width": 220,
+      "x": 640,
+      "z": "z"
+    },
+    "life-auth": {
+      "end": {
+        "kind": "free",
+        "x": 750,
+        "y": 950
+      },
+      "endHead": "none",
+      "seed": 731344221,
+      "start": {
+        "kind": "free",
+        "x": 750,
+        "y": 100
+      },
+      "style": {
+        "stroke": "muted",
+        "strokeStyle": "dashed"
+      },
+      "type": "connector",
+      "visible": false,
+      "z": "zV"
+    },
+    "api": {
+      "height": 80,
+      "label": {
+        "text": "API"
+      },
+      "seed": 946514567,
+      "type": "rectangle",
+      "visible": false,
+      "width": 220,
+      "x": 960,
+      "z": "zl"
+    },
+    "life-api": {
+      "end": {
+        "kind": "free",
+        "x": 1070,
+        "y": 950
+      },
+      "endHead": "none",
+      "seed": 1859692227,
+      "start": {
+        "kind": "free",
+        "x": 1070,
+        "y": 100
+      },
+      "style": {
+        "stroke": "muted",
+        "strokeStyle": "dashed"
+      },
+      "type": "connector",
+      "visible": false,
+      "z": "zt"
+    },
+    "m-1": {
+      "end": {
+        "kind": "free",
+        "x": 430,
+        "y": 230
+      },
+      "label": {
+        "text": "Click \"Log in\""
+      },
+      "seed": 657995226,
+      "start": {
+        "kind": "free",
+        "x": 110,
+        "y": 230
+      },
+      "style": {
+        "fontSize": 28
+      },
+      "type": "connector",
+      "visible": false,
+      "z": "zx"
+    },
+    "m-2": {
+      "end": {
+        "kind": "free",
+        "x": 750,
+        "y": 320
+      },
+      "label": {
+        "text": "Redirect to log in"
+      },
+      "seed": 641217607,
+      "start": {
+        "kind": "free",
+        "x": 430,
+        "y": 320
+      },
+      "style": {
+        "fontSize": 28
+      },
+      "type": "connector",
+      "visible": false,
+      "z": "zz"
+    },
+    "m-3": {
+      "end": {
+        "kind": "free",
+        "x": 750,
+        "y": 410
+      },
+      "label": {
+        "text": "Enter password"
+      },
+      "seed": 624439988,
+      "start": {
+        "kind": "free",
+        "x": 110,
+        "y": 410
+      },
+      "style": {
+        "fontSize": 28
+      },
+      "type": "connector",
+      "visible": false,
+      "z": "zzV"
+    },
+    "m-4": {
+      "end": {
+        "kind": "free",
+        "x": 430,
+        "y": 500
+      },
+      "label": {
+        "text": "Authorization code"
+      },
+      "seed": 607662369,
+      "start": {
+        "kind": "free",
+        "x": 750,
+        "y": 500
+      },
+      "style": {
+        "fontSize": 28,
+        "strokeStyle": "dashed"
+      },
+      "type": "connector",
+      "visible": false,
+      "z": "zzl"
+    },
+    "m-5": {
+      "end": {
+        "kind": "free",
+        "x": 750,
+        "y": 590
+      },
+      "label": {
+        "text": "Code + secret"
+      },
+      "seed": 590884750,
+      "start": {
+        "kind": "free",
+        "x": 430,
+        "y": 590
+      },
+      "style": {
+        "fontSize": 28
+      },
+      "type": "connector",
+      "visible": false,
+      "z": "zzt"
+    },
+    "m-6": {
+      "end": {
+        "kind": "free",
+        "x": 430,
+        "y": 680
+      },
+      "label": {
+        "text": "Access token"
+      },
+      "seed": 574107131,
+      "start": {
+        "kind": "free",
+        "x": 750,
+        "y": 680
+      },
+      "style": {
+        "fontSize": 28,
+        "strokeStyle": "dashed"
+      },
+      "type": "connector",
+      "visible": false,
+      "z": "zzx"
+    },
+    "m-7": {
+      "end": {
+        "kind": "free",
+        "x": 1070,
+        "y": 770
+      },
+      "label": {
+        "text": "Request + token"
+      },
+      "seed": 557329512,
+      "start": {
+        "kind": "free",
+        "x": 430,
+        "y": 770
+      },
+      "style": {
+        "fontSize": 28
+      },
+      "type": "connector",
+      "visible": false,
+      "z": "zzz"
+    },
+    "m-8": {
+      "end": {
+        "kind": "free",
+        "x": 430,
+        "y": 860
+      },
+      "label": {
+        "text": "Data"
+      },
+      "seed": 540551893,
+      "start": {
+        "kind": "free",
+        "x": 1070,
+        "y": 860
+      },
+      "style": {
+        "fontSize": 28,
+        "strokeStyle": "dashed"
+      },
+      "type": "connector",
+      "visible": false,
+      "z": "zzzV"
+    }
+  },
+  "steps": [
+    {
+      "actions": [
+        {
+          "effect": "pop",
+          "id": "a1",
+          "staggerMs": 120,
+          "targets": [
+            "u",
+            "app",
+            "auth",
+            "api"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 300,
+          "effect": "draw-on",
+          "id": "a2",
+          "targets": [
+            "life-u",
+            "life-app",
+            "life-auth",
+            "life-api"
+          ],
+          "type": "enter"
+        }
+      ],
+      "id": "s-participants",
+      "title": "Participants"
+    },
+    {
+      "actions": [
+        {
+          "effect": "draw-on",
+          "id": "a3",
+          "targets": [
+            "m-1"
+          ],
+          "type": "enter"
+        }
+      ],
+      "id": "s-m-1",
+      "title": "Click \"Log in\""
+    },
+    {
+      "actions": [
+        {
+          "effect": "draw-on",
+          "id": "a4",
+          "targets": [
+            "m-2"
+          ],
+          "type": "enter"
+        }
+      ],
+      "id": "s-m-2",
+      "title": "Redirect to log in"
+    },
+    {
+      "actions": [
+        {
+          "effect": "draw-on",
+          "id": "a5",
+          "targets": [
+            "m-3"
+          ],
+          "type": "enter"
+        }
+      ],
+      "id": "s-m-3",
+      "title": "Enter password"
+    },
+    {
+      "actions": [
+        {
+          "effect": "draw-on",
+          "id": "a6",
+          "targets": [
+            "m-4"
+          ],
+          "type": "enter"
+        }
+      ],
+      "id": "s-m-4",
+      "title": "Authorization code"
+    },
+    {
+      "actions": [
+        {
+          "effect": "draw-on",
+          "id": "a7",
+          "targets": [
+            "m-5"
+          ],
+          "type": "enter"
+        }
+      ],
+      "id": "s-m-5",
+      "title": "Code + secret"
+    },
+    {
+      "actions": [
+        {
+          "effect": "draw-on",
+          "id": "a8",
+          "targets": [
+            "m-6"
+          ],
+          "type": "enter"
+        }
+      ],
+      "id": "s-m-6",
+      "title": "Access token"
+    },
+    {
+      "actions": [
+        {
+          "effect": "draw-on",
+          "id": "a9",
+          "targets": [
+            "m-7"
+          ],
+          "type": "enter"
+        }
+      ],
+      "id": "s-m-7",
+      "title": "Request + token"
+    },
+    {
+      "actions": [
+        {
+          "effect": "draw-on",
+          "id": "a10",
+          "targets": [
+            "m-8"
+          ],
+          "type": "enter"
+        }
+      ],
+      "id": "s-m-8",
+      "title": "Data"
+    }
+  ]
+}

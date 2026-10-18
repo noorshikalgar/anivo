@@ -53,6 +53,8 @@ interface EditorState {
   imagesVersion: number;
   /** True while the timeline panel shows. */
   timelineOpen: boolean;
+  /** True while the templates gallery is open. */
+  galleryOpen: boolean;
   /** True while the align dialog is open. */
   alignOpen: boolean;
   /** Bytes of the scene assets (audio files), by asset ID. The scene has only the references. */
@@ -129,6 +131,7 @@ export const useEditor = create<EditorState>((set, get) => {
     exportOpen: false,
     scriptOpen: false,
     alignOpen: false,
+    galleryOpen: false,
     timelineOpen: false,
     imagesVersion: 0,
     recording: null,

@@ -5,7 +5,7 @@ import { exportHtml, exportVideo, homePath, imageSize, registerBundledAssets } f
 import { formatLint, lintScene, lintSummary } from "@anivo/lint";
 import { OperationBus } from "@anivo/ops";
 import { searchIcons } from "@anivo/render";
-import { type Scene, loadScene } from "@anivo/schema";
+import { type Scene, TEMPLATES, loadScene } from "@anivo/schema";
 import { importText } from "@anivo/import";
 import { applyScript, printScene } from "@anivo/script";
 import { ToolError, assetCache, contactSheetPng, imageMime, importAsset, transcribe, jsonSchema, previewPng, readSceneFile, sceneSummary, writeSceneFile } from "@anivo/tools";
@@ -18,11 +18,7 @@ export interface ServerOptions {
   name?: string;
 }
 
-const TEMPLATES: Record<string, string> = {
-  "load-balancer": "How a load balancer works",
-  "tcp-handshake": "TCP three-way handshake",
-  "docker-layers": "Docker image layers",
-};
+const TEMPLATE_TITLES: Record<string, string> = Object.fromEntries(TEMPLATES.map((t) => [t.name, `${t.title}. ${t.description}`]));
 
 
 /** The scene-agent guide: the prompt file without its header (docs/09 anivo_guide). */
@@ -106,7 +102,7 @@ export function createAnivoServer(opts: ServerOptions): McpServer {
   server.registerTool(
     "anivo_templates_list",
     { title: "List templates", description: "List the built-in templates. Use a name with anivo_scene_create.", inputSchema: {}, annotations: { readOnlyHint: true } },
-    async () => text(Object.entries(TEMPLATES).map(([k, v]) => `${k}: ${v}`).join("\n")),
+    async () => text(Object.entries(TEMPLATE_TITLES).map(([k, v]) => `${k}: ${v}`).join("\n")),
   );
 
   server.registerTool(
@@ -117,7 +113,7 @@ export function createAnivoServer(opts: ServerOptions): McpServer {
       inputSchema: {
         path: sceneArg,
         title: z.string().optional().describe("Scene title."),
-        template: z.enum(Object.keys(TEMPLATES) as [string, ...string[]]).optional(),
+        template: z.enum(TEMPLATES.map((t) => t.name) as [string, ...string[]]).optional(),
         style: z.enum(["clean", "sketch"]).optional(),
         theme: z.enum(["slate-dark", "slate-light", "paper-light", "night-dark"]).optional(),
       },

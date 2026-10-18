@@ -270,7 +270,17 @@ export function importExcalidraw(json: unknown, opts: { title?: string } = {}): 
 
 /** A 16:9 camera around all elements, with a margin of 80 px. */
 export function fitCamera(scene: Scene): { x: number; y: number; width: number; height: number } | null {
-  const boxes = Object.values(scene.elements).filter((e) => e.type !== "group" && e.type !== "connector");
+  const boxes: { x: number; y: number; width: number; height: number }[] = [];
+  for (const e of Object.values(scene.elements)) {
+    if (e.type === "group") continue;
+    if (e.type !== "connector") {
+      boxes.push(e);
+      continue;
+    }
+    // Free ends and waypoints of a connector. Bound ends are inside their elements.
+    const points = [...[e.start, e.end].flatMap((p) => (p.kind === "free" ? [p] : [])), ...(e.waypoints ?? [])];
+    for (const p of points) boxes.push({ x: p.x, y: p.y, width: 0, height: 0 });
+  }
   if (boxes.length === 0) return null;
   const x0 = Math.min(...boxes.map((b) => b.x)) - 80;
   const y0 = Math.min(...boxes.map((b) => b.y)) - 80;
