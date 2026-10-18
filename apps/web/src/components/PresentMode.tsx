@@ -2,6 +2,8 @@ import { evaluateWithLayout } from "@anivo/layout";
 import { type Ctx2D, renderFrame } from "@anivo/render";
 import { Text, makeStyles, tokens } from "@fluentui/react-components";
 import { useEffect, useRef, useState } from "react";
+import { type NotesView, type NotesWindow, openNotesWindow } from "../notesWindow.js";
+import { notify } from "../notify.js";
 import { useEditor } from "../store.js";
 
 const useStyles = makeStyles({
@@ -64,7 +66,12 @@ export function PresentMode() {
   const target = useRef(-1);
   const raf = useRef(0);
 
+  const notesWin = useRef<NotesWindow | null>(null);
+  const nextRef = useRef<() => void>(() => undefined);
+  const prevRef = useRef<() => void>(() => undefined);
+
   const exit = () => {
+    notesWin.current?.close();
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
     useEditor.setState({ presenting: false });
   };
@@ -156,6 +163,30 @@ export function PresentMode() {
   }, [step]);
 
   const notes = step >= 0 ? scene.steps[step]?.notes : undefined;
+  nextRef.current = next;
+  prevRef.current = prev;
+
+  /** The notes window gets the step, its notes and script line, and the next step. */
+  const notesView = (): NotesView => {
+    const s = step >= 0 ? scene.steps[step] : undefined;
+    const n = scene.steps[step + 1];
+    return {
+      stepLabel: step < 0 ? "Start" : `Step ${step + 1} of ${scene.steps.length}`,
+      title: s ? s.title || s.id : scene.meta.title,
+      notes: s?.notes ?? "",
+      script: s ? (scene.script.find((l) => l.stepId === s.id)?.text ?? "") : "",
+      next: n ? n.title || n.id : "",
+    };
+  };
+  useEffect(() => notesWin.current?.update(notesView()), [step]);
+  useEffect(() => () => notesWin.current?.close(), []);
+
+  const openNotes = () => {
+    if (notesWin.current && !notesWin.current.closed) return;
+    notesWin.current = openNotesWindow(() => nextRef.current(), () => prevRef.current());
+    if (!notesWin.current) notify("The browser blocked the notes window. Allow pop-ups for this site.", "error");
+    else notesWin.current.update(notesView());
+  };
 
   return (
     <div
@@ -181,13 +212,14 @@ export function PresentMode() {
           setStep(-1);
           jump(-1);
         } else if (e.key.toLowerCase() === "n") setShowNotes((v) => !v);
+        else if (e.key.toLowerCase() === "w") openNotes();
         else if (e.key === "Escape") exit();
       }}
     >
       <canvas ref={canvasRef} className={styles.canvas} aria-label="Presentation" />
       <div className={styles.hud} style={{ opacity: hud ? 1 : 0 }}>
         <Text size={200}>
-          {step < 0 ? "Start" : `Step ${step + 1} of ${timeline.steps.length}`} · Click or → for next · ← back · N notes · Esc exit
+          {step < 0 ? "Start" : `Step ${step + 1} of ${timeline.steps.length}`} · Click or → for next · ← back · N notes · W notes window · Esc exit
         </Text>
       </div>
       {showNotes && notes && <div className={styles.notes}>{notes}</div>}

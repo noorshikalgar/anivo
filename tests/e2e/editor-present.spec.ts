@@ -33,3 +33,26 @@ test("F5 starts present mode, and a click advances", async ({ page }) => {
   // The editor scene does not change in present mode.
   expect((await state(page)).scene.steps).toHaveLength(4);
 });
+
+test("W opens the speaker notes window, and it follows the steps", async ({ page }) => {
+  await page.evaluate(() => {
+    const st = (window as unknown as { __anivo: { getState(): { scene: { steps: { id: string }[] }; apply(tx: unknown): unknown } } }).__anivo.getState();
+    st.apply({ label: "Notes", ops: [{ op: "step.update", id: st.scene.steps[0]!.id, set: { notes: "Say hello first." } }] });
+  });
+  await page.getByRole("button", { name: "Present" }).click();
+  await expect(page.getByRole("dialog", { name: "Present mode" })).toBeVisible();
+  const popup = page.waitForEvent("popup");
+  await page.keyboard.press("w");
+  const notes = await popup;
+  await expect(notes.locator("#step")).toHaveText("Start");
+  await expect(notes.locator("#next")).toHaveText("Next: User appears");
+  await page.keyboard.press("ArrowRight");
+  await expect(notes.locator("#notes")).toHaveText("Say hello first.");
+  await expect(notes.locator("#step")).toHaveText("Step 1 of 4");
+  // The buttons in the notes window move the presentation.
+  await notes.locator("#nextBtn").click();
+  await notes.locator("#nextBtn").click();
+  await expect(notes.locator("#step")).toHaveText("Step 2 of 4");
+  await page.keyboard.press("Escape");
+  await expect.poll(() => notes.isClosed()).toBe(true);
+});
