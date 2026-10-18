@@ -140,7 +140,7 @@ function printConnector(c: ConnectorElement): string {
   return parts.join(" ");
 }
 
-const MORPH_OUT: Record<string, string> = { x: "x", y: "y", width: "width", height: "height", fill: "fill", stroke: "stroke", strokeWidth: "stroke-width", cornerRadius: "radius", opacity: "opacity", fontSize: "font-size", textColor: "color", label: "label", rotation: "rotate" };
+const MORPH_OUT: Record<string, string> = { x: "x", y: "y", width: "width", height: "height", fill: "fill", stroke: "stroke", strokeWidth: "stroke-width", cornerRadius: "radius", opacity: "opacity", fontSize: "font-size", textColor: "color", label: "label", rotation: "rotate", shape: "shape" };
 
 function printAction(a: Action, index: number): string {
   const parts: string[] = [];

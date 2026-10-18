@@ -157,6 +157,18 @@ function applyMorph(f: ElementFrame, to: MorphableProps, p: number): void {
     const from = finalColor(f[key]);
     f[key] = p >= 1 || from === target ? target : { from, to: target, p };
   }
+  if (to.shape !== undefined && (f.type === "rectangle" || f.type === "ellipse" || f.type === "diamond")) {
+    const from = f.shape ?? f.type;
+    if (p >= 1 || from === to.shape) {
+      f.shape = to.shape;
+      delete f.shapeFrom;
+      delete f.shapeMix;
+    } else {
+      f.shapeFrom = from;
+      f.shape = to.shape;
+      f.shapeMix = p;
+    }
+  }
   if (to.label !== undefined) {
     const from = f.label ?? "";
     if (p >= 1 || from === to.label) {

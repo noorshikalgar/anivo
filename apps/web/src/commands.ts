@@ -149,7 +149,7 @@ export function setElementText(id: string, text: string): void {
 }
 
 /** Properties that a morph can change (docs/06 "morph"). */
-const MORPHABLE = new Set(["x", "y", "width", "height", "rotation", "opacity", "fill", "stroke", "strokeWidth", "cornerRadius", "fontSize", "textColor", "label"]);
+const MORPHABLE = new Set(["x", "y", "width", "height", "rotation", "opacity", "fill", "stroke", "strokeWidth", "cornerRadius", "fontSize", "textColor", "label", "shape"]);
 const STYLE_KEYS = new Set(["fill", "stroke", "strokeWidth", "strokeStyle", "cornerRadius", "fontFamily", "fontSize", "fontWeight", "textColor", "textAlign", "roughness"]);
 
 /**

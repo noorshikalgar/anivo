@@ -170,3 +170,20 @@ describe("custom theme", () => {
     expect(sceneTheme(scene, "night-dark").name).toBe("night-dark");
   });
 });
+
+describe("shape morph outline", () => {
+  it("blends a rectangle into an ellipse with the same point count", async () => {
+    const { blendOutlines, cleanOutline } = await import("./outline.js");
+    const b = { x: 0, y: 0, width: 100, height: 100 };
+    const r = cleanOutline("rectangle", b, 0);
+    const e = cleanOutline("ellipse", b, 0);
+    const half = blendOutlines(r, e, 0.5);
+    expect(half.points.length).toBe(97);
+    const corner = Math.min(...half.points.map((p) => Math.hypot(p.x, p.y)));
+    // The rectangle corner (0,0) is at distance 0; the ellipse is about 20.7 away; the blend is between.
+    expect(corner).toBeGreaterThan(3);
+    expect(corner).toBeLessThan(20);
+    const full = blendOutlines(r, e, 1);
+    expect(Math.abs(Math.hypot(full.points[0]!.x - 50, full.points[0]!.y - 50) - 50)).toBeLessThan(1);
+  });
+});

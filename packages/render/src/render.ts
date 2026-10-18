@@ -6,7 +6,7 @@ import type { Ctx2D } from "./ctx.js";
 import { TOKEN_COLORS, diffLines, highlightLine } from "./highlight.js";
 import { getIcon } from "./icons.js";
 import { fitRect, getImage } from "./images.js";
-import { type Box, type OutlineKind, cleanOutline, sketchOutline } from "./outline.js";
+import { type Box, type OutlineKind, blendOutlines, cleanOutline, sketchOutline } from "./outline.js";
 import { type Theme, resolveColor, resolveToken, sceneTheme } from "./theme.js";
 
 export interface RenderOptions {
@@ -180,13 +180,14 @@ function applyWipeClip(ctx: Ctx2D, f: ElementFrame, b: Box): void {
 
 function drawShape(dc: DrawContext, f: ElementFrame, el: Element): void {
   const { ctx, theme } = dc;
-  const kind = el.type as OutlineKind;
+  const kind = (f.shape ?? el.type) as OutlineKind;
   const b = localBox(f);
   const radius = f.cornerRadius ?? el.style.cornerRadius ?? theme.defaults.cornerRadius;
+  const morphing = f.shapeFrom !== undefined && f.shapeMix !== undefined;
   const strokeWidth = f.strokeWidth ?? el.style.strokeWidth ?? theme.defaults.strokeWidth;
   const fill = resolveColor(theme, f.fill, "fill", el.type);
   const stroke = resolveColor(theme, f.stroke, "stroke", el.type);
-  const clean = cleanOutline(kind, b, radius);
+  const clean = morphing ? blendOutlines(cleanOutline(f.shapeFrom!, b, radius), cleanOutline(kind, b, radius), f.shapeMix!) : cleanOutline(kind, b, radius);
 
   if (f.highlight > 0) {
     const hc = resolveToken(theme, f.highlightColor ?? "warning-soft", "fill", el.type);
@@ -210,7 +211,7 @@ function drawShape(dc: DrawContext, f: ElementFrame, el: Element): void {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.setLineDash(dashFor(el, strokeWidth));
-    if (dc.style === "sketch") {
+    if (dc.style === "sketch" && !morphing) {
       const roughness = el.style.roughness ?? 1;
       const sk = sketchOutline(`${el.id}|${kind}|${Math.round(b.width)}x${Math.round(b.height)}`, { kind, box: b }, el.seed, roughness, strokeWidth);
       strokeProgressive(ctx, sk.strokes, sk.totalLength, f.strokeProgress);

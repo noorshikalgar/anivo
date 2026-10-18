@@ -61,6 +61,7 @@ export const MorphableProps = z
     fontSize: z.number().positive(),
     textColor: Color,
     label: z.string(),
+    shape: z.enum(["rectangle", "ellipse", "diamond"]).describe("Path morph (FR-STEP-14): a rectangle, ellipse, or diamond changes its outline."),
   })
   .partial();
 export type MorphableProps = z.infer<typeof MorphableProps>;

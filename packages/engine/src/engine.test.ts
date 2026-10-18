@@ -323,3 +323,16 @@ describe("motion path (FR-STEP-15)", () => {
     expect(el(evaluate(m, 5000), "a")).toMatchObject({ x: 250, y: 250 });
   });
 });
+
+describe("shape morph (FR-STEP-14)", () => {
+  const m = scene(
+    [{ id: "s1", actions: [{ id: "m1", type: "morph", targets: ["a"], durationMs: 1000, easing: "linear", to: { shape: "ellipse" } }] }],
+    { a: { type: "rectangle", z: "a0", x: 0, y: 0, width: 100, height: 100 } },
+  );
+  it("blends the outline during the morph and keeps the new shape", () => {
+    expect(el(evaluate(m, 500), "a")).toMatchObject({ shape: "ellipse", shapeFrom: "rectangle", shapeMix: 0.5 });
+    const end = el(evaluate(m, 3000), "a");
+    expect(end.shape).toBe("ellipse");
+    expect(end.shapeMix).toBeUndefined();
+  });
+});
