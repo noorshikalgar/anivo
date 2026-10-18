@@ -2,7 +2,7 @@ import { prepare } from "@anivo/engine";
 import { type LayoutKind, autoLayout, evaluateWithLayout } from "@anivo/layout";
 import type { OperationInput } from "@anivo/ops";
 import type { Element } from "@anivo/schema";
-import { type Box, boundsOf, geometryOps, leafDescendants } from "./editing.js";
+import { type Box, boundsOf, editorSkip, geometryOps, leafDescendants } from "./editing.js";
 import { useEditor } from "./store.js";
 
 /** Element boxes at the current playhead (the base state in the Base view). */
@@ -64,7 +64,37 @@ export function duplicateSelection(): void {
 
 export function selectAll(): void {
   const st = useEditor.getState();
-  st.setSelection(Object.keys(st.scene.elements));
+  const skip = editorSkip(st.scene, true);
+  st.setSelection(Object.keys(st.scene.elements).filter((id) => !skip(id)));
+}
+
+/** Lock or unlock the selected elements (FR-CANVAS-18). A locked element cannot be picked on the canvas. */
+export function toggleLockSelection(): void {
+  const st = useEditor.getState();
+  const ids = st.selection.filter((id) => id in st.scene.elements);
+  if (ids.length === 0) return;
+  const lock = !ids.every((id) => st.scene.elements[id]!.locked);
+  st.apply({ label: lock ? "Lock" : "Unlock", ops: ids.map((id) => ({ op: "element.update" as const, id, set: { locked: lock } })) });
+  if (lock) st.setSelection([]);
+}
+
+/** Hide the selected elements in the editor, or show them again. The video still shows them. */
+export function toggleHideSelection(): void {
+  const st = useEditor.getState();
+  const ids = st.selection.filter((id) => id in st.scene.elements);
+  if (ids.length === 0) return;
+  const hide = !ids.every((id) => st.scene.elements[id]!.editorHidden);
+  st.apply({ label: hide ? "Hide in editor" : "Show in editor", ops: ids.map((id) => ({ op: "element.update" as const, id, set: { editorHidden: hide } })) });
+  if (hide) st.setSelection([]);
+}
+
+/** Unlock all elements and show all hidden elements. */
+export function unlockAndShowAll(): void {
+  const st = useEditor.getState();
+  const ops = Object.values(st.scene.elements)
+    .filter((e) => e.locked || e.editorHidden)
+    .map((e) => ({ op: "element.update" as const, id: e.id, set: { locked: false, editorHidden: false } }));
+  if (ops.length > 0) st.apply({ label: "Unlock and show all", ops });
 }
 
 /**
