@@ -2,7 +2,7 @@
 
 Open-source tool that makes explainer videos from diagrams. People use the editor. Agents use the CLI and the MCP server.
 
-Status: phase 0 passed. Phase 1 (MVP editor) next. See docs/13-roadmap.md.
+Status: phases 0–2 built (editor, engine, export, Anivo Script, lint, CLI, MCP server). Phase 3 (voice and polish) in progress. Open gate items that need the owner: a 5-person usability test, a paid agent eval run (`pnpm eval`), and npm publishing. See docs/13-roadmap.md.
 
 ## Read first
 

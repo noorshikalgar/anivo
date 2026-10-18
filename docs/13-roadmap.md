@@ -68,10 +68,10 @@ Scope: FR-AGENT 02–07, 13. FR-CANVAS 16. FR-FILE 02.
 
 **Exit gate:**
 
-- [ ] Claude Code with `anivo mcp` makes a valid video for 8 of 10 eval prompts with no human edit.
-- [ ] Mean eval score of 3.5 or more out of 5.
-- [ ] `npx @anivo/cli render` works on macOS, Windows, and Linux in CI. (The bundled CLI, `pnpm build:cli`, runs in the CI `cli` job on the three systems. Publishing to npm is a later task.)
-- [ ] MCP path escape tests pass.
+- [ ] Claude Code with `anivo mcp` makes a valid video for 8 of 10 eval prompts with no human edit. (Harness ready: `pnpm eval`. A paid run needs the owner's approval. Self-test on 2026-10-18: 3 of 3 prompts valid with 0 lint errors, written by Claude Code with the CLI; it found two bugs, fixed in #30 and #31.)
+- [ ] Mean eval score of 3.5 or more out of 5. (Needs the paid run above.)
+- [x] `npx @anivo/cli render` works on macOS, Windows, and Linux in CI. (The bundled CLI, `pnpm build:cli`, runs in the CI `cli` job on the three systems. Publishing to npm is a later task.)
+- [x] MCP path escape tests pass.
 
 ## Phase 3 — Voice and polish (5 weeks)
 
