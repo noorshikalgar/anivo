@@ -71,8 +71,13 @@ export function resolveTimeline(scene: Scene): Timeline {
     const out: string[] = [];
     const visit = (id: string) => {
       const kids = children.get(id);
-      if (scene.elements[id]?.type === "group") kids?.forEach(visit);
-      else out.push(id);
+      const type = scene.elements[id]?.type;
+      if (type === "group") kids?.forEach(visit);
+      else if (type === "table") {
+        // A table is its grid and its cells.
+        out.push(id);
+        kids?.forEach(visit);
+      } else out.push(id);
     };
     ids.forEach(visit);
     return out;

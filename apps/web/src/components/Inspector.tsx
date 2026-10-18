@@ -90,6 +90,23 @@ function ElementProperties({ el }: { el: Element }) {
           />
         </>
       )}
+      {el.type === "table" && (
+        <>
+          <Row>
+            <NumberField label="Rows" value={el.rows} min={1} max={50} onCommit={(v) => set({ rows: Math.round(v) }, "Change rows")} />
+            <NumberField label="Columns" value={el.cols} min={1} max={20} onCommit={(v) => set({ cols: Math.round(v) }, "Change columns")} />
+          </Row>
+          <SelectField
+            label="Header row"
+            value={el.header ? "on" : "off"}
+            options={[
+              { value: "on", text: "Row 1 is a header" },
+              { value: "off", text: "No header" },
+            ]}
+            onCommit={(v) => set({ header: v === "on" }, "Change header")}
+          />
+        </>
+      )}
       {el.type === "image" && (
         <SelectField
           label="Fit"
@@ -102,7 +119,7 @@ function ElementProperties({ el }: { el: Element }) {
           onCommit={(v) => void useEditor.getState().apply({ label: "Change fit", ops: [{ op: "element.update", id: el.id, set: { fit: v } }] })}
         />
       )}
-      {el.type !== "connector" && el.type !== "code" && el.type !== "image" && (
+      {el.type !== "connector" && el.type !== "code" && el.type !== "image" && el.type !== "table" && (
         <TextField
           label={el.type === "text" ? "Text" : "Label"}
           multiline

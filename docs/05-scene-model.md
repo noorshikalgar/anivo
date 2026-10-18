@@ -104,7 +104,7 @@ type ConnectorEnd =
 | `icon` | `pack: string`, `name: string` (example: `pack: "lucide", name: "server"`) |
 | `image` | `assetId: AssetId` (an `image/*` asset), `fit: "contain" \| "cover" \| "fill"`. PNG, JPEG, WebP, SVG. Maximum 20 MB. |
 | `code` | `language: string`, `code: string`, `lineNumbers: boolean`, `theme: string` |
-| `table` | `rows: number`, `cols: number`. Each cell is a `text` child with ID `<tableId>-r<row>c<col>`. |
+| `table` | `rows: number` (1–50), `cols: number` (1–20), `header: boolean`. Each cell is a `text` child with ID `<tableId>-r<row>c<col>` (from 1). The table draws the grid. A change of the table box, rows, or columns moves, adds, or removes cells. An action on the table applies to the grid and all cells. |
 
 `TextContent` is `{ text: string; runs?: { start: number; end: number; bold?: boolean; code?: boolean; color?: string }[] }`.
 

@@ -1,5 +1,5 @@
 import { alignScript } from "./align.js";
-import { Action, AssetRef, AudioTrack, type ConnectorElement, Element, ElementId, type Scene, SceneSettings, ScriptLine, Step } from "@anivo/schema";
+import { Action, AssetRef, AudioTrack, type ConnectorElement, Element, ElementId, type Scene, SceneSettings, ScriptLine, Step, tableCellBox, tableCellId } from "@anivo/schema";
 import type { z } from "zod";
 import type { Operation } from "./operations.js";
 import { autoLayout } from "@anivo/layout";
@@ -190,12 +190,20 @@ export class Draft {
     switch (op.op) {
       case "element.add": {
         const props = this.normalizeProps({ ...op.props, type: op.type });
+        // A table gets its cells from "cells": rows of text.
+        const cells = op.type === "table" ? props["cells"] : undefined;
+        delete props["cells"];
+        if (op.type === "table" && Array.isArray(cells)) {
+          props["rows"] ??= cells.length;
+          props["cols"] ??= Math.max(1, ...cells.map((r) => (Array.isArray(r) ? r.length : 1)));
+        }
         const label = (props["label"] as { text?: string } | undefined)?.text ?? (props["content"] as { text?: string } | undefined)?.text;
         const id = this.newElementId(op.id, op.type, label, path);
         const el = this.parseElement({ seed: this.seedFor(id), ...props, id, z: props["z"] ?? this.topKey() }, path);
         this.touch(id);
         this.elements[id] = el;
         this.created.push(id);
+        if (el.type === "table") this.addTableCells(el, Array.isArray(cells) ? (cells as unknown[][]) : [], path);
         return;
       }
       case "element.update": {
@@ -213,7 +221,9 @@ export class Draft {
           merged["style"] = Object.fromEntries(Object.entries(merged["style"] as object).filter(([, v]) => v !== null));
         }
         this.touch(op.id);
-        this.elements[op.id] = this.parseElement(merged, path);
+        const next = this.parseElement(merged, path);
+        this.elements[op.id] = next;
+        if (old.type === "table" && next.type === "table") this.syncTableCells(old, next, path);
         return;
       }
       case "element.remove": {
@@ -459,9 +469,76 @@ export class Draft {
     return (h >>> 0) % 2147483647 || 1;
   }
 
+  /** Text cells of a new table, one for each row and column. */
+  private addTableCells(t: Extract<Element, { type: "table" }>, cells: unknown[][], path: string, onlyMissing = false): void {
+    const fontSize = Math.max(14, Math.min(28, Math.round((t.height / t.rows) * 0.45)));
+    for (let r = 1; r <= t.rows; r++) {
+      for (let c = 1; c <= t.cols; c++) {
+        const id = tableCellId(t.id, r, c);
+        if (onlyMissing && this.elements[id]?.parentId === t.id) continue;
+        if (this.elements[id]) fail({ code: "duplicate-id", message: `The element ID '${id}' exists already. A table cell needs it.`, path, hint: "Use another table ID." });
+        const text = cells[r - 1]?.[c - 1];
+        const box = tableCellBox(t, r, c);
+        const cell = this.parseElement(
+          {
+            id,
+            type: "text",
+            parentId: t.id,
+            z: this.topKey(),
+            seed: this.seedFor(id),
+            ...box,
+            autoSize: false,
+            content: { text: text === undefined || text === null ? "" : String(text) },
+            style: { fontSize, textAlign: "center", ...(t.header && r === 1 ? { fontWeight: 700 } : {}) },
+          },
+          path,
+        );
+        this.touch(id);
+        this.elements[id] = cell;
+        this.created.push(id);
+      }
+    }
+  }
+
+  /** After a table changes its box, rows, or columns: move the cells, add new cells, remove cells that are outside. */
+  private syncTableCells(old: Extract<Element, { type: "table" }>, t: Extract<Element, { type: "table" }>, path: string): void {
+    if (old.header !== t.header) {
+      // Header cells are bold.
+      for (let c = 1; c <= t.cols; c++) {
+        const cell = this.elements[tableCellId(t.id, 1, c)];
+        if (!cell || cell.parentId !== t.id) continue;
+        this.touch(cell.id);
+        const style = { ...cell.style };
+        if (t.header) style.fontWeight = 700;
+        else delete style.fontWeight;
+        this.elements[cell.id] = { ...cell, style };
+      }
+    }
+    const same = (["x", "y", "width", "height", "rows", "cols"] as const).every((k) => old[k] === t[k]);
+    if (same) return;
+    for (const c of Object.values(this.elements)) {
+      if (c.parentId !== t.id) continue;
+      const m = /-r(\d+)c(\d+)$/.exec(c.id);
+      const r = m ? Number(m[1]) : 0;
+      const col = m ? Number(m[2]) : 0;
+      if (!m || r > t.rows || col > t.cols) {
+        this.removeElement(c.id);
+        continue;
+      }
+      this.touch(c.id);
+      this.elements[c.id] = { ...c, ...tableCellBox(t, r, col) };
+    }
+    const missing: unknown[][] = [];
+    let any = false;
+    for (let r = 1; r <= t.rows; r++) for (let col = 1; col <= t.cols; col++) if (!this.elements[tableCellId(t.id, r, col)]) any = true;
+    if (any) this.addTableCells(t, missing, path, true);
+  }
+
   private removeElement(id: string): void {
     const el = this.elements[id];
     if (!el) return;
+    // The cells of a table go with the table.
+    if (el.type === "table") for (const c of Object.values(this.elements)) if (c.parentId === id) this.removeElement(c.id);
     this.touch(id);
     delete this.elements[id];
     for (const other of Object.values(this.elements)) {

@@ -344,6 +344,10 @@ importers:
       '@anivo/schema':
         specifier: workspace:*
         version: link:../schema
+    devDependencies:
+      '@anivo/engine':
+        specifier: workspace:*
+        version: link:../engine
 
   packages/tools:
     dependencies:
