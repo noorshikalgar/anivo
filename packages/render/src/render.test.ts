@@ -118,3 +118,35 @@ describe("burned-in captions", () => {
     expect(bottomRow()).toBe(0);
   });
 });
+
+describe("image element", () => {
+  const ID = "0123456789abcdef";
+  const scene = load({
+    schemaVersion: 1,
+    settings: { background: { kind: "solid", color: "#000000" } },
+    assets: { [ID]: { id: ID, mime: "image/png", bytes: 10 } },
+    elements: { pic: { id: "pic", z: "a0", type: "image", assetId: ID, x: 100, y: 100, width: 400, height: 400, fit: "contain" } },
+  });
+
+  it("draws a placeholder before the image is decoded, then the image with its fit", async () => {
+    const { registerImage, fitRect } = await import("./images.js");
+    const canvas = createCanvas(W, H);
+    const ctx = canvas.getContext("2d") as unknown as Ctx2D;
+    const px = (x: number, y: number) => [...canvas.getContext("2d").getImageData(x, y, 1, 1).data];
+    const sx = W / 1920;
+    renderScene(ctx, scene, -1, { width: W, height: H });
+    // Placeholder: a box in the surface-strong color, not the black background.
+    expect(px(Math.round(300 * sx), Math.round(300 * sx))).not.toEqual([0, 0, 0, 255]);
+    // A red 200x100 image: contain gives a 400x200 band in the middle of the 400x400 box.
+    const img = createCanvas(200, 100);
+    const g = img.getContext("2d");
+    g.fillStyle = "#ff0000";
+    g.fillRect(0, 0, 200, 100);
+    registerImage(ID, img);
+    renderScene(ctx, scene, -1, { width: W, height: H });
+    writeFileSync(new URL("image.png", outDir), canvas.toBuffer("image/png"));
+    expect(px(Math.round(300 * sx), Math.round(300 * sx))).toEqual([255, 0, 0, 255]);
+    expect(px(Math.round(300 * sx), Math.round(120 * sx))).toEqual([0, 0, 0, 255]);
+    expect(fitRect(200, 100, { x: 0, y: 0, width: 400, height: 400 }, "cover")).toEqual({ x: -200, y: 0, width: 800, height: 400 });
+  });
+});

@@ -122,18 +122,18 @@ export function ExportDialog() {
         if (captions === "srt") download(toSrt(sceneCaptions(scene), range), `${name}.srt`, "application/x-subrip");
         if (captions === "vtt") download(toVtt(sceneCaptions(scene), range), `${name}.vtt`, "text/vtt");
       } else if (format === "gif") {
-        const r = await exportGifWeb(scene, { width: Number(gifWidth), height: gifH, fps: Number(gifFps), range, onProgress, signal: ac.signal });
+        const r = await exportGifWeb(scene, { assets: useEditor.getState().assets, width: Number(gifWidth), height: gifH, fps: Number(gifFps), range, onProgress, signal: ac.signal });
         download(r.data as BlobPart, `${name}.gif`, "image/gif");
       } else if (format === "png") {
         const st = useEditor.getState();
         const t = !st.playing && st.selectedStep === null && st.playhead === 0 ? -1 : st.playhead;
-        download(await renderPngWeb(scene, t, width, height), `${name}.png`, "image/png");
+        download(await renderPngWeb(scene, t, width, height, undefined, st.assets), `${name}.png`, "image/png");
       } else {
         const files: Record<string, Uint8Array> = {};
         const a = Math.min(fromIndex, toIndex);
         const b = Math.max(fromIndex, toIndex);
         for (let i = a; i <= b; i++) {
-          const blob = await renderPngWeb(scene, timeline.steps[i]!.endMs, width, height);
+          const blob = await renderPngWeb(scene, timeline.steps[i]!.endMs, width, height, undefined, useEditor.getState().assets);
           files[`${String(i + 1).padStart(2, "0")}-${scene.steps[i]!.id}.png`] = new Uint8Array(await blob.arrayBuffer());
           setProgress((i - a + 1) / (b - a + 1));
         }

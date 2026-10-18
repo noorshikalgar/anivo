@@ -1,4 +1,4 @@
-import { Toolbar, ToolbarRadioButton, ToolbarRadioGroup, Tooltip, makeStyles, tokens } from "@fluentui/react-components";
+import { Toolbar, ToolbarButton, ToolbarDivider, ToolbarRadioButton, ToolbarRadioGroup, Tooltip, makeStyles, tokens } from "@fluentui/react-components";
 import {
   ArrowRight20Regular,
   Circle20Regular,
@@ -7,10 +7,13 @@ import {
   Diamond20Regular,
   HandLeft20Regular,
   Icons20Regular,
+  Image20Regular,
   RectangleLandscape20Regular,
   TextT20Regular,
 } from "@fluentui/react-icons";
 import type { ReactElement } from "react";
+import { pickImage } from "../images.js";
+import { withErrors } from "../notify.js";
 import { type Tool, useEditor } from "../store.js";
 
 const useStyles = makeStyles({
@@ -52,6 +55,10 @@ export function ToolPalette() {
           </Tooltip>
         ))}
       </ToolbarRadioGroup>
+      <ToolbarDivider />
+      <Tooltip content="Insert image" relationship="label" positioning="below">
+        <ToolbarButton icon={<Image20Regular />} appearance="subtle" aria-label="Insert image" onClick={() => void withErrors(pickImage)} />
+      </Tooltip>
     </Toolbar>
   );
 }

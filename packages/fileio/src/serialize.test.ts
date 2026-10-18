@@ -61,6 +61,19 @@ describe("scene JSON", () => {
     expect(r.ok && r.scene.elements["empty"]).toMatchObject({ type: "text", content: { text: "" } });
   });
 
+  it("round-trips an image element with its asset", () => {
+    const bus = new OperationBus(template);
+    const r = bus.apply({
+      ops: [
+        { op: "asset.add", asset: { id: "00000000000000ab", mime: "image/png", bytes: 3 } },
+        { op: "element.add", id: "pic", type: "image", props: { assetId: "00000000000000ab", x: 10, y: 10, width: 200, height: 100 } },
+      ],
+    });
+    expect(r.ok).toBe(true);
+    const back = sceneFromJson(sceneToJson(bus.scene));
+    expect(back.ok && back.scene.elements["pic"]).toEqual(bus.scene.elements["pic"]);
+  });
+
   it("round-trips every action type and a code element", () => {
     const bus = new OperationBus(template);
     const r = bus.apply({

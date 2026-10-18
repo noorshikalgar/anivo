@@ -168,7 +168,13 @@ export class Draft {
   private parseElement(value: Record<string, unknown>, path: string): Element {
     const parsed = Element.safeParse(value);
     if (!parsed.success) fail({ code: "invalid-element", message: `The element is not valid: ${zodMessage(parsed.error)}.`, path, hint: "Call anivo_schema, or run 'anivo schema --scene', to see the element fields." });
-    return parsed.data!;
+    const el = parsed.data!;
+    if (el.type === "image") {
+      const a = this.assets[el.assetId];
+      if (!a) fail({ code: "invalid-element", message: `The image asset '${el.assetId}' does not exist.`, path: `${path}.assetId`, hint: "Add the asset with asset.add first, in the same transaction." });
+      else if (!a.mime.startsWith("image/")) fail({ code: "invalid-element", message: `The asset '${el.assetId}' is not an image (${a.mime}).`, path: `${path}.assetId` });
+    }
+    return el;
   }
 
   private nextActionId(): string {

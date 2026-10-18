@@ -88,6 +88,14 @@ export const Code = z.object({
   lineNumbers: z.boolean().default(true),
 });
 
+/** A picture from a scene asset: PNG, JPEG, WebP, or SVG (FR-CANVAS-13). */
+export const Image = z.object({
+  ...base,
+  type: z.literal("image"),
+  assetId: z.string().regex(/^[0-9a-f]{16}$/).describe("ID of the image asset (asset.add)."),
+  fit: z.enum(["contain", "cover", "fill"]).default("contain").describe("contain: show all of the image. cover: fill the box and cut the edges. fill: stretch."),
+});
+
 export const Side = z.enum(["top", "right", "bottom", "left", "auto"]);
 
 export const ConnectorEnd = z.discriminatedUnion("kind", [
@@ -120,6 +128,7 @@ export const Element = z.discriminatedUnion("type", [
   Group,
   Connector,
   Code,
+  Image,
 ]);
 export type Element = z.infer<typeof Element>;
 export type ElementInput = z.input<typeof Element>;
@@ -128,3 +137,4 @@ export type ConnectorElement = z.infer<typeof Connector>;
 export type TextElement = z.infer<typeof Text>;
 export type IconElement = z.infer<typeof Icon>;
 export type CodeElement = z.infer<typeof Code>;
+export type ImageElement = z.infer<typeof Image>;

@@ -49,6 +49,8 @@ interface EditorState {
   recording: import("./record.js").RecordingState | null;
   /** True while the script dialog is open. */
   scriptOpen: boolean;
+  /** Increases when a new image is decoded, so the canvas draws again. */
+  imagesVersion: number;
   /** True while the timeline panel shows. */
   timelineOpen: boolean;
   /** True while the align dialog is open. */
@@ -128,6 +130,7 @@ export const useEditor = create<EditorState>((set, get) => {
     scriptOpen: false,
     alignOpen: false,
     timelineOpen: false,
+    imagesVersion: 0,
     recording: null,
     presenting: false,
     paletteOpen: false,

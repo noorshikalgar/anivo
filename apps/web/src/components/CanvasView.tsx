@@ -4,6 +4,8 @@ import { type Ctx2D, renderFrame } from "@anivo/render";
 import type { Point } from "@anivo/schema";
 import { makeStyles, mergeClasses, tokens } from "@fluentui/react-components";
 import { useEffect, useRef } from "react";
+import { insertImage } from "../images.js";
+import { withErrors } from "../notify.js";
 import {
   type Box,
   HANDLES,
@@ -84,7 +86,7 @@ export function CanvasView() {
   useEffect(() => {
     let pending = 0;
     const unsub = useEditor.subscribe((s, prev) => {
-      if (s.scene !== prev.scene || s.view !== prev.view || s.playhead !== prev.playhead || s.viewport !== prev.viewport || s.playing !== prev.playing || s.selection !== prev.selection || s.selectedStep !== prev.selectedStep) {
+      if (s.scene !== prev.scene || s.view !== prev.view || s.playhead !== prev.playhead || s.viewport !== prev.viewport || s.playing !== prev.playing || s.selection !== prev.selection || s.selectedStep !== prev.selectedStep || s.imagesVersion !== prev.imagesVersion) {
         if (!pending) pending = requestAnimationFrame(() => ((pending = 0), draw()));
       }
     });
@@ -461,6 +463,8 @@ export function CanvasView() {
   }, []);
 
   function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    // The tool palette and the text editor are inside the canvas root. Their own clicks must work.
+    if (!(e.target instanceof HTMLCanvasElement)) return;
     const st = useEditor.getState();
     const pan = e.button === 1 || spaceDown.current || st.tool === "hand";
     if (!pan) {
@@ -487,7 +491,24 @@ export function CanvasView() {
   }
 
   return (
-    <div ref={rootRef} className={mergeClasses(styles.root, tool !== "select" && tool !== "hand" && styles.draw)} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onDoubleClick={onDoubleClick} data-testid="canvas-root" data-tool={tool}>
+    <div ref={rootRef} className={mergeClasses(styles.root, tool !== "select" && tool !== "hand" && styles.draw)} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onDoubleClick={onDoubleClick}
+      onDragOver={(e) => {
+        if ([...e.dataTransfer.items].some((i) => i.kind === "file")) e.preventDefault();
+      }}
+      onDrop={(e) => {
+        const files = [...e.dataTransfer.files].filter((f) => f.type.startsWith("image/") || /\.(png|jpe?g|webp|svg)$/i.test(f.name));
+        if (files.length === 0) return;
+        e.preventDefault();
+        const r = e.currentTarget.getBoundingClientRect();
+        const { view } = useEditor.getState();
+        const at = { x: view.x + (e.clientX - r.left) / view.zoom, y: view.y + (e.clientY - r.top) / view.zoom };
+        void withErrors(async () => {
+          for (const [i, f] of files.entries()) await insertImage(new Uint8Array(await f.arrayBuffer()), f.name, f.type, { x: at.x + i * 24, y: at.y + i * 24 });
+        });
+      }}
+      data-testid="canvas-root"
+      data-tool={tool}
+    >
       <canvas ref={sceneRef} className={styles.canvas} aria-label="Scene canvas" />
       <canvas ref={overlayRef} className={styles.canvas} aria-hidden="true" />
       <ToolPalette />

@@ -102,7 +102,7 @@ type ConnectorEnd =
 | `text` | `content: TextContent`, `autoSize: boolean` |
 | `group` | `childOrder` is not stored. Children have `parentId`. |
 | `icon` | `pack: string`, `name: string` (example: `pack: "lucide", name: "server"`) |
-| `image` | `assetId: AssetId`, `fit: "contain" \| "cover"` |
+| `image` | `assetId: AssetId` (an `image/*` asset), `fit: "contain" \| "cover" \| "fill"`. PNG, JPEG, WebP, SVG. Maximum 20 MB. |
 | `code` | `language: string`, `code: string`, `lineNumbers: boolean`, `theme: string` |
 | `table` | `rows: number`, `cols: number`. Each cell is a `text` child with ID `<tableId>-r<row>c<col>`. |
 

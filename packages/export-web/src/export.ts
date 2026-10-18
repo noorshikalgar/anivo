@@ -1,6 +1,7 @@
 import { resolveTimeline, sceneCaptions } from "@anivo/engine";
 import { type Ctx2D, type RenderOptions, renderScene } from "@anivo/render";
 import { type Scene, audioSegments } from "@anivo/schema";
+import { decodeSceneImages } from "./images.js";
 import {
   AudioBufferSource,
   BufferTarget,
@@ -81,6 +82,7 @@ export async function exportVideoWeb(scene: Scene, opts: WebExportOptions): Prom
     throw new WebExportError(`This browser cannot encode ${opts.format.toUpperCase()} at ${width}×${height}. Use ${other}, or use the CLI.`, "codec-unsupported");
   }
 
+  await decodeSceneImages(scene, opts.assets);
   const transparent = scene.settings.background.kind === "transparent";
   const canvas = new OffscreenCanvas(width, height);
   const ctx = canvas.getContext("2d", { alpha: transparent });

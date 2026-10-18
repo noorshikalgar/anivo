@@ -96,6 +96,14 @@ export function checkReferences(scene: Scene): SchemaIssue[] {
     }
   }
 
+  // Images refer to image assets.
+  for (const el of Object.values(scene.elements)) {
+    if (el.type !== "image") continue;
+    const a = scene.assets[el.assetId];
+    if (!a) issues.push({ path: `elements.${el.id}.assetId`, message: `The asset '${el.assetId}' does not exist.` });
+    else if (!a.mime.startsWith("image/")) issues.push({ path: `elements.${el.id}.assetId`, message: `The asset '${el.assetId}' is not an image (${a.mime}).` });
+  }
+
   // Audio tracks refer to assets, and cue triggers refer to audio tracks.
   const trackIds = new Set<string>();
   scene.audio.forEach((t, ti) => {

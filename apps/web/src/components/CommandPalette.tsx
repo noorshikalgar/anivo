@@ -16,6 +16,7 @@ import {
   ungroupSelection,
 } from "../commands.js";
 import { cueAllSteps, importAudio } from "../audio.js";
+import { pickImage } from "../images.js";
 import { startRecording } from "../record.js";
 import { newFromTemplate, newScene, openFile, saveFile, saveFileAs } from "../files.js";
 import { notify, withErrors } from "../notify.js";
@@ -52,6 +53,7 @@ function commands(): Command[] {
     { title: "Present step by step", keys: "F5", run: () => (st.pause(), useEditor.setState({ presenting: true })) },
     { title: "Play or pause", keys: "Space", run: () => (st.playing ? st.pause() : st.play()) },
     { title: "Add step", keys: "N", run: addStep },
+    { title: "Insert image", run: () => void withErrors(pickImage) },
     { title: "Add voiceover", run: () => void withErrors(() => importAudio("voiceover")) },
     { title: "Add music", run: () => void withErrors(() => importAudio("music")) },
     { title: "Add sound effect", run: () => void withErrors(() => importAudio("sfx")) },

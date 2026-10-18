@@ -21,8 +21,10 @@ export class ToolError extends Error {
 export const assetCache: AssetStore = new Map();
 
 /** Add a file as an asset. Returns the asset reference for asset.add. */
-export function importAsset(path: string, mime: string): { id: string; mime: string; bytes: number; name: string } {
+export function importAsset(path: string, mime: string, maxBytes = Infinity): { id: string; mime: string; bytes: number; name: string } {
+  if (!existsSync(path)) throw new ToolError(`The file '${path}' does not exist.`, "Check the path.");
   const bytes = new Uint8Array(readFileSync(path));
+  if (bytes.length > maxBytes) throw new ToolError(`The file '${path}' is larger than ${Math.round(maxBytes / 1024 / 1024)} MB.`, "Use a smaller file.");
   const id = assetId(bytes);
   assetCache.set(id, bytes);
   return { id, mime, bytes: bytes.length, name: path.split(/[\\/]/).pop() ?? "file" };

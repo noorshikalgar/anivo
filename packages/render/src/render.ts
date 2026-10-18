@@ -5,6 +5,7 @@ import { type Rgba, toCss, withAlpha } from "./color.js";
 import type { Ctx2D } from "./ctx.js";
 import { TOKEN_COLORS, diffLines, highlightLine } from "./highlight.js";
 import { getIcon } from "./icons.js";
+import { fitRect, getImage } from "./images.js";
 import { type Box, type OutlineKind, cleanOutline, sketchOutline } from "./outline.js";
 import { type Theme, getTheme, resolveColor, resolveToken } from "./theme.js";
 
@@ -283,6 +284,41 @@ function drawIcon(dc: DrawContext, f: ElementFrame, el: Element): void {
 }
 
 /** Code block (FR-CANVAS-12) with highlight, type, and diff states (FR-STEP-09). */
+function drawImage(dc: DrawContext, f: ElementFrame, el: Extract<Element, { type: "image" }>): void {
+  const { ctx, theme } = dc;
+  const b = localBox(f);
+  const radius = f.cornerRadius ?? el.style.cornerRadius ?? 0;
+  const outline = cleanOutline("rectangle", b, radius);
+  const img = getImage(el.assetId);
+  if (f.fillProgress > 0) {
+    ctx.save();
+    ctx.globalAlpha *= f.fillProgress;
+    if (img) {
+      // Clip to the box: "cover" draws outside it, and the corners can be round.
+      ctx.beginPath();
+      ctx.moveTo(outline.points[0]!.x, outline.points[0]!.y);
+      for (let i = 1; i < outline.points.length; i++) ctx.lineTo(outline.points[i]!.x, outline.points[i]!.y);
+      ctx.closePath();
+      ctx.clip();
+      const r = fitRect(img.width, img.height, b, el.fit);
+      ctx.drawImage(img as never, r.x, r.y, r.width, r.height);
+    } else {
+      // Not decoded (yet): a placeholder box.
+      ctx.fillStyle = toCss(resolveColor(theme, "surface-strong", "fill", "rectangle"));
+      fillPolyline(ctx, outline.points);
+    }
+    ctx.restore();
+  }
+  // The border: the element stroke, or a temporary line while the image draws on.
+  const stroke = el.style.stroke !== undefined ? resolveColor(theme, el.style.stroke, "stroke", "rectangle") : f.strokeProgress < 1 ? resolveColor(theme, "line", "stroke", "rectangle") : null;
+  if (stroke && stroke.a > 0 && f.strokeProgress > 0) {
+    ctx.strokeStyle = toCss(stroke);
+    ctx.lineWidth = el.style.strokeWidth ?? 2;
+    ctx.setLineDash([]);
+    strokeProgressive(ctx, [outline], outline.length, f.strokeProgress);
+  }
+}
+
 function drawCode(dc: DrawContext, f: ElementFrame, el: Extract<Element, { type: "code" }>): void {
   const { ctx, theme } = dc;
   const b = localBox(f);
@@ -551,6 +587,7 @@ export function renderFrame(ctx: Ctx2D, scene: Scene, frame: FrameState, routes:
       if (OUTLINE_KINDS.has(el.type)) drawShape(dc, f, el);
       else if (el.type === "icon") drawIcon(dc, f, el);
       else if (el.type === "code") drawCode(dc, f, el);
+      else if (el.type === "image") drawImage(dc, f, el);
       else if (el.type === "text") drawStandaloneText(dc, f, el);
     }
     ctx.restore();

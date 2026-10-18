@@ -35,7 +35,7 @@ describe("Anivo MCP server", () => {
   it("lists all tools from docs/09", async () => {
     const names = (await client.listTools()).tools.map((t) => t.name).sort();
     expect(names).toEqual(
-      ["anivo_captions", "anivo_contact_sheet", "anivo_export", "anivo_guide", "anivo_icons_search", "anivo_lint", "anivo_ops_apply", "anivo_preview", "anivo_scene_create", "anivo_scene_get", "anivo_scene_summary", "anivo_schema", "anivo_script_apply", "anivo_templates_list", "anivo_transcribe", "anivo_undo"].sort(),
+      ["anivo_captions", "anivo_contact_sheet", "anivo_export", "anivo_guide", "anivo_icons_search", "anivo_image_add", "anivo_lint", "anivo_ops_apply", "anivo_preview", "anivo_scene_create", "anivo_scene_get", "anivo_scene_summary", "anivo_schema", "anivo_script_apply", "anivo_templates_list", "anivo_transcribe", "anivo_undo"].sort(),
     );
   });
 
@@ -67,6 +67,14 @@ describe("Anivo MCP server", () => {
     expect(textOf(bad)).toContain("Use one of:");
     expect(textOf(await call("anivo_undo", { scene: "t.anivo" }))).toContain("Undid");
     expect(textOf(await call("anivo_scene_summary", { scene: "t.anivo" }))).not.toContain("extra");
+  });
+
+  it("adds an image from the scene folder and refuses a file outside it", async () => {
+    const out = await call("anivo_image_add", { scene: "t.anivo", file: "../outside.png" });
+    expect(out.isError).toBe(true);
+    const bad = await call("anivo_image_add", { scene: "t.anivo", file: "t.anivo" });
+    expect(bad.isError).toBe(true);
+    expect(textOf(bad)).toContain("PNG, JPEG, WebP, or SVG");
   });
 
   it("makes captions from the script", async () => {

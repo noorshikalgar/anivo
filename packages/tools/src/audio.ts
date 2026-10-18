@@ -20,3 +20,12 @@ export function probeDurationMs(path: string, ffprobe = process.env["ANIVO_FFPRO
   if (seconds > 30 * 60) throw new ToolError("The audio is longer than 30 minutes.", "Use a shorter file (docs/08: maximum 30 minutes).");
   return Math.round(seconds * 1000);
 }
+
+const IMAGE_MIME: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", svg: "image/svg+xml" };
+
+/** Media type of an image file from its extension (FR-CANVAS-13: PNG, JPEG, WebP, SVG). */
+export function imageMime(path: string): string {
+  const mime = IMAGE_MIME[path.split(".").pop()?.toLowerCase() ?? ""];
+  if (!mime) throw new ToolError(`The image file '${path}' has a type that Anivo does not read.`, "Use a PNG, JPEG, WebP, or SVG file.");
+  return mime;
+}
