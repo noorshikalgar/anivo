@@ -47,6 +47,12 @@ interface EditorState {
   exportOpen: boolean;
   /** The voiceover record, while it runs (see record.ts). */
   recording: import("./record.js").RecordingState | null;
+  /** The home screen (the scene library) or the editor. */
+  screen: "home" | "editor";
+  /** The library entry of the open scene, or null (not saved to the library). */
+  libraryId: string | null;
+  /** Changes when the library changes, so the home screen reads it again. */
+  libraryVersion: number;
   /** The step-by-step voice record (takes), or null. */
   takes: import("./takes.js").TakesState | null;
   /** True while the script dialog is open. */
@@ -168,6 +174,9 @@ export const useEditor = create<EditorState>((set, get) => {
     imagesVersion: 0,
     recording: null,
     takes: null,
+    screen: "home",
+    libraryId: null,
+    libraryVersion: 0,
     presenting: false,
     paletteOpen: false,
 
@@ -178,7 +187,7 @@ export const useEditor = create<EditorState>((set, get) => {
     openScene(scene, assets = new Map()) {
       get().pause();
       get().bus.reset(scene);
-      set({ assets, scene, timeline: resolveTimeline(scene), version: get().bus.version, selectedStep: null, selection: [], playhead: 0 });
+      set({ assets, scene, timeline: resolveTimeline(scene), version: get().bus.version, selectedStep: null, selection: [], playhead: 0, screen: "editor", libraryId: null });
       get().fitToVideo();
     },
 

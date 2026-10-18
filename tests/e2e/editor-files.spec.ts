@@ -5,13 +5,18 @@ test.beforeEach(async ({ page }) => {
   await openEditor(page);
 });
 
-test("autosave restores the scene after a reload", async ({ page }) => {
+test("autosave keeps the scene in the library after a reload", async ({ page }) => {
+  await page.getByRole("button", { name: "Home" }).click();
+  await page.getByRole("button", { name: "Template: How a load balancer works" }).click();
+  await page.getByRole("navigation", { name: "Steps" }).waitFor();
+  const before = (await state(page)).scene.steps.length;
   await page.keyboard.press("n");
-  await expect.poll(async () => (await state(page)).scene.steps.length).toBe(5);
+  await expect.poll(async () => (await state(page)).scene.steps.length).toBe(before + 1);
   await page.waitForTimeout(1500);
   await page.reload();
+  await page.getByRole("button", { name: "Open How a load balancer works" }).click();
   await page.getByRole("navigation", { name: "Steps" }).waitFor();
-  expect((await state(page)).scene.steps).toHaveLength(5);
+  expect((await state(page)).scene.steps).toHaveLength(before + 1);
 });
 
 test("New scene starts an empty scene", async ({ page }) => {

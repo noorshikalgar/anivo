@@ -5,6 +5,7 @@
  * which browsers do not send to servers.
  */
 import { packArchive, unpack } from "@anivo/fileio";
+import { openAsNew } from "./files.js";
 import { useEditor } from "./store.js";
 
 /** The share server from the runtime configuration (ANIVO_SERVER_URL), or "". */
@@ -59,7 +60,6 @@ export async function openShareFromUrl(): Promise<boolean> {
   }
   const r = unpack(plain);
   if (!r.ok) throw new Error(`The shared scene is not valid. ${r.issues[0]?.message ?? ""}`);
-  useEditor.getState().openScene(r.scene, r.assets);
-  useEditor.setState({ fileName: null, dirty: false });
+  openAsNew(r.scene, r.assets);
   return true;
 }

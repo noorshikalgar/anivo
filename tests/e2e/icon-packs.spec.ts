@@ -19,6 +19,7 @@ test("add an icon pack from a folder of SVG files, and it stays after a reload",
   const s = (await state(page)) as unknown as { scene: { elements: Record<string, { type: string; pack?: string; name?: string }> } };
   expect(Object.values(s.scene.elements).some((e) => e.type === "icon" && e.pack === "acme" && e.name === "widget")).toBe(true);
   await page.reload();
+  await page.getByRole("button", { name: "Blank Landscape 16:9" }).click();
   await page.getByRole("navigation", { name: "Steps" }).waitFor();
   await page.evaluate(() => (window as unknown as { __anivo: { getState(): { setIconPicker(p: unknown): void } } }).__anivo.getState().setIconPicker({ x: 900, y: 500 }));
   await expect(page.getByRole("tab", { name: "acme" })).toBeVisible();

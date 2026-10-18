@@ -69,8 +69,17 @@ export async function openEditor(page: Page): Promise<void> {
   // Tests do not see the first-run tour (tests/e2e/tour.spec.ts tests it).
   await page.addInitScript(() => localStorage.setItem("anivo.tourDone", "1"));
   await page.goto(EDITOR);
-  await page.getByRole("navigation", { name: "Steps" }).waitFor();
+  // The app starts on the home screen. Opening a scene shows the editor.
+  await page.getByRole("heading", { name: "Your scenes" }).waitFor();
   const ok = await page.evaluate((json) => (window as unknown as { __anivoOpen(j: unknown): boolean }).__anivoOpen(json), FIXTURE);
   if (!ok) throw new Error("The test fixture did not open.");
   await page.getByRole("button", { name: /Traffic flows/ }).waitFor();
+}
+
+/** Open the home screen with an empty library. */
+export async function openHome(page: Page): Promise<void> {
+  await page.setViewportSize({ width: 1400, height: 860 });
+  await page.addInitScript(() => localStorage.setItem("anivo.tourDone", "1"));
+  await page.goto(EDITOR);
+  await page.getByRole("heading", { name: "Your scenes" }).waitFor();
 }

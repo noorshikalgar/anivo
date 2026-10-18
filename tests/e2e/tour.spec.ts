@@ -4,6 +4,8 @@ import { EDITOR } from "./helpers.js";
 test("the first-run tour has 5 screens, and it does not show again", async ({ page }) => {
   await page.setViewportSize({ width: 1400, height: 860 });
   await page.goto(EDITOR);
+  // The tour shows the first time the editor opens.
+  await page.getByRole("button", { name: "Blank Landscape 16:9" }).click();
   const tour = page.getByRole("dialog", { name: "Tour" });
   await expect(tour).toBeVisible();
   await expect(tour.getByText("Welcome to Anivo")).toBeVisible();
@@ -12,6 +14,7 @@ test("the first-run tour has 5 screens, and it does not show again", async ({ pa
   await tour.getByRole("button", { name: "Start" }).click();
   await expect(tour).toHaveCount(0);
   await page.reload();
+  await page.getByRole("button", { name: "Open Untitled" }).click();
   await page.getByRole("navigation", { name: "Steps" }).waitFor();
   await page.waitForTimeout(500);
   await expect(page.getByRole("dialog", { name: "Tour" })).toHaveCount(0);
@@ -19,6 +22,7 @@ test("the first-run tour has 5 screens, and it does not show again", async ({ pa
 
 test("Skip closes the tour", async ({ page }) => {
   await page.goto(EDITOR);
+  await page.getByRole("button", { name: "Blank Landscape 16:9" }).click();
   await page.getByRole("dialog", { name: "Tour" }).getByRole("button", { name: "Skip" }).click();
   await expect(page.getByRole("dialog", { name: "Tour" })).toHaveCount(0);
 });
