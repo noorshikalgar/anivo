@@ -162,7 +162,7 @@ export function CommandPalette() {
               } else if (e.key === "Escape") close();
             }}
           />
-          <div className={styles.list} role="listbox" aria-label="Commands">
+          <div className={styles.list} role="listbox" aria-label="Commands" tabIndex={0}>
             {list.map((c, i) => (
               <div key={c.title} role="option" aria-selected={i === active} className={mergeClasses(styles.item, i === active && styles.active)} onMouseEnter={() => setActive(i)} onClick={() => run(c)}>
                 <Text>{c.title}</Text>
