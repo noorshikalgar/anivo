@@ -10,6 +10,7 @@ export interface LintResult {
     | "overlap"
     | "text-overflow"
     | "off-camera"
+    | "camera-crop"
     | "low-contrast"
     | "connector-crosses"
     | "step-empty"
@@ -198,6 +199,15 @@ export function lintScene(scene: Scene): LintResult[] {
       const el = ctx(f.id);
       if (!el) continue;
       const b = f.type === "connector" ? routeBox(routes.get(f.id)) : boxOf(f);
+      // A moved camera (zoom-to or pan) cuts an element at its edge.
+      const cam = frame.camera;
+      const moved = Math.abs(cam.x - camera.x) > 1 || Math.abs(cam.y - camera.y) > 1 || Math.abs(cam.width - camera.width) > 1;
+      if (b && moved && f.type !== "connector") {
+        const seen = intersection(b, cam) / Math.max(1, area(b));
+        if (seen > 0.05 && seen < 0.95) {
+          add({ code: "camera-crop", level: "warning", ids: [f.id], ...(stepId ? { step: stepId } : {}), message: `The camera cuts '${f.id}' at its edge${where} (${Math.round(seen * 100)}% shows).`, hint: `Zoom to '${f.id}' too, or use a larger padding, or move '${f.id}' away from the zoomed part.` });
+        }
+      }
       // off-camera
       if (b && (b.x < camera.x - 1 || b.y < camera.y - 1 || b.x + b.width > camera.x + camera.width + 1 || b.y + b.height > camera.y + camera.height + 1)) {
         add({ code: "off-camera", level: "warning", ids: [f.id], ...(stepId ? { step: stepId } : {}), message: `'${f.id}' is outside the camera${where}.`, hint: `Move it inside 0,0 to ${camera.width},${camera.height}, or make the layout smaller.` });
