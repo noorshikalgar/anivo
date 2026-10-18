@@ -852,15 +852,15 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
   } else if (verb === "morph") {
     a["type"] = "morph";
     const to: Record<string, unknown> = {};
-    const MORPH: Record<string, string> = { x: "x", y: "y", width: "width", height: "height", fill: "fill", stroke: "stroke", "stroke-width": "strokeWidth", radius: "cornerRadius", opacity: "opacity", "font-size": "fontSize", color: "textColor", label: "label", rotate: "rotation" };
+    const MORPH: Record<string, string> = { x: "x", y: "y", width: "width", height: "height", fill: "fill", stroke: "stroke", "stroke-width": "strokeWidth", radius: "cornerRadius", opacity: "opacity", "font-size": "fontSize", color: "textColor", label: "label", rotate: "rotation", shape: "shape" };
     for (const [k, { v, pos }] of kv) {
       if (common(k, v, pos)) continue;
       const key = MORPH[k];
       if (!key) {
-        errors.push(err(pos, `The property '${k}' cannot morph.`, "Use: x, y, width, height, fill, stroke, stroke-width, radius, opacity, font-size, color, label, rotate."));
+        errors.push(err(pos, `The property '${k}' cannot morph.`, "Use: x, y, width, height, fill, stroke, stroke-width, radius, opacity, font-size, color, label, rotate, shape."));
         continue;
       }
-      to[key] = key === "label" || key === "fill" || key === "stroke" || key === "textColor" ? v : Number(v);
+      to[key] = key === "label" || key === "fill" || key === "stroke" || key === "textColor" || key === "shape" ? v : Number(v);
     }
     if (Object.keys(to).length === 0) errors.push(err(line.pos, "The morph changes nothing.", "Write: morph pod-3 fill=danger"));
     a["to"] = to;

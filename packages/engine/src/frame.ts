@@ -31,6 +31,10 @@ export interface ElementFrame {
   label?: string;
   labelFrom?: string;
   labelMix?: number;
+  /** Outline of a rectangle, ellipse, or diamond after a shape morph; during it the old outline and the progress. */
+  shape?: "rectangle" | "ellipse" | "diamond";
+  shapeFrom?: "rectangle" | "ellipse" | "diamond";
+  shapeMix?: number;
 
   // Effect values. The renderer applies them. 1 or 0 means "no effect".
   /** Scale around the element center. */

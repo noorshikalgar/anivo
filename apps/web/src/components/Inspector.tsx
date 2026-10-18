@@ -171,6 +171,18 @@ function ElementProperties({ el }: { el: Element }) {
           />
         </Row>
       )}
+      {(el.type === "rectangle" || el.type === "ellipse" || el.type === "diamond") && selectedStep !== null && (
+        <SelectField
+          label="Shape in this step"
+          value={(f.shape ?? el.type) as "rectangle"}
+          options={[
+            { value: "rectangle", text: "Rectangle" },
+            { value: "ellipse", text: "Ellipse" },
+            { value: "diamond", text: "Diamond" },
+          ]}
+          onCommit={(v) => set({ shape: v }, "Change shape")}
+        />
+      )}
       {(el.type === "rectangle" || el.type === "image") && <NumberField label="Corner radius" value={f.cornerRadius ?? (el.type === "image" ? 0 : 12)} min={0} max={200} onCommit={(v) => set({ cornerRadius: v }, "Change corner radius")} />}
       {el.type === "connector" && (
         <>

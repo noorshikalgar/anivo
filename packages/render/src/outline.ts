@@ -137,3 +137,46 @@ export function sketchOutline(key: string, source: { kind: OutlineKind; box: Box
   cache.set(cacheKey, out);
   return out;
 }
+
+/** A closed outline as `n` points at equal arc length. */
+function resampleClosed(points: Point[], n: number): Point[] {
+  const pts = points[0]!.x === points[points.length - 1]!.x && points[0]!.y === points[points.length - 1]!.y ? points : [...points, points[0]!];
+  const cum = [0];
+  for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1]! + Math.hypot(pts[i]!.x - pts[i - 1]!.x, pts[i]!.y - pts[i - 1]!.y));
+  const total = cum[cum.length - 1]!;
+  const out: Point[] = [];
+  let j = 1;
+  for (let k = 0; k < n; k++) {
+    const d = (k / n) * total;
+    while (j < pts.length - 1 && cum[j]! < d) j++;
+    const seg = cum[j]! - cum[j - 1]!;
+    const t = seg > 0 ? (d - cum[j - 1]!) / seg : 0;
+    out.push({ x: pts[j - 1]!.x + (pts[j]!.x - pts[j - 1]!.x) * t, y: pts[j - 1]!.y + (pts[j]!.y - pts[j - 1]!.y) * t });
+  }
+  return out;
+}
+
+/**
+ * Path morph (FR-STEP-14): an outline between two outlines. Both are resampled to
+ * the same point count; the second turns to the start point nearest the first.
+ */
+export function blendOutlines(a: Polyline, b: Polyline, t: number, n = 96): Polyline {
+  const pa = resampleClosed(a.points, n);
+  const pb = resampleClosed(b.points, n);
+  let best = 0;
+  let bestD = Infinity;
+  for (let s = 0; s < n; s++) {
+    let d = 0;
+    for (let i = 0; i < n; i += 4) d += Math.hypot(pa[i]!.x - pb[(i + s) % n]!.x, pa[i]!.y - pb[(i + s) % n]!.y);
+    if (d < bestD) {
+      bestD = d;
+      best = s;
+    }
+  }
+  const pts = pa.map((p, i) => {
+    const q = pb[(i + best) % n]!;
+    return { x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t };
+  });
+  pts.push(pts[0]!);
+  return polyline(pts);
+}

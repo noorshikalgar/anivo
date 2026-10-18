@@ -120,6 +120,12 @@ describe("Anivo Script", () => {
     expect(bad.ok).toBe(false);
   });
 
+  it("morphs a shape into another shape", () => {
+    const scene = ok(`box a "A" at=100,100\nstep "S"\n  morph a shape=ellipse\n`);
+    expect(scene.steps[0]!.actions[0]).toMatchObject({ type: "morph", to: { shape: "ellipse" } });
+    expect(printScene(scene)).toContain('morph a shape="ellipse"');
+  });
+
   it("supports a motion path and prints it back", () => {
     const text = `box a "A" at=100,100\nstep "Go"\n  move a path="150,150 600,150 600,500" curve orient dur=2s\n`;
     const scene = ok(text);
