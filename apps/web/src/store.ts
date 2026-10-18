@@ -47,6 +47,10 @@ interface EditorState {
   exportOpen: boolean;
   /** The voiceover record, while it runs (see record.ts). */
   recording: import("./record.js").RecordingState | null;
+  /** True while the view fits the video: a change of the window size fits it again. */
+  autoFit: boolean;
+  /** Small windows: the panel that shows over the canvas (a drawer), or null. */
+  drawer: "steps" | "inspector" | null;
   /** The home screen (the scene library) or the editor. */
   screen: "home" | "editor";
   /** The library entry of the open scene, or null (not saved to the library). */
@@ -175,6 +179,8 @@ export const useEditor = create<EditorState>((set, get) => {
     recording: null,
     takes: null,
     screen: "home",
+    autoFit: true,
+    drawer: null,
     libraryId: null,
     libraryVersion: 0,
     presenting: false,
@@ -191,15 +197,19 @@ export const useEditor = create<EditorState>((set, get) => {
       get().fitToVideo();
     },
 
-    setView: (view) => set({ view: { ...get().view, ...view } }),
-    setViewport: (width, height) => set({ viewport: { width, height } }),
+    setView: (view) => set({ view: { ...get().view, ...view }, autoFit: false }),
+    setViewport: (width, height) => {
+      set({ viewport: { width, height } });
+      // Until the user pans or zooms, the video stays fitted when the window size changes.
+      if (get().autoFit) get().fitToVideo();
+    },
 
     fitToVideo() {
       const { scene, viewport } = get();
       const cam = scene.settings.camera ?? { x: 0, y: 0, width: scene.settings.video.width, height: scene.settings.video.height };
-      const margin = 48;
+      const margin = Math.min(48, Math.max(12, Math.min(viewport.width, viewport.height) * 0.05));
       const zoom = Math.max(MIN_ZOOM, Math.min((viewport.width - margin * 2) / cam.width, (viewport.height - margin * 2) / cam.height));
-      set({ view: { zoom, x: cam.x - (viewport.width / zoom - cam.width) / 2, y: cam.y - (viewport.height / zoom - cam.height) / 2 } });
+      set({ autoFit: true, view: { zoom, x: cam.x - (viewport.width / zoom - cam.width) / 2, y: cam.y - (viewport.height / zoom - cam.height) / 2 } });
     },
 
     zoomAt(factor, cx, cy) {
@@ -208,7 +218,7 @@ export const useEditor = create<EditorState>((set, get) => {
       // Keep the scene point under the cursor at the same screen position.
       const sx = view.x + cx / view.zoom;
       const sy = view.y + cy / view.zoom;
-      set({ view: { zoom, x: sx - cx / zoom, y: sy - cy / zoom } });
+      set({ autoFit: false, view: { zoom, x: sx - cx / zoom, y: sy - cy / zoom } });
     },
 
     setPlayhead: (ms) => set({ playhead: Math.max(0, Math.min(ms, get().timeline.totalMs)) }),

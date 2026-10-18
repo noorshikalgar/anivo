@@ -534,7 +534,7 @@ export function CanvasView() {
     }
   }
 
-  // Pan with Space+drag, the middle button, or the hand tool. Zoom with Ctrl/Cmd+wheel or a pinch.
+  // Pan with Space+drag, the middle button, the hand tool, or two fingers. Zoom with Ctrl/Cmd+wheel or a pinch.
   useEffect(() => {
     const root = rootRef.current!;
     const onWheel = (e: WheelEvent) => {
@@ -553,11 +553,44 @@ export function CanvasView() {
         root.style.cursor = spaceDown.current ? "grab" : "";
       }
     };
+    // Touch: two fingers zoom (pinch) and pan.
+    let pinch: { d: number; x: number; y: number } | null = null;
+    const measure = (t: TouchList) => {
+      const a = t[0]!;
+      const b = t[1]!;
+      return { d: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY), x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 };
+    };
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) pinch = measure(e.touches);
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 2 || !pinch) return;
+      e.preventDefault();
+      const m = measure(e.touches);
+      const rect = root.getBoundingClientRect();
+      const st = useEditor.getState();
+      if (pinch.d > 0 && m.d > 0) st.zoomAt(m.d / pinch.d, m.x - rect.left, m.y - rect.top);
+      const z = useEditor.getState().view.zoom;
+      const v = useEditor.getState().view;
+      st.setView({ x: v.x - (m.x - pinch.x) / z, y: v.y - (m.y - pinch.y) / z });
+      pinch = m;
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) pinch = null;
+    };
+    root.addEventListener("touchstart", onTouchStart, { passive: true });
+    root.addEventListener("touchmove", onTouchMove, { passive: false });
+    root.addEventListener("touchend", onTouchEnd);
+    root.addEventListener("touchcancel", onTouchEnd);
     root.addEventListener("wheel", onWheel, { passive: false });
     window.addEventListener("keydown", onKey);
     window.addEventListener("keyup", onKey);
     return () => {
       root.removeEventListener("wheel", onWheel);
+      root.removeEventListener("touchstart", onTouchStart);
+      root.removeEventListener("touchmove", onTouchMove);
+      root.removeEventListener("touchend", onTouchEnd);
+      root.removeEventListener("touchcancel", onTouchEnd);
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("keyup", onKey);
     };
