@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,8 +9,10 @@ const BIN = fileURLToPath(new URL("../bin/anivo.js", import.meta.url));
 const dir = mkdtempSync(join(tmpdir(), "anivo-cli-"));
 const hasFfmpeg = spawnSync("ffmpeg", ["-version"]).status === 0;
 
+const userIcons = mkdtempSync(join(tmpdir(), "anivo-icons-"));
+
 function anivo(...args: string[]): { code: number; out: string; err: string } {
-  const r = spawnSync(process.execPath, [BIN, ...args], { encoding: "utf8", timeout: 120_000 });
+  const r = spawnSync(process.execPath, [BIN, ...args], { encoding: "utf8", timeout: 120_000, env: { ...process.env, ANIVO_ICONS_DIR: userIcons } });
   return { code: r.status ?? -1, out: r.stdout, err: r.stderr };
 }
 
@@ -100,6 +102,19 @@ describe("anivo CLI", () => {
     expect(r.out).toContain("Imported mermaid: 3 elements, 2 steps.");
     expect(anivo("import", md, "--out", out).err).toContain("exists already");
     expect(anivo("print", out).out).toContain('box a "Client"');
+  });
+
+  it("adds an icon pack from a folder of SVG files and finds its icons", () => {
+    const folder = join(dir, "brand");
+    mkdirSync(folder, { recursive: true });
+    writeFileSync(join(folder, "Rocket Ship.svg"), '<svg viewBox="0 0 24 24" fill="none" stroke="black"><path d="M2 2L22 22"/></svg>');
+    writeFileSync(join(folder, "notes.txt"), "not an icon");
+    const r = anivo("icons", "add", folder);
+    expect(r.code, r.err).toBe(0);
+    expect(r.out).toContain("Added icon pack 'brand': 1 icons (stroke).");
+    expect(anivo("icons", "search", "rocket", "--pack", "brand").out.trim()).toBe("brand:rocket-ship");
+    expect(anivo("icons", "packs").out).toMatch(/brand: 1 icons/);
+    expect(anivo("icons", "add", folder, "--name", "lucide").err).toContain("bundled pack");
   });
 
   it("writes a preview and a contact sheet", () => {

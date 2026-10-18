@@ -145,7 +145,8 @@ export function PresentMode() {
     root.focus();
     void root.requestFullscreen?.().catch(() => undefined);
     const onFs = () => {
-      if (!document.fullscreenElement) useEditor.setState({ presenting: false });
+      // A new notes window can end full screen. Then present mode stays; Escape exits it.
+      if (!document.fullscreenElement && !(notesWin.current && !notesWin.current.closed)) useEditor.setState({ presenting: false });
     };
     document.addEventListener("fullscreenchange", onFs);
     return () => {

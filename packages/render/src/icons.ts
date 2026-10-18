@@ -10,7 +10,8 @@ export interface IconPack {
   kind: "stroke" | "fill";
   viewBox: [number, number, number, number];
   strokeWidth: number;
-  icons: Record<string, { d: string[]; tags: string[] }>;
+  /** An icon with its own view box sets `viewBox` (custom packs). */
+  icons: Record<string, { d: string[]; tags: string[]; viewBox?: [number, number, number, number] }>;
 }
 
 /** A flattened icon in its view box coordinates. */
@@ -73,7 +74,7 @@ export function getIcon(pack: string, name: string): IconShape | undefined {
   }
   const subpaths = icon.d.flatMap((d) => flattenSvgPath(d, 8));
   const strokes = subpaths.map((s) => polyline(s.points));
-  const shape: IconShape = { kind: p.kind, viewBox: p.viewBox, strokeWidth: p.strokeWidth, subpaths, strokes, totalLength: strokes.reduce((s, l) => s + l.length, 0) };
+  const shape: IconShape = { kind: p.kind, viewBox: icon.viewBox ?? p.viewBox, strokeWidth: p.strokeWidth, subpaths, strokes, totalLength: strokes.reduce((s, l) => s + l.length, 0) };
   shapes.set(key, shape);
   return shape;
 }

@@ -23,6 +23,9 @@ importers:
       '@anivo/ops':
         specifier: workspace:*
         version: link:packages/ops
+      '@anivo/render':
+        specifier: workspace:*
+        version: link:packages/render
       '@anivo/schema':
         specifier: workspace:*
         version: link:packages/schema

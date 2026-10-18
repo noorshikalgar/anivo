@@ -1,14 +1,15 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { basename, join, resolve as resolvePath } from "node:path";
 import { resolveTimeline, sceneCaptions, toSrt, toVtt } from "@anivo/engine";
 import { type NodeExportFormat, exportHtml, exportVideo } from "@anivo/export-node";
 import { formatLint, lintScene, lintSummary } from "@anivo/lint";
 import { OperationBus } from "@anivo/ops";
-import { searchIcons } from "@anivo/render";
+import { getIconPack, iconName, iconPackFromSvgs, iconPacks, searchIcons } from "@anivo/render";
 import { type Scene, TEMPLATES, loadScene } from "@anivo/schema";
 import { importText } from "@anivo/import";
 import { applyScript, printScene } from "@anivo/script";
 import { ToolError, assetCache, audioMime, imageMime, parseTranscript, transcribe, contactSheetPng, importAsset, probeDurationMs, jsonSchema, previewPng, readSceneFile, sceneSummary, stepTime, writeSceneFile } from "@anivo/tools";
-import { homePath, imageSize, registerBundledAssets } from "@anivo/export-node";
+import { homePath, imageSize, registerBundledAssets, userIconsDir } from "@anivo/export-node";
 import { Command, Option } from "commander";
 
 const program = new Command();
@@ -238,6 +239,34 @@ icons
     registerBundledAssets();
     const r = searchIcons(q, { ...(o.pack ? { pack: o.pack } : {}), limit: Number(o.limit) });
     print(r.map((x) => `${x.pack}:${x.name}`).join("\n") || "No icons match.", r);
+  });
+icons
+  .command("packs")
+  .description("List the icon packs: bundled and your own")
+  .action(() => {
+    registerBundledAssets();
+    const list = iconPacks().map((p) => ({ pack: p, icons: Object.keys(getIconPack(p)!.icons).length, kind: getIconPack(p)!.kind }));
+    print(`${list.map((p) => `${p.pack}: ${p.icons} icons (${p.kind})`).join("\n")}\nYour packs are in ${userIconsDir()}.`, list);
+  });
+icons
+  .command("add")
+  .description("Make an icon pack from a folder of SVG files (FR-EXT-01). Use the icons as <pack>:<file-name>")
+  .argument("<folder>")
+  .option("--name <pack>", "Pack name (default: the folder name)")
+  .option("--license <text>", "License of the icons", "custom")
+  .action((folder: string, o: { name?: string; license: string }) => {
+    if (!existsSync(folder)) throw new ToolError(`The folder '${folder}' does not exist.`, "Give a folder of .svg files.");
+    const files = readdirSync(folder).filter((f) => f.toLowerCase().endsWith(".svg")).map((f) => ({ name: f, svg: readFileSync(join(folder, f), "utf8") }));
+    if (files.length === 0) throw new ToolError(`The folder '${folder}' has no .svg files.`);
+    const name = iconName(o.name ?? basename(resolvePath(folder)));
+    if (name === "lucide" || name === "fluent") throw new ToolError(`The name '${name}' is a bundled pack.`, "Use --name with another name.");
+    const { pack, skipped } = iconPackFromSvgs(name, files, o.license);
+    const n = Object.keys(pack.icons).length;
+    if (n === 0) throw new ToolError("No SVG file converted.", "Use SVG files with path, line, polyline, polygon, circle, ellipse, or rect elements.");
+    mkdirSync(userIconsDir(), { recursive: true });
+    const out = join(userIconsDir(), `${pack.pack}.json`);
+    writeFileSync(out, JSON.stringify(pack));
+    print(`Added icon pack '${pack.pack}': ${n} icons (${pack.kind}). Wrote ${out}.${skipped.length ? ` Skipped: ${skipped.join(", ")}.` : ""} Use: icon x ${pack.pack}:${Object.keys(pack.icons)[0]}`, { pack: pack.pack, icons: n, kind: pack.kind, skipped, file: out });
   });
 
 const image = program.command("image").description("Image elements");
