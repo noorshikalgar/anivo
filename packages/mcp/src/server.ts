@@ -1,8 +1,7 @@
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
-import { fileURLToPath } from "node:url";
 import { resolveTimeline } from "@anivo/engine";
-import { exportVideo, registerBundledAssets } from "@anivo/export-node";
+import { exportVideo, homePath, registerBundledAssets } from "@anivo/export-node";
 import { formatLint, lintScene, lintSummary } from "@anivo/lint";
 import { OperationBus } from "@anivo/ops";
 import { searchIcons } from "@anivo/render";
@@ -24,11 +23,10 @@ const TEMPLATES: Record<string, string> = {
   "docker-layers": "Docker image layers",
 };
 
-const assetUrl = (p: string) => new URL(`../../../${p}`, import.meta.url);
 
 /** The scene-agent guide: the prompt file without its header (docs/09 anivo_guide). */
 function guideText(): string {
-  const md = readFileSync(assetUrl("prompts/scene-agent.md"), "utf8");
+  const md = readFileSync(homePath("prompts", "scene-agent.md"), "utf8");
   const start = md.indexOf("## 1. Role");
   return start >= 0 ? md.slice(start) : md;
 }
@@ -128,7 +126,7 @@ export function createAnivoServer(opts: ServerOptions): McpServer {
         const path = sceneFile(a.path);
         if (existsSync(path)) throw new ToolError(`The file '${a.path}' exists already.`, "Use a new path, or change the scene with anivo_script_apply.");
         let scene: Scene;
-        if (a.template) scene = readSceneFile(fileURLToPath(assetUrl(`assets/templates/${a.template}.anivo.json`)));
+        if (a.template) scene = readSceneFile(homePath("assets", "templates", `${a.template}.anivo.json`));
         else {
           const r = loadScene({ schemaVersion: 1, meta: { title: a.title ?? "Untitled" } });
           if (!r.ok) throw new Error("empty scene");

@@ -7,7 +7,7 @@ import { searchIcons } from "@anivo/render";
 import { type Scene, loadScene } from "@anivo/schema";
 import { applyScript, printScene } from "@anivo/script";
 import { ToolError, contactSheetPng, jsonSchema, previewPng, readSceneFile, sceneSummary, stepTime, writeSceneFile } from "@anivo/tools";
-import { registerBundledAssets } from "@anivo/export-node";
+import { homePath, registerBundledAssets } from "@anivo/export-node";
 import { Command, Option } from "commander";
 
 const program = new Command();
@@ -20,9 +20,9 @@ const print = (text: string, data?: unknown) => {
 };
 
 function templatePath(name: string): string {
-  const p = new URL(`../../../assets/templates/${name}.anivo.json`, import.meta.url);
+  const p = homePath("assets", "templates", `${name}.anivo.json`);
   if (!existsSync(p)) throw new ToolError(`The template '${name}' does not exist.`, "Use: load-balancer, tcp-handshake, docker-layers.");
-  return p.pathname;
+  return p;
 }
 
 function emptyScene(title: string): Scene {
