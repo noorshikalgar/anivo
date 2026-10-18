@@ -12,6 +12,8 @@ export interface ElementFrame {
   id: ElementId;
   type: Element["type"];
   z: string;
+  /** The group that contains the element, if any. */
+  parentId?: ElementId;
   visible: boolean;
   x: number;
   y: number;
