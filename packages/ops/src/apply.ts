@@ -394,7 +394,10 @@ export class Draft {
       case "audio.update": {
         const i = this.audio.findIndex((t) => t.id === op.id);
         if (i < 0) fail({ code: "unknown-audio", message: `Audio track '${op.id}' does not exist.`, path: `${path}.id` });
-        const parsed = AudioTrack.safeParse({ ...this.audio[i]!, ...op.set, id: op.id });
+        // A null value removes an optional field (for example duckDb or trimEndMs).
+        const merged: Record<string, unknown> = { ...this.audio[i]!, ...op.set, id: op.id };
+        for (const [k, v] of Object.entries(op.set)) if (v === null) delete merged[k];
+        const parsed = AudioTrack.safeParse(merged);
         if (!parsed.success) fail({ code: "invalid-audio", message: `The audio track is not valid: ${zodMessage(parsed.error)}.`, path: `${path}.set` });
         this.before.audio ??= this.audio;
         this.audio = this.audio.map((t, j) => (j === i ? parsed.data! : t));

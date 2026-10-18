@@ -4,7 +4,9 @@
  */
 import { assetId } from "@anivo/fileio";
 import type { OperationInput } from "@anivo/ops";
-import { type AudioTrack, type ScriptLine, audioSegments } from "@anivo/schema";
+import { type AudioTrack, type ScriptLine, audioSegments, speechInOutput } from "@anivo/schema";
+import { speechIntervals } from "@anivo/ops";
+import { duck, monoAt16k } from "@anivo/export-web";
 import { useEditor } from "./store.js";
 
 const MIME: Record<string, string> = { mp3: "audio/mpeg", wav: "audio/wav", m4a: "audio/mp4", aac: "audio/aac", ogg: "audio/ogg", oga: "audio/ogg", opus: "audio/ogg", flac: "audio/flac", webm: "audio/webm" };
@@ -113,6 +115,13 @@ export function peaks(buffer: AudioBuffer, count: number): Float32Array {
 
 let playing: AudioScheduledSourceNode[] = [];
 
+const speechIntervalsCache = new Map<string, { fromMs: number; toMs: number }[]>();
+function speechCache(assetId: string, b: AudioBuffer) {
+  let v = speechIntervalsCache.get(assetId);
+  if (!v) speechIntervalsCache.set(assetId, (v = speechIntervals(monoAt16k(b), 16000)));
+  return v;
+}
+
 function stop(): void {
   for (const n of playing) n.stop();
   playing = [];
@@ -131,6 +140,11 @@ async function start(fromMs: number): Promise<void> {
   if (!st.playing) return;
   const lag = st.playhead - fromMs;
   const t0 = ac.currentTime;
+  // Ducking: the same gain ramps as the export.
+  const voiceId = scene.audio.find((t) => t.kind === "voiceover")?.id;
+  const vi = segs.findIndex((s) => s.trackId === voiceId);
+  const voiceBuf = vi >= 0 ? buffers[vi] : null;
+  const speech = voiceBuf && segs.some((s) => s.duckDb !== undefined) ? speechInOutput(segs[vi]!, speechCache(segs[vi]!.assetId, voiceBuf)) : [];
   segs.forEach((seg, i) => {
     const buffer = buffers[i];
     if (!buffer) return;
@@ -138,6 +152,7 @@ async function start(fromMs: number): Promise<void> {
     node.buffer = buffer;
     const gain = ac.createGain();
     gain.gain.value = 10 ** (seg.gainDb / 20);
+    if (seg.duckDb !== undefined) duck(gain.gain, 10 ** (seg.gainDb / 20), seg.duckDb, speech, t0 - lag / 1000);
     node.connect(gain).connect(ac.destination);
     const at = seg.atMs - lag;
     const skip = Math.max(0, -at);

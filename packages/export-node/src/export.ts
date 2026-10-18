@@ -1,10 +1,11 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { resolveTimeline, sceneCaptions } from "@anivo/engine";
 import { type Ctx2D, type RenderOptions, renderScene } from "@anivo/render";
-import { type AudioSegment, type Scene, audioSegments } from "@anivo/schema";
+import { type AudioSegment, DUCK_ATTACK_MS, DUCK_RELEASE_MS, type Scene, audioSegments, speechInOutput } from "@anivo/schema";
+import { speechIntervals } from "@anivo/ops";
 import { createCanvas } from "@napi-rs/canvas";
 import { registerBundledAssets } from "./fonts.js";
 import { registerSceneImages } from "./images.js";
@@ -72,7 +73,29 @@ function crf(quality: NodeExportOptions["quality"], codec: "x264" | "vp9"): stri
  * are the audio files. The filter trims, delays, and sets the gain of each
  * piece, mixes them, and limits the sum to -1 dBFS (docs/08).
  */
-function ffmpegArgs(o: Required<Pick<NodeExportOptions, "format" | "out">> & { width: number; height: number; fps: number; quality: NodeExportOptions["quality"]; audio: { file: string; seg: AudioSegment }[]; durationMs: number }): string[] {
+/** When the voiceover speaks, in output time (for ducking). FFmpeg decodes the voiceover piece. */
+function voiceSpeech(scene: Scene, audio: { file: string; seg: AudioSegment }[], ffmpeg: string): { fromMs: number; toMs: number }[] {
+  const voiceId = scene.audio.find((t) => t.kind === "voiceover")?.id;
+  const v = audio.find((a) => a.seg.trackId === voiceId);
+  if (!v) return [];
+  const r = spawnSync(ffmpeg, ["-v", "error", "-i", v.file, "-f", "f32le", "-ac", "1", "-ar", "16000", "-"], { maxBuffer: 1 << 30 });
+  if (r.status !== 0 || !r.stdout) return [];
+  const b = r.stdout as Buffer;
+  return speechInOutput(v.seg, speechIntervals(new Float32Array(b.buffer, b.byteOffset, Math.floor(b.byteLength / 4)), 16000));
+}
+
+/** FFmpeg volume expression of the ducking: 1 outside speech, the duck gain in speech, with ramps. */
+export function duckExpression(speech: { fromMs: number; toMs: number }[], duckDb: number): string {
+  if (speech.length === 0) return "1";
+  const g = 10 ** (duckDb / 20);
+  const a = DUCK_ATTACK_MS / 1000;
+  const r = DUCK_RELEASE_MS / 1000;
+  const trap = (s: { fromMs: number; toMs: number }) => `clip(min((t-${(s.fromMs / 1000 - a).toFixed(3)})/${a},(${(s.toMs / 1000 + r).toFixed(3)}-t)/${r}),0,1)`;
+  const duck = speech.map(trap).reduce((acc, x) => `max(${acc},${x})`);
+  return `1-${(1 - g).toFixed(4)}*${duck}`;
+}
+
+function ffmpegArgs(o: Required<Pick<NodeExportOptions, "format" | "out">> & { width: number; height: number; fps: number; quality: NodeExportOptions["quality"]; audio: { file: string; seg: AudioSegment }[]; durationMs: number; speech: { fromMs: number; toMs: number }[] }): string[] {
   const args = ["-hide_banner", "-loglevel", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgba", "-s", `${o.width}x${o.height}`, "-r", String(o.fps), "-i", "-"];
   const withAudio = o.audio.length > 0 && o.format !== "gif";
   if (withAudio) for (const a of o.audio) args.push("-i", a.file);
@@ -80,7 +103,7 @@ function ffmpegArgs(o: Required<Pick<NodeExportOptions, "format" | "out">> & { w
   if (withAudio) {
     o.audio.forEach(({ seg }, k) => {
       const delay = Math.round(seg.atMs);
-      filters.push(`[${k + 1}:a]atrim=start=${seg.fromMs / 1000}:end=${seg.toMs / 1000},asetpts=PTS-STARTPTS,aresample=48000,aformat=channel_layouts=stereo,adelay=${delay}|${delay},volume=${seg.gainDb}dB[a${k}]`);
+      filters.push(`[${k + 1}:a]atrim=start=${seg.fromMs / 1000}:end=${seg.toMs / 1000},asetpts=PTS-STARTPTS,aresample=48000,aformat=channel_layouts=stereo,adelay=${delay}|${delay},volume=${seg.gainDb}dB${seg.duckDb !== undefined && o.speech.length ? `,volume=eval=frame:volume='${duckExpression(o.speech, seg.duckDb)}'` : ""}[a${k}]`);
     });
     const ins = o.audio.map((_, k) => `[a${k}]`).join("");
     filters.push(`${ins}amix=inputs=${o.audio.length}:normalize=0:duration=longest,alimiter=limit=0.891:level=false[aout]`);
@@ -148,7 +171,8 @@ export async function exportVideo(scene: Scene, opts: NodeExportOptions): Promis
     writeFileSync(file, opts.assets!.get(seg.assetId)!);
     return { file, seg };
   });
-  const args = ffmpegArgs({ format: opts.format, out: opts.out, width, height, fps, quality: opts.quality, audio, durationMs: endMs - startMs });
+  const speech = segments.some((sg) => sg.duckDb !== undefined) ? voiceSpeech(scene, audio, ffmpeg) : [];
+  const args = ffmpegArgs({ format: opts.format, out: opts.out, width, height, fps, quality: opts.quality, audio, durationMs: endMs - startMs, speech });
   const proc = spawn(ffmpeg, args, { stdio: ["pipe", "ignore", "pipe"] });
   let stderr = "";
   proc.stderr.on("data", (d: Buffer) => (stderr += d.toString()));

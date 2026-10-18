@@ -72,6 +72,13 @@ Input: script lines and transcript words with times. Output: a start time for ea
 3. Sum the tracks. Apply a limiter at -1 dBFS so that the sum does not clip.
 4. Encode: AAC 192 kbps (MP4) or Opus 128 kbps (WebM).
 
+## Ducking (FR-AUDIO-06)
+
+1. A music or sound track can set `duckDb` (for example -12). The editor: the **Duck** box in the audio lane. The CLI: `anivo audio add --kind music --duck -12`.
+2. Anivo finds the speech parts of the voiceover (energy in 20 ms frames; pauses shorter than 400 ms join).
+3. During speech, the track volume goes down by `duckDb`. It goes down in 150 ms before the speech and comes back in 400 ms after it.
+4. The editor playback, the browser export, and the CLI export use the same parts and ramps.
+
 ## Record in the app (P1)
 
 1. The user clicks "Record voiceover".

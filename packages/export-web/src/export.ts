@@ -1,6 +1,7 @@
 import { resolveTimeline, sceneCaptions } from "@anivo/engine";
 import { type Ctx2D, type RenderOptions, renderScene } from "@anivo/render";
-import { type Scene, audioSegments } from "@anivo/schema";
+import { DUCK_ATTACK_MS, DUCK_RELEASE_MS, type Scene, audioSegments, speechInOutput } from "@anivo/schema";
+import { speechIntervals } from "@anivo/ops";
 import { decodeSceneImages } from "./images.js";
 import {
   AudioBufferSource,
@@ -141,6 +142,27 @@ export async function exportVideoWeb(scene: Scene, opts: WebExportOptions): Prom
 
 const SAMPLE_RATE = 48_000;
 
+/** The first channel at 16 kHz (nearest sample), for speech detection. */
+export function monoAt16k(b: AudioBuffer): Float32Array {
+  const src = b.getChannelData(0);
+  const step = b.sampleRate / 16000;
+  const out = new Float32Array(Math.floor(src.length / step));
+  for (let i = 0; i < out.length; i++) out[i] = src[Math.floor(i * step)]!;
+  return out;
+}
+
+/** Gain ramps for ducking (the same shape as the CLI export). */
+export function duck(param: AudioParam, base: number, duckDb: number, speech: { fromMs: number; toMs: number }[], offsetS = 0): void {
+  const low = base * 10 ** (duckDb / 20);
+  for (const s of speech) {
+    const a = Math.max(0, s.fromMs / 1000 - DUCK_ATTACK_MS / 1000 + offsetS);
+    param.setValueAtTime(base, a);
+    param.linearRampToValueAtTime(low, s.fromMs / 1000 + offsetS);
+    param.setValueAtTime(low, s.toMs / 1000 + offsetS);
+    param.linearRampToValueAtTime(base, s.toMs / 1000 + DUCK_RELEASE_MS / 1000 + offsetS);
+  }
+}
+
 /**
  * Mix the audio tracks of the range into one stereo buffer (trim, delay, gain),
  * with a soft limit at -1 dBFS. Gives null when no track has sound in the range.
@@ -165,11 +187,16 @@ export async function mixAudio(scene: Scene, assets: Map<string, Uint8Array> | u
   limiter.attack.value = 0.003;
   limiter.release.value = 0.1;
   limiter.connect(ctx.destination);
+  // Ducking: when the voiceover speaks, music and sound effects get quieter.
+  const voiceId = scene.audio.find((t) => t.kind === "voiceover")?.id;
+  const voice = segs.find((s) => s.trackId === voiceId);
+  const speech = voice && segs.some((s) => s.duckDb !== undefined) ? speechInOutput(voice, speechIntervals(monoAt16k(decoded.get(voice.assetId)!), 16000)) : [];
   for (const seg of segs) {
     const node = ctx.createBufferSource();
     node.buffer = decoded.get(seg.assetId)!;
     const gain = ctx.createGain();
     gain.gain.value = 10 ** (seg.gainDb / 20);
+    if (seg.duckDb !== undefined) duck(gain.gain, 10 ** (seg.gainDb / 20), seg.duckDb, speech);
     node.connect(gain).connect(limiter);
     node.start(seg.atMs / 1000, seg.fromMs / 1000, (seg.toMs - seg.fromMs) / 1000);
   }

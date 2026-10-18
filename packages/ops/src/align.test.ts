@@ -114,3 +114,21 @@ describe("speech onsets", () => {
     expect(r.map((x) => x.startMs)).toEqual([400, 2500]);
   });
 });
+
+describe("speech intervals (ducking)", () => {
+  it("joins short pauses and ends at the last loud frame", async () => {
+    const { speechIntervals } = await import("./align.js");
+    const rate = 16000;
+    const parts: [number, boolean][] = [[500, false], [800, true], [200, false], [600, true], [1500, false], [400, true], [300, false]];
+    const out = new Float32Array(parts.reduce((s, [ms]) => s + ms, 0) * 16);
+    let at = 0;
+    for (const [ms, on] of parts) {
+      if (on) for (let i = 0; i < ms * 16; i++) out[at + i] = Math.sin(i / 3) * 0.5;
+      at += ms * 16;
+    }
+    expect(speechIntervals(out, rate)).toEqual([
+      { fromMs: 500, toMs: 2100 },
+      { fromMs: 3600, toMs: 4000 },
+    ]);
+  });
+});
