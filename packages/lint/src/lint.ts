@@ -1,5 +1,5 @@
 import { type ElementFrame, evaluate, resolveTimeline } from "@anivo/engine";
-import { type Polyline, connectorRoutes, frameBox } from "@anivo/layout";
+import { type Polyline, connectorRoutes, frameBox, pointAt } from "@anivo/layout";
 import { getIcon, resolveColor, sceneTheme } from "@anivo/render";
 import type { ConnectorElement, Element, Scene } from "@anivo/schema";
 
@@ -21,7 +21,8 @@ export interface LintResult {
     | "too-fast"
     | "unknown-icon"
     | "unknown-color"
-    | "script-unmatched";
+    | "script-unmatched"
+    | "label-overlap";
   level: LintLevel;
   ids: string[];
   step?: string;
@@ -230,6 +231,22 @@ export function lintScene(scene: Scene): LintResult[] {
             const sb = boxOf(s);
             const crosses = route.points.some((p, i) => i > 0 && segmentCrossesBox(route.points[i - 1]!, p, sb, 6));
             if (crosses) add({ code: "connector-crosses", level: "info", ids: [f.id, s.id], message: `Arrow '${f.id}' passes through '${s.id}'.`, hint: `Move '${s.id}', or use route=elbow or a waypoint.` });
+          }
+          // label-overlap: the label at the middle of the arrow covers an element (also its own ends).
+          const label = f.label ?? el.label?.text;
+          if (label) {
+            const size = f.fontSize ?? el.style.fontSize ?? 20;
+            const longest = Math.max(...label.split("\n").map((l) => l.length));
+            const w = Math.min(320, longest * size * 0.56) + 16;
+            const h = label.split("\n").length * size * 1.3 + 8;
+            const mid = pointAt(route, route.length / 2).point;
+            const lb = { x: mid.x - w / 2, y: mid.y - h / 2, width: w, height: h };
+            for (const s of shapes) {
+              const sb = boxOf(s);
+              if (lb.x < sb.x + sb.width && lb.x + lb.width > sb.x && lb.y < sb.y + sb.height && lb.y + lb.height > sb.y) {
+                add({ code: "label-overlap", level: "warning", ids: [f.id, s.id], ...(stepId ? { step: stepId } : {}), message: `The label of arrow '${f.id}' covers '${s.id}'${where}.`, hint: `Make the label shorter, or move the elements apart (about ${Math.ceil(w + 40)} px of line is needed).` });
+              }
+            }
           }
         }
       }

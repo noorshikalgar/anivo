@@ -322,6 +322,7 @@ Rules for tools:
 | `dangling-connector` | warning | A connector is visible while a bound element is not visible |
 | `tiny-text` | warning | Text is smaller than 24 px at 1080p |
 | `too-fast` | info | A step is shorter than 800 ms with more than 3 actions |
+| `label-overlap` | warning | The label of an arrow covers an element |
 | `script-unmatched` | warning | Alignment did not find script lines in the voiceover transcript |
 
 Each lint result has `code`, `level`, `ids`, `step?`, `message`, and `hint`.
