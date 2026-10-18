@@ -210,6 +210,15 @@ icons
   });
 
 program
+  .command("mcp")
+  .description("Run the MCP server on standard input and output, for agents such as Claude Code")
+  .option("--root <dir>", "Folder for scene files and exports. The server reads and writes only inside it", ".")
+  .action(async (o: { root: string }) => {
+    const { runStdioServer } = await import("@anivo/mcp");
+    await runStdioServer(o.root);
+  });
+
+program
   .command("time")
   .description("Print the time of a step position in milliseconds")
   .argument("<scene>")

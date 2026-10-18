@@ -1,0 +1,22 @@
+{
+  "name": "@anivo/mcp",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@anivo/engine": "workspace:*",
+    "@anivo/export-node": "workspace:*",
+    "@anivo/lint": "workspace:*",
+    "@anivo/ops": "workspace:*",
+    "@anivo/render": "workspace:*",
+    "@anivo/schema": "workspace:*",
+    "@anivo/script": "workspace:*",
+    "@anivo/tools": "workspace:*",
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "zod": "4.6.7"
+  }
+}

@@ -12,6 +12,7 @@
     "@anivo/engine": "workspace:*",
     "@anivo/export-node": "workspace:*",
     "@anivo/lint": "workspace:*",
+    "@anivo/mcp": "workspace:*",
     "@anivo/ops": "workspace:*",
     "@anivo/render": "workspace:*",
     "@anivo/schema": "workspace:*",
