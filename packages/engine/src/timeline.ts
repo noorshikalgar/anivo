@@ -1,4 +1,4 @@
-import { type Action, type Scene, DEFAULT_EASING, defaultDurationMs } from "@anivo/schema";
+import { type Action, type Scene, DEFAULT_EASING, defaultDurationMs, trackSpan } from "@anivo/schema";
 import { type EaseFn, easingFn } from "./easing.js";
 
 /** One action for one target, with absolute times. */
@@ -118,7 +118,10 @@ export function resolveTimeline(scene: Scene): Timeline {
     cursor = holdEndMs;
   });
 
-  return { steps, totalMs: cursor, warnings };
+  // The video lasts until the end of the last audio track, if that is later than the last step.
+  let total = cursor;
+  for (const t of scene.audio ?? []) total = Math.max(total, trackSpan(t).endMs);
+  return { steps, totalMs: total, warnings };
 }
 
 /** Index of the step that contains `timeMs`, or -1 if `timeMs` is before step 0. Binary search. */

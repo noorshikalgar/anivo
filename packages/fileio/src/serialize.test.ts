@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { OperationBus } from "@anivo/ops";
 import { type Scene, loadScene } from "@anivo/schema";
 import { describe, expect, it } from "vitest";
+import { assetId, packArchive, packJson, unpack } from "./assets.js";
 import { sceneFromArchive, sceneFromBytes, sceneFromJson, sceneToArchive, sceneToJson } from "./serialize.js";
 
 function load(input: unknown): Scene {
@@ -87,6 +88,32 @@ describe("scene JSON", () => {
     expect(r.ok).toBe(true);
     const back = sceneFromJson(sceneToJson(bus.scene));
     expect(back.ok && back.scene).toEqual(bus.scene);
+  });
+
+  it("keeps audio, script, and asset bytes in the archive and in JSON", () => {
+    const bytes = new Uint8Array([1, 2, 3, 4, 5, 250]);
+    const id = assetId(bytes);
+    const bus = new OperationBus(template);
+    const r = bus.apply({
+      ops: [
+        { op: "asset.add", asset: { id, mime: "audio/wav", bytes: bytes.length, name: "vo.wav" } },
+        { op: "audio.add", track: { kind: "voiceover", assetId: id, durationMs: 9000 } },
+        { op: "script.set", lines: [{ text: "Hello", stepId: "s-user" }] },
+        { op: "step.update", id: "s-lb", set: { trigger: { kind: "cue", audioId: "voiceover", atMs: 2000 } } },
+      ],
+    });
+    expect(r.ok).toBe(true);
+    const assets = new Map([[id, bytes]]);
+    for (const packed of [packArchive(bus.scene, assets), new TextEncoder().encode(packJson(bus.scene, assets))]) {
+      const back = unpack(packed);
+      expect(back.ok).toBe(true);
+      if (!back.ok) return;
+      expect(back.scene).toEqual(bus.scene);
+      expect([...back.assets.get(id)!]).toEqual([...bytes]);
+    }
+    // Removing the track turns its cue trigger into an automatic start.
+    bus.apply({ ops: [{ op: "audio.remove", id: "voiceover" }] });
+    expect(bus.scene.steps[1]!.trigger).toEqual({ kind: "auto" });
   });
 
   it("reports invalid JSON", () => {

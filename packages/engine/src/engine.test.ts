@@ -21,8 +21,14 @@ const el = (frame: ReturnType<typeof evaluate>, id: string) => {
   return f;
 };
 
-function scene(steps: unknown[], elements: Record<string, unknown> = {}): Scene {
+const VOICE = {
+  assets: { "0123456789abcdef": { id: "0123456789abcdef", mime: "audio/wav", bytes: 10 } },
+  audio: [{ id: "vo", kind: "voiceover", assetId: "0123456789abcdef", durationMs: 20000 }],
+};
+
+function scene(steps: unknown[], elements: Record<string, unknown> = {}, extra: Record<string, unknown> = {}): Scene {
   return load({
+    ...extra,
     schemaVersion: 1,
     elements: {
       a: { type: "rectangle", z: "a0", x: 0, y: 0, width: 100, height: 50, label: { text: "A" } },
@@ -88,7 +94,7 @@ describe("resolveTimeline", () => {
     const s = scene([
       { id: "s1", actions: [{ id: "x1", type: "enter", effect: "fade", targets: ["a"], durationMs: 2000 }] },
       { id: "s2", trigger: { kind: "cue", audioId: "vo", atMs: 1000 }, actions: [] },
-    ]);
+    ], {}, VOICE);
     const tl = resolveTimeline(s);
     expect(tl.warnings[0]?.code).toBe("step-overlap");
     expect(tl.steps[1]?.startMs).toBe(2500);
@@ -98,7 +104,7 @@ describe("resolveTimeline", () => {
     const s = scene([
       { id: "s1", actions: [{ id: "x1", type: "enter", effect: "fade", targets: ["a"] }] },
       { id: "s2", trigger: { kind: "cue", audioId: "vo", atMs: 5000 }, actions: [] },
-    ]);
+    ], {}, VOICE);
     expect(resolveTimeline(s).steps[1]?.startMs).toBe(5000);
   });
 });
@@ -186,6 +192,11 @@ describe("evaluate", () => {
     expect(mid.codeFrom).toBe("a\nb");
     expect(mid.height).toBeCloseTo(120 + 2 * 36 * 0.5, 6);
     expect(el(evaluate(s, 5000), "code")).toMatchObject({ code: "a\nb\nc\nd", height: 192 });
+  });
+
+  it("makes the timeline as long as the voiceover", () => {
+    const s = scene([{ id: "s1", actions: [{ id: "x1", type: "enter", effect: "fade", targets: ["a"] }] }], {}, VOICE);
+    expect(resolveTimeline(s).totalMs).toBe(20000);
   });
 
   it("keeps an element visible when its first action is not enter", () => {

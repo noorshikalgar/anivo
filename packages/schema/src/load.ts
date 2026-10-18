@@ -65,6 +65,9 @@ export function loadScene(input: unknown): LoadResult {
     settings: raw.settings,
     elements,
     steps: raw.steps,
+    audio: raw.audio,
+    script: raw.script,
+    assets: raw.assets,
   };
 
   const refIssues = checkReferences(scene);
@@ -92,6 +95,21 @@ export function checkReferences(scene: Scene): SchemaIssue[] {
       }
     }
   }
+
+  // Audio tracks refer to assets, and cue triggers refer to audio tracks.
+  const trackIds = new Set<string>();
+  scene.audio.forEach((t, ti) => {
+    if (trackIds.has(t.id)) issues.push({ path: `audio.${ti}.id`, message: `The audio track ID '${t.id}' is used two times.` });
+    trackIds.add(t.id);
+    if (!(t.assetId in scene.assets)) issues.push({ path: `audio.${ti}.assetId`, message: `The asset '${t.assetId}' does not exist.`, });
+  });
+  if (scene.audio.filter((t) => t.kind === "voiceover").length > 1) issues.push({ path: "audio", message: "A scene can have one voiceover track only." });
+  scene.steps.forEach((step, si) => {
+    if (step.trigger.kind === "cue" && !trackIds.has(step.trigger.audioId)) issues.push({ path: `steps.${si}.trigger.audioId`, message: `The audio track '${step.trigger.audioId}' does not exist.` });
+  });
+  scene.script.forEach((l, li) => {
+    if (l.stepId !== undefined && !scene.steps.some((s) => s.id === l.stepId)) issues.push({ path: `script.${li}.stepId`, message: `The step '${l.stepId}' does not exist.` });
+  });
 
   const stepIds = new Set<string>();
   const actionIds = new Set<string>();

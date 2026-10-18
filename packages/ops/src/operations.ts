@@ -100,6 +100,25 @@ export const ActionUpdate = z.object({
 
 export const ActionRemove = z.object({ op: z.literal("action.remove"), step: z.string(), id: z.string() });
 
+export const AssetAdd = z.object({
+  op: z.literal("asset.add"),
+  asset: z.record(z.string(), z.unknown()).describe("Asset reference: { id, mime, bytes, name }. The bytes are stored outside the scene."),
+});
+
+export const AudioAdd = z.object({
+  op: z.literal("audio.add"),
+  track: z.record(z.string(), z.unknown()).describe("Audio track: { id?, kind, assetId, durationMs, startMs?, gainDb? }. The asset must exist."),
+});
+
+export const AudioUpdate = z.object({ op: z.literal("audio.update"), id: z.string(), set: Props });
+
+export const AudioRemove = z.object({ op: z.literal("audio.remove"), id: z.string().describe("Track ID. Cue triggers that use it become automatic.") });
+
+export const ScriptSet = z.object({
+  op: z.literal("script.set"),
+  lines: z.array(z.record(z.string(), z.unknown())).describe("Script lines: { id?, text, stepId? }. They replace the old script."),
+});
+
 export const SceneSettingsOp = z.object({
   op: z.literal("scene.settings"),
   set: Props.describe("Settings to change. Nested objects (video, background, defaults) merge with the old values."),
@@ -123,6 +142,11 @@ export const Operation = z.discriminatedUnion("op", [
   ActionAdd,
   ActionUpdate,
   ActionRemove,
+  AssetAdd,
+  AudioAdd,
+  AudioUpdate,
+  AudioRemove,
+  ScriptSet,
   SceneSettingsOp,
   SceneMetaOp,
 ]);

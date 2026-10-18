@@ -28,6 +28,9 @@ function afterSnapshot(before: Snapshot, scene: Scene): Snapshot {
   if (before.steps) out.steps = scene.steps;
   if (before.settings) out.settings = scene.settings;
   if (before.meta) out.meta = scene.meta;
+  if (before.audio) out.audio = scene.audio;
+  if (before.script) out.script = scene.script;
+  if (before.assets) out.assets = scene.assets;
   return out;
 }
 
@@ -43,6 +46,9 @@ function restore(scene: Scene, snap: Snapshot): Scene {
     steps: snap.steps ?? scene.steps,
     settings: snap.settings ?? scene.settings,
     meta: snap.meta ?? scene.meta,
+    audio: snap.audio ?? scene.audio,
+    script: snap.script ?? scene.script,
+    assets: snap.assets ?? scene.assets,
   };
 }
 

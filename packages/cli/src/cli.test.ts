@@ -77,6 +77,26 @@ describe("anivo CLI", () => {
     expect(anivo("icons", "search", "server", "--limit", "1").out.trim()).toBe("lucide:server");
   });
 
+  it.skipIf(!hasFfmpeg)("adds a voiceover and a script, and keeps the audio when the file changes", () => {
+    const wav = join(dir, "vo.wav");
+    spawnSync("ffmpeg", ["-v", "error", "-y", "-f", "lavfi", "-i", "sine=frequency=440:duration=3", wav]);
+    const r = anivo("audio", "add", scene, wav);
+    expect(r.code, r.err).toBe(0);
+    expect(r.out).toContain("Added voiceover track 'voiceover' (3.0 s)");
+    writeFileSync(join(dir, "lines.txt"), "First line\n\nSecond line\nThird line\n");
+    expect(anivo("script", scene, join(dir, "lines.txt")).out).toContain("Set 3 script lines. 1 lines have no step.");
+    // A later change saves the file again: the audio bytes must stay.
+    writeFileSync(join(dir, "more.txt"), `box c "C" at=100,700\n`);
+    expect(anivo("apply", scene, join(dir, "more.txt"), "--mode", "append").code).toBe(0);
+    const json = join(dir, "check.json");
+    expect(anivo("convert", scene, json).code).toBe(0);
+    const data = JSON.parse(readFileSync(json, "utf8"));
+    expect(data.audio[0].durationMs).toBe(3000);
+    expect(Object.keys(data.assetData)).toHaveLength(1);
+    expect(data.script.map((l: { text: string }) => l.text)).toEqual(["First line", "Second line", "Third line"]);
+    expect(anivo("audio", "add", scene, join(dir, "lines.txt")).err).toContain("type that Anivo does not read");
+  });
+
   it.skipIf(!hasFfmpeg)("renders an MP4 of a step range", () => {
     const r = anivo("--json", "render", scene, "--out", join(dir, "v.mp4"), "--size", "320x180", "--fps", "24", "--steps", "2", "--quality", "draft");
     expect(r.code, r.err).toBe(0);
