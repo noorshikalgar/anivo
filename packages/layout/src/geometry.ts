@@ -155,6 +155,35 @@ const PARALLEL_GAP = 44;
 /** Connector routes for all connectors in a frame, keyed by connector ID. */
 export function connectorRoutes(connectors: ConnectorElement[], frames: ElementFrame[]): Map<string, Polyline> {
   const map = new Map(frames.map((f) => [f.id, f]));
+  // A group has no box of its own. An arrow to a group uses the union of the boxes in the group.
+  const children = new Map<string, ElementFrame[]>();
+  for (const f of frames) {
+    if (f.parentId === undefined) continue;
+    const list = children.get(f.parentId) ?? [];
+    list.push(f);
+    children.set(f.parentId, list);
+  }
+  const groupBox = (id: string, depth = 0): { x: number; y: number; r: number; b: number } | undefined => {
+    let box: { x: number; y: number; r: number; b: number } | undefined;
+    // Use the visible elements, so the arrow follows the group as elements enter and exit.
+    const all = children.get(id) ?? [];
+    const shown = all.filter((c) => c.visible);
+    for (const c of shown.length > 0 ? shown : all) {
+      if (c.type === "connector") continue;
+      const cb = c.type === "group" ? (depth < 20 ? groupBox(c.id, depth + 1) : undefined) : (() => {
+        const fb = frameBox(c);
+        return { x: fb.x, y: fb.y, r: fb.x + fb.width, b: fb.y + fb.height };
+      })();
+      if (!cb) continue;
+      box = box ? { x: Math.min(box.x, cb.x), y: Math.min(box.y, cb.y), r: Math.max(box.r, cb.r), b: Math.max(box.b, cb.b) } : cb;
+    }
+    return box;
+  };
+  for (const f of frames) {
+    if (f.type !== "group") continue;
+    const gb = groupBox(f.id);
+    if (gb) map.set(f.id, { ...f, x: gb.x, y: gb.y, width: gb.r - gb.x, height: gb.b - gb.y, scale: 1, offsetX: 0, offsetY: 0, rotation: 0 });
+  }
   // Group straight connectors that join the same two elements, in either direction.
   const groups = new Map<string, ConnectorElement[]>();
   for (const c of connectors) {

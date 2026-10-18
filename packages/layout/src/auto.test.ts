@@ -63,6 +63,16 @@ describe("connectorRoutes", () => {
     expect(Math.abs(yAB - yBA)).toBeCloseTo(44, 5);
   });
 
+  it("ends an arrow to a group on the outline of the group elements", () => {
+    const group = { ...frame("g", 0), type: "group", x: 0, y: 0, width: 0, height: 0 } as ElementFrame;
+    const kids = [{ ...frame("k1", 600), parentId: "g" }, { ...frame("k2", 600), y: 200, parentId: "g" }] as ElementFrame[];
+    const routes = connectorRoutes([conn("ag", "a", "g")], [frame("a", 0), group, ...kids]);
+    const end = routes.get("ag")!.points.at(-1)!;
+    expect(end.x).toBeGreaterThan(580);
+    expect(end.x).toBeLessThan(600);
+    expect(end.y).toBeGreaterThan(50);
+  });
+
   it("keeps a single arrow on the center line", () => {
     const routes = connectorRoutes([conn("ab", "a", "b")], [frame("a", 0), frame("b", 400)]);
     expect(routes.get("ab")!.points[0]!.y).toBe(50);

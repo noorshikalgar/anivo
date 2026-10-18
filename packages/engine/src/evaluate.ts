@@ -49,6 +49,7 @@ function baseFrame(el: Element): ElementFrame {
     flash: 0,
     highlight: 0,
   };
+  if (el.parentId !== undefined) frame.parentId = el.parentId;
   const s = el.style;
   if (s.fill !== undefined) frame.fill = s.fill;
   if (s.stroke !== undefined) frame.stroke = s.stroke;
