@@ -105,8 +105,8 @@ Scope: FR-AGENT 08 (web bridge), 09. FR-EXPORT 05 (CLI only).
 
 **Exit gate:**
 
-- [ ] Journey 4 works in Chrome on macOS, Windows, and Linux.
-- [ ] Bridge security tests pass (wrong pairing code, wrong origin, remote address, expired code).
+- [ ] Journey 4 works in Chrome on macOS, Windows, and Linux. Automatic test (tests/e2e/agent-bridge.spec.ts) passes on macOS and Linux (CI). **Owner:** check Windows.
+- [x] Bridge security tests pass (wrong pairing code, wrong origin, remote address, expired code): packages/mcp/src/bridge.test.ts.
 
 ## Phase 5 — AI panel and 1.0 release (3 weeks)
 

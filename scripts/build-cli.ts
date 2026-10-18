@@ -20,7 +20,7 @@ await build({
   target: "node20",
   format: "esm",
   // Native module: install it next to the bundle (npm dependency of the package).
-  external: ["@napi-rs/canvas"],
+  external: ["@napi-rs/canvas", "bufferutil", "utf-8-validate"],
   banner: {
     js: [
       "#!/usr/bin/env node",

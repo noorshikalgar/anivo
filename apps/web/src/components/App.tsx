@@ -11,6 +11,7 @@ import { IconPicker } from "./IconPicker.js";
 import { Inspector } from "./Inspector.js";
 import { startAudioSync } from "../audio.js";
 import { startImageSync } from "../images.js";
+import { AgentPanel, ConnectAgentDialog } from "./AgentPanel.js";
 import { AlignDialog } from "./AlignDialog.js";
 import { AudioLane } from "./AudioLane.js";
 import { PlaybackBar } from "./PlaybackBar.js";
@@ -124,8 +125,9 @@ export function App() {
           <div className={styles.steps}>
             <StepsPanel />
           </div>
-          <div className={styles.canvas}>
+          <div className={styles.canvas} style={{ position: "relative" }}>
             <CanvasView />
+            <AgentPanel />
           </div>
           <div className={styles.inspector}>
             <Inspector />
@@ -150,6 +152,7 @@ export function App() {
           <TemplateGallery />
           <ThemeEditor />
           <Tour />
+          <ConnectAgentDialog />
           <CommandPalette />
           {presenting && <PresentMode />}
         </div>

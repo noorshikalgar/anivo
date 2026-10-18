@@ -474,7 +474,17 @@ program
   .command("mcp")
   .description("Run the MCP server on standard input and output, for agents such as Claude Code")
   .option("--root <dir>", "Folder for scene files and exports. The server reads and writes only inside it", ".")
-  .action(async (o: { root: string }) => {
+  .option("--attach", "Change the scene in a running editor, live, through the bridge")
+  .option("--web", "With --attach: the web editor connects to a local WebSocket with a pairing code")
+  .option("--port <port>", "With --attach --web: the bridge port", String(47811))
+  .option("--origin <url...>", "With --attach --web: more web app origins that may connect")
+  .action(async (o: { root: string; attach?: boolean; web?: boolean; port: string; origin?: string[] }) => {
+    if (o.attach) {
+      if (!o.web) throw new ToolError("Attach mode works with the web editor now.", "Use: anivo mcp --attach --web (the desktop app comes later).");
+      const { runAttachServer } = await import("@anivo/mcp");
+      await runAttachServer({ root: o.root, port: Number(o.port), ...(o.origin ? { origins: [...(await import("@anivo/mcp")).allowedOrigins(), ...o.origin] } : {}) });
+      return;
+    }
     const { runStdioServer } = await import("@anivo/mcp");
     await runStdioServer(o.root);
   });

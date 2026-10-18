@@ -276,7 +276,10 @@ Rules for tools:
 
 1. The user runs `anivo mcp --attach --web` in a terminal. The CLI opens a WebSocket server on `127.0.0.1` and prints a one-time pairing code.
 2. In the web app, the user clicks "Connect agent" and enters the pairing code.
-3. The web app connects to `ws://127.0.0.1:<port>`.
+3. The web app connects to `ws://127.0.0.1:<port>` (default port 47811) and sends the code in its first message. The code works one time and expires after 5 minutes. When the editor disconnects, the server makes a new code.
+4. The agent calls `anivo_bridge_status` to get the code and tells it to the user (the agent starts the server, so the user does not see its output).
+5. Attach mode tools have no scene path: `anivo_bridge_status`, `anivo_guide`, `anivo_scene_summary`, `anivo_scene_get`, `anivo_script_apply` (append or replace), `anivo_ops_apply`, `anivo_undo`, `anivo_lint`, `anivo_preview`, `anivo_contact_sheet`, `anivo_export`, `anivo_icons_search`, `anivo_schema`.
+6. Allowed origins: `http://localhost:5173`, `http://127.0.0.1:5173`, `http://localhost:8080`, `http://127.0.0.1:8080`, plus `ANIVO_WEB_ORIGINS` (comma-separated) and `--origin`.
 
 > **NOTE:** Chromium browsers can ask the user for "local network access" permission when an HTTPS page connects to `127.0.0.1`. The UI must explain this prompt before the connection.
 
