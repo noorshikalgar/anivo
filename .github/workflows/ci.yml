@@ -58,6 +58,14 @@ jobs:
           curl -fsI http://localhost:8080/ | grep -qi 'content-security-policy'
           curl -fs -o /dev/null http://localhost:8080/icons/lucide.json
           test "$(docker exec anivo id -u)" != "0"
+      - name: Build and check the server image
+        run: |
+          docker build -f docker/server.Dockerfile -t anivo-server:ci .
+          docker run -d --name anivo-server -p 8081:8081 anivo-server:ci
+          for i in $(seq 1 20); do curl -fs http://localhost:8081/healthz && break; sleep 1; done
+          id=$(curl -fs -X POST --data-binary @README.md -H 'content-type: application/octet-stream' http://localhost:8081/api/shares | sed -E 's/.*"id":"([^"]+)".*/\1/')
+          curl -fs http://localhost:8081/api/shares/$id | cmp - README.md
+          test "$(docker exec anivo-server id -u)" != "0"
 
   cli:
     # Phase 2 gate: the bundled CLI renders on macOS, Windows, and Linux.

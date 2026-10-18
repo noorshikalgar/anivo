@@ -55,6 +55,8 @@ interface EditorState {
   timelineOpen: boolean;
   /** Elements that the AI panel changed last (for the canvas outline). */
   aiActivity: { ids: string[]; at: number } | null;
+  /** True while the share dialog is open. */
+  shareOpen: boolean;
   /** True while the shortcut help shows. */
   helpOpen: boolean;
   /** True while the history shows. */
@@ -155,6 +157,7 @@ export const useEditor = create<EditorState>((set, get) => {
     aiActivity: null,
     aiOpen: false,
     helpOpen: false,
+    shareOpen: false,
     historyOpen: false,
     timelineOpen: false,
     imagesVersion: 0,

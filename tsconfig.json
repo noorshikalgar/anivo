@@ -45,6 +45,9 @@
     },
     {
       "path": "packages/import"
+    },
+    {
+      "path": "apps/server"
     }
   ]
 }

@@ -1,0 +1,13 @@
+{
+  "name": "@anivo/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/server.ts"
+  },
+  "scripts": {
+    "start": "tsx src/main.ts"
+  }
+}
