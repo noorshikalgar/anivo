@@ -46,6 +46,18 @@ pnpm anivo render demo.anivo --out demo.mp4
 
 Run `pnpm anivo --help` for all commands.
 
+## Use Anivo from an AI agent (MCP)
+
+Anivo has an MCP server. Agents such as Claude Code can make, check, and export videos with it:
+
+```bash
+claude mcp add anivo -- node /path/to/anivo/packages/cli/bin/anivo.js mcp --root ./videos
+```
+
+The server reads and writes files only inside the `--root` folder. Tools: `anivo_guide`, `anivo_scene_create`,
+`anivo_script_apply`, `anivo_ops_apply`, `anivo_scene_summary`, `anivo_scene_get`, `anivo_lint`, `anivo_preview`,
+`anivo_contact_sheet`, `anivo_export`, `anivo_icons_search`, `anivo_templates_list`, `anivo_schema`, `anivo_undo`.
+
 ## Read the documents in this sequence
 
 | # | Document | Contents |
