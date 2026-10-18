@@ -73,6 +73,13 @@ describe("connectorRoutes", () => {
     expect(end.y).toBeGreaterThan(50);
   });
 
+  it("starts an arrow down from an icon below the icon label", () => {
+    const icon = { ...frame("i", 0), type: "icon", label: "Your computer" } as ElementFrame;
+    const below = { ...frame("b", 0), y: 400 } as ElementFrame;
+    const routes = connectorRoutes([conn("ib", "i", "b")], [icon, below]);
+    expect(routes.get("ib")!.points[0]!.y).toBeGreaterThan(100 + 52);
+  });
+
   it("keeps a single arrow on the center line", () => {
     const routes = connectorRoutes([conn("ab", "a", "b")], [frame("a", 0), frame("b", 400)]);
     expect(routes.get("ab")!.points[0]!.y).toBe(50);
