@@ -44,7 +44,7 @@ const EMPHASIS_EFFECTS = ["pulse", "shake", "wiggle", "glow", "flash", "highligh
 const EASINGS = ["linear", "ease-in", "ease-out", "ease-in-out", "back-out", "spring-soft", "spring-bouncy"] as const;
 const label = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g, " ");
 
-function describe(a: Action): string {
+export function describe(a: Action): string {
   if (a.type === "enter" || a.type === "exit" || a.type === "emphasis") return `${label(a.type)} · ${a.effect}`;
   if (a.type === "morph") return `Morph · ${Object.keys(a.to).join(", ")}`;
   if (a.type === "camera") return `Camera · ${a.camera.op}`;

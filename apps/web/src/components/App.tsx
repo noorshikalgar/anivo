@@ -15,6 +15,7 @@ import { AudioLane } from "./AudioLane.js";
 import { PlaybackBar } from "./PlaybackBar.js";
 import { RecordBar } from "./RecordBar.js";
 import { ScriptDialog } from "./ScriptDialog.js";
+import { TimelinePanel } from "./TimelinePanel.js";
 import { PresentMode } from "./PresentMode.js";
 import { StepsPanel } from "./StepsPanel.js";
 import { TopBar } from "./TopBar.js";
@@ -62,6 +63,7 @@ export function App() {
   const notice = useEditor((s) => s.notice);
   const presenting = useEditor((s) => s.presenting);
   const recording = useEditor((s) => s.recording !== null);
+  const timelineOpen = useEditor((s) => s.timelineOpen);
   useEffect(() => {
     if (!notice) return;
     dispatchToast(
@@ -128,6 +130,7 @@ export function App() {
               <RecordBar />
             ) : (
               <>
+                {timelineOpen && <TimelinePanel />}
                 <AudioLane />
                 <PlaybackBar />
               </>
