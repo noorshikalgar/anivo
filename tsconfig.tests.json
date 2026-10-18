@@ -18,6 +18,7 @@
     "packages/*/test/**/*.ts",
     "tests/e2e/**/*.ts",
     "playwright.config.ts",
-    "scripts/**/*.ts"
+    "scripts/**/*.ts",
+    "evals/**/*.ts"
   ]
 }

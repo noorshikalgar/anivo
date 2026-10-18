@@ -1,0 +1,41 @@
+name: Agent evals
+
+# Weekly agent eval (docs/09 "Agent eval suite"). It runs only when the
+# repository has an ANTHROPIC_API_KEY secret, because each run costs money.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Number of prompts (empty = all 20)"
+        required: false
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - name: Check for the API key
+        id: key
+        run: echo "present=${{ env.ANTHROPIC_API_KEY != '' }}" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        if: steps.key.outputs.present == 'true'
+      - uses: pnpm/action-setup@v4
+        if: steps.key.outputs.present == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.key.outputs.present == 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+      - if: steps.key.outputs.present == 'true'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg && pnpm install --frozen-lockfile
+      - if: steps.key.outputs.present == 'true'
+        run: pnpm eval ${{ inputs.limit && format('--limit {0}', inputs.limit) || '' }} | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: steps.key.outputs.present == 'true'
+        with:
+          name: eval-results
+          path: evals/results
+          retention-days: 90

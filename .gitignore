@@ -12,3 +12,4 @@ tests/output/
 test-results/
 playwright-report/
 packages/cli/dist/
+evals/results/

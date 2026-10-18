@@ -18,15 +18,18 @@
     "build:templates": "tsx scripts/build-templates.ts",
     "bench": "tsx scripts/bench.ts",
     "anivo": "node packages/cli/bin/anivo.js",
-    "build:cli": "tsx scripts/build-cli.ts"
+    "build:cli": "tsx scripts/build-cli.ts",
+    "eval": "tsx evals/run.ts"
   },
   "devDependencies": {
     "@anivo/export-node": "workspace:*",
     "@anivo/fileio": "workspace:*",
     "@anivo/ops": "workspace:*",
     "@anivo/schema": "workspace:*",
+    "@anthropic-ai/sdk": "0.135.0",
     "@eslint/js": "10.0.1",
     "@fluentui/svg-icons": "1.1.344",
+    "@modelcontextprotocol/sdk": "1.32.1",
     "@napi-rs/canvas": "1.0.11",
     "@playwright/test": "1.64.1",
     "@types/node": "22.20.5",
