@@ -67,8 +67,10 @@ export const MorphableProps = z
 export type MorphableProps = z.infer<typeof MorphableProps>;
 
 export const FlowParams = z.object({
-  shape: z.enum(["dot", "square", "pill"]).default("dot"),
-  size: z.number().positive().default(8),
+  shape: z.enum(["dot", "square", "pill", "icon", "image"]).default("dot").describe("The particle. icon: set `icon`. image: set `assetId`."),
+  icon: z.string().regex(/^[a-z0-9-]+:[a-z0-9-]+$/).optional().describe("Icon of an icon particle, pack:name (for example lucide:mail)."),
+  assetId: z.string().optional().describe("Image asset of an image particle."),
+  size: z.number().positive().default(8).describe("Particle size in pixels (the width of an icon or an image)."),
   color: Color.default("accent"),
   speed: z.number().positive().default(400).describe("Pixels per second."),
   rate: z.number().positive().default(2).describe("Particles per second."),
@@ -76,7 +78,9 @@ export const FlowParams = z.object({
   distribute: z.enum(["all", "round-robin", "random-seeded"]).default("all"),
   chainFrom: ElementId.optional().describe("Continue particles that arrive from this connector."),
   skip: z.array(ElementId).default([]),
-  trail: z.number().min(0).max(1).default(0),
+  trail: z.number().min(0).max(1).default(0).describe("Fading copies behind each particle: 0 (none) to 1."),
+  count: z.number().int().positive().optional().describe("Particles in all, then the flow stops. Omit for a stream. 1: one particle travels from start to end."),
+  orient: z.boolean().default(false).describe("Turn the particle in the direction of travel."),
 });
 export type FlowParams = z.infer<typeof FlowParams>;
 

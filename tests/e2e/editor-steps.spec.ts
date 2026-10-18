@@ -66,3 +66,24 @@ test("Add action adds a camera zoom to the selection", async ({ page }) => {
   const step = s.scene.steps.find((st) => st.id === s.selectedStep)!;
   expect(step.actions[0]).toMatchObject({ type: "camera", targets: ["pod-1", "pod-2"] });
 });
+
+test("the flow editor sets an icon particle, one particle, and a trail", async ({ page }) => {
+  await page.getByRole("button", { name: /Traffic flows/ }).click();
+  await page.getByRole("button", { name: /^Flow/ }).first().click();
+  await page.getByRole("combobox", { name: "Particle", exact: true }).click();
+  await page.getByRole("option", { name: "Icon" }).click();
+  await page.getByRole("combobox", { name: "Particles" }).click();
+  await page.getByRole("option", { name: "One particle" }).click();
+  const trail = page.getByRole("spinbutton", { name: "Trail (0–1)" });
+  await trail.fill("0.5");
+  await trail.press("Enter");
+  await page.getByRole("switch", { name: "Turn along the arrow" }).click();
+  const s = (await state(page)) as unknown as { scene: { steps: { id: string; actions: { type: string; flow?: Record<string, unknown> }[] }[] } };
+  const flow = s.scene.steps.find((st) => st.id === "s-traffic")!.actions.find((a) => a.type === "flow")!.flow!;
+  expect(flow).toMatchObject({ shape: "icon", icon: "lucide:mail", count: 1, trail: 0.5, orient: true, size: 32 });
+  // Back to a stream: the count goes away.
+  await page.getByRole("combobox", { name: "Particles" }).click();
+  await page.getByRole("option", { name: "A stream" }).click();
+  const s2 = (await state(page)) as unknown as typeof s;
+  expect(s2.scene.steps.find((st) => st.id === "s-traffic")!.actions.find((a) => a.type === "flow")!.flow!["count"]).toBeUndefined();
+});

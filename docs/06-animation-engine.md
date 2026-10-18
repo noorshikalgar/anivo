@@ -126,9 +126,10 @@ A flow draws particles that move along connectors.
 
 ```ts
 interface FlowParams {
-  shape: "dot" | "square" | "pill" | "icon";
-  icon?: { pack: string; name: string };
-  size: number;               // px, default 8
+  shape: "dot" | "square" | "pill" | "icon" | "image";
+  icon?: string;              // shape "icon": pack:name, for example "lucide:mail"
+  assetId?: string;           // shape "image": an image asset (PNG, JPEG, WebP, or SVG)
+  size: number;               // px, default 8 (the width of an icon or an image)
   color: string;              // token or hex, default "accent"
   speed: number;              // px per second, default 400
   rate: number;               // particles per second, default 2
@@ -136,9 +137,13 @@ interface FlowParams {
   distribute: "all" | "round-robin" | "random-seeded";
   chainFrom?: ElementId;      // continue particles that arrive from this connector
   skip?: ElementId[];         // connectors to skip in round-robin
-  trail?: number;             // 0..1, length of a fading trail
+  trail?: number;             // 0..1: fading copies behind each particle
+  count?: number;             // particles in all; omit for a stream; 1 = one particle travels from start to end
+  orient?: boolean;           // turn the particle in the direction of travel
 }
 ```
+
+A flow with `count` stops after particle `count - 1`. With `count: 1` and `chainFrom`, one particle travels along a chain of arrows, for example a packet from a user to a server. A particle with an unknown icon or an image that is not decoded draws as a dot; lint reports an unknown icon.
 
 **Deterministic particle position.** Particles are not simulated. Calculate them from `t`:
 

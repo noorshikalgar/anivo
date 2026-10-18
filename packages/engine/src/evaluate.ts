@@ -478,7 +478,8 @@ function flowParticles(step: TimedStep, t: number, opts: EvaluateOptions, out: P
     }
 
     const kMin = Math.max(0, Math.ceil((t - maxTravel - emitStart) / interval));
-    const kMax = Math.floor((Math.min(t, emitEnd - 1e-6) - emitStart) / interval);
+    let kMax = Math.floor((Math.min(t, emitEnd - 1e-6) - emitStart) / interval);
+    if (flow.count !== undefined) kMax = Math.min(kMax, flow.count - 1);
     for (let k = kMin; k <= kMax; k++) {
       const emit = emitStart + k * interval;
       const age = t - emit;
@@ -493,7 +494,7 @@ function flowParticles(step: TimedStep, t: number, opts: EvaluateOptions, out: P
         const len = opts.connectorLength?.(connectorId);
         if (len !== undefined && distance > len) continue;
         if (len === undefined && age > MAX_TRAVEL_MS_UNKNOWN) continue;
-        out.push({ connectorId, distance, reverse, shape: flow.shape, size: flow.size, color: flow.color, trail: flow.trail });
+        out.push({ connectorId, distance, reverse, shape: flow.shape, ...(flow.icon ? { icon: flow.icon } : {}), ...(flow.assetId ? { assetId: flow.assetId } : {}), size: flow.size, color: flow.color, trail: flow.trail, orient: flow.orient });
       }
     }
   }

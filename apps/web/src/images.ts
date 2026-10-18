@@ -4,6 +4,7 @@
  */
 import { decodeImage, decodeSceneImages } from "@anivo/export-web";
 import { assetId } from "@anivo/fileio";
+import type { OperationInput } from "@anivo/ops";
 import { sanitizeSvg } from "./sanitize.js";
 import { useEditor } from "./store.js";
 
@@ -96,4 +97,26 @@ export async function pasteImage(data: DataTransfer | null): Promise<boolean> {
     return true;
   }
   return false;
+}
+
+/** Ask for an image file and add it as an asset only. Returns the asset ID and the operations that add it, or null if cancelled. */
+export async function pickImageAsset(): Promise<{ id: string; ops: OperationInput[] } | null> {
+  const file = await new Promise<File | null>((resolve) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/png,image/jpeg,image/webp,image/svg+xml,.svg";
+    input.onchange = () => resolve(input.files?.[0] ?? null);
+    input.oncancel = () => resolve(null);
+    input.click();
+  });
+  if (!file) return null;
+  const mime = imageMime(file.name, file.type);
+  const raw = new Uint8Array(await file.arrayBuffer());
+  const bytes = mime === "image/svg+xml" ? new TextEncoder().encode(sanitizeSvg(new TextDecoder().decode(raw))) : raw;
+  if (bytes.length > MAX_BYTES) throw new ImageError(`The image '${file.name}' is larger than 20 MB. Use a smaller file.`);
+  if (!(await decodeImage(bytes, mime))) throw new ImageError(`The file '${file.name}' is not a valid image, or this browser cannot read it.`);
+  const id = assetId(bytes);
+  const st = useEditor.getState();
+  useEditor.setState({ assets: new Map(st.assets).set(id, bytes) });
+  return { id, ops: id in st.scene.assets ? [] : [{ op: "asset.add", asset: { id, mime, bytes: bytes.length, name: file.name } }] };
 }

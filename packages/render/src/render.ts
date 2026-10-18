@@ -550,27 +550,99 @@ function drawConnector(dc: DrawContext, f: ElementFrame, el: ConnectorElement): 
   }
 }
 
+/** Copies behind a particle with a trail, and their opacity. */
+const TRAIL_COPIES = 6;
+
+function drawParticle(dc: DrawContext, p: Particle, x: number, y: number, dir: { x: number; y: number }, css: string): void {
+  const { ctx } = dc;
+  const r = p.size / 2;
+  ctx.save();
+  ctx.translate(x, y);
+  if (p.orient) ctx.rotate(Math.atan2(dir.y, dir.x));
+  if (p.shape === "icon" || p.shape === "image") {
+    if (p.shape === "image" && p.assetId) {
+      const img = getImage(p.assetId);
+      if (img) {
+        const h = (p.size * img.height) / Math.max(1, img.width);
+        ctx.drawImage(img as never, -r, -h / 2, p.size, h);
+        ctx.restore();
+        return;
+      }
+    }
+    const [pack, name] = (p.icon ?? "").split(":");
+    const shape = p.shape === "icon" && pack && name ? getIcon(pack, name) : undefined;
+    if (shape) {
+      const [vx, vy, vw, vh] = shape.viewBox;
+      const sc = p.size / Math.max(vw, vh);
+      ctx.scale(sc, sc);
+      ctx.translate(-vx - vw / 2, -vy - vh / 2);
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      if (shape.kind === "stroke") {
+        ctx.strokeStyle = css;
+        ctx.lineWidth = shape.strokeWidth;
+        strokeProgressive(ctx, shape.strokes, shape.totalLength, 1);
+      } else {
+        ctx.fillStyle = css;
+        ctx.beginPath();
+        for (const sp of shape.subpaths) {
+          ctx.moveTo(sp.points[0]!.x, sp.points[0]!.y);
+          for (let i = 1; i < sp.points.length; i++) ctx.lineTo(sp.points[i]!.x, sp.points[i]!.y);
+          ctx.closePath();
+        }
+        ctx.fill();
+      }
+      ctx.restore();
+      return;
+    }
+    // No icon or image (yet): a dot. Lint reports a missing icon.
+  }
+  ctx.fillStyle = css;
+  ctx.beginPath();
+  if (p.shape === "square") ctx.rect(-r, -r, p.size, p.size);
+  else if (p.shape === "pill") {
+    // A pill is along the path.
+    if (!p.orient) ctx.rotate(Math.atan2(dir.y, dir.x));
+    ctx.moveTo(-r * 2, 0);
+    ctx.lineTo(r * 2, 0);
+    ctx.lineWidth = p.size;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = css;
+    ctx.stroke();
+    ctx.restore();
+    return;
+  } else ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 function drawParticles(dc: DrawContext, particles: Particle[]): void {
   const { ctx, theme } = dc;
   for (const p of particles) {
     const route = dc.routes.get(p.connectorId);
     if (!route) continue;
-    const d = p.reverse ? route.length - p.distance : p.distance;
-    const { point, dir } = pointAt(route, d);
-    ctx.fillStyle = toCss(resolveToken(theme, p.color, "fill", "connector"));
-    const r = p.size / 2;
-    ctx.beginPath();
-    if (p.shape === "square") ctx.rect(point.x - r, point.y - r, p.size, p.size);
-    else if (p.shape === "pill") {
-      ctx.moveTo(point.x - dir.x * r * 2, point.y - dir.y * r * 2);
-      ctx.lineTo(point.x + dir.x * r * 2, point.y + dir.y * r * 2);
-      ctx.lineWidth = p.size;
-      ctx.lineCap = "round";
-      ctx.strokeStyle = ctx.fillStyle;
-      ctx.stroke();
-      continue;
-    } else ctx.arc(point.x, point.y, r, 0, Math.PI * 2);
-    ctx.fill();
+    const css = toCss(resolveToken(theme, p.color, "fill", "connector"));
+    const sign = p.reverse ? -1 : 1;
+    const at = (distance: number) => {
+      const d = p.reverse ? route.length - distance : distance;
+      const { point, dir } = pointAt(route, d);
+      return { point, dir: { x: dir.x * sign, y: dir.y * sign } };
+    };
+    if (p.trail > 0) {
+      // The copies are behind the particle on the path, and they fade out.
+      const gap = Math.max(2, p.size * 0.6);
+      for (let i = TRAIL_COPIES; i >= 1; i--) {
+        const d = p.distance - i * gap;
+        if (d < 0) continue;
+        const { point, dir } = at(d);
+        ctx.save();
+        ctx.globalAlpha *= p.trail * (1 - i / (TRAIL_COPIES + 1));
+        drawParticle(dc, p, point.x, point.y, dir, css);
+        ctx.restore();
+      }
+    }
+    const { point, dir } = at(p.distance);
+    drawParticle(dc, p, point.x, point.y, dir, css);
   }
 }
 

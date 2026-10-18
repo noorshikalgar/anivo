@@ -58,7 +58,7 @@ See [06 — Animation engine](06-animation-engine.md) for the full model.
 | FR-STEP-03 | Exit effects: the reverse of each enter effect | P0 | |
 | FR-STEP-04 | Morph: automatic transition of changed properties between steps | P0 | Position, size, rotation, colors, opacity, stroke width, corner radius, and text change smoothly. Text changes use a crossfade. |
 | FR-STEP-05 | Emphasis effects: `pulse`, `shake`, `glow`, `flash`, `wiggle`, `highlight`, `focus` (dim all other elements) | P0 | An emphasis does not change the state after the action ends. |
-| FR-STEP-06 | Flow on connectors | P0 | Options: particle shape, color, size, speed, count, spacing, direction, round-robin across a list of connectors, loop until the step ends. |
+| FR-STEP-06 | Flow on connectors | P0 | Options: particle shape, color, size, speed, count, spacing, direction, round-robin across a list of connectors, loop until the step ends. Done: dot, square, pill, an icon (`icon=lucide:mail`), or an image or SVG asset; a stream, one particle (`once`), or a number (`count=`); a trail; turn along the arrow (`orient`). The step panel shows all options. |
 | FR-STEP-07 | Camera actions: `zoom-to` an element or a bound, `pan`, `reset` | P1 | The camera never shows an area outside the scene bounds unless the user allows it. |
 | FR-STEP-08 | Counter action on a text element | P1 | Counts from a number to a number with a format, for example `{n} req/s`. |
 | FR-STEP-09 | Code actions: highlight lines, type lines, show a diff | P1 | |

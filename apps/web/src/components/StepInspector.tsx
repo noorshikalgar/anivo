@@ -7,12 +7,15 @@ import {
   AccordionItem,
   AccordionPanel,
   Button,
+  Combobox,
   Field,
   Menu,
   MenuItem,
   MenuList,
   MenuPopover,
   MenuTrigger,
+  Option,
+  Switch,
   Tag,
   TagPicker,
   TagPickerControl,
@@ -26,7 +29,10 @@ import {
   tokens,
 } from "@fluentui/react-components";
 import { Add20Regular, Delete20Regular } from "@fluentui/react-icons";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { searchIcons } from "@anivo/render";
+import { pickImageAsset } from "../images.js";
+import { withErrors } from "../notify.js";
 import { addAction, addMotionAlongArrow, removeAction, updateAction, updateStep } from "../commands.js";
 import { setCue, setStepLine } from "../audio.js";
 import { Comments } from "./Comments.js";
@@ -145,6 +151,106 @@ export function AddActionMenu({ appearance = "secondary" }: { appearance?: "seco
   );
 }
 
+type FlowAction = Extract<Action, { type: "flow" }>;
+
+/** Icon name field with search (pack:name). */
+function IconField({ value, onCommit }: { value: string | undefined; onCommit: (v: string) => void }) {
+  const [query, setQuery] = useState(value ?? "");
+  useEffect(() => setQuery(value ?? ""), [value]);
+  const results = useMemo(() => searchIcons(query.includes(":") ? query.split(":")[1]! : query, { limit: 20 }), [query]);
+  return (
+    <Field label="Icon" size="small" hint={value ? undefined : "Type to search, for example mail or packet."}>
+      <Combobox
+        size="small"
+        freeform
+        value={query}
+        selectedOptions={value ? [value] : []}
+        onChange={(e) => setQuery(e.target.value)}
+        onOptionSelect={(_, d) => d.optionValue && onCommit(d.optionValue)}
+        aria-label="Particle icon"
+      >
+        {results.map((r) => (
+          <Option key={`${r.pack}:${r.name}`} value={`${r.pack}:${r.name}`}>
+            {`${r.pack}:${r.name}`}
+          </Option>
+        ))}
+      </Combobox>
+    </Field>
+  );
+}
+
+/** What moves along the arrows of a flow (FR-STEP-07): shape, icon, image, size, color, amount, trail, and turn. */
+function FlowParticle({ step, action, theme }: { step: Step; action: FlowAction; theme: string }) {
+  const f = action.flow;
+  const assets = useEditor((s) => s.scene.assets);
+  const images = useMemo(() => Object.entries(assets).filter(([, a]) => a.mime.startsWith("image/")), [assets]);
+  const set = (next: Partial<FlowAction["flow"]>, label = "Change flow particle") => {
+    const flow: Record<string, unknown> = { ...f, ...next };
+    for (const k of Object.keys(flow)) if (flow[k] === undefined) delete flow[k];
+    updateAction(step.id, action.id, { flow }, label);
+  };
+  const amount = f.count === undefined ? "stream" : f.count === 1 ? "once" : "count";
+  return (
+    <>
+      <Row>
+        <SelectField
+          label="Particle"
+          value={f.shape}
+          options={[
+            { value: "dot", text: "Dot" },
+            { value: "square", text: "Square" },
+            { value: "pill", text: "Pill" },
+            { value: "icon", text: "Icon" },
+            { value: "image", text: "Image or SVG" },
+          ]}
+          onCommit={(v) => set({ shape: v, ...(v === "icon" && !f.icon ? { icon: "lucide:mail" } : {}), ...((v === "icon" || v === "image") && f.size < 16 ? { size: 32 } : {}) })}
+        />
+        <NumberField label="Size (px)" value={f.size} min={2} max={400} step={2} onCommit={(v) => set({ size: v })} />
+      </Row>
+      {f.shape === "icon" && <IconField value={f.icon} onCommit={(v) => set({ icon: v })} />}
+      {f.shape === "image" && (
+        <Row>
+          <SelectField label="Image" value={f.assetId ?? "none"} options={[{ value: "none", text: "None" }, ...images.map(([id, a]) => ({ value: id, text: a.name ?? id }))]} onCommit={(v) => set({ assetId: v === "none" ? undefined : v })} />
+          <Field label=" " size="small">
+            <Button
+              size="small"
+              onClick={() =>
+                void withErrors(async () => {
+                  const r = await pickImageAsset();
+                  if (!r) return;
+                  useEditor.getState().apply({ label: "Change flow image", ops: [...r.ops, { op: "action.update", step: step.id, id: action.id, set: { flow: { ...f, shape: "image", assetId: r.id } } }] });
+                })
+              }
+            >
+              Choose file…
+            </Button>
+          </Field>
+        </Row>
+      )}
+      {f.shape !== "image" && <ColorField label="Particle color" theme={theme} value={f.color} onCommit={(v) => set({ color: v ?? "accent" })} />}
+      <Row>
+        <SelectField
+          label="Particles"
+          value={amount}
+          options={[
+            { value: "stream", text: "A stream" },
+            { value: "once", text: "One particle" },
+            { value: "count", text: "A number" },
+          ]}
+          onCommit={(v) => set({ count: v === "stream" ? undefined : v === "once" ? 1 : Math.max(2, f.count ?? 3) })}
+        />
+        {amount === "count" ? <NumberField label="Number" value={f.count ?? 3} min={2} max={100} onCommit={(v) => set({ count: Math.max(1, Math.round(v)) })} /> : <div />}
+      </Row>
+      <Row>
+        <NumberField label="Trail (0–1)" value={f.trail} min={0} max={1} step={0.1} onCommit={(v) => set({ trail: Math.max(0, Math.min(1, v)) })} />
+        <Field label="Turn along the arrow" size="small">
+          <Switch checked={f.orient} onChange={(_, d) => set({ orient: d.checked })} aria-label="Turn along the arrow" />
+        </Field>
+      </Row>
+    </>
+  );
+}
+
 function ActionEditor({ step, action }: { step: Step; action: Action }) {
   const styles = useStyles();
   const theme = useEditor((s) => s.scene.settings.theme);
@@ -235,6 +341,7 @@ function ActionEditor({ step, action }: { step: Step; action: Action }) {
       )}
       {action.type === "flow" && (
         <>
+          <FlowParticle step={step} action={action} theme={theme} />
           <Row>
             <NumberField label="Rate (per s)" value={action.flow.rate} min={0.1} step={0.5} onCommit={(v) => set({ flow: { ...action.flow, rate: v } }, "Change flow")} />
             <NumberField label="Speed (px/s)" value={action.flow.speed} min={10} step={50} onCommit={(v) => set({ flow: { ...action.flow, speed: v } }, "Change flow")} />

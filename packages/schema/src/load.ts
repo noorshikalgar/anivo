@@ -105,6 +105,15 @@ export function checkReferences(scene: Scene): SchemaIssue[] {
     else if (!a.mime.startsWith("image/")) issues.push({ path: `elements.${el.id}.assetId`, message: `The asset '${el.assetId}' is not an image (${a.mime}).` });
   }
 
+  // Image particles of a flow refer to image assets.
+  scene.steps.forEach((st, si) =>
+    st.actions.forEach((a, ai) => {
+      if (a.type !== "flow" || a.flow.assetId === undefined) return;
+      const asset = scene.assets[a.flow.assetId];
+      if (!asset || !asset.mime.startsWith("image/")) issues.push({ path: `steps.${si}.actions.${ai}.flow.assetId`, message: `The image asset '${a.flow.assetId}' does not exist.` });
+    }),
+  );
+
   // Audio tracks refer to assets, and cue triggers refer to audio tracks.
   const trackIds = new Set<string>();
   scene.audio.forEach((t, ti) => {
