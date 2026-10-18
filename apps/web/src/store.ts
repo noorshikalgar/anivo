@@ -49,6 +49,8 @@ interface EditorState {
   recording: import("./record.js").RecordingState | null;
   /** True while the script dialog is open. */
   scriptOpen: boolean;
+  /** True while the align dialog is open. */
+  alignOpen: boolean;
   /** Bytes of the scene assets (audio files), by asset ID. The scene has only the references. */
   assets: Map<string, Uint8Array>;
   /** The last message for the user (see notify.ts). */
@@ -122,6 +124,7 @@ export const useEditor = create<EditorState>((set, get) => {
     assets: new Map(),
     exportOpen: false,
     scriptOpen: false,
+    alignOpen: false,
     recording: null,
     presenting: false,
     paletteOpen: false,

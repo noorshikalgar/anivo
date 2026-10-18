@@ -30,7 +30,8 @@ In After Effects, the creator moves keyframes by hand to match the voice. Anivo 
 
 | Delivery form | Engine | Notes |
 |---|---|---|
-| Web app | Whisper (small or base model) in the browser with Transformers.js and WebGPU | Downloads the model on first use (approximately 75 to 150 MB). Ask the user before the download |
+| Web app | Whisper (tiny or base model, 8-bit) in the browser with Transformers.js, in a worker. WASM now; WebGPU later | Downloads the model on first use (approximately 40 to 80 MB) from Hugging Face. Ask the user before the download. The browser caches the model. The ONNX Runtime files come from the Anivo site |
+| Any | Import a transcript (JSON word list or whisper.cpp JSON) | No speech recognition in Anivo |
 | Desktop app, CLI | `whisper.cpp` as a bundled binary, or the system binary | Faster. Works offline |
 | Any | Cloud provider with the user's own key (P2) | Optional |
 
