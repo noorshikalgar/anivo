@@ -67,7 +67,7 @@ See [06 — Animation engine](06-animation-engine.md) for the full model.
 | FR-STEP-12 | Step trigger: `auto` (after the previous step), `click` (present mode), `cue` (voiceover time) | P0 (`auto`, `click`), P1 (`cue`) | |
 | FR-STEP-13 | Scrub the playhead | P0 | Each playhead position shows the correct frame. Scrub does not depend on play history. |
 | FR-STEP-14 | Path morph between different shape types | P2 | Rectangle to ellipse with a matched point count. |
-| FR-STEP-15 | Motion path: move an element along a drawn path | P2 | |
+| FR-STEP-15 | Motion path: move an element along a drawn path | P2 | Done: `motion` action (points, curve, orient). Editor: Add action › Move along the selected arrow. Script: `move a path="x,y x,y …" [curve] [orient]`. |
 | FR-STEP-16 | Hold: a step can hold the last state for a duration | P0 | |
 | FR-STEP-17 | Timeline panel with tracks for each action | P1 | Drag action edges to change delay and duration. UI only for drag. Operations exist for the same change. |
 

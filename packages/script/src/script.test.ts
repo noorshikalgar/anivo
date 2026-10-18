@@ -120,6 +120,15 @@ describe("Anivo Script", () => {
     expect(bad.ok).toBe(false);
   });
 
+  it("supports a motion path and prints it back", () => {
+    const text = `box a "A" at=100,100\nstep "Go"\n  move a path="150,150 600,150 600,500" curve orient dur=2s\n`;
+    const scene = ok(text);
+    expect(scene.steps[0]!.actions[0]).toMatchObject({ type: "motion", durationMs: 2000, motion: { curve: true, orient: true, points: [{ x: 150, y: 150 }, { x: 600, y: 150 }, { x: 600, y: 500 }] } });
+    expect(printScene(scene)).toContain('move a path="150,150 600,150 600,500" curve orient dur=2000ms');
+    const bad = applyScript(`box a "A"\nstep "Go"\n  move a path="1,1"\n`);
+    expect(!bad.ok && bad.errors[0]!.message).toBe("The path needs 2 or more points.");
+  });
+
   it("supports a sound on an action and prints it back", () => {
     const text = `box a "A" at=100,100\nstep "S"\n  enter a pop sound=pop sound-gain=-10\n`;
     const scene = ok(text);

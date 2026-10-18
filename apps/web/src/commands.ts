@@ -475,3 +475,19 @@ export function autoLayoutSelection(kind: LayoutKind): void {
   }
   commitGeometry(changes, `Auto layout: ${kind}`);
 }
+
+/**
+ * Motion path (FR-STEP-15): the selected elements move along the selected arrow,
+ * in the selected step. The path is a copy of the arrow route at the step start.
+ */
+export function addMotionAlongArrow(): void {
+  const st = useEditor.getState();
+  if (st.selectedStep === null) return;
+  const conns = st.selection.filter((id) => st.scene.elements[id]?.type === "connector");
+  const targets = st.selection.filter((id) => st.scene.elements[id] && st.scene.elements[id]!.type !== "connector");
+  if (conns.length !== 1 || targets.length === 0) return;
+  const start = st.timeline.steps.find((s) => s.id === st.selectedStep)?.startMs ?? 0;
+  const route = evaluateWithLayout(st.scene, Math.max(0, start - 1)).routes.get(conns[0]!);
+  if (!route || route.points.length < 2) return;
+  addAction({ type: "motion", targets, motion: { points: route.points.map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) })) } }, "Add motion path");
+}

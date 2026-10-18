@@ -308,3 +308,18 @@ describe("evaluate", () => {
     expect(f.camera).toEqual({ x: 0, y: 0, width: 1920, height: 1080 });
   });
 });
+
+describe("motion path (FR-STEP-15)", () => {
+  const m = scene(
+    [{ id: "s1", actions: [{ id: "m1", type: "motion", targets: ["a"], durationMs: 1000, easing: "linear", motion: { points: [{ x: 100, y: 100 }, { x: 300, y: 100 }, { x: 300, y: 300 }], orient: true } }] }],
+    { a: { type: "rectangle", z: "a0", x: 50, y: 50, width: 100, height: 100 } },
+  );
+  it("moves the center along the points, turns along the path, and ends at the last point", () => {
+    expect(el(evaluate(m, 250), "a")).toMatchObject({ x: 150, y: 50, rotation: 0 });
+    const mid = el(evaluate(m, 750), "a");
+    expect(mid.x).toBeCloseTo(250);
+    expect(mid.y).toBeCloseTo(150);
+    expect(mid.rotation).toBeCloseTo(90);
+    expect(el(evaluate(m, 5000), "a")).toMatchObject({ x: 250, y: 250 });
+  });
+});

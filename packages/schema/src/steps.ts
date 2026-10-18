@@ -1,5 +1,5 @@
 import * as z from "zod";
-import { ActionId, Color, ElementId, Ms, StepId } from "./primitives.js";
+import { ActionId, Color, ElementId, Ms, Point, StepId } from "./primitives.js";
 
 export const EasingName = z.enum([
   "linear",
@@ -132,7 +132,18 @@ export const CodeAction = z.object({
   }),
 });
 
-export const Action = z.discriminatedUnion("type", [EnterAction, ExitAction, MorphAction, EmphasisAction, FlowAction, WaitAction, CameraAction, CounterAction, CodeAction]);
+/** Motion path (FR-STEP-15): the center of each target moves along the points. The end point is the new position. */
+export const MotionAction = z.object({
+  ...actionBase,
+  type: z.literal("motion"),
+  motion: z.object({
+    points: z.array(Point).min(2).describe("Scene points. The element center goes from the first to the last point."),
+    curve: z.boolean().default(false).describe("A smooth curve through the points, not straight lines."),
+    orient: z.boolean().default(false).describe("Turn the element along the path."),
+  }),
+});
+
+export const Action = z.discriminatedUnion("type", [EnterAction, ExitAction, MorphAction, EmphasisAction, FlowAction, WaitAction, CameraAction, CounterAction, CodeAction, MotionAction]);
 export type Action = z.infer<typeof Action>;
 export type ActionInput = z.input<typeof Action>;
 export type ActionType = Action["type"];

@@ -93,6 +93,7 @@ step "<title>" [hold=<time>] [cue=<time>]
   camera zoom-to <targets> [padding=80] | camera pan at=x,y size=WxH | camera reset
   count <target> from=<n> to=<n> format="{n} <unit>"
   code <target> highlight=<a>-<b> | type=<a>-<b>
+  move <targets> path="x,y x,y …" [curve] [orient]   (the element center follows the points and stays at the end)
   wait <time>
   (any action) sound=pop|click|whoosh|ding|thud [sound-gain=<dB>]   (a short sound when the action starts)
 ```
