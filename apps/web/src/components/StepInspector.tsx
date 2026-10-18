@@ -27,7 +27,7 @@ import {
 } from "@fluentui/react-components";
 import { Add20Regular, Delete20Regular } from "@fluentui/react-icons";
 import { useMemo } from "react";
-import { addAction, removeAction, updateAction, updateStep } from "../commands.js";
+import { addAction, addMotionAlongArrow, removeAction, updateAction, updateStep } from "../commands.js";
 import { setCue, setStepLine } from "../audio.js";
 import { useEditor } from "../store.js";
 import { ColorField, NumberField, Row, SelectField, TextField } from "./fields.js";
@@ -50,6 +50,7 @@ export function describe(a: Action): string {
   if (a.type === "morph") return `Morph · ${Object.keys(a.to).join(", ")}`;
   if (a.type === "camera") return `Camera · ${a.camera.op}`;
   if (a.type === "counter") return `Count · ${a.counter.from} to ${a.counter.to}`;
+  if (a.type === "motion") return `Move along a path · ${a.motion.points.length} points`;
   if (a.type === "code") return `Code · ${a.code.op}${a.code.lines ? ` ${a.code.lines[0]}-${a.code.lines[1]}` : ""}`;
   return label(a.type);
 }
@@ -121,6 +122,9 @@ export function AddActionMenu({ appearance = "secondary" }: { appearance?: "seco
           </MenuItem>
           <MenuItem disabled={none} onClick={() => addAction({ type: "camera", targets: selection, camera: { op: "zoom-to" } }, "Add camera zoom")}>
             Camera: zoom to selection
+          </MenuItem>
+          <MenuItem disabled={connectors.length !== 1 || selection.length < 2 || step === null} onClick={addMotionAlongArrow}>
+            Move along the selected arrow
           </MenuItem>
           <MenuItem disabled={codes.length === 0} onClick={() => addAction({ type: "code", targets: codes, code: { op: "highlight", lines: [1, 1] } }, "Add code highlight")}>
             Code: highlight lines {codes.length === 0 ? "(select a code block)" : ""}
@@ -198,6 +202,12 @@ function ActionEditor({ step, action }: { step: Step; action: Action }) {
         options={[{ value: "none", text: "No sound" }, ...SOUNDS.map((x) => ({ value: x, text: label(x) }))]}
         onCommit={(v) => set({ sound: v === "none" ? null : v }, "Change sound")}
       />
+      {action.type === "motion" && (
+        <Row>
+          <SelectField label="Path" value={action.motion.curve ? "curve" : "lines"} options={[{ value: "lines", text: "Straight lines" }, { value: "curve", text: "Smooth curve" }]} onCommit={(v) => set({ motion: { ...action.motion, curve: v === "curve" } }, "Change path")} />
+          <SelectField label="Turn" value={action.motion.orient ? "yes" : "no"} options={[{ value: "no", text: "Keep angle" }, { value: "yes", text: "Turn along path" }]} onCommit={(v) => set({ motion: { ...action.motion, orient: v === "yes" } }, "Change turn")} />
+        </Row>
+      )}
       {action.type === "camera" && action.camera.op === "zoom-to" && (
         <NumberField label="Padding (px)" value={action.camera.padding} min={0} step={20} onCommit={(v) => set({ camera: { ...action.camera, padding: v } }, "Change camera padding")} />
       )}

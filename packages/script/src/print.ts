@@ -194,6 +194,11 @@ function printAction(a: Action, index: number): string {
     parts.push("morph", targets);
     for (const [k, v] of Object.entries(a.to)) if (v !== undefined) parts.push(`${MORPH_OUT[k] ?? k}=${typeof v === "string" ? q(v) : n(v)}`);
     common();
+  } else if (a.type === "motion") {
+    parts.push("move", targets, `path=${q(a.motion.points.map((p) => `${n(p.x)},${n(p.y)}`).join(" "))}`);
+    if (a.motion.curve) parts.push("curve");
+    if (a.motion.orient) parts.push("orient");
+    common();
   } else if (a.type === "flow") {
     parts.push("flow", targets);
     const f = a.flow;

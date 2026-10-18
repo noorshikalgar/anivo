@@ -248,6 +248,55 @@ function applyCode(f: ElementFrame, c: Extract<Action, { type: "code" }>["code"]
   }
 }
 
+type MotionParams = Extract<Action, { type: "motion" }>["motion"];
+const motionCache = new WeakMap<MotionParams, { pts: { x: number; y: number }[]; cum: number[] }>();
+
+/** The path as a polyline with cumulative lengths. A curve is a Catmull-Rom spline through the points. */
+function motionPath(m: MotionParams) {
+  let c = motionCache.get(m);
+  if (c) return c;
+  let pts = m.points;
+  if (m.curve && pts.length > 2) {
+    const out: { x: number; y: number }[] = [];
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[Math.max(0, i - 1)]!;
+      const p1 = pts[i]!;
+      const p2 = pts[i + 1]!;
+      const p3 = pts[Math.min(pts.length - 1, i + 2)]!;
+      for (let k = 0; k < 16; k++) {
+        const t = k / 16;
+        const t2 = t * t;
+        const t3 = t2 * t;
+        const f = (a: number, b: number, c2: number, d: number) => 0.5 * (2 * b + (-a + c2) * t + (2 * a - 5 * b + 4 * c2 - d) * t2 + (-a + 3 * b - 3 * c2 + d) * t3);
+        out.push({ x: f(p0.x, p1.x, p2.x, p3.x), y: f(p0.y, p1.y, p2.y, p3.y) });
+      }
+    }
+    out.push(pts[pts.length - 1]!);
+    pts = out;
+  }
+  const cum = [0];
+  for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1]! + Math.hypot(pts[i]!.x - pts[i - 1]!.x, pts[i]!.y - pts[i - 1]!.y));
+  c = { pts, cum };
+  motionCache.set(m, c);
+  return c;
+}
+
+/** Motion path (FR-STEP-15): the element center at the eased share of the path length. */
+function applyMotion(f: ElementFrame, m: MotionParams, p: number): void {
+  const { pts, cum } = motionPath(m);
+  const total = cum[cum.length - 1]!;
+  const d = Math.min(1, Math.max(0, p)) * total;
+  let i = 1;
+  while (i < pts.length - 1 && cum[i]! < d) i++;
+  const a = pts[i - 1]!;
+  const b = pts[i]!;
+  const seg = cum[i]! - cum[i - 1]!;
+  const t = seg > 0 ? (d - cum[i - 1]!) / seg : 1;
+  f.x = a.x + (b.x - a.x) * t - f.width / 2;
+  f.y = a.y + (b.y - a.y) * t - f.height / 2;
+  if (m.orient && seg > 0) f.rotation = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
+}
+
 /** Apply one timed action to the state at time `t`. Copy-on-write for each touched element. */
 function applyTimedAction(state: StateMap, ta: TimedAction, t: number): void {
   const { action } = ta;
@@ -269,6 +318,7 @@ function applyTimedAction(state: StateMap, ta: TimedAction, t: number): void {
   else if (action.type === "morph") applyMorph(f, action.to, eased);
   else if (action.type === "emphasis" && raw < 1) applyEmphasis(f, action, raw);
   else if (action.type === "code") applyCode(f, action.code, eased);
+  else if (action.type === "motion") applyMotion(f, action.motion, eased);
   else if (action.type === "counter") {
     const c = action.counter;
     const n = lerp(c.from, c.to, eased);

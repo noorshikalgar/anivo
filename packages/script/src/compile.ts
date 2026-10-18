@@ -19,7 +19,7 @@ const ELEMENT_KINDS = new Set(["box", "ellipse", "diamond", "text", "icon", "cap
 const CONTAINERS = new Set(["row", "column", "grid", "group"]);
 const ENTER_EFFECTS = new Set(["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter"]);
 const EMPHASIS = new Set(["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus"]);
-const ACTIONS = new Set(["enter", "exit", "morph", "flow", "wait", "camera", "count", "code", ...EMPHASIS]);
+const ACTIONS = new Set(["enter", "exit", "morph", "flow", "wait", "camera", "count", "code", "move", ...EMPHASIS]);
 
 const DEFAULT_SIZE: Record<string, [number, number]> = {
   box: [220, 90],
@@ -732,7 +732,8 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
       else if (verb === "enter" && /^slide-(up|down|left|right)$/.test(t.v)) {
         effect = "slide";
         kv.set("direction", { v: t.v.slice(6), pos: t.pos });
-      } else if (verb === "flow" && ["all", "round-robin", "random", "forward", "reverse", "both"].includes(t.v)) kv.set(["forward", "reverse", "both"].includes(t.v) ? "direction" : "distribute", { v: t.v === "random" ? "random-seeded" : t.v, pos: t.pos });
+      } else if (verb === "move" && (t.v === "curve" || t.v === "orient")) kv.set(t.v, { v: "true", pos: t.pos });
+      else if (verb === "flow" && ["all", "round-robin", "random", "forward", "reverse", "both"].includes(t.v)) kv.set(["forward", "reverse", "both"].includes(t.v) ? "direction" : "distribute", { v: t.v === "random" ? "random-seeded" : t.v, pos: t.pos });
       else words.push(t);
     }
   }
@@ -863,6 +864,20 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
     }
     if (Object.keys(to).length === 0) errors.push(err(line.pos, "The morph changes nothing.", "Write: morph pod-3 fill=danger"));
     a["to"] = to;
+  } else if (verb === "move") {
+    a["type"] = "motion";
+    const motion: Record<string, unknown> = {};
+    for (const [k, { v, pos }] of kv) {
+      if (common(k, v, pos)) continue;
+      if (k === "path") {
+        const pts = v.split(/[\s;]+/).filter(Boolean).map((p) => parsePoint(p));
+        if (pts.length < 2 || pts.some((p) => !p)) errors.push(err(pos, "The path needs 2 or more points.", 'Write: move a path="100,200 400,200 400,600"'));
+        else motion["points"] = pts.map((p) => ({ x: p![0], y: p![1] }));
+      } else if (k === "curve" || k === "orient") motion[k] = true;
+      else errors.push(err(pos, `The property '${k}' is not known for move.`, "Use: path, curve, orient, dur, easing, stagger."));
+    }
+    if (!motion["points"]) errors.push(err(line.pos, "The move has no path.", 'Write: move a path="100,200 400,200 400,600"'));
+    a["motion"] = motion;
   } else if (verb === "flow") {
     a["type"] = "flow";
     const flow: Record<string, unknown> = {};
