@@ -119,8 +119,13 @@ Scope: FR-AGENT 10. Release work.
 
 **Exit gate:**
 
-- [ ] All P0 and P1 features pass their acceptance criteria.
-- [ ] All goals in [02](02-vision-and-scope.md#goals-for-version-10) pass.
+- [ ] All P0 and P1 features pass their acceptance criteria. Audit 2026-10-18: all are built and tested except FR-EXT-03 (npm packages, **owner**). The audit closed these gaps: smart guides, paste of images and SVG, shortcut help, history with authors, export time remaining, SVG export, share links with the optional server, `anivo serve`, `anivo mcp --http`.
+- [ ] All goals in [02](02-vision-and-scope.md#goals-for-version-10) pass:
+  - [ ] Goal 1 (new user, 6-step video in 15 minutes): **owner**, usability test.
+  - [ ] Goal 2 (agent, 8 of 10 prompts): **owner**, paid eval run (`pnpm eval`).
+  - [x] Goal 3 (60 s 1080p60 export in less than 2 minutes, M1, Chrome): 24 s (2026-10-18, Chrome, Apple M1, 16 GB, the load-balancer template held to 60 s).
+  - [x] Goal 4 (60 fps with 300 elements): 7.6 ms (clean) and 10.6 ms (sketch) median frame time, `__anivoBench` in Chrome.
+  - [x] Goal 5 (one `docker run`): CI builds and runs the image and checks it.
 
 ## After 1.0 (P2 items, no fixed sequence)
 
