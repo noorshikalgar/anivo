@@ -55,6 +55,11 @@ describe("lintScene", () => {
     expect(codes(s)).toEqual(expect.arrayContaining(["low-contrast", "tiny-text"]));
   });
 
+  it("measures text size against the short side of a portrait video", () => {
+    const s = script(`scene size=1080x1920\nbox a "A" at=100,100 size=300x100 font-size=32\nstep "S"\n  enter a fade\n`);
+    expect(codes(s)).not.toContain("tiny-text");
+  });
+
   it("finds an empty step, an unused element, an unknown icon, and an unknown color", () => {
     const s = script(`box a "A" at=100,100 fill=pinkish\nicon i nope:nothing "X" at=600,100\nbox z "Z" at=900,600\nstep "Empty"\nstep "S"\n  enter a, i fade\n  exit z fade\n`);
     const c = codes(s);

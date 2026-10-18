@@ -101,7 +101,8 @@ export function lintScene(scene: Scene): LintResult[] {
   const camera = scene.settings.camera ?? { x: 0, y: 0, width: v.width, height: v.height };
   const timeline = resolveTimeline(scene);
   const connectors = Object.values(scene.elements).filter((e): e is ConnectorElement => e.type === "connector");
-  const scale1080 = 1080 / v.height;
+  // The short side is the 1080 of "1080p", also for a portrait (9:16) video.
+  const scale1080 = 1080 / Math.min(v.width, v.height);
 
   // Static checks on elements.
   for (const el of Object.values(scene.elements)) {
