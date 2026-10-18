@@ -1,0 +1,22 @@
+[
+  { "id": "dns", "prompt": "Explain how DNS resolution works, from the browser to the authoritative name server.", "steps": 6 },
+  { "id": "load-balancer", "prompt": "Explain how a load balancer spreads requests across three servers, and what happens when one server fails.", "steps": 5 },
+  { "id": "tcp", "prompt": "Show the TCP three-way handshake between a client and a server.", "steps": 4 },
+  { "id": "https", "prompt": "Explain the TLS handshake in HTTPS at a high level: hello, certificate, key exchange, encrypted data.", "steps": 5 },
+  { "id": "cdn", "prompt": "Explain how a CDN cache serves a cache hit and a cache miss.", "steps": 5 },
+  { "id": "kafka", "prompt": "Show a Kafka consumer group rebalance when a new consumer joins.", "steps": 5 },
+  { "id": "git-merge", "prompt": "Explain a git feature branch and a merge into main.", "steps": 5 },
+  { "id": "docker", "prompt": "Explain Docker image layers and why a code change rebuilds only the top layer.", "steps": 4 },
+  { "id": "k8s-deploy", "prompt": "Explain a Kubernetes rolling update of a deployment with three pods.", "steps": 6 },
+  { "id": "oauth", "prompt": "Explain the OAuth 2.0 authorization code flow between a user, an app, and an authorization server.", "steps": 6 },
+  { "id": "cache-aside", "prompt": "Explain the cache-aside pattern with an app, Redis, and a database.", "steps": 5 },
+  { "id": "queue", "prompt": "Explain how a message queue decouples a producer from two workers.", "steps": 4 },
+  { "id": "db-index", "prompt": "Explain why a database index makes a lookup faster than a full table scan.", "steps": 4 },
+  { "id": "api-gateway", "prompt": "Explain an API gateway that routes requests to three microservices and applies rate limiting.", "steps": 5 },
+  { "id": "circuit-breaker", "prompt": "Explain the circuit breaker pattern: closed, open, and half-open states.", "steps": 5 },
+  { "id": "ci-pipeline", "prompt": "Show a CI pipeline: commit, build, test, and deploy, with a failed test that stops the deploy.", "steps": 5 },
+  { "id": "jwt", "prompt": "Explain how a JWT is issued at login and checked on each API request.", "steps": 4 },
+  { "id": "replication", "prompt": "Explain primary-replica database replication and a failover to a replica.", "steps": 5 },
+  { "id": "event-loop", "prompt": "Explain the JavaScript event loop with the call stack, the task queue, and the microtask queue.", "steps": 6 },
+  { "id": "pubsub", "prompt": "Explain publish-subscribe with one publisher, a topic, and three subscribers.", "steps": 4 }
+]
