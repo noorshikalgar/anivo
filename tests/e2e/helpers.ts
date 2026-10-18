@@ -66,6 +66,8 @@ const FIXTURE = JSON.parse(readFileSync(new URL("../../packages/schema/fixtures/
 
 export async function openEditor(page: Page): Promise<void> {
   await page.setViewportSize({ width: 1400, height: 860 });
+  // Tests do not see the first-run tour (tests/e2e/tour.spec.ts tests it).
+  await page.addInitScript(() => localStorage.setItem("anivo.tourDone", "1"));
   await page.goto(EDITOR);
   await page.getByRole("navigation", { name: "Steps" }).waitFor();
   const ok = await page.evaluate((json) => (window as unknown as { __anivoOpen(j: unknown): boolean }).__anivoOpen(json), FIXTURE);
