@@ -64,6 +64,7 @@ Each operation is a JSON object with an `op` field. Operations are versioned wit
 | `scene.settings` | Change style, theme, video size, fps, background. |
 | `audio.add` / `audio.update` / `audio.remove` | Audio tracks. |
 | `script.set` | Set the script lines. |
+| `comment.add` / `comment.update` / `comment.remove` | Comments on elements and steps. The scene summary lists open comments, so an agent can answer them. |
 | `script.align` | Run alignment (see [08](08-audio-and-captions.md)). |
 
 ### Transaction format

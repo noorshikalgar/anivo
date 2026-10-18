@@ -29,6 +29,7 @@ import { Add20Regular, Delete20Regular } from "@fluentui/react-icons";
 import { useMemo } from "react";
 import { addAction, addMotionAlongArrow, removeAction, updateAction, updateStep } from "../commands.js";
 import { setCue, setStepLine } from "../audio.js";
+import { Comments } from "./Comments.js";
 import { useEditor } from "../store.js";
 import { ColorField, NumberField, Row, SelectField, TextField } from "./fields.js";
 
@@ -358,6 +359,7 @@ export function StepInspector({ step }: { step: Step }) {
           ))}
         </Accordion>
       )}
+      <Comments kind="step" id={step.id} />
     </>
   );
 }

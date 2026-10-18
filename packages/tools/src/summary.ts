@@ -33,5 +33,10 @@ export function sceneSummary(scene: Scene): string {
     lines.push(`  ${i + 1}. ${st.id} "${st.title}" ${(t.startMs / 1000).toFixed(1)}-${(t.holdEndMs / 1000).toFixed(1)} s${st.trigger.kind === "click" ? " (on click)" : ""}`);
     for (const a of st.actions) lines.push(`     - ${actionText(a)}`);
   });
+  const open = scene.comments.filter((c) => !c.resolved);
+  if (open.length) {
+    lines.push("", `Comments (${open.length} open; answer with comment.add replyTo, then resolve with comment.update):`);
+    for (const c of open) lines.push(`  ${c.id} on ${c.target.kind} ${c.target.id}, by ${c.author}${c.replyTo ? ` (answer to ${c.replyTo})` : ""}: ${c.text}`);
+  }
   return lines.join("\n");
 }

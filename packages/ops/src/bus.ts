@@ -31,6 +31,7 @@ function afterSnapshot(before: Snapshot, scene: Scene): Snapshot {
   if (before.audio) out.audio = scene.audio;
   if (before.script) out.script = scene.script;
   if (before.assets) out.assets = scene.assets;
+  if (before.comments) out.comments = scene.comments;
   return out;
 }
 
@@ -49,6 +50,7 @@ function restore(scene: Scene, snap: Snapshot): Scene {
     audio: snap.audio ?? scene.audio,
     script: snap.script ?? scene.script,
     assets: snap.assets ?? scene.assets,
+    comments: snap.comments ?? scene.comments,
   };
 }
 

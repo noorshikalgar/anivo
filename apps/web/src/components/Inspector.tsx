@@ -22,6 +22,7 @@ import {
 import { useMemo } from "react";
 import { type AlignKind, alignSelection, autoLayoutSelection, commitProps, commitSettings, deleteSelection, distributeSelection, duplicateSelection, groupSelection, renameElement, reorderSelection, setElementText, ungroupSelection } from "../commands.js";
 import { useEditor } from "../store.js";
+import { Comments } from "./Comments.js";
 import { ColorField, NumberField, Row, SelectField, TextField } from "./fields.js";
 import { AddActionMenu, StepInspector } from "./StepInspector.js";
 
@@ -256,6 +257,7 @@ function ElementProperties({ el }: { el: Element }) {
           <Button size="small" appearance="subtle" icon={<Delete20Regular />} onClick={deleteSelection} />
         </Tooltip>
       </div>
+      <Comments kind="element" id={el.id} />
     </>
   );
 }

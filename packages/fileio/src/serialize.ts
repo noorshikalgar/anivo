@@ -114,6 +114,7 @@ export function compactScene(scene: Scene): Record<string, unknown> {
   if (scene.audio.length) out["audio"] = scene.audio;
   if (scene.script.length) out["script"] = scene.script;
   if (Object.keys(scene.assets).length) out["assets"] = scene.assets;
+  if (scene.comments.length) out["comments"] = scene.comments;
   return out;
 }
 
@@ -124,7 +125,7 @@ export function compactScene(scene: Scene): Record<string, unknown> {
  */
 export function sceneToJson(scene: Scene): string {
   const compact = compactScene(scene);
-  const { elements, steps, audio, script, assets, ...rest } = compact;
+  const { elements, steps, audio, script, assets, comments, ...rest } = compact;
   // Keep the element map in draw order. Sort keys inside each element only.
   const sortedElements: Record<string, Json> = {};
   for (const [id, el] of Object.entries(elements as Record<string, unknown>)) sortedElements[id] = sortKeys(el);
@@ -133,6 +134,7 @@ export function sceneToJson(scene: Scene): string {
   if (audio) ordered["audio"] = sortKeys(audio);
   if (script) ordered["script"] = sortKeys(script);
   if (assets) ordered["assets"] = sortKeys(assets);
+  if (comments) ordered["comments"] = sortKeys(comments);
   return `${JSON.stringify(ordered, null, 2)}\n`;
 }
 

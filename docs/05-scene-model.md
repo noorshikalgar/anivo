@@ -24,6 +24,7 @@ interface Scene {
   audio: AudioTrack[];            // 0..n; kind "voiceover" maximum 1
   script: ScriptLine[];           // 0..n
   assets: Record<AssetId, AssetRef>;
+  comments: { id: string; target: { kind: "element" | "step"; id: string }; author: string; text: string; at: string; resolved: boolean; replyTo?: string }[];
 }
 
 interface SceneSettings {
