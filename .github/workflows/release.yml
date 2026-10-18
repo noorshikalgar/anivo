@@ -1,0 +1,59 @@
+# Release (docs/11): a version tag (for example v1.0.0) builds and publishes the
+# Docker images to the GitHub container registry. The owner pushes the tag.
+name: release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Tags
+        id: tags
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          repo="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}"
+          echo "web=$repo/anivo:$v,$repo/anivo:latest" >> "$GITHUB_OUTPUT"
+          echo "server=$repo/anivo-server:$v,$repo/anivo-server:latest" >> "$GITHUB_OUTPUT"
+      - name: Web app image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.tags.outputs.web }}
+      - name: Server image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/server.Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.tags.outputs.server }}
+
+  github-release:
+    needs: images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Release notes from CHANGELOG.md
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          awk -v v="$v" '$0 ~ "^## "v {p=1; next} /^## / && p {exit} p' CHANGELOG.md > notes.md
+          gh release create "$GITHUB_REF_NAME" --title "Anivo $v" --notes-file notes.md
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
