@@ -2,7 +2,7 @@ import { Button, SpinButton, Text, Tooltip, makeStyles, tokens } from "@fluentui
 import { Delete20Regular, MicRegular, MusicNote2Regular } from "@fluentui/react-icons";
 import { type AudioTrack, trackSpan } from "@anivo/schema";
 import { useEffect, useRef, useState } from "react";
-import { decode, peaks } from "../audio.js";
+import { decode, peaks, setCue } from "../audio.js";
 import { useEditor } from "../store.js";
 import { formatTime } from "./PlaybackBar.js";
 
@@ -23,6 +23,30 @@ const useStyles = makeStyles({
     overflow: "hidden",
   },
   canvas: { width: "100%", height: "100%", display: "block" },
+  cue: {
+    position: "absolute",
+    top: "-2px",
+    bottom: "-2px",
+    width: "14px",
+    marginLeft: "-7px",
+    cursor: "ew-resize",
+    touchAction: "none",
+    display: "flex",
+    justifyContent: "center",
+    "::before": { content: '""', width: "2px", backgroundColor: tokens.colorPaletteMarigoldBorderActive },
+  },
+  cueLabel: {
+    position: "absolute",
+    top: 0,
+    left: "8px",
+    padding: "0 3px",
+    fontSize: tokens.fontSizeBase100,
+    lineHeight: "14px",
+    borderRadius: tokens.borderRadiusSmall,
+    color: tokens.colorNeutralForegroundOnBrand,
+    backgroundColor: tokens.colorPaletteMarigoldBorderActive,
+    pointerEvents: "none",
+  },
   playhead: { position: "absolute", top: 0, bottom: 0, width: "1px", backgroundColor: tokens.colorPaletteRedForeground1, pointerEvents: "none" },
   gain: { width: "88px" },
 });
@@ -53,6 +77,61 @@ function Waveform({ track, widthPx }: { track: AudioTrack; widthPx: number }) {
     };
   }, [track, widthPx]);
   return <canvas ref={ref} className={styles.canvas} style={{ color: tokens.colorBrandForeground1 }} aria-hidden />;
+}
+
+/** Cue markers of the steps that start at a voiceover time. Drag a marker to move its cue (FR-AUDIO-02). */
+function Cues({ total, laneWidth }: { total: number; laneWidth: number }) {
+  const styles = useStyles();
+  const steps = useEditor((s) => s.scene.steps);
+  const [drag, setDrag] = useState<{ id: string; atMs: number } | null>(null);
+  return (
+    <>
+      {steps.map((step, i) => {
+        if (step.trigger.kind !== "cue") return null;
+        const atMs = drag?.id === step.id ? drag.atMs : step.trigger.atMs;
+        const from = step.trigger.atMs;
+        const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+          e.stopPropagation();
+          const el = e.currentTarget;
+          el.setPointerCapture(e.pointerId);
+          const x0 = e.clientX;
+          const at = (ev: PointerEvent) => Math.max(0, Math.round(from + ((ev.clientX - x0) / Math.max(1, laneWidth)) * total));
+          const move = (ev: PointerEvent) => setDrag({ id: step.id, atMs: at(ev) });
+          const up = (ev: PointerEvent) => {
+            el.removeEventListener("pointermove", move);
+            el.removeEventListener("pointerup", up);
+            setDrag(null);
+            if (at(ev) !== from) setCue(step.id, at(ev), "Move cue");
+          };
+          el.addEventListener("pointermove", move);
+          el.addEventListener("pointerup", up);
+        };
+        return (
+          <Tooltip key={step.id} content={`Step ${i + 1} (${step.title || step.id}) starts at ${formatTime(atMs)}. Drag to move.`} relationship="description">
+            <div
+              className={styles.cue}
+              style={{ left: (atMs / total) * laneWidth }}
+              onPointerDown={onPointerDown}
+              role="slider"
+              aria-label={`Cue of step ${i + 1}`}
+              aria-valuemin={0}
+              aria-valuemax={total}
+              aria-valuenow={atMs}
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+                e.stopPropagation();
+                const d = e.shiftKey ? 1000 : 100;
+                setCue(step.id, from + (e.key === "ArrowLeft" ? -d : d), "Move cue");
+              }}
+            >
+              <span className={styles.cueLabel}>{i + 1}</span>
+            </div>
+          </Tooltip>
+        );
+      })}
+    </>
+  );
 }
 
 function TrackRow({ track }: { track: AudioTrack }) {
@@ -116,6 +195,7 @@ function TrackRow({ track }: { track: AudioTrack }) {
             {!missing && <Waveform track={track} widthPx={px(span.endMs - span.startMs)} />}
           </div>
         </Tooltip>
+        {track.kind === "voiceover" && <Cues total={total} laneWidth={laneWidth} />}
         <div className={styles.playhead} style={{ left: px(playhead) }} />
       </div>
       <SpinButton

@@ -64,3 +64,57 @@ test("remove deletes the track", async ({ page }) => {
   await page.getByLabel("Audio tracks").getByRole("button", { name: "Remove audio" }).click();
   await expect(page.getByLabel("Audio tracks")).toHaveCount(0);
 });
+
+type S = { scene: { steps: { id: string; trigger: { kind: string; atMs?: number } }[]; script: { text: string; stepId?: string }[] }; timeline: { steps: { startMs: number }[] }; playhead: number };
+const st = async (page: import("@playwright/test").Page) => (await state(page)) as unknown as S;
+
+test("the script dialog sets one line for each step", async ({ page }) => {
+  await page.getByRole("button", { name: "Audio", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Edit script…" }).click();
+  await page.getByLabel("Voiceover script").fill("A user sends a request.\n\nThe load balancer gets it.\nPods start.\nTraffic flows.\nExtra line.");
+  await expect(page.getByText("5 lines, 4 steps. 1 lines have no step.")).toBeVisible();
+  await page.getByRole("button", { name: "Set script" }).click();
+  const s = await st(page);
+  expect(s.scene.script.map((l) => l.text)).toEqual(["A user sends a request.", "The load balancer gets it.", "Pods start.", "Traffic flows.", "Extra line."]);
+  expect(s.scene.script[1]!.stepId).toBe(s.scene.steps[1]!.id);
+  expect(s.scene.script[4]!.stepId).toBeUndefined();
+});
+
+test("the step inspector edits the script line of the step", async ({ page }) => {
+  await page.getByRole("button", { name: /Load balancer/ }).first().click();
+  const field = page.getByLabel("Inspector").getByRole("textbox", { name: "Script line" });
+  await field.fill("Here is the load balancer.");
+  await field.blur();
+  const s = await st(page);
+  expect(s.scene.script).toEqual([expect.objectContaining({ text: "Here is the load balancer.", stepId: s.scene.steps[1]!.id })]);
+});
+
+test("cue markers show on the voiceover and drag to move the step start", async ({ page }) => {
+  await addAudio(page, 12, "voiceover");
+  await page.getByRole("button", { name: "Audio", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Start all steps at voiceover cues" }).click();
+  let s = await st(page);
+  expect(s.scene.steps.every((x) => x.trigger.kind === "cue")).toBe(true);
+  const cue = page.getByRole("slider", { name: "Cue of step 4" });
+  const before = s.scene.steps[3]!.trigger.atMs!;
+  const box = (await cue.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 80, box.y + box.height / 2, { steps: 5 });
+  await page.mouse.up();
+  s = await st(page);
+  expect(s.scene.steps[3]!.trigger.atMs!).toBeGreaterThan(before + 300);
+  expect(s.timeline.steps[3]!.startMs).toBe(s.scene.steps[3]!.trigger.atMs);
+});
+
+test("M during play puts a cue for the next step at the playhead", async ({ page }) => {
+  await addAudio(page, 12, "voiceover");
+  await page.evaluate(() => (window as unknown as { __anivo: { getState(): { play(): void } } }).__anivo.getState().play());
+  await page.waitForTimeout(300);
+  await page.keyboard.press("m");
+  const s = await st(page);
+  const cued = s.scene.steps.filter((x) => x.trigger.kind === "cue");
+  expect(cued).toHaveLength(1);
+  expect(cued[0]!.id).toBe(s.scene.steps[1]!.id);
+  expect(cued[0]!.trigger.atMs!).toBeGreaterThan(100);
+});

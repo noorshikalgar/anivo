@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { addStep, copySelection, deleteSelection, duplicateSelection, groupSelection, nudgeSelection, pasteFromClipboard, selectAll, ungroupSelection } from "../commands.js";
+import { cueAtPlayhead } from "../audio.js";
 import { openFile, saveFile, saveFileAs } from "../files.js";
 import { notify, withErrors } from "../notify.js";
 import { type Tool, useEditor } from "../store.js";
@@ -66,6 +67,10 @@ export function useShortcuts(): void {
       } else if (e.key === "Escape") {
         st.setSelection([]);
         st.setTool("select");
+      } else if (!mod && !e.altKey && e.key.toLowerCase() === "m" && st.playing) {
+        // M during play: a cue for the next step at the playhead (docs/08).
+        const id = cueAtPlayhead();
+        if (id) notify(`Cue set for step '${id}'`, "info");
       } else if (!mod && !e.altKey && e.key.toLowerCase() === "n") {
         addStep();
       } else if (!mod && !e.altKey && TOOL_KEYS[e.key.toLowerCase()]) {

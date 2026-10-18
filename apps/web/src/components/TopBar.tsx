@@ -18,7 +18,7 @@ import { ArrowExportUp20Regular, Play20Regular, ArrowRedo20Regular, ArrowUndo20R
 import { useState } from "react";
 import { hasFileSystemAccess, newFromTemplate, newScene, openFile, openRecent, recentFiles, saveFile, saveFileAs } from "../files.js";
 import { notify, withErrors } from "../notify.js";
-import { importAudio } from "../audio.js";
+import { cueAllSteps, importAudio } from "../audio.js";
 import { useEditor } from "../store.js";
 
 const useStyles = makeStyles({
@@ -47,6 +47,7 @@ export function TopBar() {
   const title = useEditor((s) => s.scene.meta.title);
   const fileName = useEditor((s) => s.fileName);
   const dirty = useEditor((s) => s.dirty);
+  const hasVoice = useEditor((s) => s.scene.audio.some((t) => t.kind === "voiceover"));
   useEditor((s) => s.version);
   const { bus, undo, redo, fitToVideo } = useEditor.getState();
   const [recent, setRecent] = useState<Awaited<ReturnType<typeof recentFiles>>>([]);
@@ -126,6 +127,11 @@ export function TopBar() {
               Add music…
             </MenuItem>
             <MenuItem onClick={() => void withErrors(() => importAudio("sfx"))}>Add sound effect…</MenuItem>
+            <MenuDivider />
+            <MenuItem onClick={() => useEditor.setState({ scriptOpen: true })}>Edit script…</MenuItem>
+            <MenuItem disabled={!hasVoice} onClick={cueAllSteps}>
+              Start all steps at voiceover cues
+            </MenuItem>
           </MenuList>
         </MenuPopover>
       </Menu>

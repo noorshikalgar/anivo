@@ -45,6 +45,8 @@ interface EditorState {
   presenting: boolean;
   /** True while the export dialog is open. */
   exportOpen: boolean;
+  /** True while the script dialog is open. */
+  scriptOpen: boolean;
   /** Bytes of the scene assets (audio files), by asset ID. The scene has only the references. */
   assets: Map<string, Uint8Array>;
   /** The last message for the user (see notify.ts). */
@@ -117,6 +119,7 @@ export const useEditor = create<EditorState>((set, get) => {
     notice: null,
     assets: new Map(),
     exportOpen: false,
+    scriptOpen: false,
     presenting: false,
     paletteOpen: false,
 

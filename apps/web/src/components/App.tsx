@@ -12,6 +12,7 @@ import { Inspector } from "./Inspector.js";
 import { startAudioSync } from "../audio.js";
 import { AudioLane } from "./AudioLane.js";
 import { PlaybackBar } from "./PlaybackBar.js";
+import { ScriptDialog } from "./ScriptDialog.js";
 import { PresentMode } from "./PresentMode.js";
 import { StepsPanel } from "./StepsPanel.js";
 import { TopBar } from "./TopBar.js";
@@ -127,6 +128,7 @@ export function App() {
           {/* Outside the canvas tree: React events from a dialog portal bubble to its React parents. */}
           <IconPicker />
           <ExportDialog />
+          <ScriptDialog />
           <CommandPalette />
           {presenting && <PresentMode />}
         </div>
