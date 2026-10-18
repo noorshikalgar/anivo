@@ -287,6 +287,9 @@ importers:
 
   packages/ops:
     dependencies:
+      '@anivo/layout':
+        specifier: workspace:*
+        version: link:../layout
       '@anivo/schema':
         specifier: workspace:*
         version: link:../schema
@@ -317,6 +320,9 @@ importers:
 
   packages/script:
     dependencies:
+      '@anivo/layout':
+        specifier: workspace:*
+        version: link:../layout
       '@anivo/ops':
         specifier: workspace:*
         version: link:../ops

@@ -1,3 +1,4 @@
+import { type LayoutKind, autoLayout } from "@anivo/layout";
 import type { OperationInput } from "@anivo/ops";
 import type { Scene } from "@anivo/schema";
 import { type Line, type Pos, type ScriptError, type Token, parseLines } from "./syntax.js";
@@ -105,6 +106,7 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
   const elements: ElemDecl[] = [];
   const arrows: ArrowDecl[] = [];
   const stepLines: Line[] = [];
+  const layoutLines: Line[] = [];
   const declared = new Map<string, ElemDecl>();
   const existing = new Set(mode === "append" && opts.base ? Object.keys(opts.base.elements) : []);
   let camera = { x: 0, y: 0, width: opts.base?.settings.video.width ?? 1920, height: opts.base?.settings.video.height ?? 1080 };
@@ -216,8 +218,10 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
       if (a) arrows.push(a);
     } else if (head.v === "step") {
       stepLines.push(line);
+    } else if (head.v === "layout") {
+      layoutLines.push(line);
     } else {
-      errors.push(err(head.pos, `The statement '${head.v}' is not known.`, "Use: scene, box, ellipse, diamond, text, icon, caption, row, column, grid, group, arrow, step."));
+      errors.push(err(head.pos, `The statement '${head.v}' is not known.`, "Use: scene, box, ellipse, diamond, text, icon, caption, row, column, grid, group, arrow, layout, step."));
     }
   }
   if (errors.length > 0) return { ok: false, errors: errors.slice(0, 20) };
@@ -314,6 +318,41 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
       else [d.x, d.y] = p;
     }
   };
+
+  // layout statements: place top-level elements with the automatic layout (FR-CANVAS-16).
+  for (const line of layoutLines) {
+    const words = line.tokens.slice(1).filter((t): t is Extract<Token, { t: "word" }> => t.t === "word");
+    const kinds = ["row", "column", "grid", "tree", "layered"];
+    const kindTok = words.find((w) => kinds.includes(w.v));
+    if (!kindTok) {
+      errors.push(err(line.pos, "The layout has no kind.", "Write: layout web, api, db layered"));
+      continue;
+    }
+    const ids = words.filter((w) => w !== kindTok).map((w) => w.v);
+    const decls = ids.map((id) => ({ id, d: elements.find((e) => e.id === id) }));
+    const missing = decls.find((x) => !x.d);
+    if (missing) {
+      errors.push(err(line.pos, `The layout uses '${missing.id}', which is not a top-level element.`, "Use the IDs of elements that are not inside a row, column, grid, or group."));
+      continue;
+    }
+    const kv = new Map(line.tokens.filter((t): t is Extract<Token, { t: "kv" }> => t.t === "kv").map((t) => [t.k, t.v]));
+    const set = new Set(ids);
+    const edges = arrows.flatMap((a) => (a.from.kind === "id" && set.has(a.from.id) ? a.to.flatMap((t) => (t.kind === "id" && set.has(t.id) ? [{ from: (a.from as { id: string }).id, to: t.id }] : [])) : []));
+    const gap = num(kv.get("gap") ?? "");
+    const cols = num(kv.get("cols") ?? "");
+    const direction = kv.get("direction");
+    const result = autoLayout(
+      decls.map((x) => ({ id: x.id, width: x.d!.w, height: x.d!.h })),
+      edges,
+      { kind: kindTok.v as LayoutKind, ...(gap !== undefined ? { gap } : {}), ...(cols !== undefined ? { cols } : {}), ...(direction === "right" || direction === "down" ? { direction } : {}) },
+    );
+    for (const x of decls) {
+      const p = result.get(x.id)!;
+      x.d!.x = p.x;
+      x.d!.y = p.y;
+      x.d!.kv.delete("at");
+    }
+  }
 
   // Relative placement and auto placement for top-level elements, in dependency order.
   const RELATIONS = ["right-of", "left-of", "above", "below"] as const;

@@ -79,6 +79,7 @@ row|column|grid <id> [spacing=<px>] [placement]
 arrow <from> -> <to>[, <to>…] ["label"] [straight|elbow|curved] [dashed] [both] [no-head] [id=<id>]
 arrow 340,300 -> 340,980   (free ends are x,y points)
 caption <id> "<sentence>" [top|bottom]
+layout <id>, <id>, … row|column|grid|layered|tree [gap=<px>] [cols=<n>]   (automatic placement; arrows give the order)
 
 step "<title>" [hold=<time>] [cue=<time>]
   enter <targets> fade|pop|draw-on|slide-up|slide-left|wipe|typewriter [+<delay>] [stagger=<time>]

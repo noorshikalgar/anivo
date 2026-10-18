@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import {
   addStep,
   alignSelection,
+  autoLayoutSelection,
   commitSettings,
   copySelection,
   deleteSelection,
@@ -71,6 +72,7 @@ function commands(): Command[] {
     { title: "Align bottom", run: () => alignSelection("bottom") },
     { title: "Distribute horizontally", run: () => distributeSelection("horizontal") },
     { title: "Distribute vertically", run: () => distributeSelection("vertical") },
+    ...(["row", "column", "grid", "layered", "tree"] as const).map((k) => ({ title: `Auto layout: ${k}`, run: () => autoLayoutSelection(k) })),
     { title: "Style: clean", run: () => commitSettings({ style: "clean" }, "Change style") },
     { title: "Style: sketch", run: () => commitSettings({ style: "sketch" }, "Change style") },
     ...["slate-dark", "slate-light", "paper-light", "night-dark"].map((t) => ({ title: `Theme: ${t}`, run: () => commitSettings({ theme: t }, "Change theme") })),

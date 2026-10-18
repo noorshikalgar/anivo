@@ -1,5 +1,5 @@
 import { prepare } from "@anivo/engine";
-import { evaluateWithLayout } from "@anivo/layout";
+import { type LayoutKind, autoLayout, evaluateWithLayout } from "@anivo/layout";
 import type { OperationInput } from "@anivo/ops";
 import type { Element } from "@anivo/schema";
 import { type Box, boundsOf, geometryOps, leafDescendants } from "./editing.js";
@@ -404,4 +404,32 @@ function moveGroupAware(id: string, from: Box, to: Box, changes: Map<string, Box
     const b = box(leaf);
     if (b) changes.set(leaf, { ...b, x: b.x + dx, y: b.y + dy });
   }
+}
+
+/**
+ * Automatic layout of the selected elements (FR-CANVAS-16). Arrows between
+ * them give the order for tree and layered layouts. In a step, the moves
+ * become morphs, like a drag.
+ */
+export function autoLayoutSelection(kind: LayoutKind): void {
+  const st = useEditor.getState();
+  const box = currentBoxes();
+  const ids = movableIds(st.selection);
+  const nodes = ids.flatMap((id) => {
+    const b = box(id);
+    return b ? [{ id, width: b.width, height: b.height, x: b.x, y: b.y }] : [];
+  });
+  if (nodes.length < 2) return;
+  const set = new Set(ids);
+  const edges = Object.values(st.scene.elements).flatMap((c) =>
+    c.type === "connector" && c.start.kind === "bound" && c.end.kind === "bound" && set.has(c.start.elementId) && set.has(c.end.elementId) ? [{ from: c.start.elementId, to: c.end.elementId }] : [],
+  );
+  const origin = { x: Math.min(...nodes.map((n) => n.x)), y: Math.min(...nodes.map((n) => n.y)) };
+  const result = autoLayout(nodes, edges, { kind, origin });
+  const changes = new Map<string, Box>();
+  for (const n of nodes) {
+    const p = result.get(n.id);
+    if (p) changes.set(n.id, { x: p.x, y: p.y, width: n.width, height: n.height });
+  }
+  commitGeometry(changes, `Auto layout: ${kind}`);
 }

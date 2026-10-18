@@ -20,7 +20,7 @@ import {
   Delete20Regular,
 } from "@fluentui/react-icons";
 import { useMemo } from "react";
-import { type AlignKind, alignSelection, commitProps, commitSettings, deleteSelection, distributeSelection, duplicateSelection, groupSelection, renameElement, reorderSelection, setElementText, ungroupSelection } from "../commands.js";
+import { type AlignKind, alignSelection, autoLayoutSelection, commitProps, commitSettings, deleteSelection, distributeSelection, duplicateSelection, groupSelection, renameElement, reorderSelection, setElementText, ungroupSelection } from "../commands.js";
 import { useEditor } from "../store.js";
 import { ColorField, NumberField, Row, SelectField, TextField } from "./fields.js";
 import { AddActionMenu, StepInspector } from "./StepInspector.js";
@@ -233,6 +233,16 @@ function SelectionTools({ count }: { count: number }) {
         <Tooltip content="Distribute vertically" relationship="label">
           <Button size="small" appearance="subtle" icon={<AlignSpaceEvenlyVertical20Regular />} disabled={count < 3} onClick={() => distributeSelection("vertical")} aria-label="Distribute vertically" />
         </Tooltip>
+      </div>
+      <Text size={200} weight="semibold" className={styles.heading}>
+        Auto layout
+      </Text>
+      <div className={styles.actions}>
+        {(["row", "column", "grid", "layered", "tree"] as const).map((k) => (
+          <Button key={k} size="small" appearance="secondary" onClick={() => autoLayoutSelection(k)}>
+            {k.charAt(0).toUpperCase() + k.slice(1)}
+          </Button>
+        ))}
       </div>
       <div className={styles.actions}>
         <Button size="small" icon={<Group20Regular />} onClick={groupSelection}>
