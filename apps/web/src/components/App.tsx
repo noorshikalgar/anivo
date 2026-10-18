@@ -12,6 +12,7 @@ import { Inspector } from "./Inspector.js";
 import { startAudioSync } from "../audio.js";
 import { startImageSync } from "../images.js";
 import { AgentPanel, ConnectAgentDialog } from "./AgentPanel.js";
+import { AiPanel } from "./AiPanel.js";
 import { AlignDialog } from "./AlignDialog.js";
 import { AudioLane } from "./AudioLane.js";
 import { PlaybackBar } from "./PlaybackBar.js";
@@ -128,6 +129,7 @@ export function App() {
           <div className={styles.canvas} style={{ position: "relative" }}>
             <CanvasView />
             <AgentPanel />
+            <AiPanel />
           </div>
           <div className={styles.inspector}>
             <Inspector />

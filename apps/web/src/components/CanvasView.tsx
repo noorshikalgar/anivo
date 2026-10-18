@@ -88,7 +88,7 @@ export function CanvasView() {
   useEffect(() => {
     let pending = 0;
     const unsub = useEditor.subscribe((s, prev) => {
-      if (s.scene !== prev.scene || s.view !== prev.view || s.playhead !== prev.playhead || s.viewport !== prev.viewport || s.playing !== prev.playing || s.selection !== prev.selection || s.selectedStep !== prev.selectedStep || s.imagesVersion !== prev.imagesVersion || s.agent !== prev.agent) {
+      if (s.scene !== prev.scene || s.view !== prev.view || s.playhead !== prev.playhead || s.viewport !== prev.viewport || s.playing !== prev.playing || s.selection !== prev.selection || s.selectedStep !== prev.selectedStep || s.imagesVersion !== prev.imagesVersion || s.agent !== prev.agent || s.aiActivity !== prev.aiActivity) {
         if (!pending) pending = requestAnimationFrame(() => ((pending = 0), draw()));
       }
     });
@@ -167,7 +167,14 @@ export function CanvasView() {
       return b;
     };
     // Agent presence (docs/09 "Agent presence"): changed elements glow for 2 s; pending changes show dashed.
-    const agent = useEditor.getState().agent;
+    const agentState = useEditor.getState().agent;
+    const aiActivity = useEditor.getState().aiActivity;
+    // The AI panel shows its changes like an agent, with no review queue.
+    const agent = agentState
+      ? { ...agentState, activity: aiActivity && (!agentState.activity || aiActivity.at > agentState.activity.at) ? aiActivity : agentState.activity }
+      : aiActivity
+        ? { pending: [], activity: aiActivity }
+        : null;
     if (agent) {
       ctx.save();
       ctx.strokeStyle = "#F5B84A";

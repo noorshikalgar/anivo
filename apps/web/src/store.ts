@@ -53,6 +53,10 @@ interface EditorState {
   imagesVersion: number;
   /** True while the timeline panel shows. */
   timelineOpen: boolean;
+  /** Elements that the AI panel changed last (for the canvas outline). */
+  aiActivity: { ids: string[]; at: number } | null;
+  /** True while the AI panel shows. */
+  aiOpen: boolean;
   /** True while the connect agent dialog is open. */
   connectOpen: boolean;
   /** The connected agent (bridge), or null. */
@@ -144,6 +148,8 @@ export const useEditor = create<EditorState>((set, get) => {
     tourOpen: false,
     agent: null,
     connectOpen: false,
+    aiActivity: null,
+    aiOpen: false,
     timelineOpen: false,
     imagesVersion: 0,
     recording: null,
