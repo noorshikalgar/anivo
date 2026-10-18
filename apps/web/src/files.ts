@@ -227,3 +227,16 @@ export async function restoreAutosave(): Promise<boolean> {
   openScene({ scene: r.scene, assets }, saved.fileName, handle && handle.name === saved.fileName ? handle : null);
   return true;
 }
+
+/** `anivo serve`: open the scene in "?scene=<path>" from this server (same origin only). */
+export async function openSceneFromQuery(): Promise<boolean> {
+  const path = new URLSearchParams(location.search).get("scene");
+  if (!path || !path.startsWith("/") || path.startsWith("//")) return false;
+  const res = await fetch(path);
+  if (!res.ok) throw new FileError(`The scene did not load (HTTP ${res.status}).`);
+  const r = unpack(new Uint8Array(await res.arrayBuffer()));
+  if (!r.ok) throw new FileError(`The scene is not valid. ${r.issues[0]?.message ?? ""}`.trim());
+  const name = decodeURIComponent(res.headers.get("x-anivo-name") ?? "") || null;
+  openScene({ scene: r.scene, assets: r.assets }, name, null);
+  return true;
+}
