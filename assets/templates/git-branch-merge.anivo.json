@@ -1,0 +1,396 @@
+{
+  "schemaVersion": 1,
+  "id": "",
+  "meta": {
+    "title": "Git branch and merge"
+  },
+  "settings": {},
+  "elements": {
+    "main-label": {
+      "content": {
+        "text": "main"
+      },
+      "height": 60,
+      "seed": 1215589735,
+      "style": {
+        "fontSize": 40,
+        "textColor": "muted"
+      },
+      "type": "text",
+      "width": 160,
+      "x": 120,
+      "y": 575,
+      "z": "V"
+    },
+    "feature-label": {
+      "content": {
+        "text": "feature"
+      },
+      "height": 60,
+      "seed": 315093711,
+      "style": {
+        "fontSize": 40,
+        "textColor": "muted"
+      },
+      "type": "text",
+      "width": 200,
+      "x": 120,
+      "y": 305,
+      "z": "l"
+    },
+    "c1": {
+      "height": 50,
+      "seed": 136962010,
+      "style": {
+        "fill": "accent"
+      },
+      "type": "ellipse",
+      "width": 50,
+      "x": 320,
+      "y": 580,
+      "z": "t"
+    },
+    "c2": {
+      "height": 50,
+      "seed": 86629153,
+      "style": {
+        "fill": "accent"
+      },
+      "type": "ellipse",
+      "width": 50,
+      "x": 560,
+      "y": 580,
+      "z": "x"
+    },
+    "c3": {
+      "height": 50,
+      "seed": 103406772,
+      "style": {
+        "fill": "accent"
+      },
+      "type": "ellipse",
+      "width": 50,
+      "x": 800,
+      "y": 580,
+      "z": "z"
+    },
+    "f1": {
+      "height": 50,
+      "seed": 337800568,
+      "style": {
+        "fill": "success"
+      },
+      "type": "ellipse",
+      "width": 50,
+      "x": 800,
+      "y": 310,
+      "z": "zV"
+    },
+    "f2": {
+      "height": 50,
+      "seed": 388133425,
+      "style": {
+        "fill": "success"
+      },
+      "type": "ellipse",
+      "width": 50,
+      "x": 1040,
+      "y": 310,
+      "z": "zl"
+    },
+    "f3": {
+      "height": 50,
+      "seed": 371355806,
+      "style": {
+        "fill": "success"
+      },
+      "type": "ellipse",
+      "width": 50,
+      "x": 1280,
+      "y": 310,
+      "z": "zt"
+    },
+    "merge": {
+      "height": 60,
+      "seed": 964052520,
+      "style": {
+        "fill": "warning"
+      },
+      "type": "ellipse",
+      "width": 60,
+      "x": 1500,
+      "y": 575,
+      "z": "zx"
+    },
+    "cmd": {
+      "content": {
+        "text": "git merge feature"
+      },
+      "height": 70,
+      "seed": 1989302252,
+      "style": {
+        "fontSize": 44
+      },
+      "type": "text",
+      "width": 560,
+      "x": 1180,
+      "y": 760,
+      "z": "zz"
+    },
+    "c-c1-c2": {
+      "end": {
+        "elementId": "c2",
+        "kind": "bound"
+      },
+      "endHead": "none",
+      "seed": 650090326,
+      "start": {
+        "elementId": "c1",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zzV"
+    },
+    "c-c2-c3": {
+      "end": {
+        "elementId": "c3",
+        "kind": "bound"
+      },
+      "endHead": "none",
+      "seed": 32439750,
+      "start": {
+        "elementId": "c2",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zzl"
+    },
+    "c-c3-merge": {
+      "end": {
+        "elementId": "merge",
+        "kind": "bound"
+      },
+      "endHead": "none",
+      "seed": 555107723,
+      "start": {
+        "elementId": "c3",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zzt"
+    },
+    "c-c2-f1": {
+      "end": {
+        "elementId": "f1",
+        "kind": "bound"
+      },
+      "endHead": "none",
+      "route": "curved",
+      "seed": 199723070,
+      "start": {
+        "elementId": "c2",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zzx"
+    },
+    "c-f1-f2": {
+      "end": {
+        "elementId": "f2",
+        "kind": "bound"
+      },
+      "endHead": "none",
+      "seed": 1331903971,
+      "start": {
+        "elementId": "f1",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zzz"
+    },
+    "c-f2-f3": {
+      "end": {
+        "elementId": "f3",
+        "kind": "bound"
+      },
+      "endHead": "none",
+      "seed": 675409032,
+      "start": {
+        "elementId": "f2",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zzzV"
+    },
+    "c-f3-merge": {
+      "end": {
+        "elementId": "merge",
+        "kind": "bound"
+      },
+      "endHead": "none",
+      "route": "curved",
+      "seed": 466425836,
+      "start": {
+        "elementId": "f3",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zzzl"
+    }
+  },
+  "steps": [
+    {
+      "actions": [
+        {
+          "effect": "fade",
+          "id": "a1",
+          "targets": [
+            "main-label"
+          ],
+          "type": "enter"
+        },
+        {
+          "effect": "pop",
+          "id": "a2",
+          "staggerMs": 250,
+          "targets": [
+            "c1",
+            "c2",
+            "c3"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 250,
+          "effect": "draw-on",
+          "id": "a3",
+          "staggerMs": 250,
+          "targets": [
+            "c-c1-c2",
+            "c-c2-c3"
+          ],
+          "type": "enter"
+        }
+      ],
+      "id": "s-commits-on-main",
+      "title": "Commits on main"
+    },
+    {
+      "actions": [
+        {
+          "effect": "draw-on",
+          "id": "a4",
+          "targets": [
+            "c-c2-f1"
+          ],
+          "type": "enter"
+        },
+        {
+          "effect": "fade",
+          "id": "a5",
+          "targets": [
+            "feature-label"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 500,
+          "effect": "pop",
+          "id": "a6",
+          "targets": [
+            "f1"
+          ],
+          "type": "enter"
+        }
+      ],
+      "id": "s-create-a-branch",
+      "title": "Create a branch"
+    },
+    {
+      "actions": [
+        {
+          "effect": "pop",
+          "id": "a7",
+          "staggerMs": 300,
+          "targets": [
+            "f2",
+            "f3"
+          ],
+          "type": "enter"
+        },
+        {
+          "effect": "draw-on",
+          "id": "a8",
+          "staggerMs": 300,
+          "targets": [
+            "c-f1-f2",
+            "c-f2-f3"
+          ],
+          "type": "enter"
+        }
+      ],
+      "id": "s-work-on-the-branch",
+      "title": "Work on the branch"
+    },
+    {
+      "actions": [
+        {
+          "effect": "draw-on",
+          "id": "a9",
+          "targets": [
+            "c-c3-merge",
+            "c-f3-merge"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 600,
+          "effect": "pop",
+          "id": "a10",
+          "targets": [
+            "merge"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 1000,
+          "effect": "pulse",
+          "id": "a11",
+          "targets": [
+            "merge"
+          ],
+          "type": "emphasis"
+        }
+      ],
+      "id": "s-merge",
+      "title": "Merge"
+    },
+    {
+      "actions": [
+        {
+          "camera": {
+            "op": "zoom-to",
+            "padding": 220
+          },
+          "id": "a12",
+          "targets": [
+            "merge",
+            "cmd"
+          ],
+          "type": "camera"
+        },
+        {
+          "delayMs": 400,
+          "effect": "typewriter",
+          "id": "a13",
+          "targets": [
+            "cmd"
+          ],
+          "type": "enter"
+        }
+      ],
+      "id": "s-git-merge-feature",
+      "title": "git merge feature"
+    }
+  ]
+}

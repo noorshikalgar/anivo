@@ -1,0 +1,32 @@
+scene "Cache-aside pattern" style=clean theme=slate-dark size=1920x1080 fps=60
+
+icon app lucide:server "App" at=200,470 size=140x140
+box cache "Cache (Redis)" at=820,220 size=320x110 fill=accent-soft
+icon db lucide:database "Database" at=1560,600 size=140x140
+text latency "120 ms" at=1300,140 size=360x80 font-size=56 color=warning
+caption note "1. Look in the cache first"
+
+arrow app -> cache "get user:42" font-size=30
+arrow app -> db "SELECT" font-size=30
+
+step "Cache miss"
+  enter app, cache pop stagger=200ms
+  enter app->cache draw-on +400ms
+  flow app->cache rate=2 +700ms
+  flash cache +1200ms
+  enter note fade
+step "Read from the database"
+  enter db pop
+  enter app->db draw-on +300ms
+  flow app->db rate=2 +700ms
+  enter latency fade +700ms
+  morph note label="2. Miss: read from the database"
+step "Fill the cache"
+  flow app->cache rate=3
+  morph cache fill=success-soft +500ms
+  morph note label="3. Write the result to the cache"
+step "Cache hit"
+  flow app->cache rate=3
+  glow cache +300ms
+  count latency from=120 to=2 format="{n} ms" dur=1200ms
+  morph note label="Next time: a cache hit in 2 ms"

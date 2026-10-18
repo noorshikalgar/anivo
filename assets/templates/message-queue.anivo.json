@@ -1,0 +1,449 @@
+{
+  "schemaVersion": 1,
+  "id": "",
+  "meta": {
+    "title": "Message queue"
+  },
+  "settings": {},
+  "elements": {
+    "producer": {
+      "height": 140,
+      "label": {
+        "text": "Producer"
+      },
+      "name": "package",
+      "pack": "lucide",
+      "seed": 1357396007,
+      "type": "icon",
+      "width": 140,
+      "x": 140,
+      "y": 470,
+      "z": "V"
+    },
+    "queue": {
+      "seed": 1960818873,
+      "type": "group",
+      "z": "l"
+    },
+    "m1": {
+      "height": 100,
+      "label": {
+        "text": "msg 1"
+      },
+      "parentId": "queue",
+      "seed": 338587628,
+      "style": {
+        "fill": "accent-soft"
+      },
+      "type": "rectangle",
+      "width": 150,
+      "x": 560,
+      "y": 480,
+      "z": "t"
+    },
+    "m2": {
+      "height": 100,
+      "label": {
+        "text": "msg 2"
+      },
+      "parentId": "queue",
+      "seed": 355365247,
+      "style": {
+        "fill": "accent-soft"
+      },
+      "type": "rectangle",
+      "width": 150,
+      "x": 726,
+      "y": 480,
+      "z": "x"
+    },
+    "m3": {
+      "height": 100,
+      "label": {
+        "text": "msg 3"
+      },
+      "parentId": "queue",
+      "seed": 372142866,
+      "style": {
+        "fill": "accent-soft"
+      },
+      "type": "rectangle",
+      "width": 150,
+      "x": 892,
+      "y": 480,
+      "z": "z"
+    },
+    "m4": {
+      "height": 100,
+      "label": {
+        "text": "msg 4"
+      },
+      "parentId": "queue",
+      "seed": 388920485,
+      "style": {
+        "fill": "accent-soft"
+      },
+      "type": "rectangle",
+      "width": 150,
+      "x": 1058,
+      "y": 480,
+      "z": "zV"
+    },
+    "queue-label": {
+      "content": {
+        "text": "orders queue"
+      },
+      "height": 60,
+      "seed": 1795807768,
+      "style": {
+        "textColor": "muted"
+      },
+      "type": "text",
+      "width": 650,
+      "x": 560,
+      "y": 610,
+      "z": "zl"
+    },
+    "broker": {
+      "height": 100,
+      "label": {
+        "text": "Broker"
+      },
+      "seed": 342754485,
+      "type": "rectangle",
+      "width": 150,
+      "x": 1250,
+      "y": 480,
+      "z": "zt"
+    },
+    "workers": {
+      "seed": 2007027117,
+      "type": "group",
+      "z": "zx"
+    },
+    "w1": {
+      "height": 100,
+      "label": {
+        "text": "Worker 1"
+      },
+      "parentId": "workers",
+      "seed": 273102853,
+      "type": "rectangle",
+      "width": 260,
+      "x": 1480,
+      "y": 220,
+      "z": "zz"
+    },
+    "w2": {
+      "height": 100,
+      "label": {
+        "text": "Worker 2"
+      },
+      "parentId": "workers",
+      "seed": 222769996,
+      "type": "rectangle",
+      "width": 260,
+      "x": 1480,
+      "y": 440,
+      "z": "zzV"
+    },
+    "w3": {
+      "height": 100,
+      "label": {
+        "text": "Worker 3"
+      },
+      "parentId": "workers",
+      "seed": 239547615,
+      "type": "rectangle",
+      "width": 260,
+      "x": 1480,
+      "y": 660,
+      "z": "zzl"
+    },
+    "note": {
+      "content": {
+        "text": "The producer does not wait for the workers"
+      },
+      "height": 64,
+      "seed": 295308350,
+      "style": {
+        "fontSize": 40,
+        "textColor": "muted"
+      },
+      "type": "text",
+      "width": 1600,
+      "x": 160,
+      "y": 956,
+      "z": "zzt"
+    },
+    "c-producer-m1": {
+      "end": {
+        "elementId": "m1",
+        "kind": "bound"
+      },
+      "seed": 1682805552,
+      "start": {
+        "elementId": "producer",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zzx"
+    },
+    "c-m4-broker": {
+      "end": {
+        "elementId": "broker",
+        "kind": "bound"
+      },
+      "seed": 1271649055,
+      "start": {
+        "elementId": "m4",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zzz"
+    },
+    "c-broker-w1": {
+      "end": {
+        "elementId": "w1",
+        "kind": "bound"
+      },
+      "seed": 1137683063,
+      "start": {
+        "elementId": "broker",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zzzV"
+    },
+    "c-broker-w2": {
+      "end": {
+        "elementId": "w2",
+        "kind": "bound"
+      },
+      "seed": 1154460682,
+      "start": {
+        "elementId": "broker",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zzzl"
+    },
+    "c-broker-w3": {
+      "end": {
+        "elementId": "w3",
+        "kind": "bound"
+      },
+      "seed": 1171238301,
+      "start": {
+        "elementId": "broker",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zzzt"
+    }
+  },
+  "steps": [
+    {
+      "actions": [
+        {
+          "effect": "draw-on",
+          "id": "a1",
+          "targets": [
+            "producer"
+          ],
+          "type": "enter"
+        },
+        {
+          "effect": "fade",
+          "id": "a2",
+          "targets": [
+            "queue-label"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 300,
+          "effect": "slide",
+          "id": "a3",
+          "params": {
+            "direction": "left"
+          },
+          "staggerMs": 200,
+          "targets": [
+            "m1",
+            "m2",
+            "m3",
+            "m4"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 900,
+          "effect": "pop",
+          "id": "a4",
+          "targets": [
+            "broker"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 1100,
+          "effect": "draw-on",
+          "id": "a5",
+          "targets": [
+            "c-m4-broker"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 300,
+          "effect": "draw-on",
+          "id": "a6",
+          "targets": [
+            "c-producer-m1"
+          ],
+          "type": "enter"
+        }
+      ],
+      "id": "s-publish",
+      "title": "Publish"
+    },
+    {
+      "actions": [
+        {
+          "effect": "pop",
+          "id": "a7",
+          "staggerMs": 150,
+          "targets": [
+            "w1",
+            "w2",
+            "w3"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 400,
+          "effect": "draw-on",
+          "id": "a8",
+          "targets": [
+            "c-broker-w1",
+            "c-broker-w2",
+            "c-broker-w3"
+          ],
+          "type": "enter"
+        },
+        {
+          "effect": "fade",
+          "id": "a9",
+          "targets": [
+            "note"
+          ],
+          "type": "enter"
+        }
+      ],
+      "id": "s-subscribe",
+      "title": "Subscribe"
+    },
+    {
+      "actions": [
+        {
+          "flow": {
+            "distribute": "round-robin"
+          },
+          "id": "a10",
+          "targets": [
+            "c-broker-w1",
+            "c-broker-w2",
+            "c-broker-w3"
+          ],
+          "type": "flow"
+        },
+        {
+          "delayMs": 600,
+          "effect": "fade",
+          "id": "a11",
+          "staggerMs": 600,
+          "targets": [
+            "m4",
+            "m3"
+          ],
+          "type": "exit"
+        },
+        {
+          "delayMs": 1800,
+          "id": "a12",
+          "targets": [
+            "c-m4-broker"
+          ],
+          "to": {
+            "opacity": 0
+          },
+          "type": "morph"
+        },
+        {
+          "id": "a13",
+          "targets": [
+            "note"
+          ],
+          "to": {
+            "label": "Each message goes to one worker"
+          },
+          "type": "morph"
+        }
+      ],
+      "id": "s-consume",
+      "title": "Consume"
+    },
+    {
+      "actions": [
+        {
+          "id": "a14",
+          "targets": [
+            "w2"
+          ],
+          "to": {
+            "fill": "danger-soft",
+            "label": "Worker 2 down",
+            "stroke": "danger"
+          },
+          "type": "morph"
+        },
+        {
+          "effect": "shake",
+          "id": "a15",
+          "targets": [
+            "w2"
+          ],
+          "type": "emphasis"
+        },
+        {
+          "flow": {
+            "distribute": "round-robin",
+            "skip": [
+              "c-broker-w2"
+            ]
+          },
+          "id": "a16",
+          "targets": [
+            "c-broker-w1",
+            "c-broker-w2",
+            "c-broker-w3"
+          ],
+          "type": "flow"
+        },
+        {
+          "id": "a17",
+          "targets": [
+            "note"
+          ],
+          "to": {
+            "label": "The queue keeps the messages until a worker is free"
+          },
+          "type": "morph"
+        }
+      ],
+      "id": "s-a-worker-fails",
+      "title": "A worker fails"
+    }
+  ]
+}

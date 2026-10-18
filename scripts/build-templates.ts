@@ -6,10 +6,13 @@
  *
  * Run: pnpm build:templates
  */
-import { writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { importMermaid } from "@anivo/import";
+import { lintScene } from "@anivo/lint";
+import { applyScript } from "@anivo/script";
 import { sceneToJson } from "@anivo/fileio";
 import { OperationBus, type OperationInput } from "@anivo/ops";
-import { type Scene, loadScene } from "@anivo/schema";
+import { type Scene, TEMPLATES, loadScene } from "@anivo/schema";
 
 function build(title: string, ops: OperationInput[], steps: { title: string; holdMs?: number; actions: Record<string, unknown>[] }[]): Scene {
   const r = loadScene({ schemaVersion: 1, meta: { title }, settings: { style: "clean", theme: "slate-dark" } });
@@ -183,12 +186,24 @@ const docker = build(
   ],
 );
 
-const out: [string, Scene][] = [
-  ["load-balancer", loadBalancer],
-  ["tcp-handshake", tcp],
-  ["docker-layers", docker],
-];
+// Templates written in Anivo Script (scripts/templates/<name>.anivo.txt) or Mermaid (<name>.mmd).
+function fromSource(name: string): Scene {
+  const txt = `scripts/templates/${name}.anivo.txt`;
+  if (existsSync(txt)) {
+    const r = applyScript(readFileSync(txt, "utf8"), { author: { kind: "system" } });
+    if (!r.ok) throw new Error(`${txt}: ${r.errors.map((e) => `${e.line}:${e.col} ${e.message}`).join("; ")}`);
+    return r.scene;
+  }
+  const mmd = `scripts/templates/${name}.mmd`;
+  const t = TEMPLATES.find((x) => x.name === name)!;
+  return importMermaid(readFileSync(mmd, "utf8"), { title: t.title }).scene;
+}
+
+const built: Record<string, Scene> = { "load-balancer": loadBalancer, "tcp-handshake": tcp, "docker-layers": docker };
+const out: [string, Scene][] = TEMPLATES.map((t) => [t.name, built[t.name] ?? fromSource(t.name)]);
 for (const [name, scene] of out) {
+  const errors = lintScene(scene).filter((l) => l.level === "error");
+  if (errors.length) throw new Error(`Template '${name}' has lint errors: ${errors.map((e) => e.message).join("; ")}`);
   writeFileSync(`assets/templates/${name}.anivo.json`, sceneToJson(scene));
   console.log(`assets/templates/${name}.anivo.json: ${Object.keys(scene.elements).length} elements, ${scene.steps.length} steps`);
 }

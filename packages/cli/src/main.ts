@@ -4,7 +4,7 @@ import { type NodeExportFormat, exportHtml, exportVideo } from "@anivo/export-no
 import { formatLint, lintScene, lintSummary } from "@anivo/lint";
 import { OperationBus } from "@anivo/ops";
 import { searchIcons } from "@anivo/render";
-import { type Scene, loadScene } from "@anivo/schema";
+import { type Scene, TEMPLATES, loadScene } from "@anivo/schema";
 import { importText } from "@anivo/import";
 import { applyScript, printScene } from "@anivo/script";
 import { ToolError, assetCache, audioMime, imageMime, parseTranscript, transcribe, contactSheetPng, importAsset, probeDurationMs, jsonSchema, previewPng, readSceneFile, sceneSummary, stepTime, writeSceneFile } from "@anivo/tools";
@@ -22,7 +22,7 @@ const print = (text: string, data?: unknown) => {
 
 function templatePath(name: string): string {
   const p = homePath("assets", "templates", `${name}.anivo.json`);
-  if (!existsSync(p)) throw new ToolError(`The template '${name}' does not exist.`, "Use: load-balancer, tcp-handshake, docker-layers.");
+  if (!existsSync(p)) throw new ToolError(`The template '${name}' does not exist.`, `Use: ${TEMPLATES.map((t) => t.name).join(", ")}.`);
   return p;
 }
 

@@ -121,7 +121,7 @@ See [05 — Scene model](05-scene-model.md).
 | FR-FILE-05 | Import Excalidraw files (`.excalidraw`) | P1 | Shapes, text, connectors, bindings, and groups convert. Excalidraw frames convert to groups. |
 | FR-FILE-06 | Import Mermaid flowchart and sequence diagram text | P1 | |
 | FR-FILE-07 | Schema version and migrations | P0 | Each file has `schemaVersion`. Anivo opens all older versions. |
-| FR-FILE-08 | Templates gallery (built-in) | P1 | Minimum 10 templates at 1.0. Examples A to E are templates. |
+| FR-FILE-08 | Templates gallery (built-in) | P1 | Minimum 10 templates at 1.0. Examples A to E are templates. The list is in `packages/schema/src/templates.ts`; the sources are in `scripts/build-templates.ts` and `scripts/templates/`. |
 | FR-FILE-09 | Recent scenes list | P0 | |
 
 ## 7. Agent and AI (`FR-AGENT`)

@@ -1,0 +1,320 @@
+{
+  "schemaVersion": 1,
+  "id": "",
+  "meta": {
+    "title": "CI/CD pipeline"
+  },
+  "settings": {},
+  "elements": {
+    "stages": {
+      "seed": 77660666,
+      "type": "group",
+      "z": "V"
+    },
+    "commit": {
+      "height": 110,
+      "label": {
+        "text": "Commit"
+      },
+      "parentId": "stages",
+      "seed": 860606716,
+      "type": "rectangle",
+      "width": 260,
+      "x": 140,
+      "y": 460,
+      "z": "l"
+    },
+    "build": {
+      "height": 110,
+      "label": {
+        "text": "Build"
+      },
+      "parentId": "stages",
+      "seed": 1134293668,
+      "type": "rectangle",
+      "width": 260,
+      "x": 520,
+      "y": 460,
+      "z": "t"
+    },
+    "test": {
+      "height": 110,
+      "label": {
+        "text": "Test"
+      },
+      "parentId": "stages",
+      "seed": 802189798,
+      "type": "rectangle",
+      "width": 260,
+      "x": 900,
+      "y": 460,
+      "z": "x"
+    },
+    "deploy": {
+      "height": 110,
+      "label": {
+        "text": "Deploy"
+      },
+      "parentId": "stages",
+      "seed": 1557350270,
+      "type": "rectangle",
+      "width": 260,
+      "x": 1280,
+      "y": 460,
+      "z": "z"
+    },
+    "tests": {
+      "content": {
+        "text": "0 tests passed"
+      },
+      "height": 70,
+      "seed": 1529007906,
+      "style": {
+        "fontSize": 40,
+        "textColor": "muted"
+      },
+      "type": "text",
+      "width": 520,
+      "x": 780,
+      "y": 640,
+      "z": "zV"
+    },
+    "prod": {
+      "height": 120,
+      "label": {
+        "text": "Production"
+      },
+      "name": "rocket",
+      "pack": "lucide",
+      "seed": 1832792437,
+      "type": "icon",
+      "width": 120,
+      "x": 1660,
+      "y": 200,
+      "z": "zl"
+    },
+    "c-commit-build": {
+      "end": {
+        "elementId": "build",
+        "kind": "bound"
+      },
+      "seed": 688514561,
+      "start": {
+        "elementId": "commit",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zt"
+    },
+    "c-build-test": {
+      "end": {
+        "elementId": "test",
+        "kind": "bound"
+      },
+      "seed": 2052277218,
+      "start": {
+        "elementId": "build",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zx"
+    },
+    "c-test-deploy": {
+      "end": {
+        "elementId": "deploy",
+        "kind": "bound"
+      },
+      "seed": 1116687363,
+      "start": {
+        "elementId": "test",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zz"
+    },
+    "c-deploy-prod": {
+      "end": {
+        "elementId": "prod",
+        "kind": "bound"
+      },
+      "seed": 1050570465,
+      "start": {
+        "elementId": "deploy",
+        "kind": "bound"
+      },
+      "type": "connector",
+      "z": "zzV"
+    }
+  },
+  "steps": [
+    {
+      "actions": [
+        {
+          "effect": "pop",
+          "id": "a1",
+          "targets": [
+            "commit"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 300,
+          "effect": "fade",
+          "id": "a2",
+          "staggerMs": 150,
+          "targets": [
+            "build",
+            "test",
+            "deploy"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 600,
+          "effect": "draw-on",
+          "id": "a3",
+          "staggerMs": 150,
+          "targets": [
+            "c-commit-build",
+            "c-build-test",
+            "c-test-deploy"
+          ],
+          "type": "enter"
+        }
+      ],
+      "id": "s-push-a-commit",
+      "title": "Push a commit"
+    },
+    {
+      "actions": [
+        {
+          "id": "a4",
+          "targets": [
+            "c-commit-build"
+          ],
+          "type": "flow"
+        },
+        {
+          "delayMs": 500,
+          "effect": "pulse",
+          "id": "a5",
+          "targets": [
+            "build"
+          ],
+          "type": "emphasis"
+        },
+        {
+          "delayMs": 1200,
+          "id": "a6",
+          "targets": [
+            "build"
+          ],
+          "to": {
+            "fill": "success-soft"
+          },
+          "type": "morph"
+        }
+      ],
+      "id": "s-build",
+      "title": "Build"
+    },
+    {
+      "actions": [
+        {
+          "id": "a7",
+          "targets": [
+            "c-build-test"
+          ],
+          "type": "flow"
+        },
+        {
+          "delayMs": 300,
+          "effect": "fade",
+          "id": "a8",
+          "targets": [
+            "tests"
+          ],
+          "type": "enter"
+        },
+        {
+          "counter": {
+            "format": "{n} tests passed",
+            "from": 0,
+            "to": 128
+          },
+          "delayMs": 300,
+          "durationMs": 2000,
+          "id": "a9",
+          "targets": [
+            "tests"
+          ],
+          "type": "counter"
+        },
+        {
+          "delayMs": 2300,
+          "id": "a10",
+          "targets": [
+            "test"
+          ],
+          "to": {
+            "fill": "success-soft"
+          },
+          "type": "morph"
+        }
+      ],
+      "id": "s-test",
+      "title": "Test"
+    },
+    {
+      "actions": [
+        {
+          "id": "a11",
+          "targets": [
+            "c-test-deploy"
+          ],
+          "type": "flow"
+        },
+        {
+          "delayMs": 600,
+          "id": "a12",
+          "targets": [
+            "deploy"
+          ],
+          "to": {
+            "fill": "success-soft"
+          },
+          "type": "morph"
+        },
+        {
+          "delayMs": 900,
+          "effect": "pop",
+          "id": "a13",
+          "targets": [
+            "prod"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 700,
+          "effect": "draw-on",
+          "id": "a14",
+          "targets": [
+            "c-deploy-prod"
+          ],
+          "type": "enter"
+        },
+        {
+          "delayMs": 1500,
+          "effect": "glow",
+          "id": "a15",
+          "targets": [
+            "prod"
+          ],
+          "type": "emphasis"
+        }
+      ],
+      "id": "s-deploy",
+      "title": "Deploy"
+    }
+  ]
+}
