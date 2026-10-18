@@ -14,10 +14,11 @@ import {
   makeStyles,
   tokens,
 } from "@fluentui/react-components";
-import { ArrowExportUp20Regular, Play20Regular, ArrowRedo20Regular, ArrowUndo20Regular, Document20Regular, FolderOpen20Regular, Save20Regular, ZoomFit20Regular } from "@fluentui/react-icons";
+import { ArrowExportUp20Regular, Play20Regular, ArrowRedo20Regular, ArrowUndo20Regular, Document20Regular, FolderOpen20Regular, Mic20Regular, MusicNote220Regular, Save20Regular, ZoomFit20Regular } from "@fluentui/react-icons";
 import { useState } from "react";
 import { hasFileSystemAccess, newFromTemplate, newScene, openFile, openRecent, recentFiles, saveFile, saveFileAs } from "../files.js";
 import { notify, withErrors } from "../notify.js";
+import { importAudio } from "../audio.js";
 import { useEditor } from "../store.js";
 
 const useStyles = makeStyles({
@@ -107,6 +108,24 @@ export function TopBar() {
             <MenuItem secondaryContent="Ctrl+Shift+S" onClick={() => void withErrors(async () => (await saveFileAs()) && notify("Saved", "success"))}>
               Save as…
             </MenuItem>
+          </MenuList>
+        </MenuPopover>
+      </Menu>
+      <Menu>
+        <MenuTrigger disableButtonEnhancement>
+          <Button appearance="subtle" size="small">
+            Audio
+          </Button>
+        </MenuTrigger>
+        <MenuPopover>
+          <MenuList>
+            <MenuItem icon={<Mic20Regular />} onClick={() => void withErrors(() => importAudio("voiceover"))}>
+              Add voiceover…
+            </MenuItem>
+            <MenuItem icon={<MusicNote220Regular />} onClick={() => void withErrors(() => importAudio("music"))}>
+              Add music…
+            </MenuItem>
+            <MenuItem onClick={() => void withErrors(() => importAudio("sfx"))}>Add sound effect…</MenuItem>
           </MenuList>
         </MenuPopover>
       </Menu>

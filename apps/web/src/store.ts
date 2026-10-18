@@ -45,13 +45,15 @@ interface EditorState {
   presenting: boolean;
   /** True while the export dialog is open. */
   exportOpen: boolean;
+  /** Bytes of the scene assets (audio files), by asset ID. The scene has only the references. */
+  assets: Map<string, Uint8Array>;
   /** The last message for the user (see notify.ts). */
   notice: import("./notify.js").Notice | null;
 
   apply(tx: TransactionInput): ReturnType<OperationBus["apply"]>;
   undo(): void;
   redo(): void;
-  openScene(scene: Scene): void;
+  openScene(scene: Scene, assets?: Map<string, Uint8Array>): void;
   setView(view: Partial<View>): void;
   setViewport(width: number, height: number): void;
   fitToVideo(): void;
@@ -113,6 +115,7 @@ export const useEditor = create<EditorState>((set, get) => {
     fileName: null,
     dirty: false,
     notice: null,
+    assets: new Map(),
     exportOpen: false,
     presenting: false,
     paletteOpen: false,
@@ -121,10 +124,10 @@ export const useEditor = create<EditorState>((set, get) => {
     undo: () => get().bus.undo(),
     redo: () => get().bus.redo(),
 
-    openScene(scene) {
+    openScene(scene, assets = new Map()) {
       get().pause();
       get().bus.reset(scene);
-      set({ scene, timeline: resolveTimeline(scene), version: get().bus.version, selectedStep: null, selection: [], playhead: 0 });
+      set({ assets, scene, timeline: resolveTimeline(scene), version: get().bus.version, selectedStep: null, selection: [], playhead: 0 });
       get().fitToVideo();
     },
 

@@ -16,6 +16,9 @@ if (import.meta.env.DEV) {
     useEditor.setState({ dirty: false });
     return true;
   };
+  // Add an audio file from base64 bytes, as the file picker would.
+  (window as unknown as { __anivoAddAudio: unknown }).__anivoAddAudio = async (b64: string, name: string, kind: "voiceover" | "music" | "sfx") =>
+    (await import("./audio.js")).addAudio(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)), name, "", kind);
   (window as unknown as { __anivoBench: unknown }).__anivoBench = async (style: "clean" | "sketch") => (await import("./dev/bench.js")).benchFrames(style);
 }
 
