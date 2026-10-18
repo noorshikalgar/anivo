@@ -88,7 +88,7 @@ export function CanvasView() {
   useEffect(() => {
     let pending = 0;
     const unsub = useEditor.subscribe((s, prev) => {
-      if (s.scene !== prev.scene || s.view !== prev.view || s.playhead !== prev.playhead || s.viewport !== prev.viewport || s.playing !== prev.playing || s.selection !== prev.selection || s.selectedStep !== prev.selectedStep || s.imagesVersion !== prev.imagesVersion) {
+      if (s.scene !== prev.scene || s.view !== prev.view || s.playhead !== prev.playhead || s.viewport !== prev.viewport || s.playing !== prev.playing || s.selection !== prev.selection || s.selectedStep !== prev.selectedStep || s.imagesVersion !== prev.imagesVersion || s.agent !== prev.agent) {
         if (!pending) pending = requestAnimationFrame(() => ((pending = 0), draw()));
       }
     });
@@ -166,6 +166,48 @@ export function CanvasView() {
       ctx.globalAlpha = 1;
       return b;
     };
+    // Agent presence (docs/09 "Agent presence"): changed elements glow for 2 s; pending changes show dashed.
+    const agent = useEditor.getState().agent;
+    if (agent) {
+      ctx.save();
+      ctx.strokeStyle = "#F5B84A";
+      ctx.lineWidth = 2 * dpr;
+      ctx.setLineDash([6 * dpr, 4 * dpr]);
+      for (const p of agent.pending) for (const b of p.boxes) {
+        const r = screenBox(b);
+        ctx.strokeRect(r.x - 4 * dpr, r.y - 4 * dpr, r.width + 8 * dpr, r.height + 8 * dpr);
+      }
+      ctx.restore();
+      const age = agent.activity ? performance.now() - agent.activity.at : Infinity;
+      if (agent.activity && age < 2000) {
+        const alpha = 1 - age / 2000;
+        let lastBox: Box | undefined;
+        for (const id of agent.activity.ids) {
+          const bounds = boundsOf(scene, result.frame, result.routes, id);
+          if (!bounds) continue;
+          const b = screenBox(bounds);
+          ctx.strokeStyle = "#A78BFA";
+          ctx.globalAlpha = alpha;
+          ctx.lineWidth = 2.5 * dpr;
+          ctx.strokeRect(b.x - 6 * dpr, b.y - 6 * dpr, b.width + 12 * dpr, b.height + 12 * dpr);
+          lastBox = b;
+        }
+        if (lastBox) {
+          // The agent cursor: a tag at the last changed element.
+          ctx.font = `${12 * dpr}px system-ui, sans-serif`;
+          const label = "Agent";
+          const w = ctx.measureText(label).width + 12 * dpr;
+          const x0 = lastBox.x + lastBox.width + 6 * dpr;
+          const y0 = lastBox.y - 6 * dpr - 18 * dpr;
+          ctx.fillStyle = "#A78BFA";
+          ctx.fillRect(x0, y0, w, 18 * dpr);
+          ctx.fillStyle = "#0F1720";
+          ctx.fillText(label, x0 + 6 * dpr, y0 + 13 * dpr);
+        }
+        ctx.globalAlpha = 1;
+        requestAnimationFrame(() => draw());
+      }
+    }
     if (hover.current && !selection.includes(hover.current) && !drag.current) outline(hover.current, 1, 0.6);
     for (const id of selection) outline(id, 1.5, 1);
     const single = selection.length === 1 ? byId.get(selection[0]!) : undefined;

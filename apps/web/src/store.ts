@@ -53,6 +53,10 @@ interface EditorState {
   imagesVersion: number;
   /** True while the timeline panel shows. */
   timelineOpen: boolean;
+  /** True while the connect agent dialog is open. */
+  connectOpen: boolean;
+  /** The connected agent (bridge), or null. */
+  agent: import("./agent.js").AgentState | null;
   /** True while the first-run tour shows. */
   tourOpen: boolean;
   /** True while the theme editor is open. */
@@ -138,6 +142,8 @@ export const useEditor = create<EditorState>((set, get) => {
     galleryOpen: false,
     themeEditorOpen: false,
     tourOpen: false,
+    agent: null,
+    connectOpen: false,
     timelineOpen: false,
     imagesVersion: 0,
     recording: null,

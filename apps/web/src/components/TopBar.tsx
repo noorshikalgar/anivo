@@ -14,7 +14,7 @@ import {
   makeStyles,
   tokens,
 } from "@fluentui/react-components";
-import { ArrowExportUp20Regular, Play20Regular, ArrowRedo20Regular, ArrowUndo20Regular, Document20Regular, FolderOpen20Regular, Mic20Regular, MusicNote220Regular, Record20Regular, Save20Regular, ZoomFit20Regular } from "@fluentui/react-icons";
+import { ArrowExportUp20Regular, Play20Regular, ArrowRedo20Regular, ArrowUndo20Regular, Document20Regular, FolderOpen20Regular, Bot20Regular, Mic20Regular, MusicNote220Regular, Record20Regular, Save20Regular, ZoomFit20Regular } from "@fluentui/react-icons";
 import { useState } from "react";
 import { hasFileSystemAccess, newScene, openFile, runImport, openRecent, recentFiles, saveFile, saveFileAs } from "../files.js";
 import { notify, withErrors } from "../notify.js";
@@ -45,6 +45,7 @@ export function TopBar() {
   const fileName = useEditor((s) => s.fileName);
   const dirty = useEditor((s) => s.dirty);
   const hasVoice = useEditor((s) => s.scene.audio.some((t) => t.kind === "voiceover"));
+  const agentOn = useEditor((s) => s.agent !== null);
   useEditor((s) => s.version);
   const { bus, undo, redo, fitToVideo } = useEditor.getState();
   const [recent, setRecent] = useState<Awaited<ReturnType<typeof recentFiles>>>([]);
@@ -144,6 +145,11 @@ export function TopBar() {
           <Button appearance="subtle" icon={<ZoomFit20Regular />} onClick={fitToVideo} />
         </Tooltip>
       </Toolbar>
+      {!agentOn && (
+        <Button appearance="subtle" size="small" icon={<Bot20Regular />} onClick={() => useEditor.setState({ connectOpen: true })}>
+          Connect agent
+        </Button>
+      )}
       <Tooltip content="Present step by step (F5)" relationship="label">
         <Button appearance="secondary" size="small" icon={<Play20Regular />} onClick={() => (useEditor.getState().pause(), useEditor.setState({ presenting: true }))}>
           Present
