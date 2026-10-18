@@ -101,6 +101,9 @@ importers:
       '@anivo/fileio':
         specifier: workspace:*
         version: link:../../packages/fileio
+      '@anivo/import':
+        specifier: workspace:*
+        version: link:../../packages/import
       '@anivo/layout':
         specifier: workspace:*
         version: link:../../packages/layout
@@ -165,6 +168,9 @@ importers:
       '@anivo/export-node':
         specifier: workspace:*
         version: link:../export-node
+      '@anivo/import':
+        specifier: workspace:*
+        version: link:../import
       '@anivo/lint':
         specifier: workspace:*
         version: link:../lint
@@ -251,6 +257,22 @@ importers:
         specifier: workspace:*
         version: link:../ops
 
+  packages/import:
+    dependencies:
+      '@anivo/layout':
+        specifier: workspace:*
+        version: link:../layout
+      '@anivo/ops':
+        specifier: workspace:*
+        version: link:../ops
+      '@anivo/schema':
+        specifier: workspace:*
+        version: link:../schema
+    devDependencies:
+      '@anivo/engine':
+        specifier: workspace:*
+        version: link:../engine
+
   packages/layout:
     dependencies:
       '@anivo/engine':
@@ -287,6 +309,9 @@ importers:
       '@anivo/export-node':
         specifier: workspace:*
         version: link:../export-node
+      '@anivo/import':
+        specifier: workspace:*
+        version: link:../import
       '@anivo/lint':
         specifier: workspace:*
         version: link:../lint

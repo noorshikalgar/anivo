@@ -10,6 +10,7 @@
   "dependencies": {
     "@anivo/engine": "workspace:*",
     "@anivo/export-node": "workspace:*",
+    "@anivo/import": "workspace:*",
     "@anivo/lint": "workspace:*",
     "@anivo/ops": "workspace:*",
     "@anivo/render": "workspace:*",

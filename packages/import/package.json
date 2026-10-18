@@ -1,0 +1,18 @@
+{
+  "name": "@anivo/import",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@anivo/layout": "workspace:*",
+    "@anivo/ops": "workspace:*",
+    "@anivo/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@anivo/engine": "workspace:*"
+  }
+}

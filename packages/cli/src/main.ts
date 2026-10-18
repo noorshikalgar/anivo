@@ -5,6 +5,7 @@ import { formatLint, lintScene, lintSummary } from "@anivo/lint";
 import { OperationBus } from "@anivo/ops";
 import { searchIcons } from "@anivo/render";
 import { type Scene, loadScene } from "@anivo/schema";
+import { importText } from "@anivo/import";
 import { applyScript, printScene } from "@anivo/script";
 import { ToolError, assetCache, audioMime, imageMime, parseTranscript, transcribe, contactSheetPng, importAsset, probeDurationMs, jsonSchema, previewPng, readSceneFile, sceneSummary, stepTime, writeSceneFile } from "@anivo/tools";
 import { homePath, imageSize, registerBundledAssets } from "@anivo/export-node";
@@ -181,6 +182,31 @@ program
     });
     if (!json() && process.stderr.isTTY) process.stderr.write("\n");
     print(`Wrote ${r.out}: ${r.frames} frames, ${(r.durationMs / 1000).toFixed(1)} s${r.bytes ? `, ${(r.bytes / 1e6).toFixed(2)} MB` : ""}.`, r);
+  });
+
+program
+  .command("import")
+  .description("Make a scene from an Excalidraw file or Mermaid text (flowchart or sequence diagram)")
+  .argument("<file>", ".excalidraw, .mmd, .mermaid, or .md with a mermaid block")
+  .requiredOption("--out <scene>", "New scene file (.anivo, .json, or a folder)")
+  .option("--no-steps", "Mermaid: do not make steps")
+  .option("--force", "Replace the output file if it exists")
+  .action((file: string, o: { out: string; steps: boolean; force?: boolean }) => {
+    if (!existsSync(file)) throw new ToolError(`The file '${file}' does not exist.`, "Check the path.");
+    if (existsSync(o.out) && !o.force) throw new ToolError(`The file '${o.out}' exists already.`, "Use another path, or add --force.");
+    let r: ReturnType<typeof importText>;
+    try {
+      r = importText(file, readFileSync(file, "utf8"), { steps: o.steps });
+    } catch (err) {
+      throw new ToolError(err instanceof Error ? err.message : String(err));
+    }
+    for (const [id, b] of r.assets) assetCache.set(id, b);
+    writeSceneFile(o.out, r.scene);
+    const n = Object.keys(r.scene.elements).length;
+    print(
+      [`Imported ${r.format}: ${n} elements, ${r.scene.steps.length} steps. Wrote ${o.out}.`, ...r.warnings.map((w) => `Warning: ${w}`), lintLine(r.scene)].join("\n"),
+      { out: o.out, format: r.format, elements: n, steps: r.scene.steps.length, warnings: r.warnings },
+    );
   });
 
 program
