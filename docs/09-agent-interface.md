@@ -177,7 +177,7 @@ caption note "Replaced automatically"
 
 ### Action statements
 
-`enter <targets> <effect>`, `exit <targets> <effect>`, `morph <targets> key=value…`, `pulse|shake|glow|flash|wiggle|highlight|focus <targets>`, `flow <connectors> …`, `camera zoom-to <targets>`, `camera reset`, `count <target> from=0 to=120 format="{n} req/s"`, `code <target> highlight=3-5`, `wait 1s`.
+`enter <targets> <effect>`, `exit <targets> <effect>`, `morph <targets> key=value…`, `pulse|shake|glow|flash|wiggle|highlight|focus <targets>`, `flow <connectors> …`, `camera zoom-to <targets> [padding=80]`, `camera pan at=x,y size=WxH`, `camera reset`, `count <target> from=0 to=120 format="{n} req/s" [decimals=0]`, `code <target> highlight=3-5`, `wait 1s`.
 
 ### Parser requirements
 

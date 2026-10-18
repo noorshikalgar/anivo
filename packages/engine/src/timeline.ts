@@ -12,6 +12,8 @@ export interface TimedAction {
   ease: EaseFn;
   /** For a focus action: all targets after group expansion. */
   focusTargets?: string[];
+  /** For a camera action: the elements to fit, after group expansion. */
+  cameraTargets?: string[];
 }
 
 export interface TimedStep {
@@ -97,13 +99,15 @@ export function resolveTimeline(scene: Scene): Timeline {
     let contentEnd = startMs;
     for (const action of step.actions) {
       const ease = actionEase(action);
-      const targets = action.type === "wait" && action.targets.length === 0 ? [""] : expand(action.targets);
+      // A camera action is one action for all its targets. A wait has no target.
+      const targets = action.type === "camera" || (action.type === "wait" && action.targets.length === 0) ? [""] : expand(action.targets);
+      const cameraTargets = action.type === "camera" ? expand(action.targets) : undefined;
       const focusTargets = action.type === "emphasis" && action.effect === "focus" ? targets : undefined;
       targets.forEach((target, targetIndex) => {
         const duration = defaultDurationMs(action, labelLength(scene, target));
         const s = startMs + action.delayMs + targetIndex * action.staggerMs;
         const e = s + duration;
-        if (target !== "") actions.push({ action, target, targetIndex, startMs: s, endMs: e, ease, ...(focusTargets ? { focusTargets } : {}) });
+        if (target !== "" || action.type === "camera") actions.push({ action, target, targetIndex, startMs: s, endMs: e, ease, ...(focusTargets ? { focusTargets } : {}), ...(cameraTargets ? { cameraTargets } : {}) });
         contentEnd = Math.max(contentEnd, e);
       });
     }

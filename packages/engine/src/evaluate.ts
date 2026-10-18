@@ -1,4 +1,4 @@
-import type { Action, Color, Element, FlowParams, MorphableProps, Scene } from "@anivo/schema";
+import type { Action, Color, Element, FlowParams, MorphableProps, Rect, Scene } from "@anivo/schema";
 import type { ElementFrame, FrameColor, FrameState, Particle } from "./frame.js";
 import { type TimedAction, type TimedStep, type Timeline, resolveTimeline, stepIndexAt } from "./timeline.js";
 
@@ -12,6 +12,10 @@ export interface Prepared {
   base: StateMap;
   /** `boundaries[i]` is the state at the end of step `i`. */
   boundaries: StateMap[];
+  /** The scene camera, before step 1. */
+  baseCamera: Rect;
+  /** `cameras[i]` is the camera at the end of step `i`. */
+  cameras: Rect[];
 }
 
 export interface EvaluateOptions {
@@ -211,7 +215,7 @@ function applyFocus(state: StateMap, focusTargets: string[], dimTo: number, raw:
 /** Apply one timed action to the state at time `t`. Copy-on-write for each touched element. */
 function applyTimedAction(state: StateMap, ta: TimedAction, t: number): void {
   const { action } = ta;
-  if (action.type === "flow" || action.type === "wait") return;
+  if (action.type === "flow" || action.type === "wait" || action.type === "camera") return;
   if (t < ta.startMs) return;
   const span = ta.endMs - ta.startMs;
   const raw = span <= 0 ? 1 : clamp01((t - ta.startMs) / span);
@@ -228,7 +232,61 @@ function applyTimedAction(state: StateMap, ta: TimedAction, t: number): void {
   if (action.type === "enter" || action.type === "exit") applyEnterExit(f, action, eased, raw);
   else if (action.type === "morph") applyMorph(f, action.to, eased);
   else if (action.type === "emphasis" && raw < 1) applyEmphasis(f, action, raw);
+  else if (action.type === "counter") {
+    const c = action.counter;
+    const n = lerp(c.from, c.to, eased);
+    f.label = c.format.replace("{n}", n.toFixed(c.decimals));
+  }
   state[ta.target] = f;
+}
+
+/** The camera rectangle that fits the targets with padding, at the aspect ratio of the video. */
+function fitCamera(state: StateMap, ids: string[], padding: number, aspect: number): Rect | undefined {
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  for (const id of ids) {
+    const f = state[id];
+    if (!f || f.type === "connector" || f.type === "group") continue;
+    x0 = Math.min(x0, f.x);
+    y0 = Math.min(y0, f.y);
+    x1 = Math.max(x1, f.x + f.width);
+    // An icon label is below the icon.
+    y1 = Math.max(y1, f.y + f.height + (f.type === "icon" && f.label ? 52 : 0));
+  }
+  if (!Number.isFinite(x0)) return undefined;
+  let w = x1 - x0 + padding * 2;
+  let h = y1 - y0 + padding * 2;
+  if (w / h > aspect) h = w / aspect;
+  else w = h * aspect;
+  const cx = (x0 + x1) / 2;
+  const cy = (y0 + y1) / 2;
+  return { x: cx - w / 2, y: cy - h / 2, width: w, height: h };
+}
+
+/** Interpolate two cameras: the center moves in a line, the zoom in log scale (constant zoom speed). */
+function mixCamera(a: Rect, b: Rect, p: number): Rect {
+  const w = a.width * (b.width / a.width) ** p;
+  const h = a.height * (b.height / a.height) ** p;
+  const cx = lerp(a.x + a.width / 2, b.x + b.width / 2, p);
+  const cy = lerp(a.y + a.height / 2, b.y + b.height / 2, p);
+  return { x: cx - w / 2, y: cy - h / 2, width: w, height: h };
+}
+
+/** The camera after the camera actions of a step that started before `t`. */
+function cameraAt(step: TimedStep, start: Rect, base: Rect, state: StateMap, aspect: number, t: number): Rect {
+  let cam = start;
+  for (const ta of step.actions) {
+    if (ta.action.type !== "camera" || t < ta.startMs) continue;
+    const c = ta.action.camera;
+    const target = c.op === "reset" ? base : c.op === "pan" && c.rect ? c.rect : c.op === "zoom-to" ? fitCamera(state, ta.cameraTargets ?? [], c.padding, aspect) : undefined;
+    if (!target) continue;
+    const span = ta.endMs - ta.startMs;
+    const p = span <= 0 ? 1 : ta.ease(clamp01((t - ta.startMs) / span));
+    cam = mixCamera(cam, target, p);
+  }
+  return cam;
 }
 
 /** Calculate the state at the end of each step (docs/06 "Stage 1", item 4). */
@@ -275,7 +333,16 @@ export function prepare(scene: Scene): Prepared {
   const order = Object.values(scene.elements)
     .sort((a, b) => (a.z < b.z ? -1 : a.z > b.z ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
     .map((el) => el.id);
-  return { scene, timeline, order, base, boundaries: buildBoundaries(timeline, base) };
+  const boundaries = buildBoundaries(timeline, base);
+  const v = scene.settings.video;
+  const baseCamera = scene.settings.camera ?? { x: 0, y: 0, width: v.width, height: v.height };
+  const aspect = v.width / v.height;
+  const cameras: Rect[] = [];
+  timeline.steps.forEach((step, i) => {
+    const start = i === 0 ? baseCamera : cameras[i - 1]!;
+    cameras.push(cameraAt(step, start, baseCamera, boundaries[i]!, aspect, Number.POSITIVE_INFINITY));
+  });
+  return { scene, timeline, order, base, boundaries, baseCamera, cameras };
 }
 
 /** Simple deterministic hash of two integers to [0, 1). */
@@ -338,7 +405,7 @@ function flowParticles(step: TimedStep, t: number, opts: EvaluateOptions, out: P
  * output, with no state between calls (docs/06 "Core rule").
  */
 export function evaluateAt(prepared: Prepared, timeMs: number, opts: EvaluateOptions = {}): FrameState {
-  const { timeline, boundaries, base, order, scene } = prepared;
+  const { timeline, boundaries, base, order, scene, baseCamera, cameras } = prepared;
   // A negative time gives the base state, before any action starts. At time 0,
   // actions of step 1 have started at progress 0, so time 0 is not the base state.
   const t = timeMs;
@@ -355,7 +422,7 @@ export function evaluateAt(prepared: Prepared, timeMs: number, opts: EvaluateOpt
   }
 
   const v = scene.settings.video;
-  const camera = scene.settings.camera ?? { x: 0, y: 0, width: v.width, height: v.height };
+  const camera = i < 0 ? baseCamera : cameraAt(timeline.steps[i]!, i === 0 ? baseCamera : cameras[i - 1]!, baseCamera, state, v.width / v.height, t);
   return { timeMs: Math.max(0, t), elements: order.map((id) => state[id]!), particles, camera };
 }
 

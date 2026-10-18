@@ -135,6 +135,21 @@ function printAction(a: Action, index: number): string {
     return parts.join(" ");
   }
   const targets = a.targets.join(", ");
+  if (a.type === "camera") {
+    parts.push("camera", a.camera.op);
+    if (a.camera.op === "zoom-to") parts.push(targets);
+    if (a.camera.op === "pan" && a.camera.rect) parts.push(`at=${n(a.camera.rect.x)},${n(a.camera.rect.y)}`, `size=${n(a.camera.rect.width)}x${n(a.camera.rect.height)}`);
+    if (a.camera.padding !== 80) parts.push(`padding=${a.camera.padding}`);
+    common();
+    return parts.join(" ");
+  }
+  if (a.type === "counter") {
+    parts.push("count", targets, `from=${a.counter.from}`, `to=${a.counter.to}`);
+    if (a.counter.format !== "{n}") parts.push(`format=${q(a.counter.format)}`);
+    if (a.counter.decimals) parts.push(`decimals=${a.counter.decimals}`);
+    common();
+    return parts.join(" ");
+  }
   if (a.type === "enter" || a.type === "exit") {
     parts.push(a.type, targets, a.effect);
     common();

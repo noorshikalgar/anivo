@@ -123,7 +123,8 @@ export function CanvasView() {
     const ctx = overlay.getContext("2d")!;
     const sx = overlay.width / camera.width;
     const sy = overlay.height / camera.height;
-    const v = scene.settings.camera ?? { x: 0, y: 0, width: scene.settings.video.width, height: scene.settings.video.height };
+    // The video camera at the current time: camera actions move it.
+    const v = result.frame.camera;
     const x = (v.x - camera.x) * sx;
     const y = (v.y - camera.y) * sy;
     const w = v.width * sx;

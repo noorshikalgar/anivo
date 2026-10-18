@@ -147,6 +147,31 @@ describe("evaluate", () => {
     expect(el(evaluate(s, 400), "a").opacity).toBe(1);
   });
 
+  it("zooms the camera to targets in the video aspect ratio, then resets", () => {
+    const s = scene([
+      { id: "s1", holdMs: 0, actions: [{ id: "c1", type: "camera", targets: ["a"], camera: { op: "zoom-to", padding: 20 }, durationMs: 1000, easing: "linear" }] },
+      { id: "s2", holdMs: 0, actions: [{ id: "c2", type: "camera", camera: { op: "reset" }, durationMs: 1000, easing: "linear" }] },
+    ]);
+    const end = evaluate(s, 1000).camera;
+    expect(end.width / end.height).toBeCloseTo(1920 / 1080, 6);
+    expect(end.x + end.width / 2).toBeCloseTo(50, 6);
+    expect(end.width).toBeCloseTo(((50 + 40) * 1920) / 1080, 4);
+    // The zoom moves in log scale: half time gives the geometric mean of the widths.
+    const mid = evaluate(s, 500).camera;
+    expect(mid.width).toBeCloseTo(Math.sqrt(1920 * end.width), 3);
+    expect(evaluate(s, 2000).camera).toEqual({ x: 0, y: 0, width: 1920, height: 1080 });
+    expect(evaluate(s, -1).camera).toEqual({ x: 0, y: 0, width: 1920, height: 1080 });
+  });
+
+  it("counts a number in a text element", () => {
+    const s = scene(
+      [{ id: "s1", actions: [{ id: "n1", type: "counter", targets: ["t"], counter: { from: 0, to: 1200, format: "{n} req/s" }, durationMs: 1000, easing: "linear" }] }],
+      { t: { type: "text", z: "a9", content: { text: "0 req/s" } } },
+    );
+    expect(el(evaluate(s, 500), "t").label).toBe("600 req/s");
+    expect(el(evaluate(s, 5000), "t").label).toBe("1200 req/s");
+  });
+
   it("keeps an element visible when its first action is not enter", () => {
     const s = scene([{ id: "s1", actions: [{ id: "x1", type: "emphasis", effect: "pulse", targets: ["a"] }] }]);
     expect(el(evaluate(s, 0), "a").visible).toBe(true);
