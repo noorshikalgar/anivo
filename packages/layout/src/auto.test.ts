@@ -45,3 +45,26 @@ describe("autoLayout", () => {
     expect([...autoLayout(nodes, edges, { kind: "layered" })]).toEqual([...autoLayout(nodes, edges, { kind: "layered" })]);
   });
 });
+
+import type { ElementFrame } from "@anivo/engine";
+import type { ConnectorElement } from "@anivo/schema";
+import { connectorRoutes } from "./geometry.js";
+
+describe("connectorRoutes", () => {
+  const frame = (id: string, x: number): ElementFrame =>
+    ({ id, type: "rectangle", z: id, visible: true, x, y: 0, width: 100, height: 100, rotation: 0, opacity: 1, scale: 1, offsetX: 0, offsetY: 0, strokeProgress: 1, fillProgress: 1, textReveal: 1, glow: 0, flash: 0, highlight: 0 }) as ElementFrame;
+  const conn = (id: string, a: string, b: string): ConnectorElement =>
+    ({ id, type: "connector", route: "straight", start: { kind: "bound", elementId: a, side: "auto", offset: 0 }, end: { kind: "bound", elementId: b, side: "auto", offset: 0 }, startHead: "none", endHead: "arrow" }) as ConnectorElement;
+
+  it("moves two arrows between the same elements apart, in both directions", () => {
+    const routes = connectorRoutes([conn("ab", "a", "b"), conn("ba", "b", "a")], [frame("a", 0), frame("b", 400)]);
+    const yAB = routes.get("ab")!.points[0]!.y;
+    const yBA = routes.get("ba")!.points[0]!.y;
+    expect(Math.abs(yAB - yBA)).toBeCloseTo(44, 5);
+  });
+
+  it("keeps a single arrow on the center line", () => {
+    const routes = connectorRoutes([conn("ab", "a", "b")], [frame("a", 0), frame("b", 400)]);
+    expect(routes.get("ab")!.points[0]!.y).toBe(50);
+  });
+});
