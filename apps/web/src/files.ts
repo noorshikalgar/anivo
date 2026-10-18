@@ -1,4 +1,4 @@
-import { sceneFromBytes, sceneToArchive, sceneToJson } from "@anivo/fileio";
+import { type AssetStore, packArchive, packJson, sceneToJson, unpack } from "@anivo/fileio";
 import { type Scene, loadScene } from "@anivo/schema";
 import { loadTemplate } from "./assets.js";
 import { idbGet, idbSet } from "./idb.js";
@@ -43,7 +43,8 @@ export async function recentFiles(): Promise<RecentFile[]> {
 }
 
 function bytesFor(scene: Scene, name: string): Uint8Array {
-  return name.endsWith(".json") ? new TextEncoder().encode(sceneToJson(scene)) : sceneToArchive(scene);
+  const assets = useEditor.getState().assets;
+  return name.endsWith(".json") ? new TextEncoder().encode(packJson(scene, assets)) : packArchive(scene, assets);
 }
 
 function fileNameFor(scene: Scene): string {
@@ -53,16 +54,21 @@ function fileNameFor(scene: Scene): string {
 
 export class FileError extends Error {}
 
-function openScene(scene: Scene, name: string | null, handle: FileHandle | null): void {
+interface Opened {
+  scene: Scene;
+  assets: AssetStore;
+}
+
+function openScene({ scene, assets }: Opened, name: string | null, handle: FileHandle | null): void {
   currentHandle = handle;
-  useEditor.getState().openScene(scene);
+  useEditor.getState().openScene(scene, assets);
   useEditor.setState({ fileName: name, dirty: false });
 }
 
-async function readFile(file: File): Promise<Scene> {
-  const r = sceneFromBytes(new Uint8Array(await file.arrayBuffer()));
+async function readFile(file: File): Promise<Opened> {
+  const r = unpack(new Uint8Array(await file.arrayBuffer()));
   if (!r.ok) throw new FileError(`The file '${file.name}' is not a valid Anivo scene. ${r.issues[0]?.path ?? ""} ${r.issues[0]?.message ?? ""}`.trim());
-  return r.scene;
+  return { scene: r.scene, assets: r.assets };
 }
 
 /** Open a scene file. Returns false if the user cancelled. */
@@ -147,11 +153,11 @@ export async function saveFile(): Promise<boolean> {
 
 export function newScene(): void {
   const r = loadScene({ schemaVersion: 1, meta: { title: "Untitled" } });
-  if (r.ok) openScene(r.scene, null, null);
+  if (r.ok) openScene({ scene: r.scene, assets: new Map() }, null, null);
 }
 
 export async function newFromTemplate(name: string): Promise<void> {
-  openScene(await loadTemplate(name), null, null);
+  openScene({ scene: await loadTemplate(name), assets: new Map() }, null, null);
 }
 
 // --- autosave (FR-FILE-03) -----------------------------------------------------
@@ -164,9 +170,10 @@ interface Autosave {
 
 let timer = 0;
 
-/** Save the scene to IndexedDB 1 second after the last change. */
+/** Save the scene to IndexedDB 1 second after the last change. Assets are saved when they change. */
 export function startAutosave(): () => void {
   return useEditor.subscribe((s, prev) => {
+    if (s.assets !== prev.assets) void idbSet("autosave-assets", s.assets);
     if (s.scene === prev.scene) return;
     if (s.version !== prev.version) useEditor.setState({ dirty: true });
     clearTimeout(timer);
@@ -182,9 +189,11 @@ export function startAutosave(): () => void {
 export async function restoreAutosave(): Promise<boolean> {
   const saved = await idbGet<Autosave>("autosave").catch(() => undefined);
   if (!saved) return false;
-  const r = sceneFromBytes(new TextEncoder().encode(saved.json));
+  const r = unpack(new TextEncoder().encode(saved.json));
   if (!r.ok) return false;
+  const stored = (await idbGet<AssetStore>("autosave-assets").catch(() => undefined)) ?? new Map<string, Uint8Array>();
+  const assets: AssetStore = new Map([...stored].filter(([id]) => id in r.scene.assets));
   const handle = (await idbGet<FileHandle>("handle").catch(() => undefined)) ?? null;
-  openScene(r.scene, saved.fileName, handle && handle.name === saved.fileName ? handle : null);
+  openScene({ scene: r.scene, assets }, saved.fileName, handle && handle.name === saved.fileName ? handle : null);
   return true;
 }

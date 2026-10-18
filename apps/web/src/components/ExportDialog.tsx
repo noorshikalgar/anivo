@@ -114,7 +114,7 @@ export function ExportDialog() {
     const onProgress = (d: number, n: number) => setProgress(d / n);
     try {
       if (format === "mp4" || format === "webm") {
-        const r = await exportVideoWeb(scene, { format, width, height, fps: Number(fps) as 24 | 30 | 60, range, quality, onProgress, signal: ac.signal });
+        const r = await exportVideoWeb(scene, { assets: useEditor.getState().assets, format, width, height, fps: Number(fps) as 24 | 30 | 60, range, quality, onProgress, signal: ac.signal });
         download(r.data as BlobPart, `${name}.${format}`, r.mimeType);
       } else if (format === "gif") {
         const r = await exportGifWeb(scene, { width: Number(gifWidth), height: gifH, fps: Number(gifFps), range, onProgress, signal: ac.signal });

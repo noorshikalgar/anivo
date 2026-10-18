@@ -9,6 +9,8 @@ import { CommandPalette } from "./CommandPalette.js";
 import { ExportDialog } from "./ExportDialog.js";
 import { IconPicker } from "./IconPicker.js";
 import { Inspector } from "./Inspector.js";
+import { startAudioSync } from "../audio.js";
+import { AudioLane } from "./AudioLane.js";
 import { PlaybackBar } from "./PlaybackBar.js";
 import { PresentMode } from "./PresentMode.js";
 import { StepsPanel } from "./StepsPanel.js";
@@ -51,6 +53,7 @@ export function App() {
   const [state, setState] = useState<"loading" | "ready" | { error: string }>("loading");
   useShortcuts();
   useEffect(() => startAutosave(), []);
+  useEffect(() => startAudioSync(), []);
   const toasterId = useId("toaster");
   const { dispatchToast } = useToastController(toasterId);
   const notice = useEditor((s) => s.notice);
@@ -117,6 +120,7 @@ export function App() {
             <Inspector />
           </div>
           <div className={styles.play}>
+            <AudioLane />
             <PlaybackBar />
           </div>
           <Toaster toasterId={toasterId} />
