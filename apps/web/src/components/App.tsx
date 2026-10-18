@@ -1,9 +1,10 @@
-import { FluentProvider, Spinner, Text, Toast, ToastTitle, Toaster, makeStyles, tokens, useId, useToastController } from "@fluentui/react-components";
+import { FluentProvider, Spinner, Text, Toast, ToastTitle, Toaster, makeStyles, mergeClasses, tokens, useId, useToastController } from "@fluentui/react-components";
 import { useEffect, useState } from "react";
 import { loadAssets } from "../assets.js";
 import { openSceneFromQuery, startAutosave } from "../files.js";
 import { migrateAutosave, startLibraryAutosave } from "../library.js";
 import { Home } from "./Home.js";
+import { COMPACT, useMedia } from "./useMedia.js";
 import { openShareFromUrl } from "../share.js";
 import { notify } from "../notify.js";
 import { useEditor } from "../store.js";
@@ -45,11 +46,32 @@ const useStyles = makeStyles({
     backgroundColor: tokens.colorNeutralBackground1,
     color: tokens.colorNeutralForeground1,
   },
-  top: { gridArea: "top" },
+  medium: { gridTemplateColumns: "190px minmax(0, 1fr) 260px" },
+  // Small windows: the canvas uses the full width; the panels are drawers over it.
+  compact: { gridTemplateColumns: "minmax(0, 1fr)", gridTemplateAreas: `"top" "canvas" "play"` },
+  top: { gridArea: "top", minWidth: 0 },
   steps: { gridArea: "steps", display: "grid", minHeight: 0 },
   canvas: { gridArea: "canvas", display: "grid", minHeight: 0, minWidth: 0 },
   inspector: { gridArea: "inspector", display: "grid", minHeight: 0 },
-  play: { gridArea: "play" },
+  play: { gridArea: "play", minWidth: 0 },
+  drawer: {
+    position: "fixed",
+    top: "48px",
+    bottom: 0,
+    width: "min(320px, 88vw)",
+    zIndex: 30,
+    display: "grid",
+    minHeight: 0,
+    boxShadow: tokens.shadow28,
+    backgroundColor: tokens.colorNeutralBackground2,
+    transitionProperty: "transform",
+    transitionDuration: tokens.durationNormal,
+    transitionTimingFunction: tokens.curveDecelerateMid,
+  },
+  drawerLeft: { left: 0, transform: "translateX(-105%)" },
+  drawerRight: { right: 0, transform: "translateX(105%)" },
+  drawerOpen: { transform: "none" },
+  scrim: { position: "fixed", inset: "48px 0 0 0", zIndex: 29, backgroundColor: "rgba(0,0,0,0.35)" },
   center: { height: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: tokens.spacingHorizontalM },
 });
 
@@ -88,6 +110,19 @@ export function App() {
   const takes = useEditor((s) => s.takes !== null);
   const timelineOpen = useEditor((s) => s.timelineOpen);
   const screen = useEditor((s) => s.screen);
+  const drawer = useEditor((s) => s.drawer);
+  const compact = useMedia(COMPACT);
+  const medium = useMedia("(max-width: 1279px)");
+  useEffect(() => {
+    if (!compact) useEditor.setState({ drawer: null });
+  }, [compact]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && useEditor.getState().drawer) useEditor.setState({ drawer: null });
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   useEffect(() => {
     if (!notice) return;
     dispatchToast(
@@ -136,11 +171,12 @@ export function App() {
       ) : screen === "home" ? (
         <Home />
       ) : (
-        <div className={styles.root}>
+        <div className={mergeClasses(styles.root, compact ? styles.compact : medium && styles.medium)}>
           <div className={styles.top}>
             <TopBar />
           </div>
-          <div className={styles.steps}>
+          {compact && drawer && <div className={styles.scrim} onClick={() => useEditor.setState({ drawer: null })} aria-hidden />}
+          <div className={compact ? mergeClasses(styles.drawer, styles.drawerLeft, drawer === "steps" && styles.drawerOpen) : styles.steps} inert={compact && drawer !== "steps" ? true : undefined}>
             <StepsPanel />
           </div>
           <div className={styles.canvas} style={{ position: "relative" }}>
@@ -148,7 +184,7 @@ export function App() {
             <AgentPanel />
             <AiPanel />
           </div>
-          <div className={styles.inspector}>
+          <div className={compact ? mergeClasses(styles.drawer, styles.drawerRight, drawer === "inspector" && styles.drawerOpen) : styles.inspector} inert={compact && drawer !== "inspector" ? true : undefined}>
             <Inspector />
           </div>
           <div className={styles.play}>

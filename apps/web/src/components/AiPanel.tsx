@@ -14,7 +14,7 @@ const useStyles = makeStyles({
     top: "8px",
     right: "8px",
     bottom: "8px",
-    width: "380px",
+    width: "min(380px, calc(100% - 16px))",
     display: "flex",
     flexDirection: "column",
     borderRadius: tokens.borderRadiusLarge,

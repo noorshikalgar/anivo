@@ -10,11 +10,12 @@ import {
   Toolbar,
   ToolbarButton,
   ToolbarDivider,
+  ToggleButton,
   Tooltip,
   makeStyles,
   tokens,
 } from "@fluentui/react-components";
-import { ArrowExportUp20Regular, Home20Regular, Play20Regular, ArrowRedo20Regular, ArrowUndo20Regular, Document20Regular, History20Regular, FolderOpen20Regular, Bot20Regular, Mic20Regular, Sparkle20Regular, MusicNote220Regular, Record20Regular, Save20Regular, ZoomFit20Regular } from "@fluentui/react-icons";
+import { ArrowExportUp20Regular, Home20Regular, PanelRight20Regular, TextBulletListLtr20Regular, Play20Regular, ArrowRedo20Regular, ArrowUndo20Regular, Document20Regular, History20Regular, FolderOpen20Regular, Bot20Regular, Mic20Regular, Sparkle20Regular, MusicNote220Regular, Record20Regular, Save20Regular, ZoomFit20Regular } from "@fluentui/react-icons";
 import { useState } from "react";
 import { goHome, hasFileSystemAccess, newScene, openFile, runImport, openRecent, recentFiles, saveFile, saveFileAs } from "../files.js";
 import { notify, withErrors } from "../notify.js";
@@ -23,6 +24,7 @@ import { startRecording } from "../record.js";
 import { openTakes } from "../takes.js";
 import { shareServer } from "../share.js";
 import { useEditor } from "../store.js";
+import { COMPACT, PHONE, useMedia } from "./useMedia.js";
 
 const useStyles = makeStyles({
   root: {
@@ -30,7 +32,10 @@ const useStyles = makeStyles({
     alignItems: "center",
     gap: tokens.spacingHorizontalS,
     padding: `0 ${tokens.spacingHorizontalM}`,
+    "@media (max-width: 599px)": { gap: "2px", padding: `0 ${tokens.spacingHorizontalXS}` },
     height: "48px",
+    minWidth: 0,
+    overflow: "hidden",
     borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
     backgroundColor: tokens.colorNeutralBackground1,
   },
@@ -48,6 +53,10 @@ export function TopBar() {
   const dirty = useEditor((s) => s.dirty);
   const hasVoice = useEditor((s) => s.scene.audio.some((t) => t.kind === "voiceover"));
   const agentOn = useEditor((s) => s.agent !== null);
+  const drawer = useEditor((s) => s.drawer);
+  const compact = useMedia(COMPACT);
+  const phone = useMedia(PHONE);
+  const toggle = (d: "steps" | "inspector") => useEditor.setState((st) => ({ drawer: st.drawer === d ? null : d }));
   useEditor((s) => s.version);
   const { bus, undo, redo, fitToVideo } = useEditor.getState();
   const [recent, setRecent] = useState<Awaited<ReturnType<typeof recentFiles>>>([]);
@@ -56,13 +65,18 @@ export function TopBar() {
     <header className={styles.root}>
       <Tooltip content="Home: all your scenes" relationship="description">
         <Button appearance="subtle" icon={<Home20Regular />} className={styles.brand} onClick={() => void withErrors(goHome)} aria-label="Home">
-          Anivo
+          {phone ? null : "Anivo"}
         </Button>
       </Tooltip>
+      {compact && (
+        <Tooltip content="Steps" relationship="label">
+          <ToggleButton appearance="subtle" size="small" icon={<TextBulletListLtr20Regular />} checked={drawer === "steps"} onClick={() => toggle("steps")} />
+        </Tooltip>
+      )}
       <Menu onOpenChange={(_, d) => d.open && void recentFiles().then(setRecent)}>
         <MenuTrigger disableButtonEnhancement>
-          <Button appearance="subtle" size="small">
-            File
+          <Button appearance="subtle" size="small" icon={phone ? <Document20Regular /> : undefined} aria-label="File">
+            {phone ? null : "File"}
           </Button>
         </MenuTrigger>
         <MenuPopover>
@@ -110,8 +124,8 @@ export function TopBar() {
       </Menu>
       <Menu>
         <MenuTrigger disableButtonEnhancement>
-          <Button appearance="subtle" size="small">
-            Audio
+          <Button appearance="subtle" size="small" icon={phone ? <Mic20Regular /> : undefined} aria-label="Audio">
+            {phone ? null : "Audio"}
           </Button>
         </MenuTrigger>
         <MenuPopover>
@@ -139,7 +153,7 @@ export function TopBar() {
           </MenuList>
         </MenuPopover>
       </Menu>
-      <Text size={300} className={styles.title} title={fileName ?? undefined}>
+      <Text size={300} className={styles.title} title={fileName ?? undefined} style={phone ? { display: "none" } : undefined}>
         {title}
         {fileName ? ` · ${fileName}` : ""}
         {dirty ? " •" : ""}
@@ -152,32 +166,49 @@ export function TopBar() {
         <Tooltip content="Redo (Ctrl+Shift+Z)" relationship="label">
           <ToolbarButton icon={<ArrowRedo20Regular />} onClick={redo} disabled={!bus.canRedo} />
         </Tooltip>
-        <Tooltip content="History" relationship="label">
-          <ToolbarButton icon={<History20Regular />} onClick={() => useEditor.setState({ historyOpen: true })} />
-        </Tooltip>
-        <ToolbarDivider />
-        <Tooltip content="Fit video to screen (Shift+1)" relationship="label">
-          <Button appearance="subtle" icon={<ZoomFit20Regular />} onClick={fitToVideo} />
-        </Tooltip>
+        {!phone && (
+          <Tooltip content="History" relationship="label">
+            <ToolbarButton icon={<History20Regular />} onClick={() => useEditor.setState({ historyOpen: true })} />
+          </Tooltip>
+        )}
+        {!phone && (
+          <>
+            <ToolbarDivider />
+            <Tooltip content="Fit video to screen (Shift+1)" relationship="label">
+              <Button appearance="subtle" icon={<ZoomFit20Regular />} onClick={fitToVideo} />
+            </Tooltip>
+          </>
+        )}
       </Toolbar>
-      <Button appearance="subtle" size="small" icon={<Sparkle20Regular />} onClick={() => useEditor.setState((s) => ({ aiOpen: !s.aiOpen }))}>
-        AI
-      </Button>
-      {!agentOn && (
-        <Button appearance="subtle" size="small" icon={<Bot20Regular />} onClick={() => useEditor.setState({ connectOpen: true })}>
-          Connect agent
-        </Button>
-      )}
-      <Tooltip content="Present step by step (F5)" relationship="label">
-        <Button appearance="secondary" size="small" icon={<Play20Regular />} onClick={() => (useEditor.getState().pause(), useEditor.setState({ presenting: true }))}>
-          Present
+      <Tooltip content="AI panel" relationship="description">
+        <Button appearance="subtle" size="small" icon={<Sparkle20Regular />} aria-label="AI" onClick={() => useEditor.setState((s) => ({ aiOpen: !s.aiOpen }))}>
+          {compact ? null : "AI"}
         </Button>
       </Tooltip>
+      {!agentOn && !phone && (
+        <Tooltip content="Connect agent" relationship="label">
+          <Button appearance="subtle" size="small" icon={<Bot20Regular />} onClick={() => useEditor.setState({ connectOpen: true })}>
+            {compact ? null : "Connect agent"}
+          </Button>
+        </Tooltip>
+      )}
+      {!phone && (
+        <Tooltip content="Present step by step (F5)" relationship="label">
+          <Button appearance="secondary" size="small" icon={<Play20Regular />} onClick={() => (useEditor.getState().pause(), useEditor.setState({ presenting: true }))}>
+            {compact ? null : "Present"}
+          </Button>
+        </Tooltip>
+      )}
       <Tooltip content="Export video or images (Ctrl+E)" relationship="label">
         <Button appearance="primary" size="small" icon={<ArrowExportUp20Regular />} onClick={() => useEditor.setState({ exportOpen: true })}>
-          Export
+          {phone ? null : "Export"}
         </Button>
       </Tooltip>
+      {compact && (
+        <Tooltip content="Properties" relationship="label">
+          <ToggleButton appearance="subtle" size="small" icon={<PanelRight20Regular />} checked={drawer === "inspector"} onClick={() => toggle("inspector")} />
+        </Tooltip>
+      )}
     </header>
   );
 }

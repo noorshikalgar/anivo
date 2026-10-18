@@ -33,6 +33,7 @@ import { withErrors } from "../notify.js";
 import { useEditor } from "../store.js";
 import { formatTime } from "./PlaybackBar.js";
 import { TemplateThumb } from "./TemplateGallery.js";
+import { PHONE, useMedia } from "./useMedia.js";
 
 const useStyles = makeStyles({
   root: { height: "100%", overflowY: "auto", backgroundColor: tokens.colorNeutralBackground2, color: tokens.colorNeutralForeground1 },
@@ -49,7 +50,7 @@ const useStyles = makeStyles({
     borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
   },
   brand: { fontWeight: tokens.fontWeightSemibold, letterSpacing: "0.02em", marginRight: "auto" },
-  search: { width: "min(320px, 100%)", flexGrow: 0 },
+  search: { width: "min(320px, 100%)", flexGrow: 0, "@media (max-width: 1023px)": { order: 10, width: "100%", maxWidth: "none" } },
   main: { padding: `${tokens.spacingVerticalXL} clamp(16px, 4vw, 48px) ${tokens.spacingVerticalXXXL}`, maxWidth: "1440px", margin: "0 auto", display: "flex", flexDirection: "column", gap: tokens.spacingVerticalXXL },
   section: { display: "flex", flexDirection: "column", gap: tokens.spacingVerticalM },
   sectionHead: { display: "flex", alignItems: "center", gap: tokens.spacingHorizontalM, flexWrap: "wrap" },
@@ -188,6 +189,7 @@ function SceneCard({ e, onRename, onDelete }: { e: LibraryEntry; onRename: () =>
 /** The home screen: start a scene, or open one of the library (FR-FILE-09). */
 export function Home() {
   const styles = useStyles();
+  const phone = useMedia(PHONE);
   const version = useEditor((s) => s.libraryVersion);
   const [scenes, setScenes] = useState<LibraryEntry[] | null>(null);
   const [recent, setRecent] = useState<Awaited<ReturnType<typeof recentFiles>>>([]);
@@ -239,16 +241,16 @@ export function Home() {
           Anivo
         </Text>
         <Input className={styles.search} contentBefore={<Search20Regular />} placeholder="Search scenes and templates" value={query} onChange={(_, d) => setQuery(d.value)} aria-label="Search scenes and templates" />
-        <Button icon={<FolderOpen20Regular />} onClick={() => void withErrors(openFile)}>
-          Open file
+        <Button icon={<FolderOpen20Regular />} onClick={() => void withErrors(openFile)} aria-label="Open file">
+          {phone ? null : "Open file"}
         </Button>
-        <Button icon={<DocumentArrowUp20Regular />} onClick={() => void withErrors(runImport)}>
-          Import diagram
+        <Button icon={<DocumentArrowUp20Regular />} onClick={() => void withErrors(runImport)} aria-label="Import diagram">
+          {phone ? null : "Import diagram"}
         </Button>
         <Menu>
           <MenuTrigger disableButtonEnhancement>
-            <MenuButton appearance="primary" icon={<Add20Regular />}>
-              New scene
+            <MenuButton appearance="primary" icon={<Add20Regular />} aria-label="New scene">
+              {phone ? "New" : "New scene"}
             </MenuButton>
           </MenuTrigger>
           <MenuPopover>

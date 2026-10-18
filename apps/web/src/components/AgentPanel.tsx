@@ -25,7 +25,7 @@ const useStyles = makeStyles({
     position: "absolute",
     top: "64px",
     right: "12px",
-    width: "300px",
+    width: "min(300px, calc(100% - 24px))",
     maxHeight: "60%",
     display: "flex",
     flexDirection: "column",

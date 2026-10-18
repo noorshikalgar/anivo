@@ -9,7 +9,7 @@ import { formatTime } from "./PlaybackBar.js";
 const useStyles = makeStyles({
   root: { display: "flex", flexDirection: "column", borderTop: `1px solid ${tokens.colorNeutralStroke2}`, backgroundColor: tokens.colorNeutralBackground2 },
   row: { display: "flex", alignItems: "center", gap: tokens.spacingHorizontalS, padding: `2px ${tokens.spacingHorizontalM}`, height: "40px" },
-  label: { width: "160px", display: "flex", alignItems: "center", gap: tokens.spacingHorizontalXS, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" },
+  label: { width: "160px", "@media (max-width: 599px)": { width: "84px" }, display: "flex", alignItems: "center", gap: tokens.spacingHorizontalXS, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" },
   lane: { position: "relative", flexGrow: 1, height: "32px", minWidth: 0, borderRadius: tokens.borderRadiusSmall, backgroundColor: tokens.colorNeutralBackground3 },
   clip: {
     position: "absolute",

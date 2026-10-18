@@ -29,6 +29,9 @@ const useStyles = makeStyles({
     borderRadius: tokens.borderRadiusLarge,
     boxShadow: tokens.shadow8,
     padding: "2px",
+    maxWidth: "calc(100% - 16px)",
+    overflowX: "auto",
+    scrollbarWidth: "none",
   },
 });
 
