@@ -141,7 +141,7 @@ See [09 — Agent interface](09-agent-interface.md).
 | FR-AGENT-09 | Review mode for agent transactions | P1 | Accept or reject each transaction. Rejected transactions do not stay in the undo history. |
 | FR-AGENT-10 | AI panel in the editor | P1 | Providers: Anthropic, OpenAI-compatible endpoint, Ollama. The user supplies the key. |
 | FR-AGENT-11 | Author on each operation | P0 | The history panel shows "You" or the agent name. |
-| FR-AGENT-12 | WebMCP tools in the web app (`navigator.modelContext`) | P2 | Only when the browser supports it. |
+| FR-AGENT-12 | WebMCP tools in the web app (`navigator.modelContext`) | P2 | Done: the AI panel tools as `anivo_*` tools, with `registerTool` or `provideContext`. Only when the browser supports it. |
 | FR-AGENT-13 | Agent eval suite | P1 | 20 fixed prompts. Score each output with lint and a rubric. Run in CI each week. |
 
 ## 8. Present and player (`FR-PLAY`)
