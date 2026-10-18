@@ -60,6 +60,13 @@ describe("lintScene", () => {
     expect(codes(s)).not.toContain("tiny-text");
   });
 
+  it("accepts a box inside a frame that is only a bit larger, but not two equal boxes", () => {
+    const inFrame = script(`box win " " at=90,300 size=900x780\nbox site "Page" at=130,470 size=820x560\nstep "S"\n  enter win, site fade\n`);
+    expect(codes(inFrame)).not.toContain("overlap");
+    const same = script(`box a "A" at=100,100 size=300x200\nbox b "B" at=100,100 size=300x200\nstep "S"\n  enter a, b fade\n`);
+    expect(codes(same)).toContain("overlap");
+  });
+
   it("finds an empty step, an unused element, an unknown icon, and an unknown color", () => {
     const s = script(`box a "A" at=100,100 fill=pinkish\nicon i nope:nothing "X" at=600,100\nbox z "Z" at=900,600\nstep "Empty"\nstep "S"\n  enter a, i fade\n  exit z fade\n`);
     const c = codes(s);
