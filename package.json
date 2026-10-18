@@ -9,7 +9,7 @@
   "scripts": {
     "typecheck": "tsc -b && tsc -p tsconfig.tests.json && tsc -p apps/spike/tsconfig.json && tsc -p apps/web/tsconfig.json",
     "lint": "eslint .",
-    "test": "vitest run",
+    "test": "tsx scripts/build-player.ts && vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "render:template": "tsx scripts/render-template.ts",
