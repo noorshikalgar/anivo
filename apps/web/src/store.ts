@@ -47,6 +47,8 @@ interface EditorState {
   exportOpen: boolean;
   /** The voiceover record, while it runs (see record.ts). */
   recording: import("./record.js").RecordingState | null;
+  /** The step-by-step voice record (takes), or null. */
+  takes: import("./takes.js").TakesState | null;
   /** True while the script dialog is open. */
   scriptOpen: boolean;
   /** Increases when a new image is decoded, so the canvas draws again. */
@@ -165,6 +167,7 @@ export const useEditor = create<EditorState>((set, get) => {
     timelineOpen: false,
     imagesVersion: 0,
     recording: null,
+    takes: null,
     presenting: false,
     paletteOpen: false,
 

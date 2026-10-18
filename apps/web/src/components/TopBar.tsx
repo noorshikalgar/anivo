@@ -20,6 +20,7 @@ import { hasFileSystemAccess, newScene, openFile, runImport, openRecent, recentF
 import { notify, withErrors } from "../notify.js";
 import { cueAllSteps, importAudio } from "../audio.js";
 import { startRecording } from "../record.js";
+import { openTakes } from "../takes.js";
 import { shareServer } from "../share.js";
 import { useEditor } from "../store.js";
 
@@ -121,8 +122,9 @@ export function TopBar() {
             </MenuItem>
             <MenuItem onClick={() => void withErrors(() => importAudio("sfx"))}>Add sound effect…</MenuItem>
             <MenuItem icon={<Record20Regular />} onClick={() => void withErrors(startRecording)}>
-              Record voiceover…
+              Record voiceover in one take…
             </MenuItem>
+            <MenuItem onClick={() => void withErrors(async () => openTakes())}>Record voiceover step by step…</MenuItem>
             <MenuDivider />
             <MenuItem onClick={() => useEditor.setState({ scriptOpen: true })}>Edit script…</MenuItem>
             <MenuItem onClick={() => useEditor.setState({ ttsOpen: true })}>Make voiceover from script…</MenuItem>

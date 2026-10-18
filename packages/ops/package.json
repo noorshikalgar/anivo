@@ -8,6 +8,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@anivo/engine": "workspace:*",
     "@anivo/layout": "workspace:*",
     "@anivo/schema": "workspace:*",
     "zod": "4.6.7"

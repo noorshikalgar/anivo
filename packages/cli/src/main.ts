@@ -1,14 +1,15 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { basename, join, resolve as resolvePath } from "node:path";
-import { resolveTimeline, sceneCaptions, toSrt, toVtt } from "@anivo/engine";
+import { resolveTimeline, sceneCaptions, toSrt, toVtt, wavBytes } from "@anivo/engine";
 import { type NodeExportFormat, exportHtml, exportVideo, renderSvg } from "@anivo/export-node";
 import { formatLint, lintScene, lintSummary } from "@anivo/lint";
-import { OperationBus } from "@anivo/ops";
+import { OperationBus, planTake, spliceTake, trimTake, voiceParts } from "@anivo/ops";
+import { assetId } from "@anivo/fileio";
 import { getIconPack, iconName, iconPackFromSvgs, iconPacks, searchIcons } from "@anivo/render";
 import { CustomTheme, type Scene, TEMPLATES, loadScene } from "@anivo/schema";
 import { importText } from "@anivo/import";
 import { applyScript, printScene } from "@anivo/script";
-import { ToolError, assetCache, audioMime, audioOnsets, imageMime, parseTranscript, transcribe, contactSheetPng, importAsset, probeDurationMs, jsonSchema, previewPng, readSceneFile, sceneSummary, stepTime, writeSceneFile } from "@anivo/tools";
+import { ToolError, assetCache, audioMime, audioOnsets, decodePcm, imageMime, parseTranscript, transcribe, contactSheetPng, importAsset, probeDurationMs, jsonSchema, previewPng, readSceneFile, sceneSummary, stepTime, writeSceneFile } from "@anivo/tools";
 import { homePath, imageSize, registerBundledAssets, userIconsDir } from "@anivo/export-node";
 import { Command, Option } from "commander";
 
@@ -380,6 +381,51 @@ audio
     if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
     writeSceneFile(f, bus.scene);
     print(`Removed ${id}.`);
+  });
+
+audio
+  .command("take")
+  .description("Put a voice take into the voiceover for one step. A new take of a step replaces the old one; the later steps move")
+  .argument("<scene>")
+  .argument("<step>", "Step ID or number (1 is the first step)")
+  .argument("<file>", "Audio file of the take")
+  .option("--keep-silence", "Keep the silence before and after the speech")
+  .action((f: string, stepArg: string, file: string, o: { keepSilence?: boolean }) => {
+    const scene = readSceneFile(f);
+    const step = /^\d+$/.test(stepArg) ? scene.steps[Number(stepArg) - 1] : scene.steps.find((s) => s.id === stepArg);
+    if (!step) throw new ToolError(`Step '${stepArg}' does not exist.`, "Use a step ID or a number from 'anivo summary'.");
+    const RATE = 48000;
+    let take = decodePcm(file, RATE);
+    if (!o.keepSilence) {
+      try {
+        take = trimTake(take, RATE);
+      } catch (err) {
+        throw new ToolError(`The file '${file}' has no speech.`, err instanceof Error ? err.message : undefined);
+      }
+    }
+    const takeMs = Math.round((take.length / RATE) * 1000);
+    const plan = planTake(scene, step.id, takeMs);
+    const vo = scene.audio.find((t) => t.kind === "voiceover");
+    const oldBytes = vo ? assetCache.get(vo.assetId) : undefined;
+    if (vo && !oldBytes) throw new ToolError("The voiceover file is missing from the scene.", "Add the voiceover again with 'anivo audio add'.");
+    const out = spliceTake(oldBytes ? decodePcm(oldBytes, RATE) : new Float32Array(0), take, RATE, plan);
+    const bytes = wavBytes(out, RATE);
+    const id = assetId(bytes);
+    assetCache.set(id, bytes);
+    const bus = new OperationBus(scene);
+    const r = bus.apply({
+      label: "Voice take",
+      ops: [
+        ...(vo ? [{ op: "audio.remove" as const, id: vo.id }] : []),
+        { op: "asset.add", asset: { id, mime: "audio/wav", bytes: bytes.length, name: "voiceover-takes.wav" } },
+        { op: "audio.add", track: { id: plan.trackId, kind: "voiceover", assetId: id, durationMs: Math.round((out.length / RATE) * 1000), startMs: plan.trackStartMs, ...(vo ? { gainDb: vo.gainDb } : {}) } },
+        ...plan.ops,
+      ],
+    });
+    if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
+    writeSceneFile(f, bus.scene);
+    const part = voiceParts(bus.scene).find((p) => p.stepId === step.id)!;
+    print(`Step '${step.id}': take ${(takeMs / 1000).toFixed(1)} s, part ${((part.toMs - part.fromMs) / 1000).toFixed(1)} s from ${(part.fromMs / 1000).toFixed(2)} s.${plan.silenceAfterMs > 0 ? " The animation is longer than the take, so silence fills the rest." : ""}`, { stepId: step.id, takeMs, fromMs: part.fromMs, toMs: part.toMs });
   });
 
 program

@@ -21,6 +21,7 @@ import { TtsDialog } from "./TtsDialog.js";
 import { AlignDialog } from "./AlignDialog.js";
 import { AudioLane } from "./AudioLane.js";
 import { PlaybackBar } from "./PlaybackBar.js";
+import { TakesBar } from "./TakesBar.js";
 import { RecordBar } from "./RecordBar.js";
 import { ScriptDialog } from "./ScriptDialog.js";
 import { TemplateGallery } from "./TemplateGallery.js";
@@ -81,6 +82,7 @@ export function App() {
   const notice = useEditor((s) => s.notice);
   const presenting = useEditor((s) => s.presenting);
   const recording = useEditor((s) => s.recording !== null);
+  const takes = useEditor((s) => s.takes !== null);
   const timelineOpen = useEditor((s) => s.timelineOpen);
   useEffect(() => {
     if (!notice) return;
@@ -152,6 +154,8 @@ export function App() {
           <div className={styles.play}>
             {recording ? (
               <RecordBar />
+            ) : takes ? (
+              <TakesBar />
             ) : (
               <>
                 {timelineOpen && <TimelinePanel />}
