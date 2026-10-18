@@ -117,13 +117,13 @@ See [05 — Scene model](05-scene-model.md).
 |---|---|---|---|
 | FR-FILE-01 | Save and open `.anivo` (ZIP) and `.anivo.json` (single JSON with embedded assets) | P0 | |
 | FR-FILE-02 | Folder format for Git: `scene.json` + `assets/` | P1 | JSON has a stable key order and 2-space indent. A change of one label changes one line. |
-| FR-FILE-03 | Autosave in the browser (IndexedDB) | P0 | Autosave occurs 1 second after the last change. Recover after a browser crash. |
+| FR-FILE-03 | Autosave in the browser (IndexedDB) | P0 | Autosave occurs 1 second after the last change. Recover after a browser crash. Each scene has its own entry in the scene library (`apps/web/src/library.ts`). |
 | FR-FILE-04 | File System Access API in Chromium browsers | P0 | Save to the same file with Ctrl/Cmd+S. Other browsers download the file. |
 | FR-FILE-05 | Import Excalidraw files (`.excalidraw`) | P1 | Shapes, text, connectors, bindings, and groups convert. Excalidraw frames convert to groups. |
 | FR-FILE-06 | Import Mermaid flowchart and sequence diagram text | P1 | |
 | FR-FILE-07 | Schema version and migrations | P0 | Each file has `schemaVersion`. Anivo opens all older versions. |
 | FR-FILE-08 | Templates gallery (built-in) | P1 | Minimum 10 templates at 1.0. Examples A to E are templates. The list is in `packages/schema/src/templates.ts`; the sources are in `scripts/build-templates.ts` and `scripts/templates/`. |
-| FR-FILE-09 | Recent scenes list | P0 | |
+| FR-FILE-09 | Recent scenes list | P0 | Done: the home screen (start screen) shows the scene library: thumbnail, name, size, steps, length, and last change. Search, sort, rename, duplicate, download, and delete. New blank scene (16:9, 9:16, 1:1), templates, open file, import, and drop an `.anivo` file. The **Anivo** button in the editor goes back to the home screen. |
 
 ## 7. Agent and AI (`FR-AGENT`)
 

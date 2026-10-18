@@ -14,9 +14,9 @@ import {
   makeStyles,
   tokens,
 } from "@fluentui/react-components";
-import { ArrowExportUp20Regular, Play20Regular, ArrowRedo20Regular, ArrowUndo20Regular, Document20Regular, History20Regular, FolderOpen20Regular, Bot20Regular, Mic20Regular, Sparkle20Regular, MusicNote220Regular, Record20Regular, Save20Regular, ZoomFit20Regular } from "@fluentui/react-icons";
+import { ArrowExportUp20Regular, Home20Regular, Play20Regular, ArrowRedo20Regular, ArrowUndo20Regular, Document20Regular, History20Regular, FolderOpen20Regular, Bot20Regular, Mic20Regular, Sparkle20Regular, MusicNote220Regular, Record20Regular, Save20Regular, ZoomFit20Regular } from "@fluentui/react-icons";
 import { useState } from "react";
-import { hasFileSystemAccess, newScene, openFile, runImport, openRecent, recentFiles, saveFile, saveFileAs } from "../files.js";
+import { goHome, hasFileSystemAccess, newScene, openFile, runImport, openRecent, recentFiles, saveFile, saveFileAs } from "../files.js";
 import { notify, withErrors } from "../notify.js";
 import { cueAllSteps, importAudio } from "../audio.js";
 import { startRecording } from "../record.js";
@@ -34,7 +34,7 @@ const useStyles = makeStyles({
     borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
     backgroundColor: tokens.colorNeutralBackground1,
   },
-  brand: { fontWeight: tokens.fontWeightSemibold, letterSpacing: "0.02em", marginRight: tokens.spacingHorizontalS },
+  brand: { fontWeight: tokens.fontWeightSemibold, letterSpacing: "0.02em", marginRight: tokens.spacingHorizontalS, fontSize: tokens.fontSizeBase400 },
   title: { color: tokens.colorNeutralForeground3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
   spacer: { flexGrow: 1 },
 });
@@ -54,9 +54,11 @@ export function TopBar() {
 
   return (
     <header className={styles.root}>
-      <Text size={400} className={styles.brand}>
-        Anivo
-      </Text>
+      <Tooltip content="Home: all your scenes" relationship="description">
+        <Button appearance="subtle" icon={<Home20Regular />} className={styles.brand} onClick={() => void withErrors(goHome)} aria-label="Home">
+          Anivo
+        </Button>
+      </Tooltip>
       <Menu onOpenChange={(_, d) => d.open && void recentFiles().then(setRecent)}>
         <MenuTrigger disableButtonEnhancement>
           <Button appearance="subtle" size="small">
@@ -65,7 +67,7 @@ export function TopBar() {
         </MenuTrigger>
         <MenuPopover>
           <MenuList>
-            <MenuItem icon={<Document20Regular />} onClick={newScene}>
+            <MenuItem icon={<Document20Regular />} onClick={() => newScene()}>
               New scene
             </MenuItem>
             <MenuItem onClick={() => useEditor.setState({ galleryOpen: true })}>New from template…</MenuItem>

@@ -1,7 +1,9 @@
 import { FluentProvider, Spinner, Text, Toast, ToastTitle, Toaster, makeStyles, tokens, useId, useToastController } from "@fluentui/react-components";
 import { useEffect, useState } from "react";
-import { loadAssets, loadTemplate } from "../assets.js";
-import { openSceneFromQuery, restoreAutosave, startAutosave } from "../files.js";
+import { loadAssets } from "../assets.js";
+import { openSceneFromQuery, startAutosave } from "../files.js";
+import { migrateAutosave, startLibraryAutosave } from "../library.js";
+import { Home } from "./Home.js";
 import { openShareFromUrl } from "../share.js";
 import { notify } from "../notify.js";
 import { useEditor } from "../store.js";
@@ -69,6 +71,7 @@ export function App() {
   const [state, setState] = useState<"loading" | "ready" | { error: string }>("loading");
   useShortcuts();
   useEffect(() => startAutosave(), []);
+  useEffect(() => startLibraryAutosave(), []);
   useEffect(() => startAudioSync(), []);
   useEffect(() => startImageSync(), []);
   // WebMCP: the browser's agent can use the editor tools, if the browser supports it.
@@ -84,6 +87,7 @@ export function App() {
   const recording = useEditor((s) => s.recording !== null);
   const takes = useEditor((s) => s.takes !== null);
   const timelineOpen = useEditor((s) => s.timelineOpen);
+  const screen = useEditor((s) => s.screen);
   useEffect(() => {
     if (!notice) return;
     dispatchToast(
@@ -99,14 +103,8 @@ export function App() {
     (async () => {
       try {
         await loadAssets();
-        // Restore the last session (FR-FILE-03). Start with the template on the first visit.
-        const restored = await restoreAutosave();
-        if (!restored) {
-          const scene = await loadTemplate("load-balancer");
-          if (cancelled) return;
-          useEditor.getState().openScene(scene);
-          useEditor.setState({ dirty: false });
-        }
+        // The scenes of older versions go into the library (FR-FILE-03). The app starts on the home screen.
+        await migrateAutosave().catch(() => undefined);
         if (cancelled) return;
         // anivo serve: ?scene=/local/scene opens the scene from this server.
         await openSceneFromQuery().catch((e: unknown) => notify(e instanceof Error ? e.message : String(e), "error"));
@@ -135,6 +133,8 @@ export function App() {
         <div className={styles.center}>
           <Text>Anivo did not start. {state.error} Reload the page.</Text>
         </div>
+      ) : screen === "home" ? (
+        <Home />
       ) : (
         <div className={styles.root}>
           <div className={styles.top}>

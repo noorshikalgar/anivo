@@ -23,7 +23,7 @@ import { cueAllSteps, importAudio } from "../audio.js";
 import { pickImage } from "../images.js";
 import { startRecording } from "../record.js";
 import { openTakes } from "../takes.js";
-import { newFromTemplate, newScene, openFile, runImport, saveFile, saveFileAs } from "../files.js";
+import { goHome, newFromTemplate, newScene, openFile, runImport, saveFile, saveFileAs } from "../files.js";
 import { notify, withErrors } from "../notify.js";
 import { shareServer } from "../share.js";
 import { type Tool, useEditor } from "../store.js";
@@ -74,7 +74,8 @@ function commands(): Command[] {
     { title: "Save", keys: "Ctrl+S", run: () => void withErrors(async () => (await saveFile()) && notify("Saved", "success")) },
     { title: "Save as", keys: "Ctrl+Shift+S", run: () => void withErrors(saveFileAs) },
     { title: "Open", keys: "Ctrl+O", run: () => void withErrors(openFile) },
-    { title: "New scene", run: newScene },
+    { title: "New scene", run: () => newScene() },
+    { title: "Go to the home screen", run: () => void goHome() },
     { title: "Templates gallery", run: () => useEditor.setState({ galleryOpen: true }) },
     { title: "Import Excalidraw or Mermaid", run: () => void withErrors(runImport) },
     ...TEMPLATES.map((t) => ({ title: `New from template: ${t.title}`, run: () => void withErrors(() => newFromTemplate(t.name)) })),

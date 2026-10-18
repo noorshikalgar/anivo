@@ -32,7 +32,7 @@ const useStyles = makeStyles({
 });
 
 /** A small picture of the end of the template's last step. */
-function Thumb({ name }: { name: string }) {
+export function TemplateThumb({ name }: { name: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const styles = useStyles();
   useEffect(() => {
@@ -74,7 +74,7 @@ export function TemplateGallery() {
                     void withErrors(() => newFromTemplate(t.name));
                   }}
                 >
-                  {open && <Thumb name={t.name} />}
+                  {open && <TemplateThumb name={t.name} />}
                   <Text weight="semibold">{t.title}</Text>
                   <Text size={200} className={styles.muted}>
                     {t.description}

@@ -21,7 +21,7 @@ export function useShortcuts(): void {
     const onKey = (e: KeyboardEvent) => {
       if (isTyping(e.target)) return;
       const st = useEditor.getState();
-      if (st.presenting) return;
+      if (st.presenting || st.screen !== "editor") return;
       if (st.recording) {
         // While a record runs, only these keys work.
         if (e.key.toLowerCase() === "m" || e.key === "ArrowRight") {

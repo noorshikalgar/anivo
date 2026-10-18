@@ -1,8 +1,9 @@
 import { importText } from "@anivo/import";
-import { type AssetStore, packArchive, packJson, sceneToJson, unpack } from "@anivo/fileio";
+import { type AssetStore, packArchive, packJson, unpack } from "@anivo/fileio";
 import { type Scene, loadScene } from "@anivo/schema";
 import { loadTemplate } from "./assets.js";
 import { idbGet, idbSet } from "./idb.js";
+import { flushAutosave, newLibraryId, readFromLibrary } from "./library.js";
 import { notify } from "./notify.js";
 import { useEditor } from "./store.js";
 
@@ -61,10 +62,25 @@ interface Opened {
   assets: AssetStore;
 }
 
-function openScene({ scene, assets }: Opened, name: string | null, handle: FileHandle | null): void {
+/** Open a scene in the editor. A scene that is not in the library gets a new entry. */
+function openScene({ scene, assets }: Opened, name: string | null, handle: FileHandle | null, libraryId?: string): void {
   currentHandle = handle;
   useEditor.getState().openScene(scene, assets);
-  useEditor.setState({ fileName: name, dirty: false });
+  useEditor.setState({ fileName: name, dirty: false, libraryId: libraryId ?? newLibraryId() });
+  if (!libraryId) void flushAutosave();
+}
+
+/** Open a scene of the library. */
+export async function openFromLibrary(id: string): Promise<void> {
+  const { scene, assets, entry } = await readFromLibrary(id);
+  // The file of the scene, if the user saved it on this computer.
+  const handle = entry.fileName ? ((await recentFiles()).find((r) => r.name === entry.fileName)?.handle ?? null) : null;
+  openScene({ scene, assets }, entry.fileName, handle, id);
+}
+
+/** Open an .anivo file that the user dropped. */
+export async function openDroppedFile(file: File): Promise<void> {
+  openScene(await readFile(file), file.name, null);
 }
 
 async function readFile(file: File): Promise<Opened> {
@@ -181,8 +197,9 @@ export async function runImport(): Promise<void> {
   notify(warnings.length ? `Imported. ${warnings.length} parts did not convert: ${warnings.slice(0, 2).join(" ")}` : "Imported", warnings.length ? "info" : "success");
 }
 
-export function newScene(): void {
-  const r = loadScene({ schemaVersion: 1, meta: { title: "Untitled" } });
+/** A blank scene. The default size is 1920 x 1080 (16:9). */
+export function newScene(size?: { width: number; height: number }): void {
+  const r = loadScene({ schemaVersion: 1, meta: { title: "Untitled" }, ...(size ? { settings: { video: size } } : {}) });
   if (r.ok) openScene({ scene: r.scene, assets: new Map() }, null, null);
 }
 
@@ -190,42 +207,13 @@ export async function newFromTemplate(name: string): Promise<void> {
   openScene({ scene: await loadTemplate(name), assets: new Map() }, null, null);
 }
 
-// --- autosave (FR-FILE-03) -----------------------------------------------------
+// --- changes (FR-FILE-03: library.ts saves the scene) ---------------------------
 
-interface Autosave {
-  json: string;
-  fileName: string | null;
-  savedAt: number;
-}
-
-let timer = 0;
-
-/** Save the scene to IndexedDB 1 second after the last change. Assets are saved when they change. */
+/** Mark the scene as changed after an edit. */
 export function startAutosave(): () => void {
   return useEditor.subscribe((s, prev) => {
-    if (s.assets !== prev.assets) void idbSet("autosave-assets", s.assets);
-    if (s.scene === prev.scene) return;
-    if (s.version !== prev.version) useEditor.setState({ dirty: true });
-    clearTimeout(timer);
-    timer = window.setTimeout(() => {
-      const st = useEditor.getState();
-      void idbSet("autosave", { json: sceneToJson(st.scene), fileName: st.fileName, savedAt: Date.now() } satisfies Autosave);
-      if (currentHandle) void idbSet("handle", currentHandle);
-    }, 1000);
+    if (s.scene !== prev.scene && s.version !== prev.version) useEditor.setState({ dirty: true });
   });
-}
-
-/** Restore the last autosave. Returns false if there is none. */
-export async function restoreAutosave(): Promise<boolean> {
-  const saved = await idbGet<Autosave>("autosave").catch(() => undefined);
-  if (!saved) return false;
-  const r = unpack(new TextEncoder().encode(saved.json));
-  if (!r.ok) return false;
-  const stored = (await idbGet<AssetStore>("autosave-assets").catch(() => undefined)) ?? new Map<string, Uint8Array>();
-  const assets: AssetStore = new Map([...stored].filter(([id]) => id in r.scene.assets));
-  const handle = (await idbGet<FileHandle>("handle").catch(() => undefined)) ?? null;
-  openScene({ scene: r.scene, assets }, saved.fileName, handle && handle.name === saved.fileName ? handle : null);
-  return true;
 }
 
 /** `anivo serve`: open the scene in "?scene=<path>" from this server (same origin only). */
@@ -239,4 +227,18 @@ export async function openSceneFromQuery(): Promise<boolean> {
   const name = decodeURIComponent(res.headers.get("x-anivo-name") ?? "") || null;
   openScene({ scene: r.scene, assets: r.assets }, name, null);
   return true;
+}
+
+/** Save the open scene, then show the home screen. */
+export async function goHome(): Promise<void> {
+  const st = useEditor.getState();
+  st.pause();
+  if (st.takes || st.recording) return;
+  await flushAutosave();
+  useEditor.setState({ screen: "home", selection: [], selectedStep: null });
+}
+
+/** Open a scene from another source (a share link) in a new library entry. */
+export function openAsNew(scene: Scene, assets: AssetStore): void {
+  openScene({ scene, assets }, null, null);
 }
