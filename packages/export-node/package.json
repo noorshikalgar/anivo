@@ -10,6 +10,7 @@
   "dependencies": {
     "@anivo/engine": "workspace:*",
     "@anivo/layout": "workspace:*",
+    "@anivo/player": "workspace:*",
     "@anivo/render": "workspace:*",
     "@anivo/schema": "workspace:*",
     "@napi-rs/canvas": "1.0.11"

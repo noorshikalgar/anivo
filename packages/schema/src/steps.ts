@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { ActionId, Color, ElementId, Ms, StepId } from "./primitives.js";
 
 export const EasingName = z.enum([

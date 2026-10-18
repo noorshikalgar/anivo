@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { AssetRef, AudioTrack, ScriptLine } from "./audio.js";
 import { Element } from "./elements.js";
 import { Color, Rect } from "./primitives.js";

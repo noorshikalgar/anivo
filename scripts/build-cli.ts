@@ -35,6 +35,7 @@ await build({
 cpSync("assets/fonts", `${out}/assets/fonts`, { recursive: true });
 cpSync("assets/icons", `${out}/assets/icons`, { recursive: true });
 cpSync("assets/templates", `${out}/assets/templates`, { recursive: true });
+cpSync("assets/player", `${out}/assets/player`, { recursive: true });
 cpSync("assets/LICENSES.md", `${out}/assets/LICENSES.md`);
 mkdirSync(`${out}/prompts`, { recursive: true });
 cpSync("prompts/scene-agent.md", `${out}/prompts/scene-agent.md`);

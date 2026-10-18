@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { Ms, StepId } from "./primitives.js";
 
 /** A binary file of the scene (audio, later images). The bytes live outside the scene, keyed by ID. */

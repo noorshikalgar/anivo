@@ -81,6 +81,16 @@ describe("anivo CLI", () => {
     expect(anivo("image", "add", sc, join(dir, "s.anivo.txt")).err).toContain("Use a PNG, JPEG, WebP, or SVG file.");
   });
 
+  it("writes a self-contained HTML player file", () => {
+    const out = join(dir, "s.html");
+    const r = anivo("html", scene, "--out", out, "--loop");
+    expect(r.code, r.err).toBe(0);
+    const html = readFileSync(out, "utf8");
+    expect(html).toMatch(/^<!doctype html>/);
+    expect(html).toContain("<anivo-player controls loop>");
+    expect(html).toContain('<script type="module">');
+  });
+
   it("writes a preview and a contact sheet", () => {
     expect(anivo("preview", scene, "--step", "1", "--debug", "--out", join(dir, "p.png")).code).toBe(0);
     expect(readFileSync(join(dir, "p.png")).subarray(1, 4).toString()).toBe("PNG");

@@ -107,6 +107,9 @@ importers:
       '@anivo/ops':
         specifier: workspace:*
         version: link:../../packages/ops
+      '@anivo/player':
+        specifier: workspace:*
+        version: link:../../packages/player
       '@anivo/render':
         specifier: workspace:*
         version: link:../../packages/render
@@ -147,6 +150,12 @@ importers:
       '@vitejs/plugin-react':
         specifier: 6.1.2
         version: 6.1.2(vite@8.3.4(@types/node@22.20.5)(esbuild@0.28.2)(tsx@4.23.15))
+      esbuild:
+        specifier: 0.28.2
+        version: 0.28.2
+      tsx:
+        specifier: 4.23.15
+        version: 4.23.15
 
   packages/cli:
     dependencies:
@@ -198,6 +207,9 @@ importers:
       '@anivo/layout':
         specifier: workspace:*
         version: link:../layout
+      '@anivo/player':
+        specifier: workspace:*
+        version: link:../player
       '@anivo/render':
         specifier: workspace:*
         version: link:../render
@@ -311,6 +323,27 @@ importers:
       zod:
         specifier: 4.6.7
         version: 4.6.7
+
+  packages/player:
+    dependencies:
+      '@anivo/engine':
+        specifier: workspace:*
+        version: link:../engine
+      '@anivo/export-web':
+        specifier: workspace:*
+        version: link:../export-web
+      '@anivo/fileio':
+        specifier: workspace:*
+        version: link:../fileio
+      '@anivo/layout':
+        specifier: workspace:*
+        version: link:../layout
+      '@anivo/render':
+        specifier: workspace:*
+        version: link:../render
+      '@anivo/schema':
+        specifier: workspace:*
+        version: link:../schema
 
   packages/render:
     dependencies:

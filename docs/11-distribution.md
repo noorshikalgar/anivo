@@ -158,6 +158,24 @@ claude mcp add anivo -- npx -y @anivo/cli mcp --root ./videos
 - Size budget: less than 150 KB gzip, without fonts and icon packs.
 - Loads fonts and icons used by the scene only.
 - Also available as a self-contained HTML export (see [07](07-rendering-and-export.md)).
+- Build: `pnpm build:player` writes `assets/player/anivo-player.js` (one ES module, about 64 KB gzip). The build fails at 150 KB gzip. The web app serves it at `/player/anivo-player.js`.
+
+```html
+<script type="module" src="https://your-anivo-server/player/anivo-player.js"></script>
+<anivo-player src="/videos/auth.anivo" controls loop></anivo-player>
+```
+
+| Attribute | Meaning |
+|---|---|
+| `src` | A `.anivo` file or a scene JSON file. |
+| `autoplay`, `loop`, `controls` | As for `<video>`. |
+| `step` | The step to show first. `0` is the base state. |
+| `captions` | `bottom` or `top`: show the script captions. |
+| `assets` | The folder with `fonts/` and `icons/`. Default: `../` from the script. |
+
+Methods: `play()`, `pause()`, `seek(ms)`, `goToStep(n)`. Properties: `duration`, `currentTime`, `paused`. Events: `ready`, `play`, `pause`, `ended`, `error`. Keys when focused: Space, Left, Right.
+
+Self-contained file: `anivo html <scene> --out video.html`, `anivo_export` with format `html`, or Export › HTML player in the editor. The file contains the player, the scene, the assets, the used icons, and the used fonts. It needs no network.
 
 ## Recommended path for a new user
 

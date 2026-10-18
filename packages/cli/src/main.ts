@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolveTimeline, sceneCaptions, toSrt, toVtt } from "@anivo/engine";
-import { type NodeExportFormat, exportVideo } from "@anivo/export-node";
+import { type NodeExportFormat, exportHtml, exportVideo } from "@anivo/export-node";
 import { formatLint, lintScene, lintSummary } from "@anivo/lint";
 import { OperationBus } from "@anivo/ops";
 import { searchIcons } from "@anivo/render";
@@ -348,6 +348,20 @@ program
   .action((f: string, o: { transcript?: string }) => {
     const bus = new OperationBus(readSceneFile(f));
     alignAndReport(f, bus, o.transcript ? parseTranscript(JSON.parse(readFileSync(o.transcript, "utf8"))) : undefined);
+  });
+
+program
+  .command("html")
+  .description("Write one HTML file that plays the scene in a browser, with no network")
+  .argument("<scene>")
+  .requiredOption("--out <file>", "Output HTML file")
+  .addOption(new Option("--captions <where>", "Show the script captions").choices(["bottom", "top"]))
+  .option("--autoplay", "Start to play when the page opens")
+  .option("--loop", "Play again from the start at the end")
+  .action((f: string, o: { out: string; captions?: "bottom" | "top"; autoplay?: boolean; loop?: boolean }) => {
+    const scene = readSceneFile(f);
+    const bytes = exportHtml(scene, o.out, { assets: assetCache, ...(o.captions ? { captions: o.captions } : {}), ...(o.autoplay ? { autoplay: true } : {}), ...(o.loop ? { loop: true } : {}) });
+    print(`Wrote ${o.out}: ${(bytes / 1e6).toFixed(2)} MB. Open it in a browser.`, { out: o.out, bytes });
   });
 
 program
