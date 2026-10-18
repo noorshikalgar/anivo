@@ -150,3 +150,23 @@ describe("image element", () => {
     expect(fitRect(200, 100, { x: 0, y: 0, width: 400, height: 400 }, "cover")).toEqual({ x: -200, y: 0, width: 800, height: 400 });
   });
 });
+
+describe("custom theme", () => {
+  it("changes token colors of a built-in theme, in the scene", async () => {
+    const { sceneTheme } = await import("./theme.js");
+    const scene = load({
+      schemaVersion: 1,
+      settings: { theme: "brand", customTheme: { name: "brand", base: "slate-light", tokens: { background: "#ff0000", accent: "#00ff00" } } },
+    });
+    const t = sceneTheme(scene);
+    expect(t.name).toBe("brand");
+    expect(t.dark).toBe(false);
+    expect(t.tokens["accent"]).toBe("#00ff00");
+    expect(t.tokens["text"]).toBe(THEMES["slate-light"]!.tokens["text"]);
+    const canvas = createCanvas(W, H);
+    renderScene(canvas.getContext("2d") as unknown as Ctx2D, scene, -1, { width: W, height: H });
+    expect([...canvas.getContext("2d").getImageData(5, 5, 1, 1).data]).toEqual([255, 0, 0, 255]);
+    // Another theme name uses the built-in theme.
+    expect(sceneTheme(scene, "night-dark").name).toBe("night-dark");
+  });
+});

@@ -1,5 +1,5 @@
 import type { FrameColor } from "@anivo/engine";
-import type { ElementType } from "@anivo/schema";
+import type { CustomTheme, ElementType } from "@anivo/schema";
 import { type Rgba, mixOklch, parseHex } from "./color.js";
 
 export interface Theme {
@@ -106,6 +106,30 @@ export const THEMES: Record<string, Theme> = {
 
 export function getTheme(name: string): Theme {
   return THEMES[name] ?? THEMES["slate-dark"]!;
+}
+
+const customCache = new WeakMap<object, Theme>();
+
+/** A built-in theme with the changes of a custom theme. */
+export function customTheme(c: CustomTheme): Theme {
+  const known = customCache.get(c);
+  if (known) return known;
+  const b = getTheme(c.base);
+  const t: Theme = {
+    ...b,
+    name: c.name,
+    dark: c.dark ?? b.dark,
+    tokens: { ...b.tokens, ...c.tokens },
+    defaults: { ...b.defaults, ...(c.strokeWidth !== undefined ? { strokeWidth: c.strokeWidth } : {}), ...(c.cornerRadius !== undefined ? { cornerRadius: c.cornerRadius } : {}) },
+  };
+  customCache.set(c, t);
+  return t;
+}
+
+/** The theme of a scene: its custom theme if the name matches, else a built-in theme. */
+export function sceneTheme(scene: { settings: { theme: string; customTheme?: CustomTheme | undefined } }, name = scene.settings.theme): Theme {
+  const c = scene.settings.customTheme;
+  return c && c.name === name ? customTheme(c) : getTheme(name);
 }
 
 /** The default token for a color role of an element type. */

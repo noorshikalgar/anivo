@@ -5,7 +5,7 @@ import { type NodeExportFormat, exportHtml, exportVideo } from "@anivo/export-no
 import { formatLint, lintScene, lintSummary } from "@anivo/lint";
 import { OperationBus } from "@anivo/ops";
 import { getIconPack, iconName, iconPackFromSvgs, iconPacks, searchIcons } from "@anivo/render";
-import { type Scene, TEMPLATES, loadScene } from "@anivo/schema";
+import { CustomTheme, type Scene, TEMPLATES, loadScene } from "@anivo/schema";
 import { importText } from "@anivo/import";
 import { applyScript, printScene } from "@anivo/script";
 import { ToolError, assetCache, audioMime, imageMime, parseTranscript, transcribe, contactSheetPng, importAsset, probeDurationMs, jsonSchema, previewPng, readSceneFile, sceneSummary, stepTime, writeSceneFile } from "@anivo/tools";
@@ -267,6 +267,33 @@ icons
     const out = join(userIconsDir(), `${pack.pack}.json`);
     writeFileSync(out, JSON.stringify(pack));
     print(`Added icon pack '${pack.pack}': ${n} icons (${pack.kind}). Wrote ${out}.${skipped.length ? ` Skipped: ${skipped.join(", ")}.` : ""} Use: icon x ${pack.pack}:${Object.keys(pack.icons)[0]}`, { pack: pack.pack, icons: n, kind: pack.kind, skipped, file: out });
+  });
+
+const theme = program.command("theme").description("Custom themes (FR-STYLE-03)");
+theme
+  .command("import")
+  .description("Use a theme file in a scene")
+  .argument("<scene>")
+  .argument("<file>", "Theme JSON: { name, base, tokens: { accent: '#FF5A1F', ... } }")
+  .action((f: string, file: string) => {
+    const r = CustomTheme.safeParse(JSON.parse(readFileSync(file, "utf8")));
+    if (!r.success) throw new ToolError(`The file '${file}' is not a valid Anivo theme: ${r.error.issues[0]?.path.join(".")} ${r.error.issues[0]?.message}.`, "A theme has a name (lower case, digits, '-'), a base theme, and hex color tokens.");
+    const bus = new OperationBus(readSceneFile(f));
+    const res = bus.apply({ label: "Import theme", ops: [{ op: "scene.settings", set: { customTheme: r.data, theme: r.data.name } }] });
+    if (!res.ok) throw new ToolError(res.error.message, res.error.hint);
+    writeSceneFile(f, bus.scene);
+    print(`The scene uses the theme '${r.data.name}' (from ${r.data.base}, ${Object.keys(r.data.tokens).length} colors changed).`);
+  });
+theme
+  .command("export")
+  .description("Write the custom theme of a scene to a file")
+  .argument("<scene>")
+  .requiredOption("--out <file>", "Theme JSON file")
+  .action((f: string, o: { out: string }) => {
+    const t = readSceneFile(f).settings.customTheme;
+    if (!t) throw new ToolError("The scene has no custom theme.", "Make one in the editor, or use 'anivo theme import'.");
+    writeFileSync(o.out, `${JSON.stringify(t, null, 2)}\n`);
+    print(`Wrote ${o.out}.`);
   });
 
 const image = program.command("image").description("Image elements");
