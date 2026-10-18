@@ -75,6 +75,13 @@ describe("lintScene", () => {
     expect(codes(s)).toContain("dangling-connector");
   });
 
+  it("finds an arrow label that covers an element", () => {
+    const s = script(`box a "A" at=100,100 size=200x80\nbox b "B" at=420,100 size=200x80\narrow a -> b "A long label on a short arrow"\nstep "S"\n  enter a, b, a->b fade\n`);
+    expect(lintScene(s).filter((r) => r.code === "label-overlap").map((r) => r.ids[1])).toEqual(["a", "b"]);
+    const ok = script(`box a "A" at=100,100 size=200x80\nbox b "B" at=900,100 size=200x80\narrow a -> b "Short"\nstep "S"\n  enter a, b, a->b fade\n`);
+    expect(codes(ok)).not.toContain("label-overlap");
+  });
+
   it("finds an arrow through a shape", () => {
     const s = script(`box a "A" at=100,400\nbox m "M" at=700,400\nbox b "B" at=1300,400\narrow a -> b\nstep "S"\n  enter a, m, b, a->b fade\n`);
     expect(codes(s)).toContain("connector-crosses");

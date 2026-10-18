@@ -73,7 +73,7 @@ Do these steps in sequence.
 scene "<title>" style=clean|sketch theme=<name> size=1920x1080 fps=60
 
 box <id> "<label>" [fill=<token>] [right-of|left-of|above|below=<id>] [gap=<px>] [align=start|center|end] [at=x,y] [size=WxH]
-ellipse | diamond | text | icon <id> <pack>:<name> "<label>" | code <id> lang=<lang> """…"""
+ellipse | diamond | text | icon <id> <pack>:<name> "<label>" | code <id> "<line 1>\n<line 2>" lang=<lang>   (strings are one line; \n is a new line)
 row|column|grid <id> [spacing=<px>] [placement]
   box <id> "<label>"
 arrow <from> -> <to>[, <to>…] ["label"] [straight|elbow|curved] [dashed] [both] [no-head] [id=<id>]

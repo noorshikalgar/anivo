@@ -135,7 +135,8 @@ function drawText(dc: DrawContext, f: ElementFrame, el: Element, text: string, b
   ctx.textBaseline = "middle";
   ctx.fillStyle = toCss(withAlpha(color, alpha));
   const total = text.length;
-  let shown = reveal >= 1 ? total : Math.floor(total * reveal);
+  // Round, so the last character shows before the end of the action (a contact sheet samples just before the end).
+  let shown = reveal >= 1 ? total : Math.round(total * reveal);
   const x = align === "left" ? box.x + 12 : align === "right" ? box.x + box.width - 12 : box.x + box.width / 2;
   const y0 = box.y + box.height / 2 - ((lines.length - 1) * lineHeight) / 2;
   lines.forEach((line, i) => {
