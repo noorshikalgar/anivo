@@ -1,4 +1,4 @@
-import { resolveTimeline, sceneCaptions } from "@anivo/engine";
+import { resolveTimeline, sceneCaptions, soundCues, synthSound } from "@anivo/engine";
 import { type Ctx2D, type RenderOptions, renderScene } from "@anivo/render";
 import { DUCK_ATTACK_MS, DUCK_RELEASE_MS, type Scene, audioSegments, speechInOutput } from "@anivo/schema";
 import { speechIntervals } from "@anivo/ops";
@@ -168,15 +168,16 @@ export function duck(param: AudioParam, base: number, duckDb: number, speech: { 
  * with a soft limit at -1 dBFS. Gives null when no track has sound in the range.
  */
 export async function mixAudio(scene: Scene, assets: Map<string, Uint8Array> | undefined, startMs: number, endMs: number): Promise<AudioBuffer | null> {
-  if (!assets || typeof OfflineAudioContext === "undefined") return null;
-  const segs = audioSegments(scene, startMs, endMs).filter((s) => assets.has(s.assetId));
-  if (segs.length === 0) return null;
+  if (typeof OfflineAudioContext === "undefined") return null;
+  const segs = assets ? audioSegments(scene, startMs, endMs).filter((s) => assets.has(s.assetId)) : [];
+  const cues = soundCues(scene).filter((c) => c.atMs >= startMs && c.atMs < endMs);
+  if (segs.length === 0 && cues.length === 0) return null;
   const length = Math.ceil(((endMs - startMs) / 1000) * SAMPLE_RATE);
   const ctx = new OfflineAudioContext({ numberOfChannels: 2, length, sampleRate: SAMPLE_RATE });
   const decoded = new Map<string, AudioBuffer>();
   for (const seg of segs) {
     if (!decoded.has(seg.assetId)) {
-      const bytes = assets.get(seg.assetId)!;
+      const bytes = assets!.get(seg.assetId)!;
       decoded.set(seg.assetId, await ctx.decodeAudioData(bytes.slice().buffer));
     }
   }
@@ -199,6 +200,23 @@ export async function mixAudio(scene: Scene, assets: Map<string, Uint8Array> | u
     if (seg.duckDb !== undefined) duck(gain.gain, 10 ** (seg.gainDb / 20), seg.duckDb, speech);
     node.connect(gain).connect(limiter);
     node.start(seg.atMs / 1000, seg.fromMs / 1000, (seg.toMs - seg.fromMs) / 1000);
+  }
+  // Sound effects of the actions (FR-AUDIO-10).
+  const sounds = new Map<string, AudioBuffer>();
+  for (const c of cues) {
+    let b = sounds.get(c.sound);
+    if (!b) {
+      const samples = synthSound(c.sound, SAMPLE_RATE);
+      b = ctx.createBuffer(1, samples.length, SAMPLE_RATE);
+      b.copyToChannel(samples as Float32Array<ArrayBuffer>, 0);
+      sounds.set(c.sound, b);
+    }
+    const node = ctx.createBufferSource();
+    node.buffer = b;
+    const gain = ctx.createGain();
+    gain.gain.value = 10 ** (c.gainDb / 20);
+    node.connect(gain).connect(limiter);
+    node.start((c.atMs - startMs) / 1000);
   }
   return ctx.startRendering();
 }

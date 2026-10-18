@@ -100,6 +100,16 @@ describe.skipIf(!hasFfmpeg)("exportVideo", () => {
     expect(Math.abs(before - after)).toBeLessThan(3);
   }, 60_000);
 
+  it("adds the sound effects of actions to the video, with no audio assets", async () => {
+    const steps = template.steps.map((st, i) => (i === 0 ? { ...st, actions: st.actions.map((a) => ({ ...a, sound: "pop" as const })) } : st));
+    const file = `${out}sfx.mp4`;
+    await exportVideo({ ...template, steps }, { out: file, format: "mp4", width: 320, height: 180, fps: 24, range: { startMs: 0, endMs: 1500 }, quality: "draft" });
+    const info = execFileSync("ffprobe", ["-v", "error", "-show_entries", "stream=codec_type", "-of", "default=nw=1", file]).toString();
+    expect(info).toContain("codec_type=audio");
+    const r = spawnSync("ffmpeg", ["-v", "info", "-t", "0.2", "-i", file, "-vn", "-af", "volumedetect", "-f", "null", "-"], { encoding: "utf8" });
+    expect(Number(/max_volume: (-?[\d.]+) dB/.exec(r.stderr)?.[1] ?? "-100")).toBeGreaterThan(-20);
+  }, 60_000);
+
   it("exports a PNG sequence", async () => {
     const dir = `${out}seq`;
     await exportVideo(template, { out: dir, format: "png-seq", width: 160, height: 90, fps: 24, range: { startMs: 0, endMs: 500 } });
