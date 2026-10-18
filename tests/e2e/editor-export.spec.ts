@@ -63,3 +63,17 @@ test("cancel stops an export", async ({ page }) => {
   await page.waitForTimeout(1500);
   expect(downloaded).toBe(false);
 });
+
+test("exports an SVG of each step in a ZIP file", async ({ page }) => {
+  await page.getByRole("radio", { name: "SVG of each step" }).check();
+  const { name, bytes } = await exportAndRead(page);
+  expect(name).toMatch(/-steps-svg\.zip$/);
+  const { unzipSync, strFromU8 } = await import("fflate");
+  const files = unzipSync(new Uint8Array(bytes));
+  const names = Object.keys(files).sort();
+  expect(names.length).toBe(4);
+  const svg = strFromU8(files[names[1]!]!);
+  expect(svg).toMatch(/^<svg xmlns/);
+  expect(svg).toContain("@font-face{font-family:'Inter'");
+  expect(svg).toContain("Load balancer");
+});
