@@ -6,7 +6,7 @@ import { OperationBus } from "@anivo/ops";
 import { searchIcons } from "@anivo/render";
 import { type Scene, loadScene } from "@anivo/schema";
 import { applyScript, printScene } from "@anivo/script";
-import { ToolError, contactSheetPng, jsonSchema, previewPng, readSceneFile, sceneSummary, stepTime, writeSceneFile } from "@anivo/tools";
+import { ToolError, audioMime, contactSheetPng, importAsset, probeDurationMs, jsonSchema, previewPng, readSceneFile, sceneSummary, stepTime, writeSceneFile } from "@anivo/tools";
 import { homePath, registerBundledAssets } from "@anivo/export-node";
 import { Command, Option } from "commander";
 
@@ -207,6 +207,60 @@ icons
     registerBundledAssets();
     const r = searchIcons(q, { ...(o.pack ? { pack: o.pack } : {}), limit: Number(o.limit) });
     print(r.map((x) => `${x.pack}:${x.name}`).join("\n") || "No icons match.", r);
+  });
+
+const audio = program.command("audio").description("Audio tracks");
+audio
+  .command("add")
+  .description("Add an audio file as the voiceover or as music")
+  .argument("<scene>")
+  .argument("<file>", "MP3, WAV, M4A, OGG, or FLAC file")
+  .addOption(new Option("--kind <kind>", "Track kind").choices(["voiceover", "music", "sfx"]).default("voiceover"))
+  .option("--start <ms>", "Start time in the video, in milliseconds", "0")
+  .option("--gain <db>", "Volume change in dB", "0")
+  .action((f: string, file: string, o: { kind: "voiceover" | "music" | "sfx"; start: string; gain: string }) => {
+    const scene = readSceneFile(f);
+    const asset = importAsset(file, audioMime(file));
+    const durationMs = probeDurationMs(file);
+    const bus = new OperationBus(scene);
+    const r = bus.apply({
+      label: "Add audio",
+      ops: [
+        { op: "asset.add", asset },
+        { op: "audio.add", track: { kind: o.kind, assetId: asset.id, durationMs, startMs: Number(o.start), gainDb: Number(o.gain) } },
+      ],
+    });
+    if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
+    writeSceneFile(f, bus.scene);
+    print(`Added ${o.kind} track '${r.created[0]}' (${(durationMs / 1000).toFixed(1)} s).`, { id: r.created[0], durationMs });
+  });
+audio
+  .command("remove")
+  .description("Remove an audio track")
+  .argument("<scene>")
+  .argument("<id>")
+  .action((f: string, id: string) => {
+    const bus = new OperationBus(readSceneFile(f));
+    const r = bus.apply({ ops: [{ op: "audio.remove", id }] });
+    if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
+    writeSceneFile(f, bus.scene);
+    print(`Removed ${id}.`);
+  });
+
+program
+  .command("script")
+  .description("Set the voiceover script: one line of the text file for each step, in order")
+  .argument("<scene>")
+  .argument("<file>", "Text file with one line for each step (empty lines are skipped)")
+  .action((f: string, file: string) => {
+    const scene = readSceneFile(f);
+    const lines = readFileSync(file, "utf8").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    const bus = new OperationBus(scene);
+    const r = bus.apply({ label: "Set script", ops: [{ op: "script.set", lines: lines.map((text, i) => ({ text, ...(scene.steps[i] ? { stepId: scene.steps[i]!.id } : {}) })) }] });
+    if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
+    writeSceneFile(f, bus.scene);
+    const extra = lines.length - scene.steps.length;
+    print(`Set ${lines.length} script lines.${extra > 0 ? ` ${extra} lines have no step.` : ""}${extra < 0 ? ` ${-extra} steps have no line.` : ""}`);
   });
 
 program

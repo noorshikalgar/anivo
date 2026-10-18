@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AssetRef, AudioTrack, ScriptLine } from "./audio.js";
 import { Element } from "./elements.js";
 import { Color, Rect } from "./primitives.js";
 import { EasingName, EnterEffect, Step } from "./steps.js";
@@ -51,6 +52,9 @@ export const SceneFile = z.object({
   settings: SceneSettings.default(SceneSettings.parse({})),
   elements: ElementOnDisk.default({}),
   steps: z.array(Step).default([]),
+  audio: z.array(AudioTrack).default([]),
+  script: z.array(ScriptLine).default([]),
+  assets: z.record(z.string(), AssetRef).default({}),
 });
 
 export const Scene = z.object({
@@ -60,5 +64,8 @@ export const Scene = z.object({
   settings: SceneSettings,
   elements: z.record(z.string(), Element),
   steps: z.array(Step),
+  audio: z.array(AudioTrack),
+  script: z.array(ScriptLine),
+  assets: z.record(z.string(), AssetRef),
 });
 export type Scene = z.infer<typeof Scene>;

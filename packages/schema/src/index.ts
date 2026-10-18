@@ -5,3 +5,4 @@ export * from "./scene.js";
 export * from "./defaults.js";
 export * from "./load.js";
 export * from "./migrate.js";
+export * from "./audio.js";

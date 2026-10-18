@@ -108,7 +108,11 @@ export function compactScene(scene: Scene): Record<string, unknown> {
     } else if (!deepEqual(v, d)) settings[k] = v;
   }
   const meta = withoutDefaults(scene.meta as Record<string, unknown>, SceneMeta.parse({}) as Record<string, unknown>, ["title"]);
-  return { schemaVersion: scene.schemaVersion, id: scene.id, meta, settings, elements, steps: scene.steps.map(compactStep) };
+  const out: Record<string, unknown> = { schemaVersion: scene.schemaVersion, id: scene.id, meta, settings, elements, steps: scene.steps.map(compactStep) };
+  if (scene.audio.length) out["audio"] = scene.audio;
+  if (scene.script.length) out["script"] = scene.script;
+  if (Object.keys(scene.assets).length) out["assets"] = scene.assets;
+  return out;
 }
 
 /**
@@ -118,12 +122,15 @@ export function compactScene(scene: Scene): Record<string, unknown> {
  */
 export function sceneToJson(scene: Scene): string {
   const compact = compactScene(scene);
-  const { elements, steps, ...rest } = compact;
+  const { elements, steps, audio, script, assets, ...rest } = compact;
   // Keep the element map in draw order. Sort keys inside each element only.
   const sortedElements: Record<string, Json> = {};
   for (const [id, el] of Object.entries(elements as Record<string, unknown>)) sortedElements[id] = sortKeys(el);
   const top = sortKeys(rest) as Record<string, Json>;
   const ordered: Record<string, Json> = { schemaVersion: top["schemaVersion"]!, id: top["id"]!, meta: top["meta"]!, settings: top["settings"]!, elements: sortedElements, steps: sortKeys(steps) };
+  if (audio) ordered["audio"] = sortKeys(audio);
+  if (script) ordered["script"] = sortKeys(script);
+  if (assets) ordered["assets"] = sortKeys(assets);
   return `${JSON.stringify(ordered, null, 2)}\n`;
 }
 

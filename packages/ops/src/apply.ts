@@ -1,4 +1,4 @@
-import { Action, type ConnectorElement, Element, ElementId, type Scene, SceneSettings, Step } from "@anivo/schema";
+import { Action, AssetRef, AudioTrack, type ConnectorElement, Element, ElementId, type Scene, SceneSettings, ScriptLine, Step } from "@anivo/schema";
 import type { z } from "zod";
 import type { Operation } from "./operations.js";
 import { autoLayout } from "@anivo/layout";
@@ -15,6 +15,8 @@ export interface OpError {
     | "invalid-step"
     | "invalid-action"
     | "invalid-settings"
+    | "invalid-audio"
+    | "unknown-audio"
     | "invalid-scene"
     | "conflict";
   message: string;
@@ -38,6 +40,9 @@ export interface Snapshot {
   steps?: Scene["steps"];
   settings?: Scene["settings"];
   meta?: Scene["meta"];
+  audio?: Scene["audio"];
+  script?: Scene["script"];
+  assets?: Scene["assets"];
 }
 
 function zodMessage(err: z.ZodError): string {
@@ -69,6 +74,9 @@ export class Draft {
   steps: Scene["steps"];
   settings: Scene["settings"];
   meta: Scene["meta"];
+  audio: Scene["audio"];
+  script: Scene["script"];
+  assets: Scene["assets"];
   readonly before: Snapshot = { elements: new Map() };
   readonly created: string[] = [];
   private stepsCopied = false;
@@ -78,10 +86,13 @@ export class Draft {
     this.steps = base.steps;
     this.settings = base.settings;
     this.meta = base.meta;
+    this.audio = base.audio;
+    this.script = base.script;
+    this.assets = base.assets;
   }
 
   finish(): Scene {
-    return { ...this.base, meta: this.meta, settings: this.settings, elements: this.elements, steps: this.steps };
+    return { ...this.base, meta: this.meta, settings: this.settings, elements: this.elements, steps: this.steps, audio: this.audio, script: this.script, assets: this.assets };
   }
 
   /** IDs of entities that this draft changed. */
@@ -337,6 +348,60 @@ export class Draft {
         if (!parsed.success) fail({ code: "invalid-settings", message: `The settings are not valid: ${zodMessage(parsed.error)}.`, path: `${path}.set` });
         this.before.settings ??= this.settings;
         this.settings = parsed.data!;
+        return;
+      }
+      case "asset.add": {
+        const parsed = AssetRef.safeParse(op.asset);
+        if (!parsed.success) fail({ code: "invalid-audio", message: `The asset is not valid: ${zodMessage(parsed.error)}.`, path: `${path}.asset` });
+        this.before.assets ??= this.assets;
+        this.assets = { ...this.assets, [parsed.data!.id]: parsed.data! };
+        return;
+      }
+      case "audio.add": {
+        const raw = { ...op.track };
+        if (raw["id"] === undefined) {
+          const base = raw["kind"] === "voiceover" ? "voiceover" : String(raw["kind"] ?? "track");
+          raw["id"] = this.uniqueId(base, (x) => this.audio.some((t) => t.id === x));
+        }
+        const parsed = AudioTrack.safeParse(raw);
+        if (!parsed.success) fail({ code: "invalid-audio", message: `The audio track is not valid: ${zodMessage(parsed.error)}.`, path: `${path}.track` });
+        const t = parsed.data!;
+        if (this.audio.some((x) => x.id === t.id)) fail({ code: "duplicate-id", message: `Audio track '${t.id}' exists already.`, path: `${path}.track.id` });
+        if (!(t.assetId in this.assets)) fail({ code: "invalid-audio", message: `The asset '${t.assetId}' does not exist.`, path: `${path}.track.assetId`, hint: "Add the asset with asset.add first, in the same transaction." });
+        if (t.kind === "voiceover" && this.audio.some((x) => x.kind === "voiceover")) fail({ code: "invalid-audio", message: "The scene has a voiceover track already.", path: `${path}.track.kind`, hint: "Remove the old voiceover, or add this track as music." });
+        this.before.audio ??= this.audio;
+        this.audio = [...this.audio, t];
+        this.created.push(t.id);
+        return;
+      }
+      case "audio.update": {
+        const i = this.audio.findIndex((t) => t.id === op.id);
+        if (i < 0) fail({ code: "unknown-audio", message: `Audio track '${op.id}' does not exist.`, path: `${path}.id` });
+        const parsed = AudioTrack.safeParse({ ...this.audio[i]!, ...op.set, id: op.id });
+        if (!parsed.success) fail({ code: "invalid-audio", message: `The audio track is not valid: ${zodMessage(parsed.error)}.`, path: `${path}.set` });
+        this.before.audio ??= this.audio;
+        this.audio = this.audio.map((t, j) => (j === i ? parsed.data! : t));
+        return;
+      }
+      case "audio.remove": {
+        if (!this.audio.some((t) => t.id === op.id)) fail({ code: "unknown-audio", message: `Audio track '${op.id}' does not exist.`, path: `${path}.id` });
+        this.before.audio ??= this.audio;
+        this.audio = this.audio.filter((t) => t.id !== op.id);
+        // Cue triggers on the removed track become automatic.
+        if (this.steps.some((s) => s.trigger.kind === "cue" && s.trigger.audioId === op.id)) {
+          this.touchSteps();
+          this.steps = this.steps.map((s) => (s.trigger.kind === "cue" && s.trigger.audioId === op.id ? { ...s, trigger: { kind: "auto" } } : s));
+        }
+        return;
+      }
+      case "script.set": {
+        const lines = op.lines.map((l, i) => {
+          const parsed = ScriptLine.safeParse({ id: `line-${i + 1}`, ...l });
+          if (!parsed.success) fail({ code: "invalid-op", message: `Script line ${i + 1} is not valid: ${zodMessage(parsed.error)}.`, path: `${path}.lines.${i}` });
+          return parsed.data!;
+        });
+        this.before.script ??= this.script;
+        this.script = lines;
         return;
       }
       case "scene.meta": {
