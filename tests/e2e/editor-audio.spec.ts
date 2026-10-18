@@ -136,7 +136,7 @@ async function fakeMicrophone(page: import("@playwright/test").Page) {
 test("record a voiceover: M starts each step and records its cue", async ({ page }) => {
   await fakeMicrophone(page);
   await page.getByRole("button", { name: "Audio", exact: true }).click();
-  await page.getByRole("menuitem", { name: "Record voiceover…" }).click();
+  await page.getByRole("menuitem", { name: "Record voiceover in one take…" }).click();
   const bar = page.getByRole("region", { name: "Voiceover record" });
   await expect(bar.getByText(/The record starts in/)).toBeVisible();
   await expect(bar.getByText(/Press M or → to start step 1/)).toBeVisible({ timeout: 6000 });
@@ -163,10 +163,47 @@ test("record a voiceover: M starts each step and records its cue", async ({ page
   expect(u.scene.steps[0]!.trigger.kind).not.toBe("cue");
 });
 
+test("record step by step: each take goes to its step, and a new take moves the later steps", async ({ page }) => {
+  test.setTimeout(60_000);
+  await fakeMicrophone(page);
+  type S = { scene: { audio: { durationMs: number }[]; steps: { id: string; trigger: { kind: string; atMs?: number } }[] }; selectedStep: string | null };
+  await page.getByRole("button", { name: "Audio", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Record voiceover step by step…" }).click();
+  const bar = page.getByRole("region", { name: "Record step by step" });
+  await expect(bar.getByText(/Step 1 of/)).toBeVisible();
+  const take = async (ms: number) => {
+    await page.keyboard.press("r");
+    await expect(bar.getByRole("button", { name: /Stop/ })).toBeVisible({ timeout: 6000 });
+    await page.waitForTimeout(ms);
+    await page.keyboard.press(" ");
+    await expect(bar.getByRole("button", { name: /Record/ })).toBeEnabled({ timeout: 10_000 });
+  };
+  await take(3000);
+  await expect(bar.getByText(/Step 2 of/)).toBeVisible();
+  await take(3000);
+  const s1 = (await state(page)) as unknown as S;
+  const [a, b] = s1.scene.steps.map((x) => x.trigger);
+  expect(a).toMatchObject({ kind: "cue", atMs: 0 });
+  expect(b!.atMs!).toBeGreaterThan(2500);
+  // A longer take of step 1 moves step 2.
+  await page.keyboard.press("ArrowLeft");
+  await page.keyboard.press("ArrowLeft");
+  await expect(bar.getByText(/Step 1 of/)).toBeVisible();
+  await expect(bar.getByText(/Voice: /)).toBeVisible();
+  await take(4500);
+  const s2 = (await state(page)) as unknown as S;
+  expect(s2.scene.steps[1]!.trigger.atMs! - b!.atMs!).toBeGreaterThan(1000);
+  expect(s2.scene.audio[0]!.durationMs - s1.scene.audio[0]!.durationMs).toBeGreaterThan(1000);
+  // One undo removes one take.
+  await bar.getByRole("button", { name: "Done" }).click();
+  await page.keyboard.press("Control+z");
+  expect(((await state(page)) as unknown as S).scene.steps[1]!.trigger.atMs).toBe(b!.atMs);
+});
+
 test("Escape cancels the record with no change", async ({ page }) => {
   await fakeMicrophone(page);
   await page.getByRole("button", { name: "Audio", exact: true }).click();
-  await page.getByRole("menuitem", { name: "Record voiceover…" }).click();
+  await page.getByRole("menuitem", { name: "Record voiceover in one take…" }).click();
   await expect(page.getByRole("region", { name: "Voiceover record" })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("region", { name: "Voiceover record" })).toHaveCount(0);

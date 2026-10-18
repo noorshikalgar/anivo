@@ -396,6 +396,9 @@ importers:
 
   packages/ops:
     dependencies:
+      '@anivo/engine':
+        specifier: workspace:*
+        version: link:../engine
       '@anivo/layout':
         specifier: workspace:*
         version: link:../layout

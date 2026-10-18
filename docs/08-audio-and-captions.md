@@ -88,3 +88,22 @@ Input: script lines and transcript words with times. Output: a start time for ea
 5. The user stops the record. Anivo saves the audio as a `voiceover` track.
 
 This gives the user a natural flow: speak and click, like a live presentation. The cues come from the clicks.
+
+## Record step by step (P2)
+
+A record in one take has a problem: one mistake makes the user record all the steps again. Audio › **Record voiceover step by step** records one take for each step.
+
+1. Anivo selects the first step that has no voice. The bar shows the step and its script line.
+2. The user presses `R`. After a 3-second countdown, Anivo records, and the step plays from its start, then holds at its end.
+3. The user presses `Space` to stop. Anivo removes the silence before and after the speech (it keeps 250 ms), puts the take into the voiceover at the place of the step, and selects the next step. One take is one undo step.
+4. To record a step again, select it (`←`, `→`) and press `R`. The new take replaces the old one. The later steps move by the change in length.
+5. `Space` on a step with a voice plays the step with its voice.
+
+Rules:
+
+- The voiceover stays one track. A step with a cue on the voiceover owns the audio from its cue to the next cue.
+- The part of a step is never shorter than its animation and hold (and, before a later cue, also the steps with no cue between them). When the take is shorter, silence fills the rest. So the next step never starts before the animation ends, and the voice never runs ahead of the animation.
+- When the voice is longer than the animation, the step holds its end state until the next step starts at its cue.
+- A take of a step after the end of the voice starts where the step starts; silence fills the gap.
+
+Agents and scripts: `anivo audio take <scene> <step> <file>` does the same with an audio file (FFmpeg decodes it). `--keep-silence` keeps the silence around the speech. The functions `planTake`, `trimTake`, and `spliceTake` are in `@anivo/ops`.

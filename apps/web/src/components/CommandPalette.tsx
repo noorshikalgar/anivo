@@ -22,6 +22,7 @@ import {
 import { cueAllSteps, importAudio } from "../audio.js";
 import { pickImage } from "../images.js";
 import { startRecording } from "../record.js";
+import { openTakes } from "../takes.js";
 import { newFromTemplate, newScene, openFile, runImport, saveFile, saveFileAs } from "../files.js";
 import { notify, withErrors } from "../notify.js";
 import { shareServer } from "../share.js";
@@ -63,7 +64,8 @@ function commands(): Command[] {
     { title: "Add voiceover", run: () => void withErrors(() => importAudio("voiceover")) },
     { title: "Add music", run: () => void withErrors(() => importAudio("music")) },
     { title: "Add sound effect", run: () => void withErrors(() => importAudio("sfx")) },
-    { title: "Record voiceover", run: () => void withErrors(startRecording) },
+    { title: "Record voiceover in one take", run: () => void withErrors(startRecording) },
+    { title: "Record voiceover step by step", run: () => void withErrors(async () => openTakes()) },
     { title: "Align script to voiceover", run: () => useEditor.setState({ alignOpen: true }) },
     { title: "Show or hide the timeline", run: () => useEditor.setState({ timelineOpen: !useEditor.getState().timelineOpen }) },
     { title: "Make voiceover from script", run: () => useEditor.setState({ ttsOpen: true }) },

@@ -66,3 +66,21 @@ export function audioOnsets(bytes: Uint8Array): Onset[] {
     rmSync(dir, { recursive: true, force: true });
   }
 }
+
+/** Mono samples of an audio file or of audio bytes at `rate` (FFmpeg decodes them). */
+export function decodePcm(src: string | Uint8Array, rate: number): Float32Array {
+  const ffmpeg = process.env["ANIVO_FFMPEG"] ?? "ffmpeg";
+  const dir = mkdtempSync(join(tmpdir(), "anivo-pcm-"));
+  try {
+    const path = typeof src === "string" ? src : join(dir, "in");
+    if (typeof src !== "string") writeFileSync(path, src);
+    const r = spawnSync(ffmpeg, ["-v", "error", "-i", path, "-f", "f32le", "-ac", "1", "-ar", String(rate), "-"], { maxBuffer: 1 << 30 });
+    if (r.error) throw new ToolError("FFmpeg was not found.", "Install FFmpeg, or set ANIVO_FFMPEG to the ffmpeg path.");
+    if (r.status !== 0 || !r.stdout) throw new ToolError(`FFmpeg cannot read the audio${typeof src === "string" ? ` '${src}'` : ""}.`, "Use an MP3, WAV, M4A, OGG, or FLAC file.");
+    // A copy: the Float32Array needs a buffer offset that is a multiple of 4.
+    const b = new Uint8Array(r.stdout as Buffer);
+    return new Float32Array(b.buffer, 0, Math.floor(b.byteLength / 4));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}

@@ -90,7 +90,7 @@ export function CanvasView() {
   useEffect(() => {
     let pending = 0;
     const unsub = useEditor.subscribe((s, prev) => {
-      if (s.scene !== prev.scene || s.view !== prev.view || s.playhead !== prev.playhead || s.viewport !== prev.viewport || s.playing !== prev.playing || s.selection !== prev.selection || s.selectedStep !== prev.selectedStep || s.imagesVersion !== prev.imagesVersion || s.agent !== prev.agent || s.aiActivity !== prev.aiActivity) {
+      if (s.scene !== prev.scene || s.view !== prev.view || s.playhead !== prev.playhead || s.viewport !== prev.viewport || s.playing !== prev.playing || s.selection !== prev.selection || s.selectedStep !== prev.selectedStep || s.imagesVersion !== prev.imagesVersion || s.agent !== prev.agent || s.aiActivity !== prev.aiActivity || (s.takes === null) !== (prev.takes === null) || (s.recording === null) !== (prev.recording === null)) {
         if (!pending) pending = requestAnimationFrame(() => ((pending = 0), draw()));
       }
     });
@@ -104,7 +104,7 @@ export function CanvasView() {
     const canvas = sceneRef.current;
     const overlay = overlayRef.current;
     if (!canvas || !overlay) return;
-    const { scene, view, playhead, playing, selectedStep } = useEditor.getState();
+    const { scene, view, playhead, playing, selectedStep, recording, takes } = useEditor.getState();
     // The base state is before step 1. Time 0 already has step 1 actions at progress 0.
     const t = !playing && selectedStep === null && playhead === 0 ? -1 : playhead;
     const ctx = canvas.getContext("2d")!;
@@ -119,7 +119,7 @@ export function CanvasView() {
     } else if (d && d.kind === "resize") {
       result = previewFrame(scene, result.frame, new Map([[d.id, d.next]]));
     }
-    renderFrame(ctx as unknown as Ctx2D, scene, result.frame, result.routes, { width: canvas.width, height: canvas.height, camera, ghostHidden: playing ? 0 : GHOST, skipIds: editorHiddenIds(scene) });
+    renderFrame(ctx as unknown as Ctx2D, scene, result.frame, result.routes, { width: canvas.width, height: canvas.height, camera, ghostHidden: playing || recording || takes ? 0 : GHOST, skipIds: editorHiddenIds(scene) });
     drawOverlay(overlay, camera, result);
   }
 
