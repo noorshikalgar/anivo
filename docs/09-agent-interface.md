@@ -313,6 +313,7 @@ Rules for tools:
 | `overlap` | warning | Two elements overlap by more than 10% of the smaller area, and they are not in a parent-child relation |
 | `text-overflow` | error | Label text does not fit inside its shape |
 | `off-camera` | warning | A visible element is outside the camera during a step |
+| `camera-crop` | warning | A camera zoom or pan cuts a visible element at the edge of the frame (5% to 95% of it shows) at the end of a step |
 | `low-contrast` | warning | Text contrast is less than 4.5:1 (WCAG AA) |
 | `connector-crosses` | info | A connector passes through a shape that it does not connect |
 | `step-empty` | warning | A step has no actions |

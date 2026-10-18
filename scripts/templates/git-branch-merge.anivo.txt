@@ -35,5 +35,5 @@ step "Merge"
   enter merge pop +600ms
   pulse merge +1000ms
 step "git merge feature"
-  camera zoom-to merge, cmd padding=220
+  camera zoom-to c3, f3, merge, cmd padding=60
   enter cmd typewriter +400ms

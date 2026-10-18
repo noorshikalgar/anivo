@@ -74,6 +74,15 @@ describe("lintScene", () => {
     expect(codes(good)).not.toContain("unknown-icon");
   });
 
+  it("finds an element that a camera zoom cuts at the edge", () => {
+    const s = script(`box a "A" at=100,100 size=300x200\nbox b "B" at=420,100 size=300x200\nstep "S"\n  enter a, b fade\nstep "Zoom"\n  camera zoom-to a padding=40\n`);
+    const r = lintScene(s).find((x) => x.code === "camera-crop");
+    expect(r?.ids).toEqual(["b"]);
+    expect(r?.step).toBe(s.steps[1]!.id);
+    const far = script(`box a "A" at=100,100 size=300x200\nbox b "B" at=1400,700 size=300x200\nstep "S"\n  enter a, b fade\nstep "Zoom"\n  camera zoom-to a padding=40\n`);
+    expect(codes(far)).not.toContain("camera-crop");
+  });
+
   it("finds an empty step, an unused element, an unknown icon, and an unknown color", () => {
     const s = script(`box a "A" at=100,100 fill=pinkish\nicon i nope:nothing "X" at=600,100\nbox z "Z" at=900,600\nstep "Empty"\nstep "S"\n  enter a, i fade\n  exit z fade\n`);
     const c = codes(s);

@@ -370,10 +370,12 @@
         {
           "camera": {
             "op": "zoom-to",
-            "padding": 220
+            "padding": 60
           },
           "id": "a12",
           "targets": [
+            "c3",
+            "f3",
             "merge",
             "cmd"
           ],
