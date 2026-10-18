@@ -7,7 +7,7 @@ import { OperationBus } from "@anivo/ops";
 import { searchIcons } from "@anivo/render";
 import { type Scene, loadScene } from "@anivo/schema";
 import { applyScript, printScene } from "@anivo/script";
-import { ToolError, assetCache, contactSheetPng, jsonSchema, previewPng, readSceneFile, sceneSummary, writeSceneFile } from "@anivo/tools";
+import { ToolError, assetCache, contactSheetPng, transcribe, jsonSchema, previewPng, readSceneFile, sceneSummary, writeSceneFile } from "@anivo/tools";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
@@ -273,6 +273,32 @@ export function createAnivoServer(opts: ServerOptions): McpServer {
         const size = a.size?.split("x").map(Number);
         const r = await exportVideo(scene, { out, format, assets: assetCache, ...(size ? { width: size[0]! - (size[0]! % 2), height: size[1]! - (size[1]! % 2) } : {}), ...(a.fps ? { fps: a.fps } : {}), ...(range ? { range } : {}), ...(a.captions ? { captions: a.captions } : {}) });
         return text(`Exported ${relative(root, r.out)}: ${r.frames} frames, ${(r.durationMs / 1000).toFixed(1)} s${r.bytes ? `, ${(r.bytes / 1e6).toFixed(2)} MB` : ""}.`);
+      }),
+  );
+
+  server.registerTool(
+    "anivo_transcribe",
+    {
+      title: "Transcribe the voiceover",
+      description: "Transcribe the voiceover locally with whisper.cpp, save the word times, and align the script lines to them (each matched line sets a cue on its step). Needs whisper-cli and a model file (ANIVO_WHISPER_MODEL). If you have the words already, use anivo_ops_apply with script.align instead.",
+      inputSchema: { scene: sceneArg, language: z.string().optional().describe("Language code, for example en."), align: z.boolean().default(true) },
+    },
+    async (a) =>
+      run(() => {
+        const path = sceneFile(a.scene);
+        const scene = readSceneFile(path);
+        const vo = scene.audio.find((t) => t.kind === "voiceover");
+        if (!vo) throw new ToolError("The scene has no voiceover track.", "Add a voiceover first.");
+        const bytes = assetCache.get(vo.assetId);
+        if (!bytes) throw new ToolError("The voiceover file is missing from the scene.", "Add the voiceover again.");
+        const words = transcribe(bytes, a.language ? { language: a.language } : {});
+        const bus = new OperationBus(scene);
+        const align = a.align && scene.script.length > 0;
+        const r = bus.apply({ label: "Transcribe", ops: align ? [{ op: "script.align", words }] : [{ op: "audio.update", id: vo.id, set: { transcript: { words } } }] });
+        if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
+        writeSceneFile(path, bus.scene);
+        const unmatched = bus.scene.script.filter((l) => l.unmatched).length;
+        return text(`Transcribed ${words.length} words.${align ? ` Aligned ${bus.scene.script.length - unmatched} of ${bus.scene.script.length} script lines.` : ""}`);
       }),
   );
 

@@ -6,7 +6,7 @@ import { OperationBus } from "@anivo/ops";
 import { searchIcons } from "@anivo/render";
 import { type Scene, loadScene } from "@anivo/schema";
 import { applyScript, printScene } from "@anivo/script";
-import { ToolError, assetCache, audioMime, contactSheetPng, importAsset, probeDurationMs, jsonSchema, previewPng, readSceneFile, sceneSummary, stepTime, writeSceneFile } from "@anivo/tools";
+import { ToolError, assetCache, audioMime, parseTranscript, transcribe, contactSheetPng, importAsset, probeDurationMs, jsonSchema, previewPng, readSceneFile, sceneSummary, stepTime, writeSceneFile } from "@anivo/tools";
 import { homePath, registerBundledAssets } from "@anivo/export-node";
 import { Command, Option } from "commander";
 
@@ -266,6 +266,56 @@ program
     writeSceneFile(f, bus.scene);
     const extra = lines.length - scene.steps.length;
     print(`Set ${lines.length} script lines.${extra > 0 ? ` ${extra} lines have no step.` : ""}${extra < 0 ? ` ${-extra} steps have no line.` : ""}`);
+  });
+
+/** Apply script.align and print one line for each script line. */
+function alignAndReport(f: string, bus: OperationBus, words?: { text: string; startMs: number; endMs: number }[]): void {
+  const r = bus.apply({ label: "Align script", ops: [{ op: "script.align", ...(words ? { words } : {}) }] });
+  if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
+  writeSceneFile(f, bus.scene);
+  const steps = new Map(bus.scene.steps.map((s, i) => [s.id, { s, i }]));
+  const rows = bus.scene.script.map((l, k) => {
+    const st = l.stepId ? steps.get(l.stepId) : undefined;
+    const at = st?.s.trigger.kind === "cue" ? st.s.trigger.atMs : null;
+    return { line: k + 1, step: st ? st.i + 1 : null, atMs: l.unmatched ? null : at, unmatched: l.unmatched === true, text: l.text };
+  });
+  const bad = rows.filter((x) => x.unmatched).length;
+  const text = rows
+    .map((x) => `${String(x.line).padStart(3)}. ${x.unmatched ? "unmatched" : x.atMs !== null ? `${(x.atMs / 1000).toFixed(2)} s` : "no step"}  ${x.text}`)
+    .join("\n");
+  print(`${text}\nAligned ${rows.length - bad} of ${rows.length} lines.${bad ? " Unmatched lines keep their old start. Check the words, or set the cue by hand." : ""}`, { lines: rows });
+}
+
+program
+  .command("transcribe")
+  .description("Transcribe the voiceover with whisper.cpp (local) and save the word times")
+  .argument("<scene>")
+  .option("--model <file>", "whisper.cpp model file (default: ANIVO_WHISPER_MODEL)")
+  .option("--language <code>", "Language code, for example en")
+  .option("--align", "Also align the script to the transcript")
+  .action((f: string, o: { model?: string; language?: string; align?: boolean }) => {
+    const scene = readSceneFile(f);
+    const vo = scene.audio.find((t) => t.kind === "voiceover");
+    if (!vo) throw new ToolError("The scene has no voiceover track.", "Add one with 'anivo audio add'.");
+    const bytes = assetCache.get(vo.assetId);
+    if (!bytes) throw new ToolError("The voiceover file is missing from the scene.", "Add the voiceover again with 'anivo audio add'.");
+    const words = transcribe(bytes, { ...(o.model ? { model: o.model } : {}), ...(o.language ? { language: o.language } : {}) });
+    const bus = new OperationBus(scene);
+    if (o.align && scene.script.length > 0) return alignAndReport(f, bus, words);
+    const r = bus.apply({ label: "Transcribe", ops: [{ op: "audio.update", id: vo.id, set: { transcript: { words } } }] });
+    if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
+    writeSceneFile(f, bus.scene);
+    print(`Transcribed ${words.length} words.${o.align ? " The scene has no script, so nothing was aligned." : ""}`, { words: words.length });
+  });
+
+program
+  .command("align")
+  .description("Align the script lines to the voiceover transcript and set the step cues")
+  .argument("<scene>")
+  .option("--transcript <file>", "Transcript JSON: a list of { text, startMs, endMs } or whisper.cpp JSON. Default: the saved transcript")
+  .action((f: string, o: { transcript?: string }) => {
+    const bus = new OperationBus(readSceneFile(f));
+    alignAndReport(f, bus, o.transcript ? parseTranscript(JSON.parse(readFileSync(o.transcript, "utf8"))) : undefined);
   });
 
 program

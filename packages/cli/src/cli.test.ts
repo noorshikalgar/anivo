@@ -110,6 +110,24 @@ describe("anivo CLI", () => {
     expect(anivo("audio", "add", scene, join(dir, "lines.txt")).err).toContain("type that Anivo does not read");
   });
 
+  it.skipIf(!hasFfmpeg)("aligns the script to a transcript file and sets cues", () => {
+    // The scene from the test above has a voiceover. Line 3 is not in the transcript.
+    writeFileSync(join(dir, "lines3.txt"), "First line\nSecond line\nThe end of the video\n");
+    expect(anivo("script", scene, join(dir, "lines3.txt")).code).toBe(0);
+    const t = join(dir, "words.json");
+    writeFileSync(t, JSON.stringify({ transcription: [
+      { offsets: { from: 200, to: 500 }, text: " First" }, { offsets: { from: 500, to: 800 }, text: " line" },
+      { offsets: { from: 1500, to: 1800 }, text: " Second" }, { offsets: { from: 1800, to: 2100 }, text: " line" },
+    ] }));
+    const r = anivo("align", scene, "--transcript", t);
+    expect(r.code, r.err).toBe(0);
+    expect(r.out).toMatch(/1\. 0\.20 s {2}First line/);
+    expect(r.out).toMatch(/2\. 1\.50 s {2}Second line/);
+    expect(r.out, r.out).toMatch(/3\. unmatched {2}The end of the video/);
+    expect(r.out).toContain("Aligned 2 of 3 lines.");
+    expect(anivo("transcribe", scene, "--model", join(dir, "missing.bin")).err).toContain("whisper.cpp model");
+  });
+
   it.skipIf(!hasFfmpeg)("renders an MP4 of a step range", () => {
     const r = anivo("--json", "render", scene, "--out", join(dir, "v.mp4"), "--size", "320x180", "--fps", "24", "--steps", "2", "--quality", "draft");
     expect(r.code, r.err).toBe(0);

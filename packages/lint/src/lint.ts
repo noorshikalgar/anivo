@@ -20,7 +20,8 @@ export interface LintResult {
     | "tiny-text"
     | "too-fast"
     | "unknown-icon"
-    | "unknown-color";
+    | "unknown-color"
+    | "script-unmatched";
   level: LintLevel;
   ids: string[];
   step?: string;
@@ -89,7 +90,7 @@ export function lintScene(scene: Scene): LintResult[] {
   const out: LintResult[] = [];
   const seen = new Set<string>();
   const add = (r: LintResult) => {
-    const key = `${r.code}|${r.ids.join(",")}`;
+    const key = `${r.code}|${r.ids.join(",")}|${r.step ?? ""}`;
     if (seen.has(key)) return;
     seen.add(key);
     out.push(r);
@@ -113,6 +114,10 @@ export function lintScene(scene: Scene): LintResult[] {
       }
     }
   }
+
+  // Script lines that alignment did not find in the transcript (docs/08 "Alignment").
+  const unmatched = scene.script.flatMap((l, i) => (l.unmatched ? [i + 1] : []));
+  if (unmatched.length > 0) add({ code: "script-unmatched", level: "warning", ids: [], message: `Script lines ${unmatched.join(", ")} are not in the voiceover transcript. Their steps keep the old start.`, hint: "Make the line text match the spoken words and align again, or set the cue by hand." });
 
   // Timeline checks.
   for (const w of timeline.warnings) add({ code: "step-overlap", level: "error", ids: [], step: w.stepId, message: w.message, hint: "Make the actions of the previous step shorter, or move the cue later." });

@@ -236,6 +236,7 @@ Global flags: `--json` (machine output for all commands), `--quiet`, `--no-color
 | `anivo_preview` | `scene`, `step`, `at?`, `debug?`, `width?` | PNG image (MCP image content) |
 | `anivo_contact_sheet` | `scene` | PNG image |
 | `anivo_export` | `scene`, `format`, `out`, `size?`, `fps?`, `range?`, `captions?` (`bottom`, `top`) | File path, size, duration |
+| `anivo_transcribe` | `scene`, `language?`, `align?` | Word count, aligned lines |
 | `anivo_captions` | `scene`, `format: "srt" \| "vtt"`, `out?` | Caption text |
 | `anivo_icons_search` | `query`, `pack?` (`lucide`, `fluent`, …), `limit?` | Icon names with packs |
 | `anivo_templates_list` | — | Template names and descriptions |
@@ -312,6 +313,7 @@ Rules for tools:
 | `dangling-connector` | warning | A connector is visible while a bound element is not visible |
 | `tiny-text` | warning | Text is smaller than 24 px at 1080p |
 | `too-fast` | info | A step is shorter than 800 ms with more than 3 actions |
+| `script-unmatched` | warning | Alignment did not find script lines in the voiceover transcript |
 
 Each lint result has `code`, `level`, `ids`, `step?`, `message`, and `hint`.
 

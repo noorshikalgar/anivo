@@ -119,6 +119,14 @@ export const ScriptSet = z.object({
   lines: z.array(z.record(z.string(), z.unknown())).describe("Script lines: { id?, text, stepId? }. They replace the old script."),
 });
 
+export const ScriptAlign = z.object({
+  op: z.literal("script.align"),
+  words: z
+    .array(z.object({ text: z.string(), startMs: z.number().nonnegative(), endMs: z.number().nonnegative() }))
+    .optional()
+    .describe("Transcript words with times in the voiceover file. Omit to use the transcript of the voiceover track."),
+}).describe("Align the script lines to the voiceover transcript. Each matched line sets a cue trigger on its step. Unmatched lines keep the old start.");
+
 export const SceneSettingsOp = z.object({
   op: z.literal("scene.settings"),
   set: Props.describe("Settings to change. Nested objects (video, background, defaults) merge with the old values."),
@@ -147,6 +155,7 @@ export const Operation = z.discriminatedUnion("op", [
   AudioUpdate,
   AudioRemove,
   ScriptSet,
+  ScriptAlign,
   SceneSettingsOp,
   SceneMetaOp,
 ]);
