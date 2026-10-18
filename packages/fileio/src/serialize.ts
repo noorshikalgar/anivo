@@ -47,6 +47,7 @@ function defaultsForElement(el: Element): Record<string, unknown> {
     if (el.type === "text") minimal["content"] = { text: "" };
     if (el.type === "icon") Object.assign(minimal, { pack: "p", name: "n" });
     if (el.type === "connector") Object.assign(minimal, { start: { kind: "free", x: 0, y: 0 }, end: { kind: "free", x: 0, y: 0 } });
+    if (el.type === "code") minimal["code"] = "";
     d = Element.parse(minimal) as Record<string, unknown>;
     elementDefaults.set(el.type, d);
   }
@@ -55,7 +56,7 @@ function defaultsForElement(el: Element): Record<string, unknown> {
 
 function compactElement(el: Element): Record<string, unknown> {
   // Required fields stay, even when they equal the value of the minimal element.
-  const out = withoutDefaults(el as Record<string, unknown>, defaultsForElement(el), ["type", "z", "content", "pack", "name", "start", "end"]);
+  const out = withoutDefaults(el as Record<string, unknown>, defaultsForElement(el), ["type", "z", "content", "pack", "name", "start", "end", "code"]);
   delete out["id"]; // the map key is the ID
   if (el.type === "connector") {
     // Connector bounds are derived (docs/05).
@@ -69,11 +70,17 @@ function compactElement(el: Element): Record<string, unknown> {
 }
 
 function compactAction(a: Action): Record<string, unknown> {
+  // The minimal action has the required fields of its type. Their sub-objects keep their defaults.
   const minimal: Record<string, unknown> = { id: a.id, type: a.type, targets: a.targets };
   if (a.type === "enter" || a.type === "exit" || a.type === "emphasis") minimal["effect"] = a.effect;
   if (a.type === "morph") minimal["to"] = a.to;
+  if (a.type === "camera") minimal["camera"] = { op: a.camera.op };
+  if (a.type === "counter") minimal["counter"] = { from: a.counter.from, to: a.counter.to };
+  if (a.type === "code") minimal["code"] = a.code;
   const defaults = Action.parse(minimal) as Record<string, unknown>;
-  const out = withoutDefaults(a as Record<string, unknown>, defaults, ["id", "type", "targets", "effect", "to"]);
+  const out = withoutDefaults(a as Record<string, unknown>, defaults, ["id", "type", "targets", "effect", "to", "code"]);
+  if (a.type === "camera") out["camera"] = { op: a.camera.op, ...withoutDefaults(a.camera as Record<string, unknown>, defaults["camera"] as Record<string, unknown>) };
+  if (a.type === "counter") out["counter"] = { from: a.counter.from, to: a.counter.to, ...withoutDefaults(a.counter as Record<string, unknown>, defaults["counter"] as Record<string, unknown>) };
   if (a.type === "flow" && out["flow"]) out["flow"] = withoutDefaults(a.flow as Record<string, unknown>, defaults["flow"] as Record<string, unknown>);
   return out;
 }

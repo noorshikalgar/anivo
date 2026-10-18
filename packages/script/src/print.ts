@@ -33,6 +33,10 @@ export function printScene(scene: Scene): string {
     parts.push(kind, el.id);
     if (el.type === "icon") parts.push(`${el.pack}:${el.name}`);
     if (el.type === "text") parts.push(q(el.content.text));
+    else if (el.type === "code") {
+      parts.push(q(el.code), `lang=${el.language}`);
+      if (!el.lineNumbers) parts.push("no-numbers");
+    }
     else if (el.label) parts.push(q(el.label.text));
     parts.push(`at=${n(el.x)},${n(el.y)}`, `size=${n(el.width)}x${n(el.height)}`);
     parts.push(...styleParts(el));
@@ -140,6 +144,15 @@ function printAction(a: Action, index: number): string {
     if (a.camera.op === "zoom-to") parts.push(targets);
     if (a.camera.op === "pan" && a.camera.rect) parts.push(`at=${n(a.camera.rect.x)},${n(a.camera.rect.y)}`, `size=${n(a.camera.rect.width)}x${n(a.camera.rect.height)}`);
     if (a.camera.padding !== 80) parts.push(`padding=${a.camera.padding}`);
+    common();
+    return parts.join(" ");
+  }
+  if (a.type === "code") {
+    parts.push("code", targets);
+    const c = a.code;
+    if (c.op === "highlight") parts.push(`highlight=${c.lines ? `${c.lines[0]}-${c.lines[1]}` : "none"}`);
+    else if (c.op === "type" && c.lines) parts.push(`type=${c.lines[0]}-${c.lines[1]}`);
+    else if (c.op === "diff") parts.push(`diff=${q(c.newCode ?? "")}`);
     common();
     return parts.join(" ");
   }

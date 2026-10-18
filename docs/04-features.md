@@ -29,7 +29,7 @@ All features must be available to agents unless the table says "UI only".
 | FR-CANVAS-09 | Undo and redo | P0 | Undo removes one transaction. 200 transactions of history minimum. |
 | FR-CANVAS-10 | Copy, paste, duplicate. Paste of SVG and PNG from the clipboard | P0 | Pasted SVG is sanitized (see [12](12-quality-and-security.md)). |
 | FR-CANVAS-11 | Icon library with search | P0 | Search by name and tag. Only free open-source packs. Packs at MVP: Lucide (ISC, default) and Fluent System Icons (MIT). The icon picker has a pack selector. The scene setting `defaultIconPack` selects the pack for new icons. P1 optional packs: Tabler (MIT), Simple Icons (CC0), Kubernetes community icons (CC BY 4.0, with attribution). No vendor packs with restrictive terms (see [12](12-quality-and-security.md#third-party-assets)). |
-| FR-CANVAS-12 | Code block element | P1 | Syntax colors with Shiki for 30 languages minimum. Line numbers on or off. |
+| FR-CANVAS-12 | Code block element | P1 | Syntax colors for 10 languages with the built-in highlighter ([decision 0003](decisions/0003-syntax-highlighter.md)). Line numbers on or off. |
 | FR-CANVAS-13 | Image element (PNG, JPEG, SVG, WebP) | P1 | Images are stored as assets in the scene file. Maximum 20 MB for each image. |
 | FR-CANVAS-14 | Freehand draw (pen) | P2 | Uses `perfect-freehand`. |
 | FR-CANVAS-15 | Table element (rows and columns of text) | P1 | Needed for Example E. Each cell is a child element with a stable ID. |

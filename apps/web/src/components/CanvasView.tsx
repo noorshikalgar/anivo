@@ -349,6 +349,11 @@ export function CanvasView() {
       st.setIconPicker(start);
       return;
     }
+    if (st.tool === "code") {
+      addElement("code", { code: "function hello(name) {\n  return `Hello, ${name}`;\n}", language: "js", x: start.x, y: start.y, width: 560, height: 168 }, "Add code block");
+      st.setTool("select");
+      return;
+    }
     const el = e.currentTarget;
     el.setPointerCapture(e.pointerId);
     if (st.tool === "arrow") drag.current = { kind: "arrow", start: p, end: p, from: shapeAt(p), to: null };

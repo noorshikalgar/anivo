@@ -2,6 +2,7 @@ import { Toolbar, ToolbarRadioButton, ToolbarRadioGroup, Tooltip, makeStyles, to
 import {
   ArrowRight20Regular,
   Circle20Regular,
+  Code20Regular,
   Cursor20Regular,
   Diamond20Regular,
   HandLeft20Regular,
@@ -35,6 +36,7 @@ export const TOOLS: { tool: Tool; label: string; key: string; icon: ReactElement
   { tool: "arrow", label: "Arrow", key: "A", icon: <ArrowRight20Regular /> },
   { tool: "text", label: "Text", key: "T", icon: <TextT20Regular /> },
   { tool: "icon", label: "Icon", key: "I", icon: <Icons20Regular /> },
+  { tool: "code", label: "Code block", key: "C", icon: <Code20Regular /> },
 ];
 
 export function ToolPalette() {

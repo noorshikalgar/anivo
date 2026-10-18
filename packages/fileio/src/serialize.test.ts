@@ -60,6 +60,35 @@ describe("scene JSON", () => {
     expect(r.ok && r.scene.elements["empty"]).toMatchObject({ type: "text", content: { text: "" } });
   });
 
+  it("round-trips every action type and a code element", () => {
+    const bus = new OperationBus(template);
+    const r = bus.apply({
+      ops: [
+        { op: "element.add", id: "snippet", type: "code", props: { code: "const a = 1;\nconst b = 2;", language: "ts", x: 100, y: 100, width: 500, height: 120 } },
+        { op: "element.add", id: "rps", type: "text", props: { content: "0", x: 100, y: 400, width: 300, height: 60 } },
+        {
+          op: "step.add",
+          id: "s-all",
+          props: {
+            actions: [
+              { type: "camera", targets: ["lb"], camera: { op: "zoom-to", padding: 40 } },
+              { type: "camera", camera: { op: "pan", rect: { x: 0, y: 0, width: 960, height: 540 } } },
+              { type: "camera", camera: { op: "reset" } },
+              { type: "counter", targets: ["rps"], counter: { from: 0, to: 9, format: "{n} req/s", decimals: 1 } },
+              { type: "code", targets: ["snippet"], code: { op: "highlight", lines: [2, 2] } },
+              { type: "code", targets: ["snippet"], code: { op: "diff", newCode: "const a = 3;" } },
+              { type: "wait", durationMs: 500 },
+              { type: "emphasis", effect: "glow", targets: ["lb"], params: { color: "success" } },
+            ],
+          },
+        },
+      ],
+    });
+    expect(r.ok).toBe(true);
+    const back = sceneFromJson(sceneToJson(bus.scene));
+    expect(back.ok && back.scene).toEqual(bus.scene);
+  });
+
   it("reports invalid JSON", () => {
     const r = sceneFromJson("{ not json");
     expect(r.ok).toBe(false);

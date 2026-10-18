@@ -79,7 +79,18 @@ function ElementProperties({ el }: { el: Element }) {
           </div>
         </>
       )}
-      {el.type !== "connector" && (
+      {el.type === "code" && (
+        <>
+          <TextField label="Code" multiline value={el.code} onCommit={(v) => void useEditor.getState().apply({ label: "Edit code", ops: [{ op: "element.update", id: el.id, set: { code: v } }] })} />
+          <SelectField
+            label="Language"
+            value={el.language as "ts"}
+            options={["ts", "js", "py", "go", "rust", "java", "sql", "bash", "yaml", "json"].map((l) => ({ value: l as "ts", text: l }))}
+            onCommit={(v) => set({ language: v }, "Change language")}
+          />
+        </>
+      )}
+      {el.type !== "connector" && el.type !== "code" && (
         <TextField
           label={el.type === "text" ? "Text" : "Label"}
           multiline

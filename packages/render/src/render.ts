@@ -3,6 +3,7 @@ import { type Polyline, evaluateWithLayout, frameBox, pointAt, slice } from "@an
 import type { ConnectorElement, Element, Point, Scene, SceneStyle } from "@anivo/schema";
 import { type Rgba, toCss, withAlpha } from "./color.js";
 import type { Ctx2D } from "./ctx.js";
+import { TOKEN_COLORS, diffLines, highlightLine } from "./highlight.js";
 import { getIcon } from "./icons.js";
 import { type Box, type OutlineKind, cleanOutline, sketchOutline } from "./outline.js";
 import { type Theme, getTheme, resolveColor, resolveToken } from "./theme.js";
@@ -279,6 +280,103 @@ function drawIcon(dc: DrawContext, f: ElementFrame, el: Element): void {
   }
 }
 
+/** Code block (FR-CANVAS-12) with highlight, type, and diff states (FR-STEP-09). */
+function drawCode(dc: DrawContext, f: ElementFrame, el: Extract<Element, { type: "code" }>): void {
+  const { ctx, theme } = dc;
+  const b = localBox(f);
+  const radius = f.cornerRadius ?? el.style.cornerRadius ?? 12;
+  const fill = resolveColor(theme, f.fill ?? "surface-strong", "fill", el.type);
+  const outline = cleanOutline("rectangle", b, radius);
+  ctx.fillStyle = toCss(withAlpha(fill, f.fillProgress));
+  fillPolyline(ctx, outline.points);
+  if (f.strokeProgress > 0) {
+    ctx.strokeStyle = toCss(resolveColor(theme, f.stroke ?? "line", "stroke", el.type));
+    ctx.lineWidth = f.strokeWidth ?? el.style.strokeWidth ?? 1.5;
+    ctx.setLineDash([]);
+    strokeProgressive(ctx, [outline], outline.length, f.strokeProgress);
+  }
+  const size = f.fontSize ?? el.style.fontSize ?? 24;
+  const lh = size * 1.5;
+  const pad = size;
+  const font = `400 ${size}px "${el.style.fontFamily ?? theme.fonts.code}"`;
+  ctx.font = font;
+  ctx.textBaseline = "middle";
+  ctx.textAlign = "left";
+  const code = f.code ?? el.code;
+  const gutter = el.lineNumbers ? ctx.measureText(String(code.split("\n").length)).width + size : 0;
+  const x0 = b.x + pad + gutter;
+  const color = (token: string) => resolveToken(theme, token, "textColor", "text");
+
+  // Rows: plain lines, or diff rows during a diff (removed rows shrink, added rows grow).
+  type Row = { text: string; kind: "same" | "removed" | "added"; h: number };
+  let rows: Row[];
+  if (f.codeFrom !== undefined && f.codeMix !== undefined) {
+    const p = f.codeMix;
+    rows = diffLines(f.codeFrom.split("\n"), code.split("\n")).map((r) => ({ ...r, h: r.kind === "removed" ? 1 - p : r.kind === "added" ? p : 1 }));
+  } else rows = code.split("\n").map((text) => ({ text, kind: "same" as const, h: 1 }));
+
+  // Highlight: a bar behind the range, and dim lines outside it.
+  const lines = f.codeLines;
+  const mix = f.codeLinesMix ?? 1;
+  const inRange = (n: number, r?: [number, number]) => !!r && n >= r[0] && n <= r[1];
+  const dimOf = (n: number) => {
+    const now = lines ? (inRange(n, lines) ? 1 : 0.35) : 1;
+    const before = f.codeLinesMix !== undefined ? (f.codeLinesFrom ? (inRange(n, f.codeLinesFrom) ? 1 : 0.35) : 1) : now;
+    return before + (now - before) * mix;
+  };
+  const barFor = (r?: [number, number]) => (r ? { y: b.y + pad + (r[0] - 1) * lh, h: (r[1] - r[0] + 1) * lh } : undefined);
+  const barTo = barFor(lines);
+  const barFrom = f.codeLinesMix !== undefined ? barFor(f.codeLinesFrom) : barTo;
+  const bar = barTo && barFrom ? { y: barFrom.y + (barTo.y - barFrom.y) * mix, h: barFrom.h + (barTo.h - barFrom.h) * mix, a: 1 } : barTo ? { ...barTo, a: mix } : barFrom ? { ...barFrom, a: 1 - mix } : undefined;
+  if (bar && rows.every((r) => r.kind === "same")) {
+    ctx.fillStyle = toCss(withAlpha(resolveToken(theme, "accent-soft", "fill", "rectangle"), bar.a * f.fillProgress));
+    ctx.fillRect(b.x + 6, bar.y, b.width - 12, bar.h);
+  }
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(b.x, b.y, b.width, b.height);
+  ctx.clip();
+  let y = b.y + pad;
+  let lineNo = 0;
+  for (const row of rows) {
+    if (row.kind !== "removed") lineNo++;
+    const h = lh * row.h;
+    if (h < 0.5) continue;
+    if (row.kind !== "same") {
+      ctx.fillStyle = toCss(withAlpha(resolveToken(theme, row.kind === "added" ? "success-soft" : "danger-soft", "fill", "rectangle"), f.fillProgress));
+      ctx.fillRect(b.x + 6, y, b.width - 12, h);
+    }
+    // A row that grows or shrinks shows its text only when it is more than half open, so rows do not overlap.
+    let alpha = f.fillProgress * (row.kind === "same" ? dimOf(lineNo) : 1) * Math.max(0, Math.min(1, (row.h - 0.5) / 0.5));
+    // Typing: lines in the range show their first characters only.
+    let text = row.text;
+    const t = f.codeType;
+    if (t && row.kind === "same" && lineNo >= t.lines[0] && lineNo <= t.lines[1]) {
+      const all = rows.slice(t.lines[0] - 1, t.lines[1]).reduce((n, r) => n + r.text.length, 0);
+      const before = rows.slice(t.lines[0] - 1, lineNo - 1).reduce((n, r) => n + r.text.length, 0);
+      const shown = Math.floor(all * t.p) - before;
+      text = shown <= 0 ? "" : row.text.slice(0, shown);
+      if (shown <= 0) alpha = 0;
+    }
+    const cy = y + h / 2;
+    if (el.lineNumbers && row.kind !== "removed") {
+      ctx.textAlign = "right";
+      ctx.fillStyle = toCss(withAlpha(color("muted"), alpha * 0.8));
+      ctx.fillText(String(lineNo), b.x + pad + gutter - size * 0.6, cy);
+      ctx.textAlign = "left";
+    }
+    let x = x0;
+    for (const tok of highlightLine(text, el.language)) {
+      ctx.fillStyle = toCss(withAlpha(color(TOKEN_COLORS[tok.kind]), alpha));
+      ctx.fillText(tok.text, x, cy);
+      x += ctx.measureText(tok.text).width;
+    }
+    y += h;
+  }
+  ctx.restore();
+}
+
 function drawStandaloneText(dc: DrawContext, f: ElementFrame, el: Element): void {
   drawLabel(dc, f, el, localBox(f), 1);
 }
@@ -450,6 +548,7 @@ export function renderFrame(ctx: Ctx2D, scene: Scene, frame: FrameState, routes:
       applyWipeClip(ctx, f, localBox(f));
       if (OUTLINE_KINDS.has(el.type)) drawShape(dc, f, el);
       else if (el.type === "icon") drawIcon(dc, f, el);
+      else if (el.type === "code") drawCode(dc, f, el);
       else if (el.type === "text") drawStandaloneText(dc, f, el);
     }
     ctx.restore();
