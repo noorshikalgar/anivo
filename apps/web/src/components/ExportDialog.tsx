@@ -1,4 +1,5 @@
 import { estimateGifBytes, exportGifWeb, exportVideoWeb, renderPngWeb, supportedFormats } from "@anivo/export-web";
+import { sceneCaptions, toSrt, toVtt } from "@anivo/engine";
 import {
   Button,
   Dialog,
@@ -67,6 +68,7 @@ export function ExportDialog() {
   const [quality, setQuality] = useState<"draft" | "standard" | "high">("standard");
   const [from, setFrom] = useState("0");
   const [to, setTo] = useState(String(Math.max(0, scene.steps.length - 1)));
+  const [captions, setCaptions] = useState<"none" | "bottom" | "top" | "srt" | "vtt">("none");
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [supported, setSupported] = useState<string[]>(["mp4", "webm"]);
@@ -114,8 +116,11 @@ export function ExportDialog() {
     const onProgress = (d: number, n: number) => setProgress(d / n);
     try {
       if (format === "mp4" || format === "webm") {
-        const r = await exportVideoWeb(scene, { assets: useEditor.getState().assets, format, width, height, fps: Number(fps) as 24 | 30 | 60, range, quality, onProgress, signal: ac.signal });
+        const burn = captions === "bottom" || captions === "top" ? { captions } : {};
+        const r = await exportVideoWeb(scene, { assets: useEditor.getState().assets, format, width, height, fps: Number(fps) as 24 | 30 | 60, range, quality, onProgress, signal: ac.signal, ...burn });
         download(r.data as BlobPart, `${name}.${format}`, r.mimeType);
+        if (captions === "srt") download(toSrt(sceneCaptions(scene), range), `${name}.srt`, "application/x-subrip");
+        if (captions === "vtt") download(toVtt(sceneCaptions(scene), range), `${name}.vtt`, "text/vtt");
       } else if (format === "gif") {
         const r = await exportGifWeb(scene, { width: Number(gifWidth), height: gifH, fps: Number(gifFps), range, onProgress, signal: ac.signal });
         download(r.data as BlobPart, `${name}.gif`, "image/gif");
@@ -145,6 +150,7 @@ export function ExportDialog() {
     }
   }
 
+  const hasCaptions = scene.script.some((l) => l.stepId && l.text.trim());
   const needsSteps = format !== "png";
   const noSteps = scene.steps.length === 0 && needsSteps;
   const unsupported = (format === "mp4" || format === "webm") && !supported.includes(format);
@@ -197,6 +203,25 @@ export function ExportDialog() {
                 ]}
                 onCommit={setQuality}
               />
+            )}
+            {(format === "mp4" || format === "webm") && (
+              <SelectField
+                label="Captions"
+                value={captions}
+                options={[
+                  { value: "none", text: "None" },
+                  { value: "bottom", text: "Burned in, bottom" },
+                  { value: "top", text: "Burned in, top" },
+                  { value: "srt", text: "SRT file" },
+                  { value: "vtt", text: "WebVTT file" },
+                ]}
+                onCommit={setCaptions}
+              />
+            )}
+            {captions !== "none" && (format === "mp4" || format === "webm") && !hasCaptions && (
+              <MessageBar intent="info">
+                <MessageBarBody>The scene has no captions. Add a script and link each line to a step.</MessageBarBody>
+              </MessageBar>
             )}
             {needsSteps && scene.steps.length > 0 && (
               <Row>

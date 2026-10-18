@@ -55,6 +55,19 @@ describe("anivo CLI", () => {
     expect(r.err).toContain("line 2, column 5: The ID 'a' is used two times.");
   });
 
+  it("sets the script and writes SRT and WebVTT captions", () => {
+    const sc = join(dir, "cap.anivo");
+    expect(anivo("apply", sc, join(dir, "s.anivo.txt")).code).toBe(0);
+    expect(anivo("captions", sc).code).toBe(1);
+    writeFileSync(join(dir, "lines.txt"), "First the boxes appear.\nThen data flows.\n");
+    expect(anivo("script", sc, join(dir, "lines.txt")).code).toBe(0);
+    const srt = anivo("captions", sc);
+    expect(srt.out).toMatch(/^1\n00:00:00,000 --> 00:00:\d\d,\d{3}\nFirst the boxes appear.\n\n2\n/);
+    const vtt = join(dir, "cap.vtt");
+    expect(anivo("captions", sc, "--out", vtt).code).toBe(0);
+    expect(readFileSync(vtt, "utf8")).toMatch(/^WEBVTT\n/);
+  });
+
   it("writes a preview and a contact sheet", () => {
     expect(anivo("preview", scene, "--step", "1", "--debug", "--out", join(dir, "p.png")).code).toBe(0);
     expect(readFileSync(join(dir, "p.png")).subarray(1, 4).toString()).toBe("PNG");

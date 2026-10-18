@@ -1,4 +1,4 @@
-import type { ElementFrame, FrameState, Particle } from "@anivo/engine";
+import { type Caption, type ElementFrame, type FrameState, type Particle, captionAt } from "@anivo/engine";
 import { type Polyline, evaluateWithLayout, frameBox, pointAt, slice } from "@anivo/layout";
 import type { ConnectorElement, Element, Point, Scene, SceneStyle } from "@anivo/schema";
 import { type Rgba, toCss, withAlpha } from "./color.js";
@@ -23,6 +23,8 @@ export interface RenderOptions {
    * uses it so the user can see and edit elements before they enter.
    */
   ghostHidden?: number;
+  /** Burned-in captions (docs/08 "Captions"). Make the list one time with `sceneCaptions`. */
+  captions?: { list: Caption[]; position?: "bottom" | "top" };
 }
 
 interface DrawContext {
@@ -560,9 +562,40 @@ export function renderFrame(ctx: Ctx2D, scene: Scene, frame: FrameState, routes:
   ctx.restore();
 }
 
+/**
+ * Draw the caption for `timeMs` in output pixels: white text on a dark box,
+ * centered near the bottom (or top) edge. Size follows the output height.
+ */
+export function drawCaption(ctx: Ctx2D, scene: Scene, timeMs: number, opts: RenderOptions): void {
+  const cap = opts.captions && captionAt(opts.captions.list, timeMs);
+  if (!cap) return;
+  const theme = getTheme(opts.theme ?? scene.settings.theme);
+  const size = Math.max(12, Math.round(opts.height * 0.042));
+  const lineH = Math.round(size * 1.3);
+  const padX = Math.round(size * 0.6);
+  const padY = Math.round(size * 0.3);
+  const margin = Math.round(opts.height * 0.06);
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = 1;
+  ctx.font = `500 ${size}px "${theme.fonts.clean}"`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const boxW = Math.max(...cap.lines.map((l) => ctx.measureText(l).width)) + padX * 2;
+  const boxH = cap.lines.length * lineH + padY * 2;
+  const x = opts.width / 2;
+  const top = opts.captions?.position === "top" ? margin : opts.height - margin - boxH;
+  ctx.fillStyle = "rgba(0, 0, 0, 0.72)";
+  ctx.fillRect(Math.round(x - boxW / 2), top, Math.round(boxW), boxH);
+  ctx.fillStyle = "#FFFFFF";
+  cap.lines.forEach((l, i) => ctx.fillText(l, x, top + padY + lineH * (i + 0.5)));
+  ctx.restore();
+}
+
 /** Evaluate and draw the scene at `timeMs`. */
 export function renderScene(ctx: Ctx2D, scene: Scene, timeMs: number, opts: RenderOptions): FrameState {
   const { frame, routes } = evaluateWithLayout(scene, timeMs);
   renderFrame(ctx, scene, frame, routes, opts);
+  drawCaption(ctx, scene, timeMs, opts);
   return frame;
 }

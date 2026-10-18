@@ -1,4 +1,4 @@
-import { resolveTimeline } from "@anivo/engine";
+import { resolveTimeline, sceneCaptions } from "@anivo/engine";
 import { type Ctx2D, type RenderOptions, renderScene } from "@anivo/render";
 import { type Scene, audioSegments } from "@anivo/schema";
 import {
@@ -29,6 +29,8 @@ export interface WebExportOptions {
   assets?: Map<string, Uint8Array>;
   /** Set false to export with no sound. Default true. */
   audio?: boolean;
+  /** Burn the script captions into the video, at this edge. Default: no captions. */
+  captions?: "bottom" | "top";
   onProgress?: (done: number, total: number) => void;
   signal?: AbortSignal;
 }
@@ -110,7 +112,12 @@ export async function exportVideoWeb(scene: Scene, opts: WebExportOptions): Prom
   if (audioSource && mix) await audioSource.add(mix);
 
   const frames = Math.ceil(((endMs - startMs) * fps) / 1000);
-  const renderOpts: RenderOptions = { width, height, ...(opts.style ? { style: opts.style } : {}) };
+  const renderOpts: RenderOptions = {
+    width,
+    height,
+    ...(opts.style ? { style: opts.style } : {}),
+    ...(opts.captions ? { captions: { list: sceneCaptions(scene), position: opts.captions } } : {}),
+  };
   try {
     for (let i = 0; i < frames; i++) {
       if (opts.signal?.aborted) throw new WebExportError("The export was cancelled.", "cancelled");
