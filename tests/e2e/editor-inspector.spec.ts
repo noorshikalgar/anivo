@@ -9,7 +9,7 @@ async function selectLb(page: Parameters<typeof state>[0]) {
   const lb = (await state(page)).scene.elements["lb"]!;
   const p = await screen(page, lb.x + lb.width / 2, lb.y + lb.height / 2);
   await page.mouse.click(p.x, p.y);
-  await expect(page.getByLabel("Inspector").getByText("Element")).toBeVisible();
+  await expect(page.getByLabel("Inspector").getByText("Element", { exact: true })).toBeVisible();
 }
 
 test("fill swatch changes the element fill in the base state", async ({ page }) => {
@@ -59,4 +59,18 @@ test("scene panel changes the style", async ({ page }) => {
   await page.getByLabel("Inspector").getByRole("combobox").first().click();
   await page.getByRole("option", { name: /Sketch/ }).click();
   expect((await state(page)).scene.settings.style).toBe("sketch");
+});
+
+test("a base edit warns when a step morph sets the property at the playhead", async ({ page }) => {
+  await page.getByRole("button", { name: /Traffic flows/ }).click();
+  await selectLb(page);
+  await page.getByRole("radiogroup", { name: "Fill" }).getByRole("radio", { name: "success", exact: true }).click();
+  await page.evaluate(() => {
+    const st = (window as unknown as { __anivo: { getState(): { selectStep(id: null): void; setPlayhead(ms: number): void; timeline: { totalMs: number } } } }).__anivo.getState();
+    st.selectStep(null);
+    st.setPlayhead(st.timeline.totalMs);
+  });
+  await expect(page.getByLabel("Inspector").getByText(/sets fill/)).toBeVisible();
+  await page.getByRole("button", { name: /Go to step "Traffic flows/ }).click();
+  expect((await state(page)).selectedStep).toBe("s-traffic");
 });

@@ -168,6 +168,7 @@ export function commitProps(id: string, changes: Record<string, unknown>, label 
   for (const [k, v] of Object.entries(changes)) {
     if (inStep && MORPHABLE.has(k)) morph[k] = v;
     else if (STYLE_KEYS.has(k)) style[k] = v;
+    else if (k === "label" && el.type === "text") set["content"] = { text: String(v ?? "") };
     else if (k === "label") set["label"] = v === "" || v === null ? null : { text: v };
     else set[k] = v;
   }
