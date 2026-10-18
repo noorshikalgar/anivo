@@ -10,6 +10,7 @@ import { ExportDialog } from "./ExportDialog.js";
 import { IconPicker } from "./IconPicker.js";
 import { Inspector } from "./Inspector.js";
 import { startAudioSync } from "../audio.js";
+import { startImageSync } from "../images.js";
 import { AlignDialog } from "./AlignDialog.js";
 import { AudioLane } from "./AudioLane.js";
 import { PlaybackBar } from "./PlaybackBar.js";
@@ -58,6 +59,7 @@ export function App() {
   useShortcuts();
   useEffect(() => startAutosave(), []);
   useEffect(() => startAudioSync(), []);
+  useEffect(() => startImageSync(), []);
   const toasterId = useId("toaster");
   const { dispatchToast } = useToastController(toasterId);
   const notice = useEditor((s) => s.notice);

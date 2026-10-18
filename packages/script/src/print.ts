@@ -36,6 +36,9 @@ export function printScene(scene: Scene): string {
     else if (el.type === "code") {
       parts.push(q(el.code), `lang=${el.language}`);
       if (!el.lineNumbers) parts.push("no-numbers");
+    } else if (el.type === "image") {
+      parts.push(`asset=${el.assetId}`);
+      if (el.fit !== "contain") parts.push(`fit=${el.fit}`);
     }
     else if (el.label) parts.push(q(el.label.text));
     parts.push(`at=${n(el.x)},${n(el.y)}`, `size=${n(el.width)}x${n(el.height)}`);

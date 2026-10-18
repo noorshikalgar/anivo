@@ -15,7 +15,7 @@ export interface CompileOptions {
   base?: Scene;
 }
 
-const ELEMENT_KINDS = new Set(["box", "ellipse", "diamond", "text", "icon", "caption", "row", "column", "grid", "group", "line", "code"]);
+const ELEMENT_KINDS = new Set(["box", "ellipse", "diamond", "text", "icon", "caption", "row", "column", "grid", "group", "line", "code", "image"]);
 const CONTAINERS = new Set(["row", "column", "grid", "group"]);
 const ENTER_EFFECTS = new Set(["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter"]);
 const EMPHASIS = new Set(["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus"]);
@@ -27,6 +27,7 @@ const DEFAULT_SIZE: Record<string, [number, number]> = {
   diamond: [180, 130],
   icon: [120, 120],
   line: [200, 20],
+  image: [320, 240],
 };
 
 interface ElemDecl {
@@ -453,7 +454,7 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
     const props: Record<string, unknown> = { x: round(d.x!), y: round(d.y!), width: round(d.w), height: round(d.h) };
     if (parentId) props["parentId"] = parentId;
     for (const [k, { v, pos }] of d.kv) {
-      if (["at", "size", "gap", "align", "spacing", "cols", "id", "lang", ...RELATIONS].includes(k)) {
+      if (["at", "size", "gap", "align", "spacing", "cols", "id", "lang", ...(d.kind === "image" ? ["asset", "fit"] : []), ...RELATIONS].includes(k)) {
         continue;
       }
       if (k === "opacity") props["opacity"] = Number(v);
@@ -473,6 +474,12 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
       const lang = d.kv.get("lang")?.v;
       if (lang) props["language"] = lang;
       if (d.flags.has("no-numbers")) props["lineNumbers"] = false;
+    } else if (d.kind === "image") {
+      const asset = d.kv.get("asset");
+      if (!asset) errors.push(err(d.pos, "The image has no asset.", "Write: image logo asset=0123456789abcdef. 'anivo image add' gives the asset ID."));
+      else props["assetId"] = asset.v;
+      const fit = d.kv.get("fit")?.v;
+      if (fit) props["fit"] = fit;
     } else if (d.kind === "text" || d.kind === "caption") {
       type = "text";
       props["content"] = { text: d.label ?? "" };

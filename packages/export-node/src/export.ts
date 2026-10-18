@@ -7,6 +7,7 @@ import { type Ctx2D, type RenderOptions, renderScene } from "@anivo/render";
 import { type AudioSegment, type Scene, audioSegments } from "@anivo/schema";
 import { createCanvas } from "@napi-rs/canvas";
 import { registerBundledAssets } from "./fonts.js";
+import { registerSceneImages } from "./images.js";
 
 export type NodeExportFormat = "mp4" | "webm" | "gif" | "prores" | "png-seq";
 
@@ -50,8 +51,9 @@ export class ExportError extends Error {
 }
 
 /** Render one frame to a PNG buffer. */
-export function renderPng(scene: Scene, timeMs: number, opts: { width?: number; height?: number; style?: RenderOptions["style"] } = {}): Buffer {
+export function renderPng(scene: Scene, timeMs: number, opts: { width?: number; height?: number; style?: RenderOptions["style"]; assets?: Map<string, Uint8Array> } = {}): Buffer {
   registerBundledAssets();
+  registerSceneImages(scene, opts.assets);
   const width = opts.width ?? scene.settings.video.width;
   const height = opts.height ?? scene.settings.video.height;
   const canvas = createCanvas(width, height);
@@ -104,6 +106,7 @@ function ffmpegArgs(o: Required<Pick<NodeExportOptions, "format" | "out">> & { w
  */
 export async function exportVideo(scene: Scene, opts: NodeExportOptions): Promise<NodeExportResult> {
   registerBundledAssets();
+  registerSceneImages(scene, opts.assets);
   const width = opts.width ?? scene.settings.video.width;
   const height = opts.height ?? scene.settings.video.height;
   const fps = opts.fps ?? scene.settings.video.fps;

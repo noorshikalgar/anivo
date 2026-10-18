@@ -90,7 +90,19 @@ function ElementProperties({ el }: { el: Element }) {
           />
         </>
       )}
-      {el.type !== "connector" && el.type !== "code" && (
+      {el.type === "image" && (
+        <SelectField
+          label="Fit"
+          value={el.fit}
+          options={[
+            { value: "contain", text: "Contain (show all)" },
+            { value: "cover", text: "Cover (fill and cut)" },
+            { value: "fill", text: "Stretch" },
+          ]}
+          onCommit={(v) => void useEditor.getState().apply({ label: "Change fit", ops: [{ op: "element.update", id: el.id, set: { fit: v } }] })}
+        />
+      )}
+      {el.type !== "connector" && el.type !== "code" && el.type !== "image" && (
         <TextField
           label={el.type === "text" ? "Text" : "Label"}
           multiline
@@ -136,7 +148,7 @@ function ElementProperties({ el }: { el: Element }) {
           />
         </Row>
       )}
-      {el.type === "rectangle" && <NumberField label="Corner radius" value={f.cornerRadius ?? 12} min={0} max={200} onCommit={(v) => set({ cornerRadius: v }, "Change corner radius")} />}
+      {(el.type === "rectangle" || el.type === "image") && <NumberField label="Corner radius" value={f.cornerRadius ?? (el.type === "image" ? 0 : 12)} min={0} max={200} onCommit={(v) => set({ cornerRadius: v }, "Change corner radius")} />}
       {el.type === "connector" && (
         <>
           <SelectField

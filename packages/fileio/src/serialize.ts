@@ -48,6 +48,7 @@ function defaultsForElement(el: Element): Record<string, unknown> {
     if (el.type === "icon") Object.assign(minimal, { pack: "p", name: "n" });
     if (el.type === "connector") Object.assign(minimal, { start: { kind: "free", x: 0, y: 0 }, end: { kind: "free", x: 0, y: 0 } });
     if (el.type === "code") minimal["code"] = "";
+    if (el.type === "image") minimal["assetId"] = "0000000000000000";
     d = Element.parse(minimal) as Record<string, unknown>;
     elementDefaults.set(el.type, d);
   }
@@ -56,7 +57,7 @@ function defaultsForElement(el: Element): Record<string, unknown> {
 
 function compactElement(el: Element): Record<string, unknown> {
   // Required fields stay, even when they equal the value of the minimal element.
-  const out = withoutDefaults(el as Record<string, unknown>, defaultsForElement(el), ["type", "z", "content", "pack", "name", "start", "end", "code"]);
+  const out = withoutDefaults(el as Record<string, unknown>, defaultsForElement(el), ["type", "z", "content", "pack", "name", "start", "end", "code", "assetId"]);
   delete out["id"]; // the map key is the ID
   if (el.type === "connector") {
     // Connector bounds are derived (docs/05).

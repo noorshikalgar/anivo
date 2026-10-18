@@ -236,6 +236,7 @@ Global flags: `--json` (machine output for all commands), `--quiet`, `--no-color
 | `anivo_preview` | `scene`, `step`, `at?`, `debug?`, `width?` | PNG image (MCP image content) |
 | `anivo_contact_sheet` | `scene` | PNG image |
 | `anivo_export` | `scene`, `format`, `out`, `size?`, `fps?`, `range?`, `captions?` (`bottom`, `top`) | File path, size, duration |
+| `anivo_image_add` | `scene`, `file`, `id?`, `x?`, `y?`, `width?`, `fit?` | Element ID, asset ID |
 | `anivo_transcribe` | `scene`, `language?`, `align?` | Word count, aligned lines |
 | `anivo_captions` | `scene`, `format: "srt" \| "vtt"`, `out?` | Caption text |
 | `anivo_icons_search` | `query`, `pack?` (`lucide`, `fluent`, …), `limit?` | Icon names with packs |

@@ -68,6 +68,19 @@ describe("anivo CLI", () => {
     expect(readFileSync(vtt, "utf8")).toMatch(/^WEBVTT\n/);
   });
 
+  it.skipIf(!hasFfmpeg)("adds an image and renders it in the preview", () => {
+    const sc = join(dir, "img.anivo");
+    expect(anivo("apply", sc, join(dir, "s.anivo.txt")).code).toBe(0);
+    spawnSync("ffmpeg", ["-v", "error", "-y", "-f", "lavfi", "-i", "color=red:s=4x2", "-frames:v", "1", join(dir, "red.png")]);
+    const r = anivo("image", "add", sc, join(dir, "red.png"), "--id", "logo", "--at", "600,600", "--width", "400");
+    expect(r.code, r.err).toBe(0);
+    expect(r.out).toMatch(/Added image 'logo' \(asset [0-9a-f]{16}, 4×2 px\)/);
+    expect(anivo("print", sc).out).toMatch(/image logo asset=[0-9a-f]{16} at=600,600 size=400x200/);
+    const out = join(dir, "img.png");
+    expect(anivo("preview", sc, "--step", "0", "--out", out).code).toBe(0);
+    expect(anivo("image", "add", sc, join(dir, "s.anivo.txt")).err).toContain("Use a PNG, JPEG, WebP, or SVG file.");
+  });
+
   it("writes a preview and a contact sheet", () => {
     expect(anivo("preview", scene, "--step", "1", "--debug", "--out", join(dir, "p.png")).code).toBe(0);
     expect(readFileSync(join(dir, "p.png")).subarray(1, 4).toString()).toBe("PNG");

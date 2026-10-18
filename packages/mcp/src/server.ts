@@ -1,13 +1,13 @@
 import { existsSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { resolveTimeline, sceneCaptions, toSrt, toVtt } from "@anivo/engine";
-import { exportVideo, homePath, registerBundledAssets } from "@anivo/export-node";
+import { exportVideo, homePath, imageSize, registerBundledAssets } from "@anivo/export-node";
 import { formatLint, lintScene, lintSummary } from "@anivo/lint";
 import { OperationBus } from "@anivo/ops";
 import { searchIcons } from "@anivo/render";
 import { type Scene, loadScene } from "@anivo/schema";
 import { applyScript, printScene } from "@anivo/script";
-import { ToolError, assetCache, contactSheetPng, transcribe, jsonSchema, previewPng, readSceneFile, sceneSummary, writeSceneFile } from "@anivo/tools";
+import { ToolError, assetCache, contactSheetPng, imageMime, importAsset, transcribe, jsonSchema, previewPng, readSceneFile, sceneSummary, writeSceneFile } from "@anivo/tools";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
@@ -273,6 +273,43 @@ export function createAnivoServer(opts: ServerOptions): McpServer {
         const size = a.size?.split("x").map(Number);
         const r = await exportVideo(scene, { out, format, assets: assetCache, ...(size ? { width: size[0]! - (size[0]! % 2), height: size[1]! - (size[1]! % 2) } : {}), ...(a.fps ? { fps: a.fps } : {}), ...(range ? { range } : {}), ...(a.captions ? { captions: a.captions } : {}) });
         return text(`Exported ${relative(root, r.out)}: ${r.frames} frames, ${(r.durationMs / 1000).toFixed(1)} s${r.bytes ? `, ${(r.bytes / 1e6).toFixed(2)} MB` : ""}.`);
+      }),
+  );
+
+  server.registerTool(
+    "anivo_image_add",
+    {
+      title: "Add an image",
+      description: "Add a PNG, JPEG, WebP, or SVG file from the scene folder as an image element. Returns the element ID and the asset ID for Anivo Script (image <id> asset=<asset-id>).",
+      inputSchema: {
+        scene: sceneArg,
+        file: z.string().describe("Image file path inside the scene folder."),
+        id: z.string().optional(),
+        x: z.number().default(100),
+        y: z.number().default(100),
+        width: z.number().positive().default(480).describe("Width in scene pixels. The height keeps the image ratio."),
+        fit: z.enum(["contain", "cover", "fill"]).default("contain"),
+      },
+    },
+    async (a) =>
+      run(() => {
+        const path = sceneFile(a.scene);
+        const scene = readSceneFile(path);
+        const file = inside(a.file);
+        const asset = importAsset(file, imageMime(file), 20 * 1024 * 1024);
+        const size = imageSize(assetCache.get(asset.id)!);
+        if (!size) throw new ToolError(`The file '${a.file}' is not a valid image.`, "Use a PNG, JPEG, WebP, or SVG file.");
+        const bus = new OperationBus(scene);
+        const r = bus.apply({
+          label: "Add image",
+          ops: [
+            ...(asset.id in scene.assets ? [] : [{ op: "asset.add" as const, asset }]),
+            { op: "element.add", ...(a.id ? { id: a.id } : {}), type: "image", props: { assetId: asset.id, fit: a.fit, x: a.x, y: a.y, width: a.width, height: Math.round((a.width * size.height) / size.width) } },
+          ],
+        });
+        if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
+        writeSceneFile(path, bus.scene);
+        return text(`Added image '${r.created[0]}' (asset ${asset.id}, ${size.width}×${size.height} px). In Anivo Script: image ${r.created[0]} asset=${asset.id}`);
       }),
   );
 

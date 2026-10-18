@@ -6,8 +6,8 @@ import { OperationBus } from "@anivo/ops";
 import { searchIcons } from "@anivo/render";
 import { type Scene, loadScene } from "@anivo/schema";
 import { applyScript, printScene } from "@anivo/script";
-import { ToolError, assetCache, audioMime, parseTranscript, transcribe, contactSheetPng, importAsset, probeDurationMs, jsonSchema, previewPng, readSceneFile, sceneSummary, stepTime, writeSceneFile } from "@anivo/tools";
-import { homePath, registerBundledAssets } from "@anivo/export-node";
+import { ToolError, assetCache, audioMime, imageMime, parseTranscript, transcribe, contactSheetPng, importAsset, probeDurationMs, jsonSchema, previewPng, readSceneFile, sceneSummary, stepTime, writeSceneFile } from "@anivo/tools";
+import { homePath, imageSize, registerBundledAssets } from "@anivo/export-node";
 import { Command, Option } from "commander";
 
 const program = new Command();
@@ -212,6 +212,38 @@ icons
     registerBundledAssets();
     const r = searchIcons(q, { ...(o.pack ? { pack: o.pack } : {}), limit: Number(o.limit) });
     print(r.map((x) => `${x.pack}:${x.name}`).join("\n") || "No icons match.", r);
+  });
+
+const image = program.command("image").description("Image elements");
+image
+  .command("add")
+  .description("Add a PNG, JPEG, WebP, or SVG file as an image element")
+  .argument("<scene>")
+  .argument("<file>")
+  .option("--id <id>", "Element ID")
+  .option("--at <x,y>", "Top-left corner in scene pixels", "100,100")
+  .option("--width <px>", "Width in scene pixels. The height keeps the image ratio", "480")
+  .addOption(new Option("--fit <fit>", "How the image fills its box").choices(["contain", "cover", "fill"]).default("contain"))
+  .action((f: string, file: string, o: { id?: string; at: string; width: string; fit: "contain" | "cover" | "fill" }) => {
+    const scene = readSceneFile(f);
+    const asset = importAsset(file, imageMime(file), 20 * 1024 * 1024);
+    const size = imageSize(assetCache.get(asset.id)!);
+    if (!size) throw new ToolError(`The file '${file}' is not a valid image.`, "Use a PNG, JPEG, WebP, or SVG file.");
+    const at = /^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/.exec(o.at);
+    if (!at) throw new ToolError(`The position '${o.at}' is not valid.`, "Write: --at 100,200");
+    const width = Number(o.width);
+    const bus = new OperationBus(scene);
+    const r = bus.apply({
+      label: "Add image",
+      ops: [
+        ...(asset.id in scene.assets ? [] : [{ op: "asset.add" as const, asset }]),
+        { op: "element.add", ...(o.id ? { id: o.id } : {}), type: "image", props: { assetId: asset.id, fit: o.fit, x: Number(at[1]), y: Number(at[2]), width, height: Math.round((width * size.height) / size.width) } },
+      ],
+    });
+    if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
+    writeSceneFile(f, bus.scene);
+    const id = r.created[0]!;
+    print(`Added image '${id}' (asset ${asset.id}, ${size.width}×${size.height} px). In Anivo Script: image ${id} asset=${asset.id}`, { id, assetId: asset.id, width: size.width, height: size.height });
   });
 
 const audio = program.command("audio").description("Audio tracks");

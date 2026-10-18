@@ -6,3 +6,4 @@ export * from "./render.js";
 export * from "./icons.js";
 export * from "./svgpath.js";
 export * from "./highlight.js";
+export * from "./images.js";

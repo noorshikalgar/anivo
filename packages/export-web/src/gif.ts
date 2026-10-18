@@ -6,6 +6,7 @@ import { type Ctx2D, type RenderOptions, renderScene } from "@anivo/render";
 import type { Scene } from "@anivo/schema";
 import { GIFEncoder, applyPalette, quantize } from "gifenc";
 import { WebExportError } from "./export.js";
+import { decodeSceneImages } from "./images.js";
 
 export interface GifExportOptions {
   width?: number;
@@ -13,6 +14,8 @@ export interface GifExportOptions {
   fps?: number;
   range?: { startMs: number; endMs: number };
   style?: RenderOptions["style"];
+  /** Asset bytes by asset ID, for image elements. */
+  assets?: Map<string, Uint8Array>;
   onProgress?: (done: number, total: number) => void;
   signal?: AbortSignal;
 }
@@ -36,6 +39,7 @@ export async function exportGifWeb(scene: Scene, opts: GifExportOptions = {}): P
   const endMs = opts.range?.endMs ?? total;
   if (endMs <= startMs) throw new WebExportError(`The time range ${startMs}–${endMs} ms is empty. Set an end time after the start time.`, "invalid-range");
   const frames = Math.ceil(((endMs - startMs) * fps) / 1000);
+  await decodeSceneImages(scene, opts.assets);
 
   const canvas = new OffscreenCanvas(width, height);
   const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
@@ -72,7 +76,8 @@ export async function exportGifWeb(scene: Scene, opts: GifExportOptions = {}): P
 }
 
 /** One PNG of the scene at a time. */
-export async function renderPngWeb(scene: Scene, timeMs: number, width: number, height: number, style?: RenderOptions["style"]): Promise<Blob> {
+export async function renderPngWeb(scene: Scene, timeMs: number, width: number, height: number, style?: RenderOptions["style"], assets?: Map<string, Uint8Array>): Promise<Blob> {
+  await decodeSceneImages(scene, assets);
   const canvas = new OffscreenCanvas(width, height);
   const ctx = canvas.getContext("2d")!;
   renderScene(ctx as unknown as Ctx2D, scene, timeMs, { width, height, ...(style ? { style } : {}) });

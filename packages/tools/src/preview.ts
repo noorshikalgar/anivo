@@ -1,10 +1,10 @@
 import { resolveTimeline } from "@anivo/engine";
-import { registerBundledAssets } from "@anivo/export-node";
+import { registerBundledAssets, registerSceneImages } from "@anivo/export-node";
 import { evaluateWithLayout, frameBox } from "@anivo/layout";
 import { type Ctx2D, renderFrame } from "@anivo/render";
 import type { Scene } from "@anivo/schema";
 import { type Canvas, createCanvas } from "@napi-rs/canvas";
-import { ToolError } from "./files.js";
+import { ToolError, assetCache } from "./files.js";
 
 export interface PreviewOptions {
   /** Step number (1-based) or step ID. Default: the last step. 0 is the base state. */
@@ -34,6 +34,7 @@ export function stepTime(scene: Scene, step: number | string | undefined, at: Pr
 
 /** Render one frame on a new canvas. The renderer sets its own transform, so each image has its own canvas. */
 function frameCanvas(scene: Scene, timeMs: number, width: number, height: number, debug: boolean): Canvas {
+  registerSceneImages(scene, assetCache);
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext("2d") as unknown as Ctx2D;
   const { frame, routes } = evaluateWithLayout(scene, timeMs);
