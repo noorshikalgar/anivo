@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { OperationBus } from "@anivo/ops";
-import { type Scene, loadScene } from "@anivo/schema";
+import { Action, type Scene, loadScene } from "@anivo/schema";
 import { describe, expect, it } from "vitest";
 import { assetId, packArchive, packJson, unpack } from "./assets.js";
 import { sceneFromArchive, sceneFromBytes, sceneFromJson, sceneToArchive, sceneToJson } from "./serialize.js";
@@ -61,6 +61,19 @@ describe("scene JSON", () => {
     expect(r.ok && r.scene.elements["empty"]).toMatchObject({ type: "text", content: { text: "" } });
   });
 
+  it("round-trips a motion action, a shape morph, and an action sound", () => {
+    const bus = new OperationBus(template);
+    const r = bus.apply({
+      ops: [
+        { op: "action.add", step: template.steps[0]!.id, action: { type: "motion", targets: ["user"], motion: { points: [{ x: 0, y: 0 }, { x: 10, y: 10 }], curve: true } } },
+        { op: "action.add", step: template.steps[0]!.id, action: { type: "morph", targets: ["lb"], to: { shape: "ellipse" }, sound: "pop" } },
+      ],
+    });
+    expect(r.ok).toBe(true);
+    const back = sceneFromJson(sceneToJson(bus.scene));
+    expect(back.ok && back.scene.steps[0]).toEqual(bus.scene.steps[0]);
+  });
+
   it("round-trips an image element with its asset", () => {
     const bus = new OperationBus(template);
     const r = bus.apply({
@@ -93,6 +106,11 @@ describe("scene JSON", () => {
               { type: "code", targets: ["snippet"], code: { op: "diff", newCode: "const a = 3;" } },
               { type: "wait", durationMs: 500 },
               { type: "emphasis", effect: "glow", targets: ["lb"], params: { color: "success" } },
+              { type: "motion", targets: ["lb"], motion: { points: [{ x: 0, y: 0 }, { x: 50, y: 50 }] } },
+              { type: "exit", effect: "fade", targets: ["pod-3"] },
+              { type: "enter", effect: "pop", targets: ["pod-3"], params: { scale: 0.5 } },
+              { type: "morph", targets: ["lb"], to: { fill: "#ff0000" } },
+              { type: "flow", targets: ["c-lb-1"], flow: { dots: 3 } },
             ],
           },
         },
@@ -101,6 +119,9 @@ describe("scene JSON", () => {
     expect(r.ok).toBe(true);
     const back = sceneFromJson(sceneToJson(bus.scene));
     expect(back.ok && back.scene).toEqual(bus.scene);
+    // A new action type must be added to this test.
+    const types = new Set(bus.scene.steps.flatMap((st) => st.actions.map((a) => a.type)));
+    for (const t of Action.options.map((o) => o.shape.type.value)) expect(types, `action type '${t}'`).toContain(t);
   });
 
   it("keeps audio, script, and asset bytes in the archive and in JSON", () => {
