@@ -491,13 +491,23 @@ program
   .option("--root <dir>", "Folder for scene files and exports. The server reads and writes only inside it", ".")
   .option("--attach", "Change the scene in a running editor, live, through the bridge")
   .option("--web", "With --attach: the web editor connects to a local WebSocket with a pairing code")
-  .option("--port <port>", "With --attach --web: the bridge port", String(47811))
+  .option("--port <port>", "The bridge port (--attach --web, default 47811) or the HTTP port (--http, default 8765)")
   .option("--origin <url...>", "With --attach --web: more web app origins that may connect")
-  .action(async (o: { root: string; attach?: boolean; web?: boolean; port: string; origin?: string[] }) => {
+  .option("--http", "Serve over Streamable HTTP instead of standard input and output. Each request needs the token")
+  .option("--host <host>", "With --http: the address to listen on. Use 0.0.0.0 only on a trusted network", "127.0.0.1")
+  .option("--token <token>", "With --http: the bearer token (default: ANIVO_TOKEN, or a new random token)")
+  .action(async (o: { root: string; attach?: boolean; web?: boolean; port?: string; origin?: string[]; http?: boolean; host: string; token?: string }) => {
+    if (o.http) {
+      const { startHttpServer } = await import("@anivo/mcp");
+      const token = o.token ?? process.env["ANIVO_TOKEN"];
+      const r = await startHttpServer({ root: o.root, port: Number(o.port ?? 8765), host: o.host, ...(token ? { token } : {}) });
+      process.stderr.write(`Anivo MCP server: ${r.url}\nToken: ${r.token}\nAgents send the header "Authorization: Bearer <token>". Press Ctrl+C to stop.\n`);
+      return;
+    }
     if (o.attach) {
       if (!o.web) throw new ToolError("Attach mode works with the web editor now.", "Use: anivo mcp --attach --web (the desktop app comes later).");
       const { runAttachServer } = await import("@anivo/mcp");
-      await runAttachServer({ root: o.root, port: Number(o.port), ...(o.origin ? { origins: [...(await import("@anivo/mcp")).allowedOrigins(), ...o.origin] } : {}) });
+      await runAttachServer({ root: o.root, port: Number(o.port ?? 47811), ...(o.origin ? { origins: [...(await import("@anivo/mcp")).allowedOrigins(), ...o.origin] } : {}) });
       return;
     }
     const { runStdioServer } = await import("@anivo/mcp");
@@ -506,16 +516,14 @@ program
 
 program
   .command("serve")
-  .description("Run the MCP server over Streamable HTTP, for agents that connect with HTTP. Each request needs the token")
-  .option("--root <dir>", "Folder for scene files and exports", ".")
-  .option("--port <port>", "Port", "8765")
-  .option("--host <host>", "Address to listen on. Use 0.0.0.0 only on a trusted network", "127.0.0.1")
-  .option("--token <token>", "Bearer token (default: ANIVO_TOKEN, or a new random token)")
-  .action(async (o: { root: string; port: string; host: string; token?: string }) => {
-    const { startHttpServer } = await import("@anivo/mcp");
-    const token = o.token ?? process.env["ANIVO_TOKEN"];
-    const r = await startHttpServer({ root: o.root, port: Number(o.port), host: o.host, ...(token ? { token } : {}) });
-    process.stderr.write(`Anivo MCP server: ${r.url}\nToken: ${r.token}\nAgents send the header "Authorization: Bearer <token>". Press Ctrl+C to stop.\n`);
+  .description("Serve the web app on this computer and open a scene in it")
+  .argument("[scene]", "Scene file to open")
+  .option("--port <port>", "Port", "5173")
+  .option("--host <host>", "Address to listen on", "127.0.0.1")
+  .action(async (scene: string | undefined, o: { port: string; host: string }) => {
+    const { serveWebApp } = await import("./serve.js");
+    const r = await serveWebApp({ port: Number(o.port), host: o.host, ...(scene ? { scene } : {}) });
+    process.stderr.write(`Anivo: ${r.url}\nOpen it in a browser. Press Ctrl+C to stop.\n`);
   });
 
 program

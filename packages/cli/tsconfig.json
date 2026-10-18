@@ -44,6 +44,9 @@
     },
     {
       "path": "../import"
+    },
+    {
+      "path": "../fileio"
     }
   ]
 }

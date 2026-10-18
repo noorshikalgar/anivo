@@ -1,7 +1,7 @@
 import { FluentProvider, Spinner, Text, Toast, ToastTitle, Toaster, makeStyles, tokens, useId, useToastController } from "@fluentui/react-components";
 import { useEffect, useState } from "react";
 import { loadAssets, loadTemplate } from "../assets.js";
-import { restoreAutosave, startAutosave } from "../files.js";
+import { openSceneFromQuery, restoreAutosave, startAutosave } from "../files.js";
 import { openShareFromUrl } from "../share.js";
 import { notify } from "../notify.js";
 import { useEditor } from "../store.js";
@@ -99,6 +99,8 @@ export function App() {
           useEditor.setState({ dirty: false });
         }
         if (cancelled) return;
+        // anivo serve: ?scene=/local/scene opens the scene from this server.
+        await openSceneFromQuery().catch((e: unknown) => notify(e instanceof Error ? e.message : String(e), "error"));
         // A share link (#share=…) opens the shared scene (FR-SHARE-01).
         await openShareFromUrl().catch((e: unknown) => notify(e instanceof Error ? e.message : String(e), "error"));
         setState("ready");

@@ -11,6 +11,7 @@
   "dependencies": {
     "@anivo/engine": "workspace:*",
     "@anivo/export-node": "workspace:*",
+    "@anivo/fileio": "workspace:*",
     "@anivo/import": "workspace:*",
     "@anivo/lint": "workspace:*",
     "@anivo/mcp": "workspace:*",

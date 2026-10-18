@@ -5,6 +5,7 @@
  *   dist/prompts/    the scene-agent guide
  * Run: pnpm build:cli. Then: node packages/cli/dist/anivo.mjs --help
  */
+import { execSync } from "node:child_process";
 import { cpSync, mkdirSync, rmSync } from "node:fs";
 import { build } from "esbuild";
 
@@ -36,6 +37,9 @@ cpSync("assets/fonts", `${out}/assets/fonts`, { recursive: true });
 cpSync("assets/icons", `${out}/assets/icons`, { recursive: true });
 cpSync("assets/templates", `${out}/assets/templates`, { recursive: true });
 cpSync("assets/player", `${out}/assets/player`, { recursive: true });
+// The web app, for 'anivo serve'.
+execSync("pnpm --filter @anivo/web build", { stdio: "ignore" });
+cpSync("apps/web/dist", `${out}/web`, { recursive: true });
 cpSync("assets/LICENSES.md", `${out}/assets/LICENSES.md`);
 mkdirSync(`${out}/prompts`, { recursive: true });
 cpSync("prompts/scene-agent.md", `${out}/prompts/scene-agent.md`);
