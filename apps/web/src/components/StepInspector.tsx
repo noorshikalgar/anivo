@@ -28,12 +28,12 @@ import {
   makeStyles,
   tokens,
 } from "@fluentui/react-components";
-import { Add20Regular, Delete20Regular } from "@fluentui/react-icons";
+import { Add20Regular, Delete20Regular, SplitVertical20Regular } from "@fluentui/react-icons";
 import { useEffect, useMemo, useState } from "react";
 import { searchIcons } from "@anivo/render";
 import { pickImageAsset } from "../images.js";
 import { withErrors } from "../notify.js";
-import { addAction, addMotionAlongArrow, removeAction, updateAction, updateStep } from "../commands.js";
+import { addAction, addMotionAlongArrow, canSplitAction, removeAction, splitAction, updateAction, updateStep } from "../commands.js";
 import { setCue, setStepLine } from "../audio.js";
 import { Comments } from "./Comments.js";
 import { useEditor } from "../store.js";
@@ -401,9 +401,20 @@ function ActionEditor({ step, action }: { step: Step; action: Action }) {
           />
         </>
       )}
-      <Button size="small" appearance="subtle" icon={<Delete20Regular />} onClick={() => removeAction(step.id, action.id)}>
-        Remove action
-      </Button>
+      <Row>
+        {canSplitAction(action) ? (
+          <Tooltip content="One action for each element, so that each element can have its own delay and duration" relationship="description">
+            <Button size="small" appearance="subtle" icon={<SplitVertical20Regular />} onClick={() => splitAction(step.id, action.id)}>
+              Split per element
+            </Button>
+          </Tooltip>
+        ) : (
+          <div />
+        )}
+        <Button size="small" appearance="subtle" icon={<Delete20Regular />} onClick={() => removeAction(step.id, action.id)}>
+          Remove action
+        </Button>
+      </Row>
     </div>
   );
 }
