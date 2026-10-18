@@ -70,6 +70,12 @@ export function App() {
   useEffect(() => startAutosave(), []);
   useEffect(() => startAudioSync(), []);
   useEffect(() => startImageSync(), []);
+  // WebMCP: the browser's agent can use the editor tools, if the browser supports it.
+  useEffect(() => {
+    let stop: (() => void) | null = null;
+    void import("../ai/webmcp.js").then((m) => (stop = m.startWebMcp()));
+    return () => stop?.();
+  }, []);
   const toasterId = useId("toaster");
   const { dispatchToast } = useToastController(toasterId);
   const notice = useEditor((s) => s.notice);
