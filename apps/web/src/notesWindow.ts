@@ -33,13 +33,16 @@ button { font: inherit; padding: 8px 16px; border-radius: 8px; border: 1px solid
 export function openNotesWindow(onNext: () => void, onPrev: () => void): NotesWindow | null {
   const w = window.open("", "anivo-notes", "popup,width=720,height=540");
   if (!w) return null;
+  // document.write makes the page in one step. The first empty page of a new window
+  // can otherwise replace content that is set too early.
   const d = w.document;
-  d.title = "Anivo speaker notes";
-  d.head.innerHTML = `<meta charset="utf-8"><style>${CSS}</style>`;
-  d.body.innerHTML = `<header><span id="step"></span><span id="timer">0:00</span></header>
+  d.open();
+  d.write(`<!doctype html><html><head><meta charset="utf-8"><title>Anivo speaker notes</title><style>${CSS}</style></head><body>
+    <header><span id="step"></span><span id="timer">0:00</span></header>
     <h1 id="title"></h1><div id="script"></div><div id="notes"></div><div id="next"></div>
-    <nav><button id="prev">← Back</button><button id="nextBtn">Next →</button></nav>`;
-  const $ = (id: string) => d.getElementById(id)!;
+    <nav><button id="prev">← Back</button><button id="nextBtn">Next →</button></nav></body></html>`);
+  d.close();
+  const $ = (id: string) => w.document.getElementById(id)!;
   $("prev").addEventListener("click", onPrev);
   $("nextBtn").addEventListener("click", onNext);
   d.addEventListener("keydown", (e) => {
