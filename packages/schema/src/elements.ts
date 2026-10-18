@@ -96,6 +96,31 @@ export const Image = z.object({
   fit: z.enum(["contain", "cover", "fill"]).default("contain").describe("contain: show all of the image. cover: fill the box and cut the edges. fill: stretch."),
 });
 
+/**
+ * A table of text cells (FR-CANVAS-15). The table draws the grid. Each cell is a
+ * text element with parentId = the table ID and the ID <tableId>-r<row>c<col>
+ * (from 1), so actions can target one cell.
+ */
+export const Table = z.object({
+  ...base,
+  type: z.literal("table"),
+  rows: z.number().int().min(1).max(50),
+  cols: z.number().int().min(1).max(20),
+  header: z.boolean().default(true).describe("Row 1 is a header row with a fill."),
+});
+
+/** ID of a table cell. Rows and columns start at 1. */
+export function tableCellId(tableId: string, row: number, col: number): string {
+  return `${tableId}-r${row}c${col}`;
+}
+
+/** Box of a table cell in scene pixels: the table box in equal rows and columns. */
+export function tableCellBox(t: { x: number; y: number; width: number; height: number; rows: number; cols: number }, row: number, col: number) {
+  const w = t.width / t.cols;
+  const h = t.height / t.rows;
+  return { x: t.x + (col - 1) * w, y: t.y + (row - 1) * h, width: w, height: h };
+}
+
 export const Side = z.enum(["top", "right", "bottom", "left", "auto"]);
 
 export const ConnectorEnd = z.discriminatedUnion("kind", [
@@ -129,6 +154,7 @@ export const Element = z.discriminatedUnion("type", [
   Connector,
   Code,
   Image,
+  Table,
 ]);
 export type Element = z.infer<typeof Element>;
 export type ElementInput = z.input<typeof Element>;
@@ -138,3 +164,4 @@ export type TextElement = z.infer<typeof Text>;
 export type IconElement = z.infer<typeof Icon>;
 export type CodeElement = z.infer<typeof Code>;
 export type ImageElement = z.infer<typeof Image>;
+export type TableElement = z.infer<typeof Table>;

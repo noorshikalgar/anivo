@@ -15,7 +15,7 @@ export interface CompileOptions {
   base?: Scene;
 }
 
-const ELEMENT_KINDS = new Set(["box", "ellipse", "diamond", "text", "icon", "caption", "row", "column", "grid", "group", "line", "code", "image"]);
+const ELEMENT_KINDS = new Set(["box", "ellipse", "diamond", "text", "icon", "caption", "row", "column", "grid", "group", "line", "code", "image", "table"]);
 const CONTAINERS = new Set(["row", "column", "grid", "group"]);
 const ENTER_EFFECTS = new Set(["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter"]);
 const EMPHASIS = new Set(["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus"]);
@@ -30,6 +30,19 @@ const DEFAULT_SIZE: Record<string, [number, number]> = {
   image: [320, 240],
 };
 
+/** IDs of the cells of the declared tables: <table>-r<row>c<col>. */
+function tableCells(decls: Map<string, ElemDecl>): string[] {
+  const out: string[] = [];
+  for (const d of decls.values()) {
+    if (d.kind !== "table" || !d.cells) continue;
+    const cols = Math.max(1, ...d.cells.map((r) => r.length));
+    d.cells.forEach((_, r) => {
+      for (let c = 1; c <= cols; c++) out.push(`${d.id}-r${r + 1}c${c}`);
+    });
+  }
+  return out;
+}
+
 interface ElemDecl {
   /** Position of the statement in the script, for the draw order. */
   order: number;
@@ -41,6 +54,8 @@ interface ElemDecl {
   flags: Set<string>;
   kv: Map<string, { v: string; quoted: boolean; pos: Pos }>;
   children: ElemDecl[];
+  /** Table rows of cell texts. */
+  cells?: string[][];
   // Layout results
   w: number;
   h: number;
@@ -172,6 +187,17 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
           if (a) arrows.push({ ...a, parentId: id });
         } else errors.push(err(c.pos, `A ${kind} can contain elements only.`, "Write elements such as: box pod-1 \"pod-1\""));
       }
+    } else if (kind === "table") {
+      // Each child line is one row of cells: "a" "b" "c".
+      decl.cells = [];
+      for (const c of line.children) {
+        if (c.tokens.length === 0 || c.tokens.some((t) => t.t !== "string")) {
+          errors.push(err(c.pos, "A table row must contain cell texts only.", 'Write each row as strings: "id" "name" "email"'));
+          continue;
+        }
+        decl.cells.push(c.tokens.map((t) => (t as { v: string }).v));
+      }
+      if (decl.cells.length === 0) errors.push(err(line.pos, "The table has no rows.", 'Write the rows under the table, one line each: "id" "name"'));
     } else if (line.children.length > 0) {
       errors.push(err(line.children[0]!.pos, `A ${kind} cannot have child lines.`, "Remove the indent, or use row, column, grid, or group."));
     }
@@ -263,6 +289,12 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
       // A caption can change its text with a morph, so it takes the camera width.
       w = Math.min(1600, camera.width - 240);
       h = Math.round(fontSize * 1.6 * Math.max(1, text.split("\n").length));
+    } else if (d.kind === "table") {
+      const rows = d.cells?.length ?? 1;
+      const cols = Math.max(1, ...(d.cells ?? [[""]]).map((r) => r.length));
+      const longestCell = Math.max(4, ...(d.cells ?? []).flat().map((c) => c.length));
+      w = Math.min(1700, cols * Math.max(160, Math.round(longestCell * 24 * 0.56 + 40)));
+      h = rows * 64;
     } else if (d.kind === "code") {
       const lines = text.split("\n");
       const fs = num(d.kv.get("font-size")?.v ?? "") ?? 24;
@@ -474,6 +506,9 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
       const lang = d.kv.get("lang")?.v;
       if (lang) props["language"] = lang;
       if (d.flags.has("no-numbers")) props["lineNumbers"] = false;
+    } else if (d.kind === "table") {
+      props["cells"] = d.cells ?? [];
+      if (d.flags.has("no-header")) props["header"] = false;
     } else if (d.kind === "image") {
       const asset = d.kv.get("asset");
       if (!asset) errors.push(err(d.pos, "The image has no asset.", "Write: image logo asset=0123456789abcdef. 'anivo image add' gives the asset ID."));
@@ -492,7 +527,7 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
 
   // Connectors
   const connectorIds = new Map<string, string>();
-  const allIds = () => new Set([...existing, ...allDecls.keys()]);
+  const allIds = () => new Set([...existing, ...allDecls.keys(), ...tableCells(allDecls)]);
   for (const a of arrows) {
     const ids = allIds();
     const checkEnd = (e: End, pos: Pos) => {
@@ -544,7 +579,7 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
   ops.push(...settingsOps, ...ordered.map((o) => o.op));
 
   // --- pass 4: steps ------------------------------------------------------------------------
-  const declOrder = [...existing, ...allDecls.keys()];
+  const declOrder = [...existing, ...allDecls.keys(), ...tableCells(allDecls)];
   const resolveTargets = (t: Token[], pos: Pos): string[] => {
     const out: string[] = [];
     for (const tok of t) {

@@ -197,10 +197,12 @@ export function routeMiddle(route: Polyline): Point {
 export function leafDescendants(scene: Scene, id: string): string[] {
   const el = scene.elements[id];
   if (!el) return [];
-  if (el.type !== "group") return [id];
-  return Object.values(scene.elements)
+  if (el.type !== "group" && el.type !== "table") return [id];
+  const kids = Object.values(scene.elements)
     .filter((e) => e.parentId === id)
     .flatMap((e) => leafDescendants(scene, e.id));
+  // A table moves and resizes with its cells.
+  return el.type === "table" ? [id, ...kids] : kids;
 }
 
 /** The top-most group that contains the element, or the element itself. */

@@ -91,6 +91,18 @@ export function addElement(type: string, props: Record<string, unknown>, label =
   return id;
 }
 
+/** Add a table of 3 rows and 3 columns at the center of the view (FR-CANVAS-15). Double-click a cell to edit it. */
+export function insertTable(rows = 3, cols = 3): string | undefined {
+  const st = useEditor.getState();
+  const width = cols * 200;
+  const height = rows * 64;
+  const cx = st.view.x + st.viewport.width / st.view.zoom / 2;
+  const cy = st.view.y + st.viewport.height / st.view.zoom / 2;
+  const cells = Array.from({ length: rows }, (_, r) => Array.from({ length: cols }, (_, c) => (r === 0 ? `Column ${c + 1}` : "")));
+  st.setTool("select");
+  return addElement("table", { x: Math.round(cx - width / 2), y: Math.round(cy - height / 2), width, height, rows, cols, cells }, "Insert table");
+}
+
 /** Change the label of a shape, or the content of a text element. Empty text removes the label. */
 export function setElementText(id: string, text: string): void {
   const st = useEditor.getState();

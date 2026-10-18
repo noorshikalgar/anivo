@@ -1,4 +1,4 @@
-import type { Action, ConnectorElement, Element, Scene } from "@anivo/schema";
+import { type Action, type ConnectorElement, type Element, type Scene, tableCellId } from "@anivo/schema";
 
 /**
  * Print a scene as Anivo Script (docs/09). `compile(print(scene))` gives the
@@ -26,6 +26,22 @@ export function printScene(scene: Scene): string {
     if (el.type === "group") {
       out.push(`${indent}group ${el.id}`);
       for (const c of childrenOf(el.id)) printElement(c, `${indent}  `);
+      return;
+    }
+    if (el.type === "table") {
+      const parts = ["table", el.id];
+      if (!el.header) parts.push("no-header");
+      parts.push(`at=${n(el.x)},${n(el.y)}`, `size=${n(el.width)}x${n(el.height)}`, ...styleParts(el));
+      out.push(indent + parts.join(" "));
+      for (let r = 1; r <= el.rows; r++) {
+        const row: string[] = [];
+        for (let c = 1; c <= el.cols; c++) {
+          const cell = scene.elements[tableCellId(el.id, r, c)];
+          if (cell) printed.add(cell.id);
+          row.push(q(cell?.type === "text" ? cell.content.text : ""));
+        }
+        out.push(`${indent}  ${row.join(" ")}`);
+      }
       return;
     }
     const parts: string[] = [];

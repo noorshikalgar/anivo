@@ -11,5 +11,8 @@
     "@anivo/layout": "workspace:*",
     "@anivo/ops": "workspace:*",
     "@anivo/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@anivo/engine": "workspace:*"
   }
 }

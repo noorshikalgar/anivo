@@ -1,5 +1,5 @@
 import { type Caption, type ElementFrame, type FrameState, type Particle, captionAt } from "@anivo/engine";
-import { type Polyline, evaluateWithLayout, frameBox, pointAt, slice } from "@anivo/layout";
+import { type Polyline, evaluateWithLayout, frameBox, pointAt, polyline, slice } from "@anivo/layout";
 import type { ConnectorElement, Element, Point, Scene, SceneStyle } from "@anivo/schema";
 import { type Rgba, toCss, withAlpha } from "./color.js";
 import type { Ctx2D } from "./ctx.js";
@@ -319,6 +319,55 @@ function drawImage(dc: DrawContext, f: ElementFrame, el: Extract<Element, { type
   }
 }
 
+/** The grid of a table: header fill, outer border, and row and column lines. The cells draw as text elements. */
+function drawTable(dc: DrawContext, f: ElementFrame, el: Extract<Element, { type: "table" }>): void {
+  const { ctx, theme } = dc;
+  const b = localBox(f);
+  const radius = f.cornerRadius ?? el.style.cornerRadius ?? 8;
+  const strokeWidth = f.strokeWidth ?? el.style.strokeWidth ?? 2;
+  const stroke = resolveColor(theme, f.stroke ?? "line", "stroke", "rectangle");
+  const fill = resolveColor(theme, f.fill ?? "surface", "fill", "rectangle");
+  const headerFill = resolveColor(theme, "surface-strong", "fill", "rectangle");
+  const outline = cleanOutline("rectangle", b, radius);
+  const rowH = b.height / el.rows;
+  const colW = b.width / el.cols;
+
+  if (f.fillProgress > 0) {
+    if (fill.a > 0) {
+      ctx.fillStyle = toCss(withAlpha(fill, f.fillProgress));
+      fillPolyline(ctx, outline.points);
+    }
+    if (el.header) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(outline.points[0]!.x, outline.points[0]!.y);
+      for (let i = 1; i < outline.points.length; i++) ctx.lineTo(outline.points[i]!.x, outline.points[i]!.y);
+      ctx.closePath();
+      ctx.clip();
+      ctx.fillStyle = toCss(withAlpha(headerFill, f.fillProgress));
+      ctx.fillRect(b.x, b.y, b.width, rowH);
+      ctx.restore();
+    }
+  }
+  if (f.highlight > 0) {
+    const hc = resolveToken(theme, f.highlightColor ?? "warning-soft", "fill", "rectangle");
+    ctx.fillStyle = toCss(withAlpha(hc, f.highlight));
+    fillPolyline(ctx, outline.points);
+  }
+  if (stroke.a > 0 && strokeWidth > 0 && f.strokeProgress > 0) {
+    ctx.strokeStyle = toCss(stroke);
+    ctx.lineWidth = strokeWidth;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.setLineDash([]);
+    // Draw-on: the border first, then the inner lines.
+    const lines: Polyline[] = [outline];
+    for (let r = 1; r < el.rows; r++) lines.push(polyline([{ x: b.x, y: b.y + r * rowH }, { x: b.x + b.width, y: b.y + r * rowH }]));
+    for (let c = 1; c < el.cols; c++) lines.push(polyline([{ x: b.x + c * colW, y: b.y }, { x: b.x + c * colW, y: b.y + b.height }]));
+    strokeProgressive(ctx, lines, lines.reduce((sum, l) => sum + l.length, 0), f.strokeProgress);
+  }
+}
+
 function drawCode(dc: DrawContext, f: ElementFrame, el: Extract<Element, { type: "code" }>): void {
   const { ctx, theme } = dc;
   const b = localBox(f);
@@ -588,6 +637,7 @@ export function renderFrame(ctx: Ctx2D, scene: Scene, frame: FrameState, routes:
       else if (el.type === "icon") drawIcon(dc, f, el);
       else if (el.type === "code") drawCode(dc, f, el);
       else if (el.type === "image") drawImage(dc, f, el);
+      else if (el.type === "table") drawTable(dc, f, el);
       else if (el.type === "text") drawStandaloneText(dc, f, el);
     }
     ctx.restore();

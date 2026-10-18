@@ -9,9 +9,11 @@ import {
   Icons20Regular,
   Image20Regular,
   RectangleLandscape20Regular,
+  Table20Regular,
   TextT20Regular,
 } from "@fluentui/react-icons";
 import type { ReactElement } from "react";
+import { insertTable } from "../commands.js";
 import { pickImage } from "../images.js";
 import { withErrors } from "../notify.js";
 import { type Tool, useEditor } from "../store.js";
@@ -56,6 +58,9 @@ export function ToolPalette() {
         ))}
       </ToolbarRadioGroup>
       <ToolbarDivider />
+      <Tooltip content="Insert table" relationship="label" positioning="below">
+        <ToolbarButton icon={<Table20Regular />} appearance="subtle" aria-label="Insert table" onClick={() => insertTable()} />
+      </Tooltip>
       <Tooltip content="Insert image" relationship="label" positioning="below">
         <ToolbarButton icon={<Image20Regular />} appearance="subtle" aria-label="Insert image" onClick={() => void withErrors(pickImage)} />
       </Tooltip>

@@ -79,6 +79,8 @@ row|column|grid <id> [spacing=<px>] [placement]
 arrow <from> -> <to>[, <to>…] ["label"] [straight|elbow|curved] [dashed] [both] [no-head] [id=<id>]
 arrow 340,300 -> 340,980   (free ends are x,y points)
 caption <id> "<sentence>" [top|bottom]
+table <id> [no-header] [at=x,y] [size=WxH]   (cells: <id>-r<row>c<col>, for example highlight users-r2c3)
+  "<cell>" "<cell>" …   (one line for each row)
 image <id> asset=<asset-id> [fit=contain|cover|fill] [at=x,y] [size=WxH]   (add the file first: anivo image add, or anivo_image_add)
 layout <id>, <id>, … row|column|grid|layered|tree [gap=<px>] [cols=<n>]   (automatic placement; arrows give the order)
 
