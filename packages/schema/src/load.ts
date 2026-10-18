@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { Element } from "./elements.js";
 import { type RawScene, migrate } from "./migrate.js";
 import { SCHEMA_VERSION, type Scene, SceneFile } from "./scene.js";

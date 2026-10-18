@@ -19,6 +19,7 @@ import {
   tokens,
 } from "@fluentui/react-components";
 import { zipSync } from "fflate";
+import { exportHtml } from "../html.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { notify } from "../notify.js";
 import { useEditor } from "../store.js";
@@ -31,7 +32,7 @@ const useStyles = makeStyles({
   muted: { color: tokens.colorNeutralForeground3 },
 });
 
-type Format = "mp4" | "webm" | "gif" | "png" | "png-steps";
+type Format = "mp4" | "webm" | "gif" | "png" | "png-steps" | "html";
 
 const FORMATS: { value: Format; text: string; note: string }[] = [
   { value: "mp4", text: "MP4 video", note: "H.264. Works in all video editors." },
@@ -39,6 +40,7 @@ const FORMATS: { value: Format; text: string; note: string }[] = [
   { value: "gif", text: "GIF", note: "For a README or docs. Large for long videos." },
   { value: "png", text: "PNG image", note: "The frame at the playhead." },
   { value: "png-steps", text: "PNG of each step", note: "End state of each step, in one ZIP file." },
+  { value: "html", text: "HTML player", note: "One HTML file that plays the scene in a browser, with no network. Small, and the text stays sharp." },
 ];
 
 const even = (n: number) => Math.max(2, Math.round(n / 2) * 2);
@@ -124,6 +126,10 @@ export function ExportDialog() {
       } else if (format === "gif") {
         const r = await exportGifWeb(scene, { assets: useEditor.getState().assets, width: Number(gifWidth), height: gifH, fps: Number(gifFps), range, onProgress, signal: ac.signal });
         download(r.data as BlobPart, `${name}.gif`, "image/gif");
+      } else if (format === "html") {
+        const st = useEditor.getState();
+        const html = await exportHtml(scene, st.assets, captions === "bottom" || captions === "top" ? captions : undefined);
+        download(html, `${name}.html`, "text/html");
       } else if (format === "png") {
         const st = useEditor.getState();
         const t = !st.playing && st.selectedStep === null && st.playhead === 0 ? -1 : st.playhead;
@@ -151,7 +157,7 @@ export function ExportDialog() {
   }
 
   const hasCaptions = scene.script.some((l) => l.stepId && l.text.trim());
-  const needsSteps = format !== "png";
+  const needsSteps = format !== "png" && format !== "html";
   const noSteps = scene.steps.length === 0 && needsSteps;
   const unsupported = (format === "mp4" || format === "webm") && !supported.includes(format);
 
@@ -204,7 +210,7 @@ export function ExportDialog() {
                 onCommit={setQuality}
               />
             )}
-            {(format === "mp4" || format === "webm") && (
+            {(format === "mp4" || format === "webm" || format === "html") && (
               <SelectField
                 label="Captions"
                 value={captions}
@@ -218,7 +224,7 @@ export function ExportDialog() {
                 onCommit={setCaptions}
               />
             )}
-            {captions !== "none" && (format === "mp4" || format === "webm") && !hasCaptions && (
+            {captions !== "none" && (format === "mp4" || format === "webm" || format === "html") && !hasCaptions && (
               <MessageBar intent="info">
                 <MessageBarBody>The scene has no captions. Add a script and link each line to a step.</MessageBarBody>
               </MessageBar>

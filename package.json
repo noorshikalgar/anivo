@@ -9,17 +9,18 @@
   "scripts": {
     "typecheck": "tsc -b && tsc -p tsconfig.tests.json && tsc -p apps/spike/tsconfig.json && tsc -p apps/web/tsconfig.json",
     "lint": "eslint .",
-    "test": "vitest run",
+    "test": "tsx scripts/build-player.ts && vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "render:template": "tsx scripts/render-template.ts",
     "build:icons": "tsx scripts/build-icon-packs.ts",
-    "dev": "pnpm --filter @anivo/web dev",
+    "dev": "pnpm build:player && pnpm --filter @anivo/web dev",
     "build:templates": "tsx scripts/build-templates.ts",
     "bench": "tsx scripts/bench.ts",
     "anivo": "node packages/cli/bin/anivo.js",
-    "build:cli": "tsx scripts/build-cli.ts",
-    "eval": "tsx evals/run.ts"
+    "build:cli": "tsx scripts/build-player.ts && tsx scripts/build-cli.ts",
+    "eval": "tsx evals/run.ts",
+    "build:player": "tsx scripts/build-player.ts"
   },
   "devDependencies": {
     "@anivo/export-node": "workspace:*",

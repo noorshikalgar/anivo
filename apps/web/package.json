@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --port 5173 --strictPort",
-    "build": "vite build",
+    "dev": "tsx ../../scripts/build-player.ts && vite --port 5173 --strictPort",
+    "build": "tsx ../../scripts/build-player.ts && vite build",
     "preview": "vite preview --port 5173 --strictPort"
   },
   "dependencies": {
@@ -14,6 +14,7 @@
     "@anivo/fileio": "workspace:*",
     "@anivo/layout": "workspace:*",
     "@anivo/ops": "workspace:*",
+    "@anivo/player": "workspace:*",
     "@anivo/render": "workspace:*",
     "@anivo/schema": "workspace:*",
     "@fluentui/react-components": "9.74.9",
@@ -28,6 +29,8 @@
   "devDependencies": {
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
-    "@vitejs/plugin-react": "6.1.2"
+    "@vitejs/plugin-react": "6.1.2",
+    "esbuild": "0.28.2",
+    "tsx": "4.23.15"
   }
 }

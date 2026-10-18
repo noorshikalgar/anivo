@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { resolveTimeline, sceneCaptions, toSrt, toVtt } from "@anivo/engine";
-import { exportVideo, homePath, imageSize, registerBundledAssets } from "@anivo/export-node";
+import { exportHtml, exportVideo, homePath, imageSize, registerBundledAssets } from "@anivo/export-node";
 import { formatLint, lintScene, lintSummary } from "@anivo/lint";
 import { OperationBus } from "@anivo/ops";
 import { searchIcons } from "@anivo/render";
@@ -248,7 +248,7 @@ export function createAnivoServer(opts: ServerOptions): McpServer {
       inputSchema: {
         scene: sceneArg,
         out: z.string().describe("Output path, for example 'out/auth.mp4'."),
-        format: z.enum(["mp4", "webm", "gif", "png-seq"]).optional(),
+        format: z.enum(["mp4", "webm", "gif", "png-seq", "html"]).optional().describe("html: one HTML file that plays the scene in a browser."),
         size: z.string().regex(/^\d+x\d+$/).optional().describe("For example 1280x720."),
         fps: z.union([z.literal(24), z.literal(30), z.literal(60)]).optional(),
         steps: z.string().regex(/^\d+(-\d+)?$/).optional().describe("Step range, for example 2-4."),
@@ -261,7 +261,11 @@ export function createAnivoServer(opts: ServerOptions): McpServer {
         const scene = readSceneFile(sceneFile(a.scene));
         const out = inside(a.out);
         if (existsSync(out) && !a.overwrite) throw new ToolError(`The file '${a.out}' exists already.`, "Use another path, or set overwrite to true.");
-        const format = a.format ?? (out.endsWith(".webm") ? "webm" : out.endsWith(".gif") ? "gif" : out.endsWith(".mp4") ? "mp4" : "png-seq");
+        const format = a.format ?? (out.endsWith(".webm") ? "webm" : out.endsWith(".gif") ? "gif" : out.endsWith(".mp4") ? "mp4" : out.endsWith(".html") ? "html" : "png-seq");
+        if (format === "html") {
+          const bytes = exportHtml(scene, out, { assets: assetCache, ...(a.captions ? { captions: a.captions } : {}) });
+          return text(`Exported ${relative(root, out)}: ${(bytes / 1e6).toFixed(2)} MB HTML player.`);
+        }
         let range: { startMs: number; endMs: number } | undefined;
         if (a.steps) {
           const tl = resolveTimeline(scene);

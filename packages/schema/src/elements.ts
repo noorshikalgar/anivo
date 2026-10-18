@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { Color, ElementId, Point } from "./primitives.js";
 
 export const StrokeStyle = z.enum(["solid", "dashed", "dotted"]);

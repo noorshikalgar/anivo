@@ -26,6 +26,9 @@
     },
     {
       "path": "../render"
+    },
+    {
+      "path": "../player"
     }
   ]
 }

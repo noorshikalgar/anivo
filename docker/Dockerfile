@@ -10,6 +10,7 @@ COPY packages ./packages
 COPY apps/web ./apps/web
 COPY apps/spike/package.json ./apps/spike/package.json
 COPY assets ./assets
+COPY scripts/build-player.ts ./scripts/build-player.ts
 RUN pnpm install --frozen-lockfile --filter @anivo/web... \
  && pnpm --filter @anivo/web build
 

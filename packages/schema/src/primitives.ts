@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /** Readable element ID, for example `lb` or `pod-1`. Agents use these IDs. */
 export const ElementId = z
