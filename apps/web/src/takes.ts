@@ -8,8 +8,9 @@
  * step, silence fills the rest, so the next step never starts too early.
  */
 import { wavBytes } from "@anivo/engine";
-import { planTake, spliceTake, trimTake } from "@anivo/ops";
+import { OperationBus, planFit, planTake, speechIntervals, spliceTake, trimTake, voiceParts } from "@anivo/ops";
 import { AudioError, addAudio, decode } from "./audio.js";
+import { notify } from "./notify.js";
 import { useEditor } from "./store.js";
 
 export interface TakesState {
@@ -206,4 +207,38 @@ function stopPreview(): void {
     st.pause();
     setTakes({ phase: "ready" });
   }
+}
+
+/**
+ * Make the animation of the selected step faster, so that it ends with the
+ * speech of its take. The silence after the take goes away. One undo step.
+ */
+export async function fitAnimationToVoice(): Promise<void> {
+  const st = useEditor.getState();
+  const t = st.takes;
+  if (!t || t.phase !== "ready") return;
+  const scene = st.scene;
+  const step = scene.steps[t.stepIndex]!;
+  const part = voiceParts(scene).find((p) => p.stepId === step.id);
+  const vo = scene.audio.find((a) => a.kind === "voiceover");
+  if (!part || !vo) throw new AudioError("This step has no voice. Record a take first.");
+  const buffer = await decode(vo.assetId);
+  if (!buffer) throw new AudioError("The voiceover audio is missing. Import the voiceover again.");
+  const old = mono(buffer);
+  const at = (ms: number) => Math.max(0, Math.round(((ms - vo.startMs + vo.trimStartMs) / 1000) * RATE));
+  const samplesOfPart = old.slice(at(part.fromMs), at(part.toMs));
+  const speech = speechIntervals(samplesOfPart, RATE);
+  const voiceMs = speech.length ? Math.min(part.toMs - part.fromMs, Math.round(speech.at(-1)!.toMs + PAD_MS)) : part.toMs - part.fromMs;
+  const fit = planFit(scene, step.id, voiceMs);
+  if (fit.ops.length === 0) {
+    notify("The animation of this step is not longer than its voice.", "info");
+    return;
+  }
+  const bus = new OperationBus(scene);
+  const r = bus.apply({ ops: fit.ops });
+  if (!r.ok) throw new AudioError(r.error.message);
+  const take = samplesOfPart.slice(0, Math.round((voiceMs / 1000) * RATE));
+  const plan = planTake(bus.scene, step.id, voiceMs);
+  await addAudio(wavBytes(spliceTake(old, take, RATE, plan), RATE), "voiceover-takes.wav", "audio/wav", "voiceover", () => [...fit.ops, ...plan.ops]);
+  goToTake(t.stepIndex);
 }

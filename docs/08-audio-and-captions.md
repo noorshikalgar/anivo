@@ -105,5 +105,6 @@ Rules:
 - The part of a step is never shorter than its animation and hold (and, before a later cue, also the steps with no cue between them). When the take is shorter, silence fills the rest. So the next step never starts before the animation ends, and the voice never runs ahead of the animation.
 - When the voice is longer than the animation, the step holds its end state until the next step starts at its cue.
 - A take of a step after the end of the voice starts where the step starts; silence fills the gap.
+- **Fit animation to voice** (in the bar, when the animation is longer than the take): the animation and the hold of the step get faster by one factor (at most 4 times), so the step ends with the speech. The silence after the take goes away. CLI: `anivo audio fit <scene> <step>`.
 
 Agents and scripts: `anivo audio take <scene> <step> <file>` does the same with an audio file (FFmpeg decodes it). `--keep-silence` keeps the silence around the speech. The functions `planTake`, `trimTake`, and `spliceTake` are in `@anivo/ops`.

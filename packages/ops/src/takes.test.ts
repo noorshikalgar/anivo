@@ -3,7 +3,7 @@ import { resolveTimeline } from "@anivo/engine";
 import { type Scene, loadScene } from "@anivo/schema";
 import { describe, expect, it } from "vitest";
 import { OperationBus } from "./bus.js";
-import { planTake, spliceTake, trimTake, voiceParts } from "./takes.js";
+import { planFit, planTake, spliceTake, trimTake, voiceParts } from "./takes.js";
 
 const fixture = (): Scene => {
   const r = loadScene(JSON.parse(readFileSync(new URL("../../schema/fixtures/v1-load-balancer.json", import.meta.url), "utf8")));
@@ -85,5 +85,21 @@ describe("spliceTake and trimTake", () => {
     expect(out.length / r).toBeGreaterThan(1.3);
     expect(out.length / r).toBeLessThan(1.7);
     expect(() => trimTake(new Float32Array(r), r)).toThrow(/no speech/);
+  });
+});
+
+describe("planFit", () => {
+  it("makes the animation and the hold end with the voice", () => {
+    const s = fixture();
+    const id = s.steps[0]!.id;
+    const t = resolveTimeline(s).steps[0]!;
+    const voice = Math.round((t.holdEndMs - t.startMs) / 2);
+    const { factor, ops } = planFit(s, id, voice);
+    expect(factor).toBeCloseTo(0.5, 2);
+    const bus = new OperationBus(s);
+    expect(bus.apply({ ops }).ok).toBe(true);
+    const t2 = resolveTimeline(bus.scene).steps[0]!;
+    expect(Math.abs(t2.holdEndMs - t2.startMs - voice)).toBeLessThan(20);
+    expect(planFit(s, id, 60_000).ops).toEqual([]);
   });
 });
