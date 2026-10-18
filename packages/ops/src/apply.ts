@@ -1,3 +1,4 @@
+import { alignScript } from "./align.js";
 import { Action, AssetRef, AudioTrack, type ConnectorElement, Element, ElementId, type Scene, SceneSettings, ScriptLine, Step } from "@anivo/schema";
 import type { z } from "zod";
 import type { Operation } from "./operations.js";
@@ -402,6 +403,39 @@ export class Draft {
         });
         this.before.script ??= this.script;
         this.script = lines;
+        return;
+      }
+      case "script.align": {
+        const vi = this.audio.findIndex((t) => t.kind === "voiceover");
+        if (vi < 0) fail({ code: "invalid-audio", message: "The scene has no voiceover track.", path, hint: "Add a voiceover with audio.add first." });
+        let vo = this.audio[vi]!;
+        if (op.words) {
+          this.before.audio ??= this.audio;
+          vo = { ...vo, transcript: { words: op.words } };
+          this.audio = this.audio.map((t, j) => (j === vi ? vo : t));
+        }
+        const words = vo.transcript?.words ?? [];
+        if (words.length === 0) fail({ code: "invalid-audio", message: "The voiceover has no transcript.", path, hint: "Give the transcript words in 'words'." });
+        if (this.script.length === 0) fail({ code: "invalid-op", message: "The scene has no script.", path, hint: "Set the script with script.set first." });
+        const result = alignScript(this.script.map((l) => l.text), words);
+        this.before.script ??= this.script;
+        this.script = this.script.map((l, k) => {
+          const next: ScriptLine = { ...l };
+          if (result[k]!.unmatched) next.unmatched = true;
+          else delete next.unmatched;
+          return next;
+        });
+        // Source time to video time.
+        const offset = vo.startMs - vo.trimStartMs;
+        const cue = new Map<string, number>();
+        this.script.forEach((l, k) => {
+          const a = result[k]!;
+          if (l.stepId && a.startMs !== null) cue.set(l.stepId, Math.max(0, Math.round(a.startMs + offset)));
+        });
+        if (cue.size > 0) {
+          this.touchSteps();
+          this.steps = this.steps.map((st) => (cue.has(st.id) ? { ...st, trigger: { kind: "cue", audioId: vo.id, atMs: cue.get(st.id)! } } : st));
+        }
         return;
       }
       case "scene.meta": {

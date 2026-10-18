@@ -63,6 +63,13 @@ describe("lintScene", () => {
     expect(lintScene(s2).some((r) => r.code === "action-conflict")).toBe(true);
   });
 
+  it("reports each empty step, and unmatched script lines", () => {
+    const s = script(`box a "A" at=100,100\nstep "One"\nstep "Two"\nstep "S"\n  enter a fade\n`);
+    expect(lintScene(s).filter((r) => r.code === "step-empty")).toHaveLength(2);
+    const withScript = { ...s, script: [{ id: "l1", text: "x", unmatched: true }, { id: "l2", text: "y" }, { id: "l3", text: "z", unmatched: true }] };
+    expect(lintScene(withScript).find((r) => r.code === "script-unmatched")?.message).toMatch(/lines 1, 3 /);
+  });
+
   it("finds an arrow that is visible while its element is not", () => {
     const s = script(`box a "A" at=100,100\nbox b "B" at=600,100\narrow a -> b\nstep "S"\n  enter a fade\n  enter a->b draw-on\nstep "T"\n  enter b pop\n`);
     expect(codes(s)).toContain("dangling-connector");
