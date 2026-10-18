@@ -158,7 +158,7 @@ See [09 — Agent interface](09-agent-interface.md).
 |---|---|---|---|
 | FR-SHARE-01 | Share link with end-to-end encryption | P1 | The key is in the URL fragment. The server stores only encrypted data. Needs the optional server. |
 | FR-SHARE-02 | Real-time collaboration | P2 | Yjs. Cursors for each person and each agent. |
-| FR-SHARE-03 | Comments on elements and steps | P2 | |
+| FR-SHARE-03 | Comments on elements and steps | P2 | Done: `comments` in the scene file; `comment.add`, `comment.update`, `comment.remove` operations; answers, resolve; a badge on the canvas; agents see open comments in the scene summary. |
 
 ## 10. Editor quality (`FR-UX`)
 

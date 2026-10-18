@@ -68,6 +68,7 @@ export function loadScene(input: unknown): LoadResult {
     audio: raw.audio,
     script: raw.script,
     assets: raw.assets,
+    comments: raw.comments,
   };
 
   const refIssues = checkReferences(scene);

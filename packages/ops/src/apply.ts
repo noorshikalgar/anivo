@@ -1,5 +1,5 @@
 import { alignScript } from "./align.js";
-import { Action, AssetRef, AudioTrack, type ConnectorElement, Element, ElementId, type Scene, SceneSettings, ScriptLine, Step, tableCellBox, tableCellId } from "@anivo/schema";
+import { Action, AssetRef, AudioTrack, Comment, type ConnectorElement, Element, ElementId, type Scene, SceneSettings, ScriptLine, Step, tableCellBox, tableCellId } from "@anivo/schema";
 import type { z } from "zod";
 import type { Operation } from "./operations.js";
 import { autoLayout } from "@anivo/layout";
@@ -44,6 +44,7 @@ export interface Snapshot {
   audio?: Scene["audio"];
   script?: Scene["script"];
   assets?: Scene["assets"];
+  comments?: Scene["comments"];
 }
 
 function zodMessage(err: z.ZodError): string {
@@ -78,6 +79,7 @@ export class Draft {
   audio: Scene["audio"];
   script: Scene["script"];
   assets: Scene["assets"];
+  comments: Scene["comments"];
   readonly before: Snapshot = { elements: new Map() };
   readonly created: string[] = [];
   private stepsCopied = false;
@@ -90,10 +92,11 @@ export class Draft {
     this.audio = base.audio;
     this.script = base.script;
     this.assets = base.assets;
+    this.comments = base.comments;
   }
 
   finish(): Scene {
-    return { ...this.base, meta: this.meta, settings: this.settings, elements: this.elements, steps: this.steps, audio: this.audio, script: this.script, assets: this.assets };
+    return { ...this.base, meta: this.meta, settings: this.settings, elements: this.elements, steps: this.steps, audio: this.audio, script: this.script, assets: this.assets, comments: this.comments };
   }
 
   /** IDs of entities that this draft changed. */
@@ -308,6 +311,7 @@ export class Draft {
         const i = this.stepIndex(op.id, `${path}.id`);
         this.touchSteps();
         this.steps.splice(i, 1);
+        this.dropComments("step", op.id);
         return;
       }
       case "step.move": {
@@ -457,6 +461,37 @@ export class Draft {
         }
         return;
       }
+      case "comment.add": {
+        const kindOk = op.target.kind === "element" ? !!this.elements[op.target.id] : this.steps.some((st) => st.id === op.target.id);
+        if (!kindOk) fail({ code: "invalid-op", message: `The ${op.target.kind} '${op.target.id}' does not exist.`, path: `${path}.target` });
+        if (op.replyTo && !this.comments.some((c) => c.id === op.replyTo)) fail({ code: "invalid-op", message: `The comment '${op.replyTo}' does not exist.`, path: `${path}.replyTo` });
+        let n = this.comments.length + 1;
+        while (this.comments.some((c) => c.id === `cm-${n}`)) n++;
+        const id = op.id ?? `cm-${n}`;
+        if (this.comments.some((c) => c.id === id)) fail({ code: "duplicate-id", message: `The comment '${id}' exists already.`, path: `${path}.id` });
+        const parsed = Comment.safeParse({ id, target: op.target, author: op.author ?? "You", text: op.text, at: op.at ?? "", ...(op.replyTo ? { replyTo: op.replyTo } : {}) });
+        if (!parsed.success) fail({ code: "invalid-op", message: `The comment is not valid: ${zodMessage(parsed.error)}.`, path });
+        this.before.comments ??= this.comments;
+        this.comments = [...this.comments, parsed.data!];
+        this.created.push(id);
+        return;
+      }
+      case "comment.update": {
+        const i = this.comments.findIndex((c) => c.id === op.id);
+        if (i < 0) fail({ code: "invalid-op", message: `The comment '${op.id}' does not exist.`, path: `${path}.id` });
+        const parsed = Comment.safeParse({ ...this.comments[i]!, ...op.set, id: op.id });
+        if (!parsed.success) fail({ code: "invalid-op", message: `The comment is not valid: ${zodMessage(parsed.error)}.`, path: `${path}.set` });
+        this.before.comments ??= this.comments;
+        this.comments = this.comments.map((c, j) => (j === i ? parsed.data! : c));
+        return;
+      }
+      case "comment.remove": {
+        if (!this.comments.some((c) => c.id === op.id)) fail({ code: "invalid-op", message: `The comment '${op.id}' does not exist.`, path: `${path}.id` });
+        this.before.comments ??= this.comments;
+        // Answers go with the comment.
+        this.comments = this.comments.filter((c) => c.id !== op.id && c.replyTo !== op.id);
+        return;
+      }
       case "scene.meta": {
         this.before.meta ??= this.meta;
         this.meta = { ...this.meta, ...(op.set as Partial<Scene["meta"]>) };
@@ -537,9 +572,18 @@ export class Draft {
     if (any) this.addTableCells(t, missing, path, true);
   }
 
+  /** Comments on a removed element or step go with it. */
+  private dropComments(kind: "element" | "step", id: string): void {
+    if (!this.comments.some((c) => c.target.kind === kind && c.target.id === id)) return;
+    this.before.comments ??= this.comments;
+    const gone = new Set(this.comments.filter((c) => c.target.kind === kind && c.target.id === id).map((c) => c.id));
+    this.comments = this.comments.filter((c) => !gone.has(c.id) && !(c.replyTo && gone.has(c.replyTo)));
+  }
+
   private removeElement(id: string): void {
     const el = this.elements[id];
     if (!el) return;
+    this.dropComments("element", id);
     // The cells of a table go with the table.
     if (el.type === "table") for (const c of Object.values(this.elements)) if (c.parentId === id) this.removeElement(c.id);
     this.touch(id);

@@ -217,6 +217,28 @@ export function CanvasView() {
         requestAnimationFrame(() => draw());
       }
     }
+    // Open comments: a small badge at the top-right corner of the element (FR-SHARE-03).
+    const openCount = new Map<string, number>();
+    for (const c of scene.comments) if (c.target.kind === "element" && !c.resolved && !c.replyTo) openCount.set(c.target.id, (openCount.get(c.target.id) ?? 0) + 1);
+    for (const [id, n] of openCount) {
+      const bounds = boundsOf(scene, result.frame, result.routes, id);
+      if (!bounds) continue;
+      const b = screenBox(bounds);
+      const r = 9 * dpr;
+      const cx = b.x + b.width + 2 * dpr;
+      const cy = b.y - 2 * dpr;
+      ctx.fillStyle = "#F5B84A";
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#0F1720";
+      ctx.font = `600 ${11 * dpr}px system-ui, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(String(n), cx, cy + 0.5 * dpr);
+      ctx.textAlign = "start";
+      ctx.textBaseline = "alphabetic";
+    }
     if (hover.current && !selection.includes(hover.current) && !drag.current) outline(hover.current, 1, 0.6);
     for (const id of selection) outline(id, 1.5, 1);
     const single = selection.length === 1 ? byId.get(selection[0]!) : undefined;

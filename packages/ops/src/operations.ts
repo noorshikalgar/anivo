@@ -131,6 +131,18 @@ export const ScriptAlign = z.object({
     .describe("Speech onsets in the voiceover file (time and the pause before it), from speechOnsets. Cues snap to them."),
 }).describe("Align the script lines to the voiceover transcript. Each matched line sets a cue trigger on its step. Unmatched lines keep the old start.");
 
+export const CommentAdd = z.object({
+  op: z.literal("comment.add"),
+  id: z.string().optional(),
+  target: z.object({ kind: z.enum(["element", "step"]), id: z.string() }),
+  text: z.string(),
+  author: z.string().optional().describe("Who writes it, for example 'You' or the agent name."),
+  at: z.string().optional().describe("ISO time."),
+  replyTo: z.string().optional(),
+});
+export const CommentUpdate = z.object({ op: z.literal("comment.update"), id: z.string(), set: z.object({ text: z.string().optional(), resolved: z.boolean().optional() }) });
+export const CommentRemove = z.object({ op: z.literal("comment.remove"), id: z.string() });
+
 export const SceneSettingsOp = z.object({
   op: z.literal("scene.settings"),
   set: Props.describe("Settings to change. Nested objects (video, background, defaults) merge with the old values."),
@@ -160,6 +172,9 @@ export const Operation = z.discriminatedUnion("op", [
   AudioRemove,
   ScriptSet,
   ScriptAlign,
+  CommentAdd,
+  CommentUpdate,
+  CommentRemove,
   SceneSettingsOp,
   SceneMetaOp,
 ]);

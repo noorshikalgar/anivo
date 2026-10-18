@@ -16,6 +16,20 @@ export const VideoSettings = z.object({
   fps: z.union([z.literal(24), z.literal(30), z.literal(60)]).default(60),
 });
 
+/** A comment on an element or a step (FR-SHARE-03). People and agents read and answer them. */
+export const Comment = z.object({
+  id: z.string().regex(/^[a-z0-9-]{1,48}$/),
+  target: z.object({ kind: z.enum(["element", "step"]), id: z.string() }),
+  author: z.string().default("You"),
+  text: z.string().min(1).max(4000),
+  /** ISO time. */
+  at: z.string().default(""),
+  resolved: z.boolean().default(false),
+  /** The comment that this one answers. */
+  replyTo: z.string().optional(),
+});
+export type Comment = z.infer<typeof Comment>;
+
 /** A custom theme (FR-STYLE-03): a built-in theme with changed colors. Also the theme file format. */
 export const CustomTheme = z.object({
   name: z.string().regex(/^[a-z][a-z0-9-]{0,39}$/).describe("Theme name. Set settings.theme to this name to use the theme."),
@@ -67,6 +81,7 @@ export const SceneFile = z.object({
   audio: z.array(AudioTrack).default([]),
   script: z.array(ScriptLine).default([]),
   assets: z.record(z.string(), AssetRef).default({}),
+  comments: z.array(Comment).default([]),
 });
 
 export const Scene = z.object({
@@ -78,6 +93,7 @@ export const Scene = z.object({
   steps: z.array(Step),
   audio: z.array(AudioTrack),
   script: z.array(ScriptLine),
+  comments: z.array(Comment),
   assets: z.record(z.string(), AssetRef),
 });
 export type Scene = z.infer<typeof Scene>;
