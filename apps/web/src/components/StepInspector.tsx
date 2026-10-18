@@ -48,6 +48,7 @@ function describe(a: Action): string {
   if (a.type === "morph") return `Morph · ${Object.keys(a.to).join(", ")}`;
   if (a.type === "camera") return `Camera · ${a.camera.op}`;
   if (a.type === "counter") return `Count · ${a.counter.from} to ${a.counter.to}`;
+  if (a.type === "code") return `Code · ${a.code.op}${a.code.lines ? ` ${a.code.lines[0]}-${a.code.lines[1]}` : ""}`;
   return label(a.type);
 }
 
@@ -57,6 +58,7 @@ export function AddActionMenu({ appearance = "secondary" }: { appearance?: "seco
   const elements = useEditor((s) => s.scene.elements);
   const connectors = selection.filter((id) => elements[id]?.type === "connector");
   const texts = selection.filter((id) => elements[id]?.type === "text");
+  const codes = selection.filter((id) => elements[id]?.type === "code");
   const none = selection.length === 0;
   const add = (action: Record<string, unknown>, name: string) => addAction({ targets: selection, ...action }, name);
   const step = useEditor((s) => s.selectedStep);
@@ -117,6 +119,15 @@ export function AddActionMenu({ appearance = "secondary" }: { appearance?: "seco
           </MenuItem>
           <MenuItem disabled={none} onClick={() => addAction({ type: "camera", targets: selection, camera: { op: "zoom-to" } }, "Add camera zoom")}>
             Camera: zoom to selection
+          </MenuItem>
+          <MenuItem disabled={codes.length === 0} onClick={() => addAction({ type: "code", targets: codes, code: { op: "highlight", lines: [1, 1] } }, "Add code highlight")}>
+            Code: highlight lines {codes.length === 0 ? "(select a code block)" : ""}
+          </MenuItem>
+          <MenuItem disabled={codes.length === 0} onClick={() => addAction({ type: "code", targets: codes, code: { op: "type", lines: [1, 1] } }, "Add code typing")}>
+            Code: type lines
+          </MenuItem>
+          <MenuItem disabled={codes.length !== 1} onClick={() => addAction({ type: "code", targets: codes, code: { op: "diff", newCode: (elements[codes[0]!] as { code?: string } | undefined)?.code ?? "" } }, "Add code change")}>
+            Code: change the code
           </MenuItem>
           <MenuItem disabled={texts.length === 0} onClick={() => addAction({ type: "counter", targets: texts, counter: { from: 0, to: 100 } }, "Add count")}>
             Count {texts.length === 0 ? "(select a text)" : ""}
@@ -193,6 +204,15 @@ function ActionEditor({ step, action }: { step: Step; action: Action }) {
             <NumberField label="Decimals" value={action.counter.decimals} min={0} max={6} onCommit={(v) => set({ counter: { ...action.counter, decimals: Math.round(v) } }, "Change count decimals")} />
           </Row>
         </>
+      )}
+      {action.type === "code" && action.code.op !== "diff" && (
+        <Row>
+          <NumberField label="First line" value={action.code.lines?.[0] ?? 1} min={1} onCommit={(v) => set({ code: { ...action.code, lines: [Math.round(v), Math.max(Math.round(v), action.code.lines?.[1] ?? 1)] } }, "Change lines")} />
+          <NumberField label="Last line" value={action.code.lines?.[1] ?? 1} min={1} onCommit={(v) => set({ code: { ...action.code, lines: [Math.min(action.code.lines?.[0] ?? 1, Math.round(v)), Math.round(v)] } }, "Change lines")} />
+        </Row>
+      )}
+      {action.type === "code" && action.code.op === "diff" && (
+        <TextField label="New code" multiline value={action.code.newCode ?? ""} onCommit={(v) => void set({ code: { ...action.code, newCode: v } }, "Change new code")} />
       )}
       {action.type === "flow" && (
         <>

@@ -172,6 +172,22 @@ describe("evaluate", () => {
     expect(el(evaluate(s, 5000), "t").label).toBe("1200 req/s");
   });
 
+  it("highlights code lines and grows a code block during a diff", () => {
+    const s = scene(
+      [
+        { id: "s1", holdMs: 0, actions: [{ id: "h1", type: "code", targets: ["code"], code: { op: "highlight", lines: [2, 2] }, durationMs: 400 }] },
+        { id: "s2", holdMs: 0, actions: [{ id: "d1", type: "code", targets: ["code"], code: { op: "diff", newCode: "a\nb\nc\nd" }, durationMs: 1000, easing: "linear" }] },
+      ],
+      { code: { type: "code", z: "a9", code: "a\nb", width: 300, height: 120 } },
+    );
+    expect(el(evaluate(s, 400), "code").codeLines).toEqual([2, 2]);
+    expect(el(evaluate(s, 200), "code").codeLinesMix).toBeGreaterThan(0);
+    const mid = el(evaluate(s, 900), "code");
+    expect(mid.codeFrom).toBe("a\nb");
+    expect(mid.height).toBeCloseTo(120 + 2 * 36 * 0.5, 6);
+    expect(el(evaluate(s, 5000), "code")).toMatchObject({ code: "a\nb\nc\nd", height: 192 });
+  });
+
   it("keeps an element visible when its first action is not enter", () => {
     const s = scene([{ id: "s1", actions: [{ id: "x1", type: "emphasis", effect: "pulse", targets: ["a"] }] }]);
     expect(el(evaluate(s, 0), "a").visible).toBe(true);

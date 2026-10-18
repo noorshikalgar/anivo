@@ -117,7 +117,20 @@ export const CounterAction = z.object({
   }),
 });
 
-export const Action = z.discriminatedUnion("type", [EnterAction, ExitAction, MorphAction, EmphasisAction, FlowAction, WaitAction, CameraAction, CounterAction]);
+const LineRange = z.tuple([z.number().int().min(1), z.number().int().min(1)]).describe("First and last line, from 1.");
+
+/** Code actions (docs/06 "code"): highlight lines, type lines, or change the code with a diff. */
+export const CodeAction = z.object({
+  ...actionBase,
+  type: z.literal("code"),
+  code: z.object({
+    op: z.enum(["highlight", "type", "diff"]),
+    lines: LineRange.optional().describe("highlight and type: the line range. highlight with no lines clears the highlight."),
+    newCode: z.string().optional().describe("diff: the new code."),
+  }),
+});
+
+export const Action = z.discriminatedUnion("type", [EnterAction, ExitAction, MorphAction, EmphasisAction, FlowAction, WaitAction, CameraAction, CounterAction, CodeAction]);
 export type Action = z.infer<typeof Action>;
 export type ActionInput = z.input<typeof Action>;
 export type ActionType = Action["type"];

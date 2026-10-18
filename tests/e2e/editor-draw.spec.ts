@@ -67,3 +67,16 @@ test("an element drawn in a step enters in that step", async ({ page }) => {
   const step = (await state(page)).scene.steps.find((s) => s.id === "s-traffic")!;
   expect(step.actions.some((a) => a.type === "enter" && a.targets.includes(id!))).toBe(true);
 });
+
+test("code tool adds a code block that the panel can edit", async ({ page }) => {
+  const before = Object.keys((await state(page)).scene.elements);
+  await page.keyboard.press("c");
+  const p = await screen(page, 200, 800);
+  await page.mouse.click(p.x, p.y);
+  const [id] = await newIds(page, before);
+  expect((await state(page)).scene.elements[id!]).toMatchObject({ type: "code" });
+  const code = page.getByLabel("Inspector").getByRole("textbox", { name: "Code" });
+  await code.fill("print('hi')");
+  await code.blur();
+  await expect.poll(async () => ((await state(page)).scene.elements[id!] as unknown as { code: string }).code).toBe("print('hi')");
+});

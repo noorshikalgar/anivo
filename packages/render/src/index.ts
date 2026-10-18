@@ -5,3 +5,4 @@ export * from "./theme.js";
 export * from "./render.js";
 export * from "./icons.js";
 export * from "./svgpath.js";
+export * from "./highlight.js";

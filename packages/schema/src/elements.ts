@@ -79,6 +79,15 @@ export const Icon = z.object({
 
 export const Group = shape("group");
 
+/** Source code with syntax colors (FR-CANVAS-12). */
+export const Code = z.object({
+  ...base,
+  type: z.literal("code"),
+  language: z.string().default("ts").describe("Language for the colors: ts, js, py, go, rust, java, sql, bash, yaml, json."),
+  code: z.string().describe("The source code. Lines are separated by \\n."),
+  lineNumbers: z.boolean().default(true),
+});
+
 export const Side = z.enum(["top", "right", "bottom", "left", "auto"]);
 
 export const ConnectorEnd = z.discriminatedUnion("kind", [
@@ -110,6 +119,7 @@ export const Element = z.discriminatedUnion("type", [
   Icon,
   Group,
   Connector,
+  Code,
 ]);
 export type Element = z.infer<typeof Element>;
 export type ElementInput = z.input<typeof Element>;
@@ -117,3 +127,4 @@ export type ElementType = Element["type"];
 export type ConnectorElement = z.infer<typeof Connector>;
 export type TextElement = z.infer<typeof Text>;
 export type IconElement = z.infer<typeof Icon>;
+export type CodeElement = z.infer<typeof Code>;

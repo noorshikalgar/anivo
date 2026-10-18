@@ -54,6 +54,7 @@ function baseFrame(el: Element): ElementFrame {
     highlight: 0,
   };
   if (el.parentId !== undefined) frame.parentId = el.parentId;
+  if (el.type === "code") frame.code = el.code;
   const s = el.style;
   if (s.fill !== undefined) frame.fill = s.fill;
   if (s.stroke !== undefined) frame.stroke = s.stroke;
@@ -71,6 +72,11 @@ function settle(frame: ElementFrame): ElementFrame {
   delete f.wipe;
   delete f.labelFrom;
   delete f.labelMix;
+  delete f.codeFrom;
+  delete f.codeMix;
+  delete f.codeLinesFrom;
+  delete f.codeLinesMix;
+  delete f.codeType;
   for (const key of ["fill", "stroke", "textColor"] as const) {
     const c = f[key];
     if (c !== undefined && typeof c === "object") f[key] = c.to;
@@ -212,6 +218,36 @@ function applyFocus(state: StateMap, focusTargets: string[], dimTo: number, raw:
   }
 }
 
+function applyCode(f: ElementFrame, c: Extract<Action, { type: "code" }>["code"], p: number): void {
+  if (c.op === "highlight") {
+    const from = f.codeLines;
+    if (p >= 1) {
+      if (c.lines) f.codeLines = c.lines;
+      else delete f.codeLines;
+      delete f.codeLinesFrom;
+      delete f.codeLinesMix;
+      return;
+    }
+    if (from) f.codeLinesFrom = from;
+    else delete f.codeLinesFrom;
+    if (c.lines) f.codeLines = c.lines;
+    else delete f.codeLines;
+    f.codeLinesMix = p;
+  } else if (c.op === "type" && c.lines) {
+    if (p < 1) f.codeType = { lines: c.lines, p };
+  } else if (c.op === "diff" && c.newCode !== undefined) {
+    const from = f.code ?? "";
+    // The block grows or shrinks with the line count (line height: 1.5 x font size).
+    const lineHeight = (f.fontSize ?? 24) * 1.5;
+    f.height += (c.newCode.split("\n").length - from.split("\n").length) * lineHeight * p;
+    f.code = c.newCode;
+    if (p < 1) {
+      f.codeFrom = from;
+      f.codeMix = p;
+    }
+  }
+}
+
 /** Apply one timed action to the state at time `t`. Copy-on-write for each touched element. */
 function applyTimedAction(state: StateMap, ta: TimedAction, t: number): void {
   const { action } = ta;
@@ -232,6 +268,7 @@ function applyTimedAction(state: StateMap, ta: TimedAction, t: number): void {
   if (action.type === "enter" || action.type === "exit") applyEnterExit(f, action, eased, raw);
   else if (action.type === "morph") applyMorph(f, action.to, eased);
   else if (action.type === "emphasis" && raw < 1) applyEmphasis(f, action, raw);
+  else if (action.type === "code") applyCode(f, action.code, eased);
   else if (action.type === "counter") {
     const c = action.counter;
     const n = lerp(c.from, c.to, eased);

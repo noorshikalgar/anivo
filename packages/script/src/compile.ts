@@ -15,11 +15,11 @@ export interface CompileOptions {
   base?: Scene;
 }
 
-const ELEMENT_KINDS = new Set(["box", "ellipse", "diamond", "text", "icon", "caption", "row", "column", "grid", "group", "line"]);
+const ELEMENT_KINDS = new Set(["box", "ellipse", "diamond", "text", "icon", "caption", "row", "column", "grid", "group", "line", "code"]);
 const CONTAINERS = new Set(["row", "column", "grid", "group"]);
 const ENTER_EFFECTS = new Set(["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter"]);
 const EMPHASIS = new Set(["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus"]);
-const ACTIONS = new Set(["enter", "exit", "morph", "flow", "wait", "camera", "count", ...EMPHASIS]);
+const ACTIONS = new Set(["enter", "exit", "morph", "flow", "wait", "camera", "count", "code", ...EMPHASIS]);
 
 const DEFAULT_SIZE: Record<string, [number, number]> = {
   box: [220, 90],
@@ -262,6 +262,12 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
       // A caption can change its text with a morph, so it takes the camera width.
       w = Math.min(1600, camera.width - 240);
       h = Math.round(fontSize * 1.6 * Math.max(1, text.split("\n").length));
+    } else if (d.kind === "code") {
+      const lines = text.split("\n");
+      const fs = num(d.kv.get("font-size")?.v ?? "") ?? 24;
+      const longestLine = Math.max(1, ...lines.map((l) => l.length));
+      w = Math.min(1700, Math.round(longestLine * fs * 0.62 + fs * 2 + fs * 2.5));
+      h = Math.round(lines.length * fs * 1.5 + fs * 2);
     } else if (d.kind === "text") {
       w = Math.min(1200, Math.max(120, textWidth + 24));
       h = Math.round(fontSize * 1.6 * Math.max(1, text.split("\n").length));
@@ -447,7 +453,7 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
     const props: Record<string, unknown> = { x: round(d.x!), y: round(d.y!), width: round(d.w), height: round(d.h) };
     if (parentId) props["parentId"] = parentId;
     for (const [k, { v, pos }] of d.kv) {
-      if (["at", "size", "gap", "align", "spacing", "cols", "id", ...RELATIONS].includes(k)) {
+      if (["at", "size", "gap", "align", "spacing", "cols", "id", "lang", ...RELATIONS].includes(k)) {
         continue;
       }
       if (k === "opacity") props["opacity"] = Number(v);
@@ -462,7 +468,12 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
     if (d.flags.has("bold")) style["fontWeight"] = 700;
     if (Object.keys(style).length) props["style"] = style;
     let type = d.kind === "box" ? "rectangle" : d.kind;
-    if (d.kind === "text" || d.kind === "caption") {
+    if (d.kind === "code") {
+      props["code"] = d.label ?? "";
+      const lang = d.kv.get("lang")?.v;
+      if (lang) props["language"] = lang;
+      if (d.flags.has("no-numbers")) props["lineNumbers"] = false;
+    } else if (d.kind === "text" || d.kind === "caption") {
       type = "text";
       props["content"] = { text: d.label ?? "" };
       if (d.kind === "caption") props["style"] = { fontSize: 40, textColor: "muted", ...style };
@@ -711,6 +722,30 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
         return undefined;
       }
       cam["rect"] = { x: at[0], y: at[1], width: size[0], height: size[1] };
+    }
+    return a;
+  }
+  if (verb === "code") {
+    const targets = resolveTargets(words, line.pos);
+    const a: Record<string, unknown> = { type: "code", targets };
+    if (delay !== undefined) a["delayMs"] = delay;
+    const range = (v: string) => {
+      const m = /^(\d+)(?:-(\d+))?$/.exec(v);
+      return m ? [Number(m[1]), Number(m[2] ?? m[1])] : undefined;
+    };
+    for (const [k, { v, pos }] of kv) {
+      if (k === "highlight") a["code"] = v === "none" ? { op: "highlight" } : { op: "highlight", lines: range(v) };
+      else if (k === "type") a["code"] = { op: "type", lines: range(v) };
+      else if (k === "diff") a["code"] = { op: "diff", newCode: v };
+      else if (k === "dur" || k === "duration") a["durationMs"] = parseTime(v);
+      else if (k === "easing") a["easing"] = v;
+      else if (k === "id") a["id"] = v;
+      else errors.push(err(pos, `The property '${k}' is not known for code.`, 'Use: highlight=3-5, highlight=none, type=2-4, diff="new code", dur.'));
+      if ((k === "highlight" && v !== "none" && !range(v)) || (k === "type" && !range(v))) errors.push(err(pos, `The line range '${v}' is not valid.`, "Write: 3-5 or 4"));
+    }
+    if (!a["code"]) {
+      errors.push(err(line.pos, "The code action needs highlight=, type=, or diff=.", "Write: code snippet highlight=3-5"));
+      return undefined;
     }
     return a;
   }

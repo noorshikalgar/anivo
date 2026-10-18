@@ -51,6 +51,16 @@ export interface ElementFrame {
   /** Flash intensity, 0..1. */
   flash: number;
   flashColor?: Color;
+  /** Code block: the code, and during a diff the old code and the progress. */
+  code?: string;
+  codeFrom?: string;
+  codeMix?: number;
+  /** Code block: highlighted lines; during a change the old range and the progress. */
+  codeLines?: [number, number];
+  codeLinesFrom?: [number, number];
+  codeLinesMix?: number;
+  /** Code block: lines that type in, and the progress. */
+  codeType?: { lines: [number, number]; p: number };
   /** Highlight marker intensity, 0..1. */
   highlight: number;
   highlightColor?: Color;
