@@ -16,6 +16,8 @@ import {
 } from "@fluentui/react-components";
 import { useMemo, useState } from "react";
 import { addElement } from "../commands.js";
+import { addIconPackFromFolder } from "../iconPacks.js";
+import { notify, withErrors } from "../notify.js";
 import { useEditor } from "../store.js";
 
 const useStyles = makeStyles({
@@ -51,7 +53,7 @@ function IconSvg({ pack, name }: { pack: string; name: string }) {
   if (!data || !p) return null;
   const stroke = p.kind === "stroke";
   return (
-    <svg width="28" height="28" viewBox={p.viewBox.join(" ")} aria-hidden="true">
+    <svg width="28" height="28" viewBox={(data.viewBox ?? p.viewBox).join(" ")} aria-hidden="true">
       {data.d.map((d, i) => (
         <path key={i} d={d} fill={stroke ? "none" : "currentColor"} stroke={stroke ? "currentColor" : "none"} strokeWidth={p.strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
       ))}
@@ -65,6 +67,7 @@ export function IconPicker() {
   const defaultPack = useEditor((s) => s.scene.settings.defaults.defaultIconPack);
   const [query, setQuery] = useState("");
   const [pack, setPack] = useState<string>(defaultPack);
+  const [, setPacksVersion] = useState(0);
   const results = useMemo(() => (query.trim() ? searchIcons(query, { pack, limit: 120 }) : Object.keys(getIconPack(pack)?.icons ?? {}).slice(0, 120).map((name) => ({ pack, name }))), [query, pack]);
 
   const close = () => useEditor.getState().setIconPicker(null);
@@ -100,6 +103,20 @@ export function IconPicker() {
             </div>
           </DialogContent>
           <DialogActions>
+            <Button
+              appearance="subtle"
+              onClick={() =>
+                void withErrors(async () => {
+                  const r = await addIconPackFromFolder();
+                  if (!r) return;
+                  setPacksVersion((v) => v + 1);
+                  setPack(r.pack);
+                  notify(`Added icon pack '${r.pack}': ${r.icons} icons${r.skipped.length ? `. ${r.skipped.length} files did not convert` : ""}`, "success");
+                })
+              }
+            >
+              Add icon pack (folder of SVG files)…
+            </Button>
             <Button appearance="secondary" onClick={close}>
               Cancel
             </Button>

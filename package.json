@@ -28,6 +28,7 @@
     "@anivo/import": "workspace:*",
     "@anivo/lint": "workspace:*",
     "@anivo/ops": "workspace:*",
+    "@anivo/render": "workspace:*",
     "@anivo/schema": "workspace:*",
     "@anivo/script": "workspace:*",
     "@anthropic-ai/sdk": "0.135.0",

@@ -176,6 +176,6 @@ See [09 — Agent interface](09-agent-interface.md).
 
 | ID | Feature | Pri | Acceptance criteria |
 |---|---|---|---|
-| FR-EXT-01 | Custom icon packs from a folder of SVG files | P1 | |
+| FR-EXT-01 | Custom icon packs from a folder of SVG files | P1 | Editor: Add icon pack in the icon picker (kept in the browser). CLI: `anivo icons add <folder>` writes `~/.anivo/icons/<pack>.json` (or `ANIVO_ICONS_DIR`); the CLI and the MCP server load these packs. Use an icon as `<pack>:<file-name>`. The HTML export includes the used icons. |
 | FR-EXT-02 | Plugin API for new effects and new element types | P2 | Plugins run in a sandbox. They cannot read files or the network without permission. |
 | FR-EXT-03 | Public npm packages for the engine and the renderer | P1 | Other tools can render Anivo scenes. |

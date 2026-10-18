@@ -7,3 +7,4 @@ export * from "./icons.js";
 export * from "./svgpath.js";
 export * from "./highlight.js";
 export * from "./images.js";
+export * from "./svgpack.js";
