@@ -17,6 +17,7 @@ import { AgentPanel, ConnectAgentDialog } from "./AgentPanel.js";
 import { AiPanel } from "./AiPanel.js";
 import { HistoryDialog, ShortcutHelp } from "./HelpDialogs.js";
 import { ShareDialog } from "./ShareDialog.js";
+import { TtsDialog } from "./TtsDialog.js";
 import { AlignDialog } from "./AlignDialog.js";
 import { AudioLane } from "./AudioLane.js";
 import { PlaybackBar } from "./PlaybackBar.js";
@@ -165,6 +166,7 @@ export function App() {
           <ConnectAgentDialog />
           <ShortcutHelp />
           <ShareDialog />
+          <TtsDialog />
           <HistoryDialog />
           <CommandPalette />
           {presenting && <PresentMode />}

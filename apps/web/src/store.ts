@@ -55,6 +55,8 @@ interface EditorState {
   timelineOpen: boolean;
   /** Elements that the AI panel changed last (for the canvas outline). */
   aiActivity: { ids: string[]; at: number } | null;
+  /** True while the text-to-speech dialog is open. */
+  ttsOpen: boolean;
   /** True while the share dialog is open. */
   shareOpen: boolean;
   /** True while the shortcut help shows. */
@@ -158,6 +160,7 @@ export const useEditor = create<EditorState>((set, get) => {
     aiOpen: false,
     helpOpen: false,
     shareOpen: false,
+    ttsOpen: false,
     historyOpen: false,
     timelineOpen: false,
     imagesVersion: 0,

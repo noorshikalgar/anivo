@@ -4,6 +4,7 @@
 
 - **Audio › Add voiceover…** imports an MP3, WAV, M4A, OGG, or FLAC file (30 minutes maximum).
 - **Audio › Record voiceover…** records with your microphone. After a 3-second countdown, Anivo shows the base state. Press **M** or **→** to start each step while you speak. Anivo saves the times as cues.
+- **Audio › Make voiceover from script…** makes speech from each script line with a speech service (an OpenAI-compatible API, with your key, or a local server). Each step starts when its line starts.
 - **Audio › Add music…** adds background music. Set the volume (dB) in the audio lane.
 
 The audio lane is above the playback bar. Drag a clip to move it in time.
