@@ -10,7 +10,19 @@ Anivo animates the changes between the steps and exports a video.
 A person can use Anivo by hand. An AI agent can use Anivo through a CLI or an MCP server.
 Both use the same operations, so a person and an agent can work on the same scene.
 
-Status: **phase 1 (MVP editor) in progress.** The editor, the animation engine, and video export work.
+Status: **version 1.0 features are complete; release preparation.** Owner tasks before the release: a usability test, a paid agent eval run, npm publishing, and the hosted web app. See [docs/13](docs/13-roadmap.md).
+
+What Anivo does:
+
+- **Editor:** shapes, text, arrows with bindings, icons (Lucide, Fluent, your own SVG folders), code blocks, images, tables; sketch or clean style; themes and a theme editor; smart guides.
+- **Animation:** steps with enter, exit, morph, emphasis, flow particles, camera, counters, and code actions; a timeline panel; present mode with a speaker notes window.
+- **Voice:** import or record a voiceover, music, script, automatic alignment (speech recognition on your computer), captions.
+- **Export:** MP4, WebM (with alpha), GIF, PNG and SVG of each step, ProRes 4444 (CLI), one-file HTML player, `<anivo-player>` web component.
+- **Import:** Excalidraw files, Mermaid flowcharts and sequence diagrams, 10 templates.
+- **Agents:** Anivo Script, a CLI, an MCP server (stdio and HTTP), live editing in the browser with review mode, and an AI panel (Anthropic, OpenAI-compatible, Ollama).
+- **Share:** share links with end-to-end encryption, an optional server, Docker images.
+
+**Start with the [user guide](guide/README.md).**
 
 ## Run Anivo
 
@@ -30,33 +42,27 @@ pnpm install
 pnpm dev
 ```
 
-Then open http://localhost:5173. Other commands: `pnpm test`, `pnpm test:e2e`, `pnpm typecheck`, `pnpm lint`,
-`pnpm render:template load-balancer out.mp4` (render a template with the Node engine).
+Then open http://localhost:5173. Other commands: `pnpm test`, `pnpm test:e2e`, `pnpm typecheck`, `pnpm lint`, `pnpm build:cli`, `pnpm eval:align` (macOS).
 
 The `anivo` command-line tool (for people and agents):
 
 ```bash
 pnpm anivo new demo.anivo --template load-balancer
-pnpm anivo print demo.anivo > demo.anivo.txt
-pnpm anivo apply demo.anivo demo.anivo.txt --mode replace
 pnpm anivo lint demo.anivo
 pnpm anivo contact-sheet demo.anivo --out sheet.png
-pnpm anivo render demo.anivo --out demo.mp4
+pnpm anivo export demo.anivo --out demo.mp4
+pnpm anivo serve demo.anivo
 ```
 
-Run `pnpm anivo --help` for all commands.
+See [guide/05-command-line.md](guide/05-command-line.md) for all commands.
 
 ## Use Anivo from an AI agent (MCP)
-
-Anivo has an MCP server. Agents such as Claude Code can make, check, and export videos with it:
 
 ```bash
 claude mcp add anivo -- node /path/to/anivo/packages/cli/bin/anivo.js mcp --root ./videos
 ```
 
-The server reads and writes files only inside the `--root` folder. Tools: `anivo_guide`, `anivo_scene_create`,
-`anivo_script_apply`, `anivo_ops_apply`, `anivo_scene_summary`, `anivo_scene_get`, `anivo_lint`, `anivo_preview`,
-`anivo_contact_sheet`, `anivo_export`, `anivo_icons_search`, `anivo_templates_list`, `anivo_schema`, `anivo_undo`.
+The server reads and writes files only inside the `--root` folder. For live editing in the browser, use `mcp --attach --web`. See [guide/04-agents.md](guide/04-agents.md).
 
 ## Read the documents in this sequence
 
