@@ -72,6 +72,7 @@ export function ExportDialog() {
   const [to, setTo] = useState(String(Math.max(0, scene.steps.length - 1)));
   const [captions, setCaptions] = useState<"none" | "bottom" | "top" | "srt" | "vtt">("none");
   const [progress, setProgress] = useState<number | null>(null);
+  const [eta, setEta] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [supported, setSupported] = useState<string[]>(["mp4", "webm"]);
   const abort = useRef<AbortController | null>(null);
@@ -115,7 +116,14 @@ export function ExportDialog() {
     const ac = new AbortController();
     abort.current = ac;
     setProgress(0);
-    const onProgress = (d: number, n: number) => setProgress(d / n);
+    setEta(null);
+    const started = performance.now();
+    const onProgress = (d: number, n: number) => {
+      setProgress(d / n);
+      // Time remaining, from the speed so far.
+      const t = performance.now() - started;
+      if (d > 2 && t > 500) setEta(Math.max(0, Math.round(((t / d) * (n - d)) / 1000)));
+    };
     try {
       if (format === "mp4" || format === "webm") {
         const burn = captions === "bottom" || captions === "top" ? { captions } : {};
@@ -267,6 +275,11 @@ export function ExportDialog() {
               </MessageBar>
             )}
             {busy && <ProgressBar value={progress ?? 0} thickness="large" aria-label="Export progress" />}
+            {busy && eta !== null && (
+              <Text size={200} className={styles.muted}>
+                About {eta < 60 ? `${eta} s` : `${Math.floor(eta / 60)} min ${eta % 60} s`} remaining
+              </Text>
+            )}
           </DialogContent>
           <DialogActions>
             <Button appearance="secondary" onClick={close}>

@@ -4,6 +4,7 @@
  */
 import { decodeImage, decodeSceneImages } from "@anivo/export-web";
 import { assetId } from "@anivo/fileio";
+import { sanitizeSvg } from "./sanitize.js";
 import { useEditor } from "./store.js";
 
 const MIME: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", svg: "image/svg+xml" };
@@ -21,8 +22,10 @@ export function imageMime(name: string, type: string): string {
 }
 
 /** Add an image to the scene, centered at a scene point (default: the center of the view). Returns the element ID. */
-export async function insertImage(bytes: Uint8Array, name: string, type: string, at?: { x: number; y: number }): Promise<string> {
+export async function insertImage(input: Uint8Array, name: string, type: string, at?: { x: number; y: number }): Promise<string> {
   const mime = imageMime(name, type);
+  // SVG files are sanitized before they become assets.
+  const bytes = mime === "image/svg+xml" ? new TextEncoder().encode(sanitizeSvg(new TextDecoder().decode(input))) : input;
   if (bytes.length > MAX_BYTES) throw new ImageError(`The image '${name}' is larger than 20 MB. Use a smaller file.`);
   const img = await decodeImage(bytes, mime);
   if (!img) throw new ImageError(`The file '${name}' is not a valid image, or this browser cannot read it.`);
@@ -74,4 +77,23 @@ export function startImageSync(): () => void {
   return useEditor.subscribe((s, prev) => {
     if (s.scene.elements !== prev.scene.elements || s.assets !== prev.assets) sync();
   });
+}
+
+/**
+ * Paste from the system clipboard (FR-CANVAS-10): an image file (PNG, JPEG, WebP, SVG)
+ * or SVG text becomes an image element. Returns true if it pasted an image.
+ */
+export async function pasteImage(data: DataTransfer | null): Promise<boolean> {
+  if (!data) return false;
+  const file = [...data.files].find((f) => /^image\/(png|jpeg|webp|svg\+xml)$/.test(f.type));
+  if (file) {
+    await insertImage(new Uint8Array(await file.arrayBuffer()), file.name || `pasted.${file.type.split(/[/+]/)[1]}`, file.type);
+    return true;
+  }
+  const text = data.getData("text/plain").trim();
+  if (/^(<\?xml[^>]*>\s*)?<svg[\s>]/i.test(text)) {
+    await insertImage(new TextEncoder().encode(text), "pasted.svg", "image/svg+xml");
+    return true;
+  }
+  return false;
 }

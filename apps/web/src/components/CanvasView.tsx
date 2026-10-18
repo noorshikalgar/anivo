@@ -21,6 +21,8 @@ import {
   normalizeRect,
   previewFrame,
   resizeBox,
+  smartGuides,
+  type GuideLine,
   snap,
   toScene,
   toScreen,
@@ -31,7 +33,7 @@ import { ToolPalette } from "./ToolPalette.js";
 import { useEditor } from "../store.js";
 
 type Drag =
-  | { kind: "move"; start: Point; ids: string[]; boxes: Map<string, Box>; dx: number; dy: number; moved: boolean }
+  | { kind: "move"; start: Point; ids: string[]; boxes: Map<string, Box>; dx: number; dy: number; moved: boolean; others: Box[]; guides: GuideLine[] }
   | { kind: "resize"; start: Point; id: string; handle: Handle; box: Box; next: Box }
   | { kind: "marquee"; start: Point; end: Point; additive: boolean; base: string[] }
   | { kind: "create"; type: "rectangle" | "ellipse" | "diamond"; start: Point; end: Point }
@@ -232,6 +234,20 @@ export function CanvasView() {
       }
     }
     const d = drag.current;
+    if (d?.kind === "move" && d.moved && d.guides.length) {
+      ctx.save();
+      ctx.strokeStyle = "#F26D6D";
+      ctx.lineWidth = 1 * dpr;
+      for (const gl of d.guides) {
+        const a = toScreen(view, gl.axis === "x" ? { x: gl.at, y: gl.from } : { x: gl.from, y: gl.at });
+        const b = toScreen(view, gl.axis === "x" ? { x: gl.at, y: gl.to } : { x: gl.to, y: gl.at });
+        ctx.beginPath();
+        ctx.moveTo(a.x * dpr, a.y * dpr);
+        ctx.lineTo(b.x * dpr, b.y * dpr);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
     if (d?.kind === "create") {
       const r = screenBox(normalizeRect(d.start, d.end));
       ctx.strokeStyle = accent;
@@ -319,7 +335,12 @@ export function CanvasView() {
           const b = currentBox(id);
           if (b) boxes.set(id, b);
         }
-        drag.current = { kind: "move", start: p, ids: sel, boxes, dx: 0, dy: 0, moved: false };
+        // Boxes of the other visible elements, for smart guides.
+        const moving = new Set(boxes.keys());
+        const others = last.current
+          ? last.current.frame.elements.flatMap((f) => (f.visible && f.type !== "connector" && f.type !== "group" && !moving.has(f.id) ? [elementBounds(f, last.current!.routes)] : []))
+          : [];
+        drag.current = { kind: "move", start: p, ids: sel, boxes, dx: 0, dy: 0, moved: false, others, guides: [] };
       } else {
         drag.current = { kind: "marquee", start: p, end: p, additive: e.shiftKey, base: e.shiftKey ? st.selection : [] };
         if (!e.shiftKey) st.setSelection([]);
@@ -335,10 +356,17 @@ export function CanvasView() {
         const first = d.boxes.values().next().value;
         let dx = q.x - d.start.x;
         let dy = q.y - d.start.y;
+        // Smart guides win over the grid on their axis.
+        const all = [...d.boxes.values()];
+        const union = all.length
+          ? { x: Math.min(...all.map((b) => b.x)) + dx, y: Math.min(...all.map((b) => b.y)) + dy, width: Math.max(...all.map((b) => b.x + b.width)) - Math.min(...all.map((b) => b.x)), height: Math.max(...all.map((b) => b.y + b.height)) - Math.min(...all.map((b) => b.y)) }
+          : null;
+        const g = union && grid ? smartGuides(union, d.others, 6 / useEditor.getState().view.zoom) : { dx: null, dy: null, lines: [] };
         if (first) {
-          dx = snap(first.x + dx, grid) - first.x;
-          dy = snap(first.y + dy, grid) - first.y;
+          dx = g.dx !== null ? dx + g.dx : snap(first.x + dx, grid) - first.x;
+          dy = g.dy !== null ? dy + g.dy : snap(first.y + dy, grid) - first.y;
         }
+        d.guides = g.lines;
         if (ev.shiftKey) {
           // Shift keeps the move on one axis.
           if (Math.abs(dx) > Math.abs(dy)) dy = 0;

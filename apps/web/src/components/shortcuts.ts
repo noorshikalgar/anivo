@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { addStep, copySelection, deleteSelection, duplicateSelection, groupSelection, nudgeSelection, pasteFromClipboard, selectAll, toggleHideSelection, toggleLockSelection, ungroupSelection } from "../commands.js";
 import { cueAtPlayhead } from "../audio.js";
+import { pasteImage } from "../images.js";
 import { cancelRecording, nextStep } from "../record.js";
 import { openFile, saveFile, saveFileAs } from "../files.js";
 import { notify, withErrors } from "../notify.js";
@@ -11,6 +12,8 @@ const TOOL_KEYS: Record<string, Tool> = { v: "select", h: "hand", r: "rectangle"
 function isTyping(target: EventTarget | null): boolean {
   return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || (target instanceof HTMLElement && target.isContentEditable);
 }
+
+let pasteFallback = 0;
 
 /** Global keyboard shortcuts (FR-UX-01). */
 export function useShortcuts(): void {
@@ -68,8 +71,8 @@ export function useShortcuts(): void {
       } else if (mod && e.key.toLowerCase() === "x") {
         void copySelection(true);
       } else if (mod && e.key.toLowerCase() === "v") {
-        e.preventDefault();
-        void pasteFromClipboard();
+        // The browser sends a paste event next. If it does not (no clipboard access), paste the copy from this page.
+        pasteFallback = window.setTimeout(() => void pasteFromClipboard(), 80);
       } else if (mod && e.key.toLowerCase() === "d") {
         e.preventDefault();
         duplicateSelection();
@@ -82,6 +85,9 @@ export function useShortcuts(): void {
       } else if (e.key === "Escape") {
         st.setSelection([]);
         st.setTool("select");
+      } else if (e.key === "?") {
+        e.preventDefault();
+        useEditor.setState({ helpOpen: true });
       } else if (!mod && !e.altKey && e.key.toLowerCase() === "m" && st.playing) {
         // M during play: a cue for the next step at the playhead (docs/08).
         const id = cueAtPlayhead();
@@ -119,6 +125,20 @@ export function useShortcuts(): void {
       }
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    // Ctrl+V: the browser sends a paste event with the clipboard data.
+    const onPaste = (e: ClipboardEvent) => {
+      clearTimeout(pasteFallback);
+      if (isTyping(e.target) || useEditor.getState().presenting) return;
+      e.preventDefault();
+      const data = e.clipboardData;
+      void withErrors(async () => {
+        if (!(await pasteImage(data))) await pasteFromClipboard(data?.getData("text/plain"));
+      });
+    };
+    window.addEventListener("paste", onPaste);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("paste", onPaste);
+    };
   }, []);
 }

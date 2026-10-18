@@ -13,6 +13,7 @@ import { startAudioSync } from "../audio.js";
 import { startImageSync } from "../images.js";
 import { AgentPanel, ConnectAgentDialog } from "./AgentPanel.js";
 import { AiPanel } from "./AiPanel.js";
+import { HistoryDialog, ShortcutHelp } from "./HelpDialogs.js";
 import { AlignDialog } from "./AlignDialog.js";
 import { AudioLane } from "./AudioLane.js";
 import { PlaybackBar } from "./PlaybackBar.js";
@@ -155,6 +156,8 @@ export function App() {
           <ThemeEditor />
           <Tour />
           <ConnectAgentDialog />
+          <ShortcutHelp />
+          <HistoryDialog />
           <CommandPalette />
           {presenting && <PresentMode />}
         </div>

@@ -25,6 +25,7 @@
     "@fluentui/react-components": "9.74.9",
     "@fluentui/react-icons": "2.0.344",
     "@huggingface/transformers": "4.3.1",
+    "dompurify": "3.4.17",
     "fflate": "0.8.3",
     "onnxruntime-web": "1.31.0-dev.20260914-8d85527a0",
     "react": "19.3.1",
