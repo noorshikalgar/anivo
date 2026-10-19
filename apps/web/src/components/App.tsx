@@ -4,6 +4,9 @@ import { loadAssets } from "../assets.js";
 import { openSceneFromQuery, startAutosave } from "../files.js";
 import { migrateAutosave, startLibraryAutosave } from "../library.js";
 import { Home } from "./Home.js";
+import { Outliner } from "./Outliner.js";
+import { ViewportHeader } from "./ViewportHeader.js";
+import { StatusBar } from "./StatusBar.js";
 import { COMPACT, useMedia } from "./useMedia.js";
 import { openShareFromUrl } from "../share.js";
 import { notify } from "../notify.js";
@@ -40,23 +43,32 @@ const useStyles = makeStyles({
   root: {
     height: "100%",
     display: "grid",
-    gridTemplateRows: "auto minmax(0, 1fr) auto",
-    gridTemplateColumns: "220px minmax(0, 1fr) 280px",
-    gridTemplateAreas: `"top top top" "steps canvas inspector" "play play play"`,
-    backgroundColor: tokens.colorNeutralBackground1,
-    color: tokens.colorNeutralForeground1,
+    gridTemplateRows: "auto minmax(0, 1fr) auto auto",
+    gridTemplateColumns: "230px minmax(0, 1fr) 300px",
+    gridTemplateAreas: `"top top top" "steps canvas right" "play play play" "status status status"`,
+    gap: "2px",
+    backgroundColor: "var(--ui-app)",
+    color: "var(--ui-text)",
   },
-  medium: { gridTemplateColumns: "190px minmax(0, 1fr) 260px" },
+  medium: { gridTemplateColumns: "200px minmax(0, 1fr) 270px" },
   // Small windows: the canvas uses the full width; the panels are drawers over it.
-  compact: { gridTemplateColumns: "minmax(0, 1fr)", gridTemplateAreas: `"top" "canvas" "play"` },
+  compact: { gridTemplateColumns: "minmax(0, 1fr)", gridTemplateAreas: `"top" "canvas" "play" "status"` },
+  maximized: { gridTemplateColumns: "minmax(0, 1fr)", gridTemplateRows: "auto minmax(0, 1fr) auto", gridTemplateAreas: `"top" "canvas" "status"` },
+  gone: { display: "none !important" },
   top: { gridArea: "top", minWidth: 0 },
-  steps: { gridArea: "steps", display: "grid", minHeight: 0 },
-  canvas: { gridArea: "canvas", display: "grid", minHeight: 0, minWidth: 0 },
-  inspector: { gridArea: "inspector", display: "grid", minHeight: 0 },
-  play: { gridArea: "play", minWidth: 0 },
+  // Areas: round corners and a 2 px gap, as in Blender.
+  area: { borderRadius: "6px", overflow: "hidden", minHeight: 0, minWidth: 0, gridTemplateColumns: "minmax(0, 1fr)" },
+  steps: { gridArea: "steps", display: "grid", marginLeft: "2px" },
+  canvas: { gridArea: "canvas", display: "grid", gridTemplateRows: "auto minmax(0, 1fr)" },
+  stage: { position: "relative", display: "grid", minHeight: 0, minWidth: 0 },
+  right: { gridArea: "right", display: "flex", flexDirection: "column", gap: "2px", marginRight: "2px", minHeight: 0, minWidth: 0 },
+  outliner: { flex: "0 0 34%", display: "grid", minHeight: "80px" },
+  inspector: { flex: "1 1 0", display: "grid" },
+  play: { gridArea: "play", minWidth: 0, margin: "0 2px" },
+  status: { gridArea: "status", minWidth: 0 },
   drawer: {
     position: "fixed",
-    top: "48px",
+    top: "32px",
     bottom: 0,
     width: "min(320px, 88vw)",
     zIndex: 30,
@@ -69,9 +81,9 @@ const useStyles = makeStyles({
     transitionTimingFunction: tokens.curveDecelerateMid,
   },
   drawerLeft: { left: 0, transform: "translateX(-105%)" },
-  drawerRight: { right: 0, transform: "translateX(105%)" },
+  drawerRight: { right: 0, transform: "translateX(105%)", gridTemplateRows: "minmax(0, 34%) minmax(0, 1fr)", gap: "2px", backgroundColor: "var(--ui-app)" },
   drawerOpen: { transform: "none" },
-  scrim: { position: "fixed", inset: "48px 0 0 0", zIndex: 29, backgroundColor: "rgba(0,0,0,0.35)" },
+  scrim: { position: "fixed", inset: "32px 0 0 0", zIndex: 29, backgroundColor: "rgba(0,0,0,0.35)" },
   center: { height: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: tokens.spacingHorizontalM },
 });
 
@@ -90,6 +102,9 @@ function usePrefersDark(): boolean {
 export function App() {
   const styles = useStyles();
   const dark = usePrefersDark();
+  useEffect(() => {
+    document.documentElement.dataset["ui"] = dark ? "dark" : "light";
+  }, [dark]);
   const [state, setState] = useState<"loading" | "ready" | { error: string }>("loading");
   useShortcuts();
   useEffect(() => startAutosave(), []);
@@ -111,6 +126,7 @@ export function App() {
   const timelineOpen = useEditor((s) => s.timelineOpen);
   const screen = useEditor((s) => s.screen);
   const drawer = useEditor((s) => s.drawer);
+  const maximized = useEditor((s) => s.maximized);
   const compact = useMedia(COMPACT);
   const medium = useMedia("(max-width: 1279px)");
   useEffect(() => {
@@ -171,23 +187,31 @@ export function App() {
       ) : screen === "home" ? (
         <Home />
       ) : (
-        <div className={mergeClasses(styles.root, compact ? styles.compact : medium && styles.medium)}>
+        <div className={mergeClasses(styles.root, compact ? styles.compact : medium && styles.medium, maximized && styles.maximized)}>
           <div className={styles.top}>
             <TopBar />
           </div>
           {compact && drawer && <div className={styles.scrim} onClick={() => useEditor.setState({ drawer: null })} aria-hidden />}
-          <div className={compact ? mergeClasses(styles.drawer, styles.drawerLeft, drawer === "steps" && styles.drawerOpen) : styles.steps} inert={compact && drawer !== "steps" ? true : undefined}>
+          <div className={compact ? mergeClasses(styles.drawer, styles.drawerLeft, drawer === "steps" && styles.drawerOpen) : mergeClasses(styles.area, styles.steps, maximized && styles.gone)} inert={compact && drawer !== "steps" ? true : undefined}>
             <StepsPanel />
           </div>
-          <div className={styles.canvas} style={{ position: "relative" }}>
-            <CanvasView />
-            <AgentPanel />
-            <AiPanel />
+          <div className={mergeClasses(styles.area, styles.canvas)}>
+            <ViewportHeader />
+            <div className={styles.stage}>
+              <CanvasView />
+              <AgentPanel />
+              <AiPanel />
+            </div>
           </div>
-          <div className={compact ? mergeClasses(styles.drawer, styles.drawerRight, drawer === "inspector" && styles.drawerOpen) : styles.inspector} inert={compact && drawer !== "inspector" ? true : undefined}>
-            <Inspector />
+          <div className={compact ? mergeClasses(styles.drawer, styles.drawerRight, drawer === "inspector" && styles.drawerOpen) : mergeClasses(styles.right, maximized && styles.gone)} inert={compact && drawer !== "inspector" ? true : undefined}>
+            <div className={mergeClasses(styles.area, styles.outliner)}>
+              <Outliner />
+            </div>
+            <div className={mergeClasses(styles.area, styles.inspector)}>
+              <Inspector />
+            </div>
           </div>
-          <div className={styles.play}>
+          <div className={mergeClasses(styles.area, styles.play, maximized && styles.gone)}>
             {recording ? (
               <RecordBar />
             ) : takes ? (
@@ -199,6 +223,9 @@ export function App() {
                 <PlaybackBar />
               </>
             )}
+          </div>
+          <div className={styles.status}>
+            <StatusBar />
           </div>
           <Toaster toasterId={toasterId} />
           {/* Outside the canvas tree: React events from a dialog portal bubble to its React parents. */}

@@ -251,3 +251,20 @@ describe("OperationBus", () => {
     expect(bus.scene.elements["load-balancer"]).toBe(old.elements["load-balancer"]);
   });
 });
+
+describe("merge key", () => {
+  it("makes transactions in a row with the same key one undo step", () => {
+    const r = loadScene({ schemaVersion: 1, meta: { title: "M" }, elements: { a: { type: "rectangle", z: "a0", x: 0, y: 0, width: 10, height: 10 } } });
+    if (!r.ok) throw new Error("scene");
+    const bus = new OperationBus(r.scene);
+    for (const x of [10, 20, 30]) bus.apply({ label: "Drag", mergeKey: "g1", ops: [{ op: "element.update", id: "a", set: { x } }] });
+    bus.apply({ label: "Other", ops: [{ op: "element.update", id: "a", set: { y: 5 } }] });
+    bus.apply({ label: "Drag", mergeKey: "g1", ops: [{ op: "element.update", id: "a", set: { x: 40 } }] });
+    expect(bus.history.map((h) => h.label)).toEqual(["Drag", "Other", "Drag"]);
+    bus.undo();
+    bus.undo();
+    expect(bus.scene.elements["a"]).toMatchObject({ x: 30, y: 0 });
+    bus.undo();
+    expect(bus.scene.elements["a"]).toMatchObject({ x: 0, y: 0 });
+  });
+});

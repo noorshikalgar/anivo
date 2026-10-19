@@ -37,7 +37,12 @@ export function useShortcuts(): void {
         return;
       }
       const mod = e.ctrlKey || e.metaKey;
-      if (mod && e.key.toLowerCase() === "k") {
+      if (mod && e.code === "Space") {
+        e.preventDefault();
+        useEditor.setState({ maximized: !st.maximized });
+        return;
+      }
+      if ((mod && e.key.toLowerCase() === "k") || e.key === "F3") {
         e.preventDefault();
         useEditor.setState({ paletteOpen: true });
       } else if (mod && e.key.toLowerCase() === "s") {

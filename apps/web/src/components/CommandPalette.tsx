@@ -40,8 +40,8 @@ const useStyles = makeStyles({
     borderRadius: tokens.borderRadiusMedium,
     cursor: "pointer",
   },
-  active: { backgroundColor: tokens.colorNeutralBackground1Selected },
-  keys: { color: tokens.colorNeutralForeground3 },
+  active: { backgroundColor: tokens.colorNeutralBackground1Selected, "--ui-muted": "var(--ui-muted-on-select)" } as never,
+  keys: { color: "var(--ui-muted)" },
 });
 
 interface Command {

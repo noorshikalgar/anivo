@@ -32,7 +32,7 @@ test("Add action adds an enter action for the selected element", async ({ page }
 
 test("the action editor changes the duration", async ({ page }) => {
   await page.getByRole("button", { name: /User appears/ }).click();
-  await page.getByRole("button", { name: /Enter · draw-on/ }).click();
+  await page.getByRole("option", { name: /Enter · draw-on/ }).click();
   const field = page.getByRole("spinbutton", { name: "Duration (ms)" });
   await field.fill("1200");
   await field.press("Enter");
@@ -69,7 +69,7 @@ test("Add action adds a camera zoom to the selection", async ({ page }) => {
 
 test("the flow editor sets an icon particle, one particle, and a trail", async ({ page }) => {
   await page.getByRole("button", { name: /Traffic flows/ }).click();
-  await page.getByRole("button", { name: /^Flow/ }).first().click();
+  await page.getByRole("listbox", { name: "Actions" }).getByRole("option", { name: /^Flow/ }).first().click();
   await page.getByRole("combobox", { name: "Particle", exact: true }).click();
   await page.getByRole("option", { name: "Icon" }).click();
   await page.getByRole("combobox", { name: "Particles" }).click();
@@ -77,7 +77,7 @@ test("the flow editor sets an icon particle, one particle, and a trail", async (
   const trail = page.getByRole("spinbutton", { name: "Trail (0–1)" });
   await trail.fill("0.5");
   await trail.press("Enter");
-  await page.getByRole("switch", { name: "Turn along the arrow" }).click();
+  await page.getByRole("checkbox", { name: "Turn along the arrow" }).click();
   const s = (await state(page)) as unknown as { scene: { steps: { id: string; actions: { type: string; flow?: Record<string, unknown> }[] }[] } };
   const flow = s.scene.steps.find((st) => st.id === "s-traffic")!.actions.find((a) => a.type === "flow")!.flow!;
   expect(flow).toMatchObject({ shape: "icon", icon: "lucide:mail", count: 1, trail: 0.5, orient: true, size: 32 });
@@ -90,8 +90,9 @@ test("the flow editor sets an icon particle, one particle, and a trail", async (
 
 test("Split per element gives each element its own action and keeps the timing", async ({ page }) => {
   await page.getByRole("button", { name: /Pods fan out/ }).click();
-  await page.getByRole("button", { name: /Enter · pop/ }).click();
-  await page.getByRole("button", { name: "Split per element" }).click();
+  await page.getByRole("option", { name: /Enter · pop/ }).click();
+  await page.getByRole("button", { name: "More action commands" }).click();
+  await page.getByRole("menuitem", { name: "Split per element" }).click();
   type S = { scene: { steps: { id: string; actions: { type: string; targets: string[]; delayMs: number; staggerMs: number; durationMs?: number }[] }[] } };
   const step = ((await state(page)) as unknown as S).scene.steps.find((s) => s.id === "s-pods")!;
   const pops = step.actions.filter((a) => a.type === "enter" && a.targets[0]!.startsWith("pod-"));
@@ -102,6 +103,7 @@ test("Split per element gives each element its own action and keeps the timing",
   ]);
   // A flow keeps its targets together: no split button.
   await page.getByRole("button", { name: /Traffic flows/ }).click();
-  await page.getByRole("button", { name: /^Flow/ }).nth(1).click();
-  await expect(page.getByRole("button", { name: "Split per element" })).toHaveCount(0);
+  await page.getByRole("listbox", { name: "Actions" }).getByRole("option", { name: /^Flow/ }).nth(1).click();
+  await page.getByRole("button", { name: "More action commands" }).click();
+  await expect(page.getByRole("menuitem", { name: "Split per element" })).toBeDisabled();
 });

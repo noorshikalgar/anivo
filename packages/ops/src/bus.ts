@@ -11,6 +11,8 @@ export interface HistoryEntry {
   version: number;
   before: Snapshot;
   after: Snapshot;
+  /** Transactions in a row with the same key merge into this entry. */
+  mergeKey?: string;
 }
 
 export type ApplyResult =
@@ -155,7 +157,7 @@ export class OperationBus {
       return { ok: false, error: { code: "invalid-scene", message: issues[0]!.message, path: issues[0]!.path } };
     }
 
-    this.commit(next, tx.author, tx.label, draft.before, true);
+    this.commit(next, tx.author, tx.label, draft.before, true, tx.mergeKey);
     return { ok: true, version: this.ver, created: draft.created, warnings: [] };
   }
 
@@ -175,11 +177,20 @@ export class OperationBus {
     return true;
   }
 
-  private commit(next: Scene, author: Author, label: string, before: Snapshot, record: boolean): HistoryEntry {
+  private commit(next: Scene, author: Author, label: string, before: Snapshot, record: boolean, mergeKey?: string): HistoryEntry {
     this.current = next;
     this.ver++;
     for (const id of before.elements.keys()) this.changedAt.set(id, this.ver);
-    const entry: HistoryEntry = { seq: ++this.seq, author, label, version: this.ver, before, after: afterSnapshot(before, next) };
+    const last = this.undoStack[this.undoStack.length - 1];
+    if (record && mergeKey !== undefined && last?.mergeKey === mergeKey && this.redoStack.length === 0) {
+      // One gesture, one undo step: keep the state before the first transaction of the gesture.
+      const merged: Snapshot = { ...before, ...last.before, elements: new Map([...before.elements, ...last.before.elements]) };
+      const entry: HistoryEntry = { seq: ++this.seq, author, label, version: this.ver, before: merged, after: afterSnapshot(merged, next), mergeKey };
+      this.undoStack[this.undoStack.length - 1] = entry;
+      for (const l of this.listeners) l(next, entry);
+      return entry;
+    }
+    const entry: HistoryEntry = { seq: ++this.seq, author, label, version: this.ver, before, after: afterSnapshot(before, next), ...(mergeKey !== undefined ? { mergeKey } : {}) };
     if (record) {
       this.undoStack.push(entry);
       if (this.undoStack.length > MAX_HISTORY) this.undoStack.shift();
