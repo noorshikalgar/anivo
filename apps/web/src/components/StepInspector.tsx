@@ -2,20 +2,16 @@ import { defaultDurationMs } from "@anivo/schema";
 import { SOUNDS } from "@anivo/engine";
 import type { Action, Step } from "@anivo/schema";
 import {
-  Accordion,
-  AccordionHeader,
-  AccordionItem,
-  AccordionPanel,
-  Button,
   Combobox,
-  Field,
   Menu,
+  MenuDivider,
+  MenuGroup,
+  MenuGroupHeader,
   MenuItem,
   MenuList,
   MenuPopover,
   MenuTrigger,
   Option,
-  Switch,
   Tag,
   TagPicker,
   TagPickerControl,
@@ -23,28 +19,23 @@ import {
   TagPickerInput,
   TagPickerList,
   TagPickerOption,
-  Text,
-  Tooltip,
   makeStyles,
-  tokens,
 } from "@fluentui/react-components";
-import { Add20Regular, Delete20Regular, SplitVertical20Regular } from "@fluentui/react-icons";
-import { useEffect, useMemo, useState } from "react";
+import { Add16Regular, ChevronDown16Regular, ChevronUp16Regular, Delete16Regular, MoreHorizontal16Regular, SplitVertical16Regular, Subtract16Regular } from "@fluentui/react-icons";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { searchIcons } from "@anivo/render";
 import { pickImageAsset } from "../images.js";
 import { withErrors } from "../notify.js";
-import { addAction, addMotionAlongArrow, canSplitAction, removeAction, splitAction, updateAction, updateStep } from "../commands.js";
+import { addAction, addMotionAlongArrow, canSplitAction, moveAction, removeAction, splitAction, updateAction, updateStep } from "../commands.js";
 import { setCue, setStepLine } from "../audio.js";
 import { Comments } from "./Comments.js";
 import { useEditor } from "../store.js";
 import { ColorField, NumberField, Row, SelectField, TextField } from "./fields.js";
+import { actionIcon } from "./typeIcons.js";
+import { Btn, Check, IconButton, ListSideGap, ListView, MenuButtonSmall, Note, Panel, Prop } from "./ui.js";
 
 const useStyles = makeStyles({
-  heading: { color: tokens.colorNeutralForeground3, marginTop: tokens.spacingVerticalXS },
-  muted: { color: tokens.colorNeutralForeground3 },
-  panel: { display: "flex", flexDirection: "column", gap: tokens.spacingVerticalS, paddingBottom: tokens.spacingVerticalS },
-  headerRow: { display: "flex", alignItems: "center", justifyContent: "space-between" },
-  targets: { color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+  panel: { display: "flex", flexDirection: "column", gap: "2px" },
 });
 
 const ENTER_EFFECTS = ["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter"] as const;
@@ -63,7 +54,7 @@ export function describe(a: Action): string {
 }
 
 /** Menu that adds an action for the selected elements to the selected step. */
-export function AddActionMenu({ appearance = "secondary" }: { appearance?: "secondary" | "subtle" }) {
+export function AddActionMenu({ iconOnly }: { iconOnly?: boolean }) {
   const selection = useEditor((s) => s.selection);
   const elements = useEditor((s) => s.scene.elements);
   const connectors = selection.filter((id) => elements[id]?.type === "connector");
@@ -72,79 +63,71 @@ export function AddActionMenu({ appearance = "secondary" }: { appearance?: "seco
   const none = selection.length === 0;
   const add = (action: Record<string, unknown>, name: string) => addAction({ targets: selection, ...action }, name);
   const step = useEditor((s) => s.selectedStep);
-  return (
+  const sub = (title: string, type: "enter" | "exit" | "emphasis", effects: readonly string[]) => (
     <Menu>
       <MenuTrigger disableButtonEnhancement>
-        <Button size="small" appearance={appearance} icon={<Add20Regular />} disabled={none && step === null}>
-          Add action
-        </Button>
+        <MenuItem icon={actionIcon(type)} disabled={none}>
+          {title}
+        </MenuItem>
       </MenuTrigger>
       <MenuPopover>
         <MenuList>
-          <MenuItem onClick={() => addAction({ type: "camera", camera: { op: "reset" } }, "Add camera reset")}>Camera: reset to the full view</MenuItem>
-          <Menu>
-            <MenuTrigger disableButtonEnhancement>
-              <MenuItem disabled={none}>Enter</MenuItem>
-            </MenuTrigger>
-            <MenuPopover>
-              <MenuList>
-                {ENTER_EFFECTS.map((e) => (
-                  <MenuItem key={e} onClick={() => add({ type: "enter", effect: e }, "Add enter")}>
-                    {label(e)}
-                  </MenuItem>
-                ))}
-              </MenuList>
-            </MenuPopover>
-          </Menu>
-          <Menu>
-            <MenuTrigger disableButtonEnhancement>
-              <MenuItem disabled={none}>Exit</MenuItem>
-            </MenuTrigger>
-            <MenuPopover>
-              <MenuList>
-                {ENTER_EFFECTS.map((e) => (
-                  <MenuItem key={e} onClick={() => add({ type: "exit", effect: e }, "Add exit")}>
-                    {label(e)}
-                  </MenuItem>
-                ))}
-              </MenuList>
-            </MenuPopover>
-          </Menu>
-          <Menu>
-            <MenuTrigger disableButtonEnhancement>
-              <MenuItem disabled={none}>Emphasis</MenuItem>
-            </MenuTrigger>
-            <MenuPopover>
-              <MenuList>
-                {EMPHASIS_EFFECTS.map((e) => (
-                  <MenuItem key={e} onClick={() => add({ type: "emphasis", effect: e }, "Add emphasis")}>
-                    {label(e)}
-                  </MenuItem>
-                ))}
-              </MenuList>
-            </MenuPopover>
-          </Menu>
-          <MenuItem disabled={connectors.length === 0} onClick={() => addAction({ type: "flow", targets: connectors, flow: connectors.length > 1 ? { distribute: "round-robin" } : {} }, "Add flow")}>
-            Flow {connectors.length === 0 ? "(select an arrow)" : ""}
-          </MenuItem>
-          <MenuItem disabled={none} onClick={() => addAction({ type: "camera", targets: selection, camera: { op: "zoom-to" } }, "Add camera zoom")}>
-            Camera: zoom to selection
-          </MenuItem>
-          <MenuItem disabled={connectors.length !== 1 || selection.length < 2 || step === null} onClick={addMotionAlongArrow}>
-            Move along the selected arrow
-          </MenuItem>
-          <MenuItem disabled={codes.length === 0} onClick={() => addAction({ type: "code", targets: codes, code: { op: "highlight", lines: [1, 1] } }, "Add code highlight")}>
-            Code: highlight lines {codes.length === 0 ? "(select a code block)" : ""}
-          </MenuItem>
-          <MenuItem disabled={codes.length === 0} onClick={() => addAction({ type: "code", targets: codes, code: { op: "type", lines: [1, 1] } }, "Add code typing")}>
-            Code: type lines
-          </MenuItem>
-          <MenuItem disabled={codes.length !== 1} onClick={() => addAction({ type: "code", targets: codes, code: { op: "diff", newCode: (elements[codes[0]!] as { code?: string } | undefined)?.code ?? "" } }, "Add code change")}>
-            Code: change the code
-          </MenuItem>
-          <MenuItem disabled={texts.length === 0} onClick={() => addAction({ type: "counter", targets: texts, counter: { from: 0, to: 100 } }, "Add count")}>
-            Count {texts.length === 0 ? "(select a text)" : ""}
-          </MenuItem>
+          {effects.map((e) => (
+            <MenuItem key={e} onClick={() => add({ type, effect: e }, `Add ${type}`)}>
+              {label(e)}
+            </MenuItem>
+          ))}
+        </MenuList>
+      </MenuPopover>
+    </Menu>
+  );
+  return (
+    <Menu>
+      <MenuTrigger disableButtonEnhancement>
+        <MenuButtonSmall icon={<Add16Regular />} iconOnly={iconOnly} aria-label="Add action" disabled={none && step === null}>
+          Add action
+        </MenuButtonSmall>
+      </MenuTrigger>
+      <MenuPopover>
+        <MenuList>
+          <MenuGroup>
+            <MenuGroupHeader>{none ? "Select elements first" : `For ${selection.length === 1 ? selection[0] : `${selection.length} elements`}`}</MenuGroupHeader>
+            {sub("Enter", "enter", ENTER_EFFECTS)}
+            {sub("Exit", "exit", ENTER_EFFECTS)}
+            {sub("Emphasis", "emphasis", EMPHASIS_EFFECTS)}
+            <MenuItem icon={actionIcon("flow")} disabled={connectors.length === 0} onClick={() => addAction({ type: "flow", targets: connectors, flow: connectors.length > 1 ? { distribute: "round-robin" } : {} }, "Add flow")}>
+              Flow {connectors.length === 0 ? "(select an arrow)" : ""}
+            </MenuItem>
+            <MenuItem icon={actionIcon("motion")} disabled={connectors.length !== 1 || selection.length < 2 || step === null} onClick={addMotionAlongArrow}>
+              Move along the selected arrow
+            </MenuItem>
+            <MenuItem icon={actionIcon("counter")} disabled={texts.length === 0} onClick={() => addAction({ type: "counter", targets: texts, counter: { from: 0, to: 100 } }, "Add count")}>
+              Count {texts.length === 0 ? "(select a text)" : ""}
+            </MenuItem>
+          </MenuGroup>
+          <MenuDivider />
+          <MenuGroup>
+            <MenuGroupHeader>Camera</MenuGroupHeader>
+            <MenuItem icon={actionIcon("camera")} disabled={none} onClick={() => addAction({ type: "camera", targets: selection, camera: { op: "zoom-to" } }, "Add camera zoom")}>
+              Camera: zoom to selection
+            </MenuItem>
+            <MenuItem icon={actionIcon("camera")} onClick={() => addAction({ type: "camera", camera: { op: "reset" } }, "Add camera reset")}>
+              Camera: reset to the full view
+            </MenuItem>
+          </MenuGroup>
+          <MenuDivider />
+          <MenuGroup>
+            <MenuGroupHeader>Code</MenuGroupHeader>
+            <MenuItem icon={actionIcon("code")} disabled={codes.length === 0} onClick={() => addAction({ type: "code", targets: codes, code: { op: "highlight", lines: [1, 1] } }, "Add code highlight")}>
+              Code: highlight lines {codes.length === 0 ? "(select a code block)" : ""}
+            </MenuItem>
+            <MenuItem icon={actionIcon("code")} disabled={codes.length === 0} onClick={() => addAction({ type: "code", targets: codes, code: { op: "type", lines: [1, 1] } }, "Add code typing")}>
+              Code: type lines
+            </MenuItem>
+            <MenuItem icon={actionIcon("code")} disabled={codes.length !== 1} onClick={() => addAction({ type: "code", targets: codes, code: { op: "diff", newCode: (elements[codes[0]!] as { code?: string } | undefined)?.code ?? "" } }, "Add code change")}>
+              Code: change the code
+            </MenuItem>
+          </MenuGroup>
         </MenuList>
       </MenuPopover>
     </Menu>
@@ -159,8 +142,10 @@ function IconField({ value, onCommit }: { value: string | undefined; onCommit: (
   useEffect(() => setQuery(value ?? ""), [value]);
   const results = useMemo(() => searchIcons(query.includes(":") ? query.split(":")[1]! : query, { limit: 20 }), [query]);
   return (
-    <Field label="Icon" size="small" hint={value ? undefined : "Type to search, for example mail or packet."}>
+    <Prop label="Icon">
       <Combobox
+        style={{ minWidth: 0, width: "100%" }}
+        placeholder="Search, for example mail"
         size="small"
         freeform
         value={query}
@@ -175,7 +160,7 @@ function IconField({ value, onCommit }: { value: string | undefined; onCommit: (
           </Option>
         ))}
       </Combobox>
-    </Field>
+    </Prop>
   );
 }
 
@@ -184,10 +169,10 @@ function FlowParticle({ step, action, theme }: { step: Step; action: FlowAction;
   const f = action.flow;
   const assets = useEditor((s) => s.scene.assets);
   const images = useMemo(() => Object.entries(assets).filter(([, a]) => a.mime.startsWith("image/")), [assets]);
-  const set = (next: Partial<FlowAction["flow"]>, label = "Change flow particle") => {
+  const set = (next: Partial<FlowAction["flow"]>, label = "Change flow particle", mergeKey?: string) => {
     const flow: Record<string, unknown> = { ...f, ...next };
     for (const k of Object.keys(flow)) if (flow[k] === undefined) delete flow[k];
-    updateAction(step.id, action.id, { flow }, label);
+    updateAction(step.id, action.id, { flow }, label, mergeKey);
   };
   const amount = f.count === undefined ? "stream" : f.count === 1 ? "once" : "count";
   return (
@@ -211,9 +196,8 @@ function FlowParticle({ step, action, theme }: { step: Step; action: FlowAction;
       {f.shape === "image" && (
         <Row>
           <SelectField label="Image" value={f.assetId ?? "none"} options={[{ value: "none", text: "None" }, ...images.map(([id, a]) => ({ value: id, text: a.name ?? id }))]} onCommit={(v) => set({ assetId: v === "none" ? undefined : v })} />
-          <Field label=" " size="small">
-            <Button
-              size="small"
+          <Prop label="">
+            <Btn
               onClick={() =>
                 void withErrors(async () => {
                   const r = await pickImageAsset();
@@ -223,8 +207,8 @@ function FlowParticle({ step, action, theme }: { step: Step; action: FlowAction;
               }
             >
               Choose file…
-            </Button>
-          </Field>
+            </Btn>
+          </Prop>
         </Row>
       )}
       {f.shape !== "image" && <ColorField label="Particle color" theme={theme} value={f.color} onCommit={(v) => set({ color: v ?? "accent" })} />}
@@ -243,9 +227,9 @@ function FlowParticle({ step, action, theme }: { step: Step; action: FlowAction;
       </Row>
       <Row>
         <NumberField label="Trail (0–1)" value={f.trail} min={0} max={1} step={0.1} onCommit={(v) => set({ trail: Math.max(0, Math.min(1, v)) })} />
-        <Field label="Turn along the arrow" size="small">
-          <Switch checked={f.orient} onChange={(_, d) => set({ orient: d.checked })} aria-label="Turn along the arrow" />
-        </Field>
+        <Prop label="">
+          <Check label="Turn along the arrow" checked={f.orient} onChange={(v) => set({ orient: v })} />
+        </Prop>
       </Row>
     </>
   );
@@ -257,7 +241,7 @@ function ActionEditor({ step, action }: { step: Step; action: Action }) {
   const elements = useEditor((s) => s.scene.elements);
   // Derive the list outside the store selector: a new array from a selector re-renders without end.
   const connectorIds = useMemo(() => Object.values(elements).filter((e) => e.type === "connector").map((e) => e.id), [elements]);
-  const set = (s: Record<string, unknown>, name?: string) => updateAction(step.id, action.id, s, name);
+  const set = (s: Record<string, unknown>, name?: string, mergeKey?: string) => updateAction(step.id, action.id, s, name, mergeKey);
   const duration = action.durationMs ?? defaultDurationMs(action);
   return (
     <div className={styles.panel}>
@@ -291,8 +275,8 @@ function ActionEditor({ step, action }: { step: Step; action: Action }) {
         <ColorField label="Color" theme={theme} value={action.params.color} onCommit={(v) => set({ params: { ...action.params, color: v ?? undefined } }, "Change color")} />
       )}
       <Row>
-        <NumberField label="Delay (ms)" value={action.delayMs} min={0} step={50} onCommit={(v) => set({ delayMs: Math.round(v) }, "Change delay")} />
-        <NumberField label="Duration (ms)" value={duration} min={0} step={50} onCommit={(v) => set({ durationMs: Math.round(v) }, "Change duration")} />
+        <NumberField label="Delay (ms)" value={action.delayMs} min={0} step={50} onCommit={(v, k) => set({ delayMs: Math.round(v) }, "Change delay", k)} />
+        <NumberField label="Duration (ms)" value={duration} min={0} step={50} onCommit={(v, k) => set({ durationMs: Math.round(v) }, "Change duration", k)} />
       </Row>
       <Row>
         <SelectField
@@ -368,7 +352,7 @@ function ActionEditor({ step, action }: { step: Step; action: Action }) {
               onCommit={(v) => set({ flow: { ...action.flow, direction: v } }, "Change flow")}
             />
           </Row>
-          <Field label="Skip arrows" size="small" hint="Particles do not use these arrows, for example a failed connection.">
+          <Prop label="Skip arrows">
             <TagPicker
               size="medium"
               selectedOptions={action.flow.skip}
@@ -392,7 +376,7 @@ function ActionEditor({ step, action }: { step: Step; action: Action }) {
                 ))}
               </TagPickerList>
             </TagPicker>
-          </Field>
+          </Prop>
           <SelectField
             label="Continue from arrow"
             value={action.flow.chainFrom ?? "none"}
@@ -401,33 +385,36 @@ function ActionEditor({ step, action }: { step: Step; action: Action }) {
           />
         </>
       )}
-      <Row>
-        {canSplitAction(action) ? (
-          <Tooltip content="One action for each element, so that each element can have its own delay and duration" relationship="description">
-            <Button size="small" appearance="subtle" icon={<SplitVertical20Regular />} onClick={() => splitAction(step.id, action.id)}>
-              Split per element
-            </Button>
-          </Tooltip>
-        ) : (
-          <div />
-        )}
-        <Button size="small" appearance="subtle" icon={<Delete20Regular />} onClick={() => removeAction(step.id, action.id)}>
-          Remove action
-        </Button>
-      </Row>
     </div>
   );
 }
 
 export function StepInspector({ step }: { step: Step }) {
-  const styles = useStyles();
   const hasVoice = useEditor((s) => s.scene.audio.some((t) => t.kind === "voiceover"));
   const startMs = useEditor((s) => s.timeline.steps.find((t) => t.id === step.id)?.startMs ?? 0);
   const line = useEditor((s) => s.scene.script.find((l) => l.stepId === step.id));
+  const activeId = useEditor((s) => s.activeAction);
+  const setActive = (id: string | null) => useEditor.setState({ activeAction: id });
+  const ids = step.actions.map((a) => a.id).join(",");
+  const prevIds = useRef(ids);
+  useEffect(() => {
+    if (!step.actions.some((a) => a.id === activeId)) setActive(step.actions[0]?.id ?? null);
+  }, [step.id]);
+  // A new action becomes the active one; a removed active action gives its place to a neighbor.
+  useEffect(() => {
+    const before = prevIds.current.split(",").filter(Boolean);
+    const now = step.actions.map((a) => a.id);
+    const added = now.find((id) => !before.includes(id));
+    if (added) setActive(added);
+    else if (activeId === null || !now.includes(activeId)) setActive(now[Math.min(Math.max(0, before.indexOf(activeId ?? "")), now.length - 1)] ?? null);
+    prevIds.current = ids;
+  }, [ids]);
+  const active = step.actions.find((a) => a.id === activeId);
+  const index = active ? step.actions.indexOf(active) : -1;
   return (
     <>
-      <TextField label="Title" value={step.title} onCommit={(v) => updateStep(step.id, { title: v }, "Rename step")} />
-      <Row>
+      <Panel id="step-step" title="Settings">
+        <TextField label="Title" value={step.title} onCommit={(v) => updateStep(step.id, { title: v }, "Rename step")} />
         <SelectField
           label="Start"
           value={step.trigger.kind}
@@ -438,46 +425,65 @@ export function StepInspector({ step }: { step: Step }) {
           ]}
           onCommit={(v) => (v === "cue" ? setCue(step.id, startMs, "Change step start") : updateStep(step.id, { trigger: { kind: v } }, "Change step start"))}
         />
-        <NumberField label="Hold (ms)" value={step.holdMs} min={0} step={100} onCommit={(v) => updateStep(step.id, { holdMs: Math.round(v) }, "Change hold")} />
-      </Row>
-      {step.trigger.kind === "cue" && (
-        <NumberField label="Cue time (ms)" value={step.trigger.atMs} min={0} step={100} onCommit={(v) => setCue(step.id, v, "Move cue")} />
-      )}
-      <TextField label="Script line" multiline value={line?.text ?? ""} placeholder="The words of the voiceover for this step" onCommit={(v) => setStepLine(step.id, v)} />
-      <TextField label="Speaker notes" multiline value={step.notes ?? ""} placeholder="Notes for present mode" onCommit={(v) => updateStep(step.id, { notes: v === "" ? null : v }, "Change notes")} />
+        {step.trigger.kind === "cue" && <NumberField label="Cue time (ms)" value={step.trigger.atMs} min={0} step={100} onCommit={(v) => setCue(step.id, v, "Move cue")} />}
+        <NumberField label="Hold (ms)" value={step.holdMs} min={0} step={100} onCommit={(v, k) => updateStep(step.id, { holdMs: Math.round(v) }, "Change hold", k)} />
+      </Panel>
 
-      <div className={styles.headerRow}>
-        <Text size={200} weight="semibold" className={styles.heading}>
-          Actions
-        </Text>
-        <AddActionMenu appearance="subtle" />
-      </div>
-      {step.actions.length === 0 ? (
-        <Text size={200} className={styles.muted}>
-          Select elements on the canvas, then add an action. Or move an element to record a morph.
-        </Text>
-      ) : (
-        <Accordion collapsible multiple>
-          {step.actions.map((a) => (
-            <AccordionItem key={a.id} value={a.id}>
-              <AccordionHeader size="small">
-                <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-                  <Text size={200} weight="semibold">
-                    {describe(a)}
-                  </Text>
-                  <Tooltip content={a.targets.join(", ")} relationship="description">
-                    <span className={styles.targets}>{a.targets.join(", ")}</span>
-                  </Tooltip>
-                </div>
-              </AccordionHeader>
-              <AccordionPanel>
-                <ActionEditor step={step} action={a} />
-              </AccordionPanel>
-            </AccordionItem>
-          ))}
-        </Accordion>
+      <Panel id="step-actions" title={`Actions (${step.actions.length})`}>
+        <ListView
+          label="Actions"
+          items={step.actions.map((a) => ({ id: a.id, icon: actionIcon(a.type), text: describe(a), meta: a.targets.length > 2 ? `${a.targets.length} elements` : a.targets.join(", ") }))}
+          active={activeId}
+          onActivate={setActive}
+          empty="No actions. Select elements, then click +."
+          onRowKey={(id, e) => {
+            if (e.key === "Delete" || e.key === "Backspace") {
+              e.preventDefault();
+              removeAction(step.id, id);
+            }
+          }}
+          side={
+            <>
+              <AddActionMenu iconOnly />
+              <IconButton label="Remove action" icon={<Subtract16Regular />} disabled={!active} onClick={() => active && removeAction(step.id, active.id)} />
+              <ListSideGap />
+              <IconButton label="Move up" icon={<ChevronUp16Regular />} disabled={index <= 0} onClick={() => active && moveAction(step.id, active.id, -1)} />
+              <IconButton label="Move down" icon={<ChevronDown16Regular />} disabled={index < 0 || index >= step.actions.length - 1} onClick={() => active && moveAction(step.id, active.id, 1)} />
+              <ListSideGap />
+              <Menu>
+                <MenuTrigger disableButtonEnhancement>
+                  <MenuButtonSmall iconOnly icon={<MoreHorizontal16Regular />} aria-label="More action commands" disabled={!active} />
+                </MenuTrigger>
+                <MenuPopover>
+                  <MenuList>
+                    <MenuItem icon={<SplitVertical16Regular />} disabled={!active || !canSplitAction(active)} onClick={() => active && splitAction(step.id, active.id)}>
+                      Split per element
+                    </MenuItem>
+                    <MenuItem icon={<Delete16Regular />} disabled={!active} onClick={() => active && removeAction(step.id, active.id)}>
+                      Remove action
+                    </MenuItem>
+                  </MenuList>
+                </MenuPopover>
+              </Menu>
+            </>
+          }
+        />
+        {active && <Note>Targets: {active.targets.join(", ") || "none"}</Note>}
+      </Panel>
+
+      {active && (
+        <Panel id="step-action" title={describe(active)}>
+          <ActionEditor key={active.id} step={step} action={active} />
+        </Panel>
       )}
-      <Comments kind="step" id={step.id} />
+
+      <Panel id="step-voice" title="Script and notes">
+        <TextField label="Script line" multiline value={line?.text ?? ""} placeholder="The words of the voiceover for this step" onCommit={(v) => setStepLine(step.id, v)} />
+        <TextField label="Speaker notes" multiline value={step.notes ?? ""} placeholder="Notes for present mode" onCommit={(v) => updateStep(step.id, { notes: v === "" ? null : v }, "Change notes")} />
+      </Panel>
+      <Panel id="step-comments" title="Comments" defaultOpen={false}>
+        <Comments kind="step" id={step.id} />
+      </Panel>
     </>
   );
 }

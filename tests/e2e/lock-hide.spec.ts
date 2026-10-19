@@ -16,7 +16,7 @@ test("a locked element cannot be picked on the canvas; unlock all brings it back
   const p = await center(page, "pod-2");
   await page.mouse.click(p.x, p.y);
   expect((await st(page)).selection).toEqual(["pod-2"]);
-  await page.getByRole("switch", { name: "Locked" }).click();
+  await page.getByLabel("Inspector").getByRole("button", { name: "Lock", exact: true }).click();
   expect((await st(page)).scene.elements["pod-2"]!.locked).toBe(true);
   await page.mouse.click(p.x, p.y);
   expect((await st(page)).selection).toEqual([]);

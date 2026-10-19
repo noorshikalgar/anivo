@@ -6,9 +6,32 @@
     <meta name="description" content="Anivo: draw a diagram, divide it into steps, export an explainer video." />
     <title>Anivo</title>
     <style>
+      @font-face { font-family: Inter; font-weight: 400; font-display: swap; src: url(/fonts/inter-latin-400-normal.woff2) format("woff2"); }
+      @font-face { font-family: Inter; font-weight: 500; font-display: swap; src: url(/fonts/inter-latin-500-normal.woff2) format("woff2"); }
+      @font-face { font-family: Inter; font-weight: 600 700; font-display: swap; src: url(/fonts/inter-latin-700-normal.woff2) format("woff2"); }
+      /* Editor UI colors (docs/15). App.tsx sets data-ui to "dark" or "light". */
+      :root, :root[data-ui="dark"] {
+        --ui-app: #161616; --ui-region: #303030; --ui-header: #2b2b2b; --ui-panel: #383838; --ui-panel-header: #3d3d3d;
+        --ui-list: #282828; --ui-list-alt: #2b2b2b; --ui-widget: #545454; --ui-widget-hover: #656565; --ui-field: #1d1d1d; --ui-menu: #282828;
+        --ui-text: #e6e6e6; --ui-muted: #a0a0a0; --ui-faint: #707070; --ui-outline: #3d3d3d; --ui-line: #232323;
+        --ui-hover: rgba(255, 255, 255, 0.07); --ui-pressed: rgba(255, 255, 255, 0.12);
+        --ui-select: #4772b3; --ui-row-selected: #334d80; --ui-muted-on-select: #d2d9e6; --ui-active: #ffaf29; --ui-viewport: #1f1f1f;
+        color-scheme: dark;
+      }
+      :root[data-ui="light"] {
+        --ui-app: #a8a8a8; --ui-region: #e4e4e4; --ui-header: #d6d6d6; --ui-panel: #ececec; --ui-panel-header: #dddddd;
+        --ui-list: #f2f2f2; --ui-list-alt: #ebebeb; --ui-widget: #ffffff; --ui-widget-hover: #f4f4f4; --ui-field: #ffffff; --ui-menu: #ffffff;
+        --ui-text: #1a1a1a; --ui-muted: #5c5c5c; --ui-faint: #8a8a8a; --ui-outline: #b4b4b4; --ui-line: #c6c6c6;
+        --ui-hover: rgba(0, 0, 0, 0.06); --ui-pressed: rgba(0, 0, 0, 0.1);
+        --ui-select: #4772b3; --ui-row-selected: #b9cdeb; --ui-muted-on-select: #2c3a52; --ui-active: #e08a00; --ui-viewport: #cfcfcf;
+        color-scheme: light;
+      }
       html, body, #root { height: 100%; margin: 0; }
-      body { overflow: hidden; }
+      body { overflow: hidden; background: var(--ui-app); font-family: Inter, system-ui, sans-serif; }
       #root > .fui-FluentProvider { height: 100%; }
+      ::-webkit-scrollbar { width: 8px; height: 8px; }
+      ::-webkit-scrollbar-thumb { background: var(--ui-widget); border-radius: 4px; border: 2px solid transparent; background-clip: padding-box; }
+      ::-webkit-scrollbar-track { background: transparent; }
     </style>
   </head>
   <body>

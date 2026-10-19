@@ -15,7 +15,7 @@ test("on a phone, the panels are drawers and the video fits the screen", async (
   await openEditor(page);
   await page.setViewportSize({ width: 375, height: 812 });
   await expect(page.getByRole("navigation", { name: "Steps" })).not.toBeInViewport();
-  for (const name of ["Home", "Export video or images (Ctrl+E)", "Properties", "Steps"]) await expect(page.getByRole("button", { name, exact: true })).toBeInViewport({ ratio: 1 });
+  for (const name of ["Home", "Export", "Properties", "Steps"]) await expect(page.getByRole("button", { name, exact: true })).toBeInViewport({ ratio: 1 });
   expect(await noSideScroll(page)).toBe(true);
   // The video fits the new width.
   await expect.poll(async () => (await state(page)).view.zoom * 960).toBeLessThan(375);

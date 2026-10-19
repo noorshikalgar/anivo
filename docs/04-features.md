@@ -174,6 +174,7 @@ See [09 — Agent interface](09-agent-interface.md).
 | FR-UX-06 | Touch and pen input on tablets | P2 | Partly done: two fingers zoom (pinch) and pan the canvas; one finger selects, moves, and draws. |
 | FR-UX-07 | Accessibility: keyboard focus order, screen reader labels on all controls | P1 | Pass axe-core with zero critical issues. |
 | FR-UX-08 | Layout for small windows (tablet and phone) | P1 | Done: at 1280 px and less the panels are narrower. Below 1024 px the canvas uses the full width, and **Steps** and **Properties** (top bar buttons) open as drawers over it (Escape closes them). Below 600 px the top bar shows icons only. The video fits the canvas again when the window size changes, until the user pans or zooms. The home screen and the dialogs fit a 375 px phone. |
+| FR-UX-09 | A dense, consistent UI, as in professional tools | P1 | Done: [15 — Editor UI design](15-ui-design.md). Areas with headers (Steps tree, Viewport with a vertical toolbar, Outliner, Properties with tabs, Timeline ruler, status bar), collapsible panels, label-left property rows, drag number fields (one undo step for each drag), icon toggles, color fields, list views. |
 
 ## 11. Extensibility (`FR-EXT`)
 

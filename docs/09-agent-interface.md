@@ -88,6 +88,7 @@ Each operation is a JSON object with an `op` field. Operations are versioned wit
 3. Return the result: new IDs, warnings, and the new scene version number.
 4. Record the transaction in the history with its author and label.
 5. Use optimistic version checks. A transaction can include `baseVersion`. If the scene version is different and the transaction touches the same elements, return `conflict`. If the elements are different, apply it.
+6. Merge one gesture into one undo step. A transaction can include `mergeKey`. Transactions in a row with the same key are one history entry (for example all the changes of one drag of a number field).
 
 ### Error format
 

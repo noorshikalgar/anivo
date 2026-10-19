@@ -1,4 +1,4 @@
-import { Toolbar, ToolbarButton, ToolbarDivider, ToolbarRadioButton, ToolbarRadioGroup, Tooltip, makeStyles, tokens } from "@fluentui/react-components";
+import { Toolbar, ToolbarButton, ToolbarDivider, ToolbarRadioButton, ToolbarRadioGroup, Tooltip, makeStyles } from "@fluentui/react-components";
 import {
   ArrowRight20Regular,
   Circle20Regular,
@@ -19,20 +19,34 @@ import { withErrors } from "../notify.js";
 import { type Tool, useEditor } from "../store.js";
 
 const useStyles = makeStyles({
+  // The toolbar of the viewport (docs/15): a column of tools on the left, as in Blender.
   root: {
     position: "absolute",
-    top: tokens.spacingVerticalM,
-    left: "50%",
-    transform: "translateX(-50%)",
+    top: "8px",
+    left: "8px",
     zIndex: 2,
-    backgroundColor: tokens.colorNeutralBackground1,
-    borderRadius: tokens.borderRadiusLarge,
-    boxShadow: tokens.shadow8,
-    padding: "2px",
-    maxWidth: "calc(100% - 16px)",
-    overflowX: "auto",
+    display: "flex",
+    flexDirection: "column",
+    gap: "2px",
+    padding: "3px",
+    borderRadius: "6px",
+    backgroundColor: "color-mix(in srgb, var(--ui-header) 92%, transparent)",
+    boxShadow: "0 1px 4px rgba(0,0,0,0.35)",
+    maxHeight: "calc(100% - 16px)",
+    overflowY: "auto",
     scrollbarWidth: "none",
   },
+  btn: {
+    width: "30px",
+    height: "30px",
+    minWidth: "30px",
+    borderRadius: "4px",
+    color: "var(--ui-text)",
+    "[aria-checked='true'], [aria-pressed='true']": { backgroundColor: "var(--ui-select)", color: "#fff" },
+    "&[aria-checked='true'] .fui-Button__icon": { color: "#fff" },
+    ":hover": { backgroundColor: "var(--ui-hover)" },
+  },
+  divider: { height: "1px", width: "auto", margin: "3px 2px", backgroundColor: "var(--ui-line)", minHeight: "1px" },
 });
 
 export const TOOLS: { tool: Tool; label: string; key: string; icon: ReactElement }[] = [
@@ -52,20 +66,23 @@ export function ToolPalette() {
   const tool = useEditor((s) => s.tool);
   const setTool = useEditor((s) => s.setTool);
   return (
-    <Toolbar className={styles.root} aria-label="Tools" checkedValues={{ tool: [tool] }} onCheckedValueChange={(_, d) => setTool(d.checkedItems[0] as Tool)}>
-      <ToolbarRadioGroup>
-        {TOOLS.map((t) => (
-          <Tooltip key={t.tool} content={`${t.label} (${t.key})`} relationship="label" positioning="below">
-            <ToolbarRadioButton name="tool" value={t.tool} icon={t.icon} appearance="subtle" />
-          </Tooltip>
+    <Toolbar vertical className={styles.root} aria-label="Tools" checkedValues={{ tool: [tool] }} onCheckedValueChange={(_, d) => setTool(d.checkedItems[0] as Tool)}>
+      <ToolbarRadioGroup style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+        {TOOLS.map((t, i) => (
+          <span key={t.tool} style={{ display: "contents" }}>
+            {(i === 2 || i === 6) && <ToolbarDivider className={styles.divider} />}
+            <Tooltip content={`${t.label} (${t.key})`} relationship="label" positioning="after">
+              <ToolbarRadioButton className={styles.btn} name="tool" value={t.tool} icon={t.icon} appearance="subtle" />
+            </Tooltip>
+          </span>
         ))}
       </ToolbarRadioGroup>
-      <ToolbarDivider />
-      <Tooltip content="Insert table" relationship="label" positioning="below">
-        <ToolbarButton icon={<Table20Regular />} appearance="subtle" aria-label="Insert table" onClick={() => insertTable()} />
+      <ToolbarDivider className={styles.divider} />
+      <Tooltip content="Insert table" relationship="label" positioning="after">
+        <ToolbarButton className={styles.btn} icon={<Table20Regular />} appearance="subtle" aria-label="Insert table" onClick={() => insertTable()} />
       </Tooltip>
-      <Tooltip content="Insert image" relationship="label" positioning="below">
-        <ToolbarButton icon={<Image20Regular />} appearance="subtle" aria-label="Insert image" onClick={() => void withErrors(pickImage)} />
+      <Tooltip content="Insert image" relationship="label" positioning="after">
+        <ToolbarButton className={styles.btn} icon={<Image20Regular />} appearance="subtle" aria-label="Insert image" onClick={() => void withErrors(pickImage)} />
       </Tooltip>
     </Toolbar>
   );

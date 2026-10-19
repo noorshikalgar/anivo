@@ -192,6 +192,7 @@ export const Transaction = z.object({
   label: z.string().default(""),
   ops: z.array(Operation).min(1),
   baseVersion: z.number().int().nonnegative().optional().describe("Scene version that the author saw. Used to find conflicts."),
+  mergeKey: z.string().optional().describe("Transactions in a row with the same key are one undo step, for example the changes of one drag gesture."),
 });
 export type Transaction = z.infer<typeof Transaction>;
 export type TransactionInput = z.input<typeof Transaction>;

@@ -47,6 +47,12 @@ interface EditorState {
   exportOpen: boolean;
   /** The voiceover record, while it runs (see record.ts). */
   recording: import("./record.js").RecordingState | null;
+  /** The viewport uses the full window (Ctrl+Space). */
+  maximized: boolean;
+  /** Show the elements that are hidden at the current time, faint (the viewport overlay). */
+  showGhosts: boolean;
+  /** The active action of the selected step (properties and step tree), or null. */
+  activeAction: string | null;
   /** True while the view fits the video: a change of the window size fits it again. */
   autoFit: boolean;
   /** Small windows: the panel that shows over the canvas (a drawer), or null. */
@@ -180,6 +186,9 @@ export const useEditor = create<EditorState>((set, get) => {
     takes: null,
     screen: "home",
     autoFit: true,
+    activeAction: null,
+    showGhosts: true,
+    maximized: false,
     drawer: null,
     libraryId: null,
     libraryVersion: 0,

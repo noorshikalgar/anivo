@@ -157,7 +157,7 @@ const STYLE_KEYS = new Set(["fill", "stroke", "strokeWidth", "strokeStyle", "cor
  * morphable properties of a visible element become a morph in that step
  * (FR-STEP-04). Other properties always change the element.
  */
-export function commitProps(id: string, changes: Record<string, unknown>, label = "Change property"): void {
+export function commitProps(id: string, changes: Record<string, unknown>, label = "Change property", mergeKey?: string): void {
   const st = useEditor.getState();
   const el = st.scene.elements[id];
   if (!el) return;
@@ -181,7 +181,7 @@ export function commitProps(id: string, changes: Record<string, unknown>, label 
     if (existing && existing.type === "morph") ops.push({ op: "action.update", step: step.id, id: existing.id, set: { to: { ...existing.to, ...morph } } });
     else ops.push({ op: "action.add", step: step.id, action: { type: "morph", targets: [id], to: morph } });
   }
-  if (ops.length > 0) st.apply({ label, ops });
+  if (ops.length > 0) st.apply({ label, ops, ...(mergeKey ? { mergeKey } : {}) });
 }
 
 /** Rename an element. Returns an error message, or undefined if the rename worked. */
@@ -246,8 +246,8 @@ export function moveStep(id: string, index: number): void {
   useEditor.getState().apply({ label: "Move step", ops: [{ op: "step.move", id, index }] });
 }
 
-export function updateStep(id: string, set: Record<string, unknown>, label = "Change step"): void {
-  useEditor.getState().apply({ label, ops: [{ op: "step.update", id, set }] });
+export function updateStep(id: string, set: Record<string, unknown>, label = "Change step", mergeKey?: string): void {
+  useEditor.getState().apply({ label, ops: [{ op: "step.update", id, set }], ...(mergeKey ? { mergeKey } : {}) });
 }
 
 /** Add an action for the selected elements to the selected step. */
@@ -258,8 +258,18 @@ export function addAction(action: Record<string, unknown>, label = "Add action")
   return r.ok ? r.created[0] : undefined;
 }
 
-export function updateAction(step: string, id: string, set: Record<string, unknown>, label = "Change action"): void {
-  useEditor.getState().apply({ label, ops: [{ op: "action.update", step, id, set }] });
+export function updateAction(step: string, id: string, set: Record<string, unknown>, label = "Change action", mergeKey?: string): void {
+  useEditor.getState().apply({ label, ops: [{ op: "action.update", step, id, set }], ...(mergeKey ? { mergeKey } : {}) });
+}
+
+/** Move an action one place up or down in its step. */
+export function moveAction(stepId: string, id: string, dir: -1 | 1): void {
+  const st = useEditor.getState();
+  const step = st.scene.steps.find((s) => s.id === stepId);
+  const i = step?.actions.findIndex((a) => a.id === id) ?? -1;
+  const to = i + dir;
+  if (!step || i < 0 || to < 0 || to >= step.actions.length) return;
+  st.apply({ label: "Move action", ops: [{ op: "action.remove", step: stepId, id }, { op: "action.add", step: stepId, index: to, action: step.actions[i]! }] });
 }
 
 /** Action types that split into one action for each target. A camera or a flow uses all its targets together. */

@@ -1,214 +1,260 @@
+/**
+ * The top bar (docs/15): the menus, the scene title, and the main commands.
+ */
+import { Menu, MenuDivider, MenuItem, MenuList, MenuPopover, MenuTrigger, Tooltip, makeStyles, mergeClasses } from "@fluentui/react-components";
 import {
-  Button,
-  Menu,
-  MenuDivider,
-  MenuItem,
-  MenuList,
-  MenuPopover,
-  MenuTrigger,
-  Text,
-  Toolbar,
-  ToolbarButton,
-  ToolbarDivider,
-  ToggleButton,
-  Tooltip,
-  makeStyles,
-  tokens,
-} from "@fluentui/react-components";
-import { ArrowExportUp20Regular, Home20Regular, PanelRight20Regular, TextBulletListLtr20Regular, Play20Regular, ArrowRedo20Regular, ArrowUndo20Regular, Document20Regular, History20Regular, FolderOpen20Regular, Bot20Regular, Mic20Regular, Sparkle20Regular, MusicNote220Regular, Record20Regular, Save20Regular, ZoomFit20Regular } from "@fluentui/react-icons";
+  ArrowExportUp16Regular,
+  ArrowRedo16Regular,
+  ArrowUndo16Regular,
+  Bot16Regular,
+  Copy16Regular,
+  Delete16Regular,
+  Document16Regular,
+  FolderOpen16Regular,
+  History16Regular,
+  Home16Regular,
+  Keyboard16Regular,
+  Mic16Regular,
+  MusicNote216Regular,
+  PanelRight16Regular,
+  Play16Regular,
+  Record16Regular,
+  Save16Regular,
+  Search16Regular,
+  Sparkle16Regular,
+  TextBulletListLtr16Regular,
+  ZoomFit16Regular,
+} from "@fluentui/react-icons";
 import { useState } from "react";
-import { goHome, hasFileSystemAccess, newScene, openFile, runImport, openRecent, recentFiles, saveFile, saveFileAs } from "../files.js";
+import { deleteSelection, duplicateSelection } from "../commands.js";
+import { goHome, hasFileSystemAccess, newScene, openFile, openRecent, recentFiles, runImport, saveFile, saveFileAs } from "../files.js";
 import { notify, withErrors } from "../notify.js";
 import { cueAllSteps, importAudio } from "../audio.js";
 import { startRecording } from "../record.js";
 import { openTakes } from "../takes.js";
 import { shareServer } from "../share.js";
 import { useEditor } from "../store.js";
+import { MenuButtonSmall } from "./ui.js";
 import { COMPACT, PHONE, useMedia } from "./useMedia.js";
 
 const useStyles = makeStyles({
   root: {
     display: "flex",
     alignItems: "center",
-    gap: tokens.spacingHorizontalS,
-    padding: `0 ${tokens.spacingHorizontalM}`,
-    "@media (max-width: 599px)": { gap: "2px", padding: `0 ${tokens.spacingHorizontalXS}` },
-    height: "48px",
+    gap: "2px",
+    height: "30px",
+    padding: "0 6px",
     minWidth: 0,
     overflow: "hidden",
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
-    backgroundColor: tokens.colorNeutralBackground1,
+    backgroundColor: "var(--ui-header)",
+    color: "var(--ui-text)",
+    fontSize: "12px",
   },
-  brand: { fontWeight: tokens.fontWeightSemibold, letterSpacing: "0.02em", marginRight: tokens.spacingHorizontalS, fontSize: tokens.fontSizeBase400 },
-  title: { color: tokens.colorNeutralForeground3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
-  spacer: { flexGrow: 1 },
+  brand: { fontWeight: 600, marginRight: "6px", gap: "6px", padding: "0 8px" },
+  menu: {
+    height: "22px",
+    padding: "0 8px",
+    border: "none",
+    borderRadius: "4px",
+    background: "none",
+    color: "var(--ui-text)",
+    font: "inherit",
+    fontSize: "12px",
+    cursor: "pointer",
+    ":hover": { backgroundColor: "var(--ui-hover)" },
+    "[aria-expanded='true']": { backgroundColor: "var(--ui-select)", color: "#fff" },
+    ":focus-visible": { outline: "1px solid var(--ui-select)" },
+  },
+  title: { flexGrow: 1, minWidth: 0, textAlign: "center", color: "var(--ui-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", padding: "0 12px" },
+  titleName: { color: "var(--ui-text)" },
+  group: { display: "flex", alignItems: "center", gap: "2px" },
+  sep: { width: "1px", height: "16px", backgroundColor: "var(--ui-line)", margin: "0 4px" },
+  primary: { backgroundColor: "var(--ui-select)", color: "#fff", ":hover": { backgroundColor: "#5580bd" } },
 });
 
 export { TEMPLATES } from "@anivo/schema";
 
+/** A top-bar menu: a text button that opens a menu. */
+function BarMenu({ label, icon, children, onOpen }: { label: string; icon?: React.ReactElement; children: React.ReactNode; onOpen?: () => void }) {
+  const s = useStyles();
+  const phone = useMedia(PHONE);
+  return (
+    <Menu onOpenChange={(_, d) => d.open && onOpen?.()}>
+      <MenuTrigger disableButtonEnhancement>
+        <MenuButtonSmall className={s.menu} aria-label={label} iconOnly={phone && !!icon} icon={phone ? icon : undefined}>
+          {label}
+        </MenuButtonSmall>
+      </MenuTrigger>
+      <MenuPopover>
+        <MenuList>{children}</MenuList>
+      </MenuPopover>
+    </Menu>
+  );
+}
+
 export function TopBar() {
-  const styles = useStyles();
-  const title = useEditor((s) => s.scene.meta.title);
-  const fileName = useEditor((s) => s.fileName);
-  const dirty = useEditor((s) => s.dirty);
-  const hasVoice = useEditor((s) => s.scene.audio.some((t) => t.kind === "voiceover"));
-  const agentOn = useEditor((s) => s.agent !== null);
-  const drawer = useEditor((s) => s.drawer);
+  const s = useStyles();
+  const title = useEditor((st) => st.scene.meta.title);
+  const fileName = useEditor((st) => st.fileName);
+  const dirty = useEditor((st) => st.dirty);
+  const hasVoice = useEditor((st) => st.scene.audio.some((t) => t.kind === "voiceover"));
+  const agentOn = useEditor((st) => st.agent !== null);
+  const timelineOpen = useEditor((st) => st.timelineOpen);
+  const hasSelection = useEditor((st) => st.selection.length > 0);
+  const drawer = useEditor((st) => st.drawer);
   const compact = useMedia(COMPACT);
   const phone = useMedia(PHONE);
   const toggle = (d: "steps" | "inspector") => useEditor.setState((st) => ({ drawer: st.drawer === d ? null : d }));
-  useEditor((s) => s.version);
+  useEditor((st) => st.version);
   const { bus, undo, redo, fitToVideo } = useEditor.getState();
   const [recent, setRecent] = useState<Awaited<ReturnType<typeof recentFiles>>>([]);
+  const tool = (label: string, icon: React.ReactElement, onClick: () => void, opts: { text?: string; primary?: boolean; pressed?: boolean; disabled?: boolean } = {}) => (
+    <Tooltip content={label} relationship="description" withArrow={false}>
+      <MenuButtonSmall className={mergeClasses(s.menu, opts.primary && s.primary)} aria-label={opts.text ?? label} aria-pressed={opts.pressed} disabled={opts.disabled} icon={icon} iconOnly={!opts.text || compact} onClick={onClick}>
+        {opts.text}
+      </MenuButtonSmall>
+    </Tooltip>
+  );
 
   return (
-    <header className={styles.root}>
-      <Tooltip content="Home: all your scenes" relationship="description">
-        <Button appearance="subtle" icon={<Home20Regular />} className={styles.brand} onClick={() => void withErrors(goHome)} aria-label="Home">
+    <header className={s.root}>
+      <Tooltip content="Home: all your scenes" relationship="description" withArrow={false}>
+        <MenuButtonSmall className={mergeClasses(s.menu, s.brand)} icon={<Home16Regular />} aria-label="Home" onClick={() => void withErrors(goHome)}>
           {phone ? null : "Anivo"}
-        </Button>
+        </MenuButtonSmall>
       </Tooltip>
-      {compact && (
-        <Tooltip content="Steps" relationship="label">
-          <ToggleButton appearance="subtle" size="small" icon={<TextBulletListLtr20Regular />} checked={drawer === "steps"} onClick={() => toggle("steps")} />
-        </Tooltip>
-      )}
-      <Menu onOpenChange={(_, d) => d.open && void recentFiles().then(setRecent)}>
-        <MenuTrigger disableButtonEnhancement>
-          <Button appearance="subtle" size="small" icon={phone ? <Document20Regular /> : undefined} aria-label="File">
-            {phone ? null : "File"}
-          </Button>
-        </MenuTrigger>
-        <MenuPopover>
-          <MenuList>
-            <MenuItem icon={<Document20Regular />} onClick={() => newScene()}>
-              New scene
-            </MenuItem>
-            <MenuItem onClick={() => useEditor.setState({ galleryOpen: true })}>New from template…</MenuItem>
-            <MenuItem onClick={() => void withErrors(runImport)}>Import Excalidraw or Mermaid…</MenuItem>
-            <MenuDivider />
-            <MenuItem icon={<FolderOpen20Regular />} secondaryContent="Ctrl+O" onClick={() => void withErrors(openFile)}>
-              Open…
-            </MenuItem>
-            {hasFileSystemAccess && (
-              <Menu>
-                <MenuTrigger disableButtonEnhancement>
-                  <MenuItem disabled={recent.length === 0}>Open recent</MenuItem>
-                </MenuTrigger>
-                <MenuPopover>
-                  <MenuList>
-                    {recent.map((r) => (
-                      <MenuItem key={r.name} onClick={() => void withErrors(() => openRecent(r))}>
-                        {r.name}
-                      </MenuItem>
-                    ))}
-                  </MenuList>
-                </MenuPopover>
-              </Menu>
-            )}
-            <MenuDivider />
-            <MenuItem icon={<Save20Regular />} secondaryContent="Ctrl+S" onClick={() => void withErrors(async () => (await saveFile()) && notify("Saved", "success"))}>
-              Save
-            </MenuItem>
-            <MenuItem secondaryContent="Ctrl+Shift+S" onClick={() => void withErrors(async () => (await saveFileAs()) && notify("Saved", "success"))}>
-              Save as…
-            </MenuItem>
-            {shareServer() && (
-              <>
-                <MenuDivider />
-                <MenuItem onClick={() => useEditor.setState({ shareOpen: true })}>Share link…</MenuItem>
-              </>
-            )}
-          </MenuList>
-        </MenuPopover>
-      </Menu>
-      <Menu>
-        <MenuTrigger disableButtonEnhancement>
-          <Button appearance="subtle" size="small" icon={phone ? <Mic20Regular /> : undefined} aria-label="Audio">
-            {phone ? null : "Audio"}
-          </Button>
-        </MenuTrigger>
-        <MenuPopover>
-          <MenuList>
-            <MenuItem icon={<Mic20Regular />} onClick={() => void withErrors(() => importAudio("voiceover"))}>
-              Add voiceover…
-            </MenuItem>
-            <MenuItem icon={<MusicNote220Regular />} onClick={() => void withErrors(() => importAudio("music"))}>
-              Add music…
-            </MenuItem>
-            <MenuItem onClick={() => void withErrors(() => importAudio("sfx"))}>Add sound effect…</MenuItem>
-            <MenuItem icon={<Record20Regular />} onClick={() => void withErrors(startRecording)}>
-              Record voiceover in one take…
-            </MenuItem>
-            <MenuItem onClick={() => void withErrors(async () => openTakes())}>Record voiceover step by step…</MenuItem>
-            <MenuDivider />
-            <MenuItem onClick={() => useEditor.setState({ scriptOpen: true })}>Edit script…</MenuItem>
-            <MenuItem onClick={() => useEditor.setState({ ttsOpen: true })}>Make voiceover from script…</MenuItem>
-            <MenuItem disabled={!hasVoice} onClick={() => useEditor.setState({ alignOpen: true })}>
-              Align script to voiceover…
-            </MenuItem>
-            <MenuItem disabled={!hasVoice} onClick={cueAllSteps}>
-              Start all steps at voiceover cues
-            </MenuItem>
-          </MenuList>
-        </MenuPopover>
-      </Menu>
-      <Text size={300} className={styles.title} title={fileName ?? undefined} style={phone ? { display: "none" } : undefined}>
-        {title}
-        {fileName ? ` · ${fileName}` : ""}
-        {dirty ? " •" : ""}
-      </Text>
-      <div className={styles.spacer} />
-      <Toolbar aria-label="Edit" size="small">
-        <Tooltip content="Undo (Ctrl+Z)" relationship="label">
-          <ToolbarButton icon={<ArrowUndo20Regular />} onClick={undo} disabled={!bus.canUndo} />
-        </Tooltip>
-        <Tooltip content="Redo (Ctrl+Shift+Z)" relationship="label">
-          <ToolbarButton icon={<ArrowRedo20Regular />} onClick={redo} disabled={!bus.canRedo} />
-        </Tooltip>
-        {!phone && (
-          <Tooltip content="History" relationship="label">
-            <ToolbarButton icon={<History20Regular />} onClick={() => useEditor.setState({ historyOpen: true })} />
-          </Tooltip>
+      {compact && tool("Steps", <TextBulletListLtr16Regular />, () => toggle("steps"), { pressed: drawer === "steps" })}
+      <BarMenu label="File" icon={<Document16Regular />} onOpen={() => void recentFiles().then(setRecent)}>
+        <MenuItem icon={<Document16Regular />} onClick={() => newScene()}>
+          New scene
+        </MenuItem>
+        <MenuItem onClick={() => useEditor.setState({ galleryOpen: true })}>New from template…</MenuItem>
+        <MenuItem onClick={() => void withErrors(runImport)}>Import Excalidraw or Mermaid…</MenuItem>
+        <MenuDivider />
+        <MenuItem icon={<FolderOpen16Regular />} secondaryContent="Ctrl+O" onClick={() => void withErrors(openFile)}>
+          Open…
+        </MenuItem>
+        {hasFileSystemAccess && (
+          <Menu>
+            <MenuTrigger disableButtonEnhancement>
+              <MenuItem disabled={recent.length === 0}>Open recent</MenuItem>
+            </MenuTrigger>
+            <MenuPopover>
+              <MenuList>
+                {recent.map((r) => (
+                  <MenuItem key={r.name} onClick={() => void withErrors(() => openRecent(r))}>
+                    {r.name}
+                  </MenuItem>
+                ))}
+              </MenuList>
+            </MenuPopover>
+          </Menu>
         )}
-        {!phone && (
+        <MenuDivider />
+        <MenuItem icon={<Save16Regular />} secondaryContent="Ctrl+S" onClick={() => void withErrors(async () => (await saveFile()) && notify("Saved", "success"))}>
+          Save
+        </MenuItem>
+        <MenuItem secondaryContent="Ctrl+Shift+S" onClick={() => void withErrors(async () => (await saveFileAs()) && notify("Saved", "success"))}>
+          Save as…
+        </MenuItem>
+        {shareServer() && (
           <>
-            <ToolbarDivider />
-            <Tooltip content="Fit video to screen (Shift+1)" relationship="label">
-              <Button appearance="subtle" icon={<ZoomFit20Regular />} onClick={fitToVideo} />
-            </Tooltip>
+            <MenuDivider />
+            <MenuItem onClick={() => useEditor.setState({ shareOpen: true })}>Share link…</MenuItem>
           </>
         )}
-      </Toolbar>
-      <Tooltip content="AI panel" relationship="description">
-        <Button appearance="subtle" size="small" icon={<Sparkle20Regular />} aria-label="AI" onClick={() => useEditor.setState((s) => ({ aiOpen: !s.aiOpen }))}>
-          {compact ? null : "AI"}
-        </Button>
-      </Tooltip>
-      {!agentOn && !phone && (
-        <Tooltip content="Connect agent" relationship="label">
-          <Button appearance="subtle" size="small" icon={<Bot20Regular />} onClick={() => useEditor.setState({ connectOpen: true })}>
-            {compact ? null : "Connect agent"}
-          </Button>
-        </Tooltip>
+        <MenuDivider />
+        <MenuItem icon={<ArrowExportUp16Regular />} secondaryContent="Ctrl+E" onClick={() => useEditor.setState({ exportOpen: true })}>
+          Export…
+        </MenuItem>
+        <MenuItem icon={<Home16Regular />} onClick={() => void withErrors(goHome)}>
+          Home
+        </MenuItem>
+      </BarMenu>
+      {!phone && (
+        <BarMenu label="Edit">
+          <MenuItem icon={<ArrowUndo16Regular />} secondaryContent="Ctrl+Z" disabled={!bus.canUndo} onClick={undo}>
+            Undo
+          </MenuItem>
+          <MenuItem icon={<ArrowRedo16Regular />} secondaryContent="Ctrl+Shift+Z" disabled={!bus.canRedo} onClick={redo}>
+            Redo
+          </MenuItem>
+          <MenuItem icon={<History16Regular />} onClick={() => useEditor.setState({ historyOpen: true })}>
+            History…
+          </MenuItem>
+          <MenuDivider />
+          <MenuItem icon={<Copy16Regular />} secondaryContent="Ctrl+D" disabled={!hasSelection} onClick={duplicateSelection}>
+            Duplicate
+          </MenuItem>
+          <MenuItem icon={<Delete16Regular />} secondaryContent="Delete" disabled={!hasSelection} onClick={deleteSelection}>
+            Delete
+          </MenuItem>
+          <MenuDivider />
+          <MenuItem icon={<Search16Regular />} secondaryContent="F3" onClick={() => useEditor.setState({ paletteOpen: true })}>
+            Search commands…
+          </MenuItem>
+        </BarMenu>
       )}
       {!phone && (
-        <Tooltip content="Present step by step (F5)" relationship="label">
-          <Button appearance="secondary" size="small" icon={<Play20Regular />} onClick={() => (useEditor.getState().pause(), useEditor.setState({ presenting: true }))}>
-            {compact ? null : "Present"}
-          </Button>
-        </Tooltip>
+        <BarMenu label="View">
+          <MenuItem icon={<ZoomFit16Regular />} secondaryContent="Shift+1" onClick={fitToVideo}>
+            Fit the video
+          </MenuItem>
+          <MenuItem secondaryContent="T" onClick={() => useEditor.setState((st) => ({ timelineOpen: !st.timelineOpen }))}>
+            {timelineOpen ? "Hide the timeline" : "Show the timeline"}
+          </MenuItem>
+          <MenuDivider />
+          <MenuItem icon={<Play16Regular />} secondaryContent="F5" onClick={() => (useEditor.getState().pause(), useEditor.setState({ presenting: true }))}>
+            Present
+          </MenuItem>
+        </BarMenu>
       )}
-      <Tooltip content="Export video or images (Ctrl+E)" relationship="label">
-        <Button appearance="primary" size="small" icon={<ArrowExportUp20Regular />} onClick={() => useEditor.setState({ exportOpen: true })}>
-          {phone ? null : "Export"}
-        </Button>
-      </Tooltip>
-      {compact && (
-        <Tooltip content="Properties" relationship="label">
-          <ToggleButton appearance="subtle" size="small" icon={<PanelRight20Regular />} checked={drawer === "inspector"} onClick={() => toggle("inspector")} />
-        </Tooltip>
+      <BarMenu label="Audio" icon={<Mic16Regular />}>
+        <MenuItem icon={<Mic16Regular />} onClick={() => void withErrors(() => importAudio("voiceover"))}>
+          Add voiceover…
+        </MenuItem>
+        <MenuItem icon={<MusicNote216Regular />} onClick={() => void withErrors(() => importAudio("music"))}>
+          Add music…
+        </MenuItem>
+        <MenuItem onClick={() => void withErrors(() => importAudio("sfx"))}>Add sound effect…</MenuItem>
+        <MenuDivider />
+        <MenuItem icon={<Record16Regular />} onClick={() => void withErrors(startRecording)}>
+          Record voiceover in one take…
+        </MenuItem>
+        <MenuItem onClick={() => void withErrors(async () => openTakes())}>Record voiceover step by step…</MenuItem>
+        <MenuDivider />
+        <MenuItem onClick={() => useEditor.setState({ scriptOpen: true })}>Edit script…</MenuItem>
+        <MenuItem onClick={() => useEditor.setState({ ttsOpen: true })}>Make voiceover from script…</MenuItem>
+        <MenuItem disabled={!hasVoice} onClick={() => useEditor.setState({ alignOpen: true })}>
+          Align script to voiceover…
+        </MenuItem>
+        <MenuItem disabled={!hasVoice} onClick={cueAllSteps}>
+          Start all steps at voiceover cues
+        </MenuItem>
+      </BarMenu>
+      {!phone && (
+        <BarMenu label="Help">
+          <MenuItem icon={<Keyboard16Regular />} secondaryContent="?" onClick={() => useEditor.setState({ helpOpen: true })}>
+            Keyboard shortcuts
+          </MenuItem>
+          <MenuItem onClick={() => useEditor.setState({ tourOpen: true })}>Show the tour</MenuItem>
+        </BarMenu>
       )}
+      <div className={s.title} title={fileName ?? undefined} style={phone ? { visibility: "hidden" } : undefined}>
+        <span className={s.titleName}>{title}</span>
+        {fileName ? ` · ${fileName}` : ""}
+        {dirty ? " •" : ""}
+      </div>
+      <div className={s.group}>
+        {!phone && tool("Undo (Ctrl+Z)", <ArrowUndo16Regular />, undo, { disabled: !bus.canUndo })}
+        {!phone && tool("Redo (Ctrl+Shift+Z)", <ArrowRedo16Regular />, redo, { disabled: !bus.canRedo })}
+        <span className={s.sep} />
+        {tool("AI panel", <Sparkle16Regular />, () => useEditor.setState((st) => ({ aiOpen: !st.aiOpen })), { text: "AI" })}
+        {!agentOn && !phone && tool("Connect an agent (Claude Code, Cursor) to this editor", <Bot16Regular />, () => useEditor.setState({ connectOpen: true }), { text: "Connect agent" })}
+        {!phone && tool("Present step by step (F5)", <Play16Regular />, () => (useEditor.getState().pause(), useEditor.setState({ presenting: true })), { text: "Present" })}
+        {tool("Export video or images (Ctrl+E)", <ArrowExportUp16Regular />, () => useEditor.setState({ exportOpen: true }), { text: "Export", primary: true })}
+        {compact && tool("Properties", <PanelRight16Regular />, () => toggle("inspector"), { pressed: drawer === "inspector" })}
+      </div>
     </header>
   );
 }
