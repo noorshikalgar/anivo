@@ -1,41 +1,45 @@
-import { Text, Tooltip, makeStyles, mergeClasses, tokens } from "@fluentui/react-components";
+import { Tooltip, makeStyles, mergeClasses } from "@fluentui/react-components";
 import type { Action } from "@anivo/schema";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { updateAction } from "../commands.js";
 import { useEditor } from "../store.js";
 import { formatTime } from "./PlaybackBar.js";
 import { describe } from "./StepInspector.js";
+import { actionIcon } from "./typeIcons.js";
 
 const LABEL_W = 200;
 const ROW_H = 22;
 const MIN_MS = 50;
 
 const useStyles = makeStyles({
-  root: { display: "flex", flexDirection: "column", height: "200px", borderTop: `1px solid ${tokens.colorNeutralStroke2}`, backgroundColor: tokens.colorNeutralBackground2, minHeight: 0 },
-  ruler: { display: "flex", height: "22px", flexShrink: 0, borderBottom: `1px solid ${tokens.colorNeutralStroke2}` },
-  rulerLabel: { width: `${LABEL_W}px`, boxSizing: "border-box", flexShrink: 0, padding: `0 ${tokens.spacingHorizontalS}`, display: "flex", alignItems: "center" },
+  root: { display: "flex", flexDirection: "column", height: "200px", backgroundColor: "var(--ui-list)", color: "var(--ui-text)", minHeight: 0, fontSize: "12px" },
+  ruler: { display: "flex", height: "22px", flexShrink: 0, backgroundColor: "var(--ui-region)", borderBottom: "1px solid var(--ui-line)" },
+  rulerLabel: { width: `${LABEL_W}px`, boxSizing: "border-box", flexShrink: 0, padding: "0 8px", display: "flex", alignItems: "center" },
   rulerTrack: { position: "relative", flexGrow: 1, cursor: "pointer" },
-  tick: { position: "absolute", top: 0, bottom: 0, borderLeft: `1px solid ${tokens.colorNeutralStroke2}`, paddingLeft: "3px", fontSize: tokens.fontSizeBase100, color: tokens.colorNeutralForeground3 },
+  tick: { position: "absolute", top: 0, bottom: 0, borderLeft: "1px solid var(--ui-outline)", paddingLeft: "3px", fontSize: "10px", lineHeight: "22px", color: "var(--ui-muted)", fontVariantNumeric: "tabular-nums" },
   body: { position: "relative", flexGrow: 1, overflowY: "auto", overflowX: "hidden" },
-  row: { display: "flex", height: `${ROW_H}px`, alignItems: "center" },
-  stepRow: { backgroundColor: tokens.colorNeutralBackground3, fontWeight: tokens.fontWeightSemibold, cursor: "pointer" },
-  selectedStep: { backgroundColor: tokens.colorNeutralBackground1Selected },
-  label: { width: `${LABEL_W}px`, boxSizing: "border-box", flexShrink: 0, padding: `0 ${tokens.spacingHorizontalS}`, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", fontSize: tokens.fontSizeBase200 },
+  row: { display: "flex", height: `${ROW_H}px`, alignItems: "center", ":nth-child(even)": { backgroundColor: "var(--ui-list-alt)" } },
+  stepRow: { backgroundColor: "var(--ui-panel) !important", fontWeight: 600, cursor: "pointer" },
+  selectedStep: { backgroundColor: "var(--ui-row-selected) !important", "--ui-muted": "var(--ui-muted-on-select)" } as never,
+  label: { width: `${LABEL_W}px`, boxSizing: "border-box", flexShrink: 0, padding: "0 8px", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", fontSize: "12px", display: "flex", alignItems: "center", gap: "6px" },
+  labelIcon: { display: "flex", color: "var(--ui-muted)", flexShrink: 0, paddingLeft: "12px" },
   track: { position: "relative", flexGrow: 1, height: "100%" },
-  stepBand: { position: "absolute", top: "4px", bottom: "4px", borderRadius: tokens.borderRadiusSmall, backgroundColor: tokens.colorNeutralStroke2 },
+  stepBand: { position: "absolute", top: "5px", bottom: "5px", borderRadius: "3px", backgroundColor: "var(--ui-widget)" },
   bar: {
     position: "absolute",
     top: "3px",
     bottom: "3px",
-    borderRadius: tokens.borderRadiusSmall,
-    backgroundColor: tokens.colorBrandBackground,
+    borderRadius: "3px",
+    backgroundColor: "var(--ui-select)",
+    boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.12)",
+    ":focus-visible": { outline: "1px solid #fff" },
     cursor: "grab",
     touchAction: "none",
     minWidth: "4px",
   },
-  wait: { backgroundColor: tokens.colorNeutralStrokeAccessible },
+  wait: { backgroundColor: "var(--ui-widget)" },
   edge: { position: "absolute", top: 0, bottom: 0, width: "6px", cursor: "ew-resize" },
-  playhead: { position: "absolute", top: 0, bottom: 0, width: "1px", backgroundColor: tokens.colorPaletteRedForeground1, pointerEvents: "none" },
+  playhead: { position: "absolute", top: 0, bottom: 0, width: "2px", marginLeft: "-1px", backgroundColor: "var(--ui-select)", pointerEvents: "none" },
 });
 
 interface Bar {
@@ -155,11 +159,7 @@ export function TimelinePanel() {
   return (
     <div className={styles.root} role="region" aria-label="Timeline">
       <div className={styles.ruler}>
-        <div className={styles.rulerLabel}>
-          <Text size={200} weight="semibold">
-            Timeline
-          </Text>
-        </div>
+        <div className={styles.rulerLabel} />
         <div className={styles.rulerTrack} ref={trackRef} onPointerDown={seek} aria-label="Time ruler">
           {ticks.map((t) => (
             <span key={t} className={styles.tick} style={{ left: px(t) }}>
@@ -189,6 +189,7 @@ export function TimelinePanel() {
               return (
                 <div key={key} className={styles.row}>
                   <div className={styles.label} title={`${describe(b.action)} · ${b.action.targets.join(", ")}`}>
+                    <span className={styles.labelIcon}>{actionIcon(b.action.type)}</span>
                     {describe(b.action)}
                   </div>
                   <div className={styles.track}>

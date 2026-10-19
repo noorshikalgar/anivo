@@ -11,8 +11,8 @@ const useStyles = makeStyles({
     alignItems: "center",
     gap: tokens.spacingHorizontalM,
     padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalM}`,
-    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
-    backgroundColor: tokens.colorNeutralBackground1,
+    
+    backgroundColor: "var(--ui-header)", fontSize: "12px",
   },
   dot: { width: "12px", height: "12px", borderRadius: "50%", backgroundColor: tokens.colorPaletteRedBackground3 },
   time: { fontVariantNumeric: "tabular-nums", minWidth: "56px" },
@@ -56,13 +56,13 @@ export function RecordBar() {
                 ? `Speak. Press M or → to start step ${rec.stepIndex + 2}: ${next.title || next.id}.`
                 : "This is the last step. Press Stop when you finish."}
         </Text>
-        <Button icon={<Next20Regular />} onClick={nextStep} disabled={rec.phase !== "recording" || !next}>
+        <Button size="small" icon={<Next20Regular />} onClick={nextStep} disabled={rec.phase !== "recording" || !next}>
           Next step
         </Button>
-        <Button appearance="primary" icon={<RecordStop20Regular />} onClick={() => void withErrors(stopRecording)} disabled={rec.phase === "saving"}>
+        <Button size="small" appearance="primary" icon={<RecordStop20Regular />} onClick={() => void withErrors(stopRecording)} disabled={rec.phase === "saving"}>
           Stop
         </Button>
-        <Button appearance="subtle" icon={<Dismiss20Regular />} onClick={cancelRecording} disabled={rec.phase === "saving"} aria-label="Cancel record" />
+        <Button size="small" appearance="subtle" icon={<Dismiss20Regular />} onClick={cancelRecording} disabled={rec.phase === "saving"} aria-label="Cancel record" />
       </div>
     </>
   );

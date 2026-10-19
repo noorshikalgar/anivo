@@ -7,10 +7,10 @@ import { useEditor } from "../store.js";
 import { formatTime } from "./PlaybackBar.js";
 
 const useStyles = makeStyles({
-  root: { display: "flex", flexDirection: "column", borderTop: `1px solid ${tokens.colorNeutralStroke2}`, backgroundColor: tokens.colorNeutralBackground2 },
-  row: { display: "flex", alignItems: "center", gap: tokens.spacingHorizontalS, padding: `2px ${tokens.spacingHorizontalM}`, height: "40px" },
+  root: { display: "flex", flexDirection: "column", backgroundColor: "var(--ui-list)", fontSize: "12px", borderTop: "1px solid var(--ui-line)" },
+  row: { display: "flex", alignItems: "center", gap: "6px", padding: "2px 8px", height: "34px" },
   label: { width: "160px", "@media (max-width: 599px)": { width: "84px" }, display: "flex", alignItems: "center", gap: tokens.spacingHorizontalXS, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" },
-  lane: { position: "relative", flexGrow: 1, height: "32px", minWidth: 0, borderRadius: tokens.borderRadiusSmall, backgroundColor: tokens.colorNeutralBackground3 },
+  lane: { position: "relative", flexGrow: 1, height: "28px", minWidth: 0, borderRadius: "3px", backgroundColor: "var(--ui-region)" },
   clip: {
     position: "absolute",
     top: 0,
@@ -47,7 +47,7 @@ const useStyles = makeStyles({
     backgroundColor: tokens.colorPaletteMarigoldBorderActive,
     pointerEvents: "none",
   },
-  playhead: { position: "absolute", top: 0, bottom: 0, width: "1px", backgroundColor: tokens.colorPaletteRedForeground1, pointerEvents: "none" },
+  playhead: { position: "absolute", top: 0, bottom: 0, width: "2px", marginLeft: "-1px", backgroundColor: "var(--ui-select)", pointerEvents: "none" },
   gain: { width: "88px" },
 });
 

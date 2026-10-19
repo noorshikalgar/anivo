@@ -79,6 +79,7 @@ export function PlaybackBar() {
       <div
         ref={ruler}
         className={s.ruler}
+        style={timelineOpen ? { display: "none" } : undefined}
         role="slider"
         tabIndex={0}
         aria-label="Playhead"

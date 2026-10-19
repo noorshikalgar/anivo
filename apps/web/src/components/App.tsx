@@ -218,9 +218,9 @@ export function App() {
               <TakesBar />
             ) : (
               <>
+                <PlaybackBar />
                 {timelineOpen && <TimelinePanel />}
                 <AudioLane />
-                <PlaybackBar />
               </>
             )}
           </div>

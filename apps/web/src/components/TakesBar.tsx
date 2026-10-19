@@ -13,8 +13,8 @@ const useStyles = makeStyles({
     flexDirection: "column",
     gap: tokens.spacingVerticalXS,
     padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
-    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
-    backgroundColor: tokens.colorNeutralBackground1,
+    
+    backgroundColor: "var(--ui-header)", fontSize: "12px",
   },
   row: { display: "flex", alignItems: "center", gap: tokens.spacingHorizontalS, flexWrap: "wrap" },
   title: { flexGrow: 1, minWidth: "160px" },
@@ -86,36 +86,36 @@ export function TakesBar() {
                     : "No voice yet"}
           </Text>
           <Tooltip content="Previous step (←)" relationship="label">
-            <Button icon={<ArrowLeft20Regular />} disabled={busy || t.stepIndex === 0} onClick={() => goToTake(t.stepIndex - 1)} />
+            <Button size="small" icon={<ArrowLeft20Regular />} disabled={busy || t.stepIndex === 0} onClick={() => goToTake(t.stepIndex - 1)} />
           </Tooltip>
           {t.phase === "recording" ? (
-            <Button appearance="primary" icon={<RecordStop20Regular />} onClick={() => void withErrors(saveTake)}>
+            <Button size="small" appearance="primary" icon={<RecordStop20Regular />} onClick={() => void withErrors(saveTake)}>
               Stop (Space)
             </Button>
           ) : (
-            <Button appearance="primary" icon={<Record20Regular />} disabled={busy} onClick={() => void withErrors(recordTake)}>
+            <Button size="small" appearance="primary" icon={<Record20Regular />} disabled={busy} onClick={() => void withErrors(recordTake)}>
               {part ? "Record again (R)" : "Record (R)"}
             </Button>
           )}
           <Tooltip content="Play this step with its voice (Space)" relationship="label">
-            <Button icon={<Play20Regular />} disabled={busy || !part} onClick={previewTake} />
+            <Button size="small" icon={<Play20Regular />} disabled={busy || !part} onClick={previewTake} />
           </Tooltip>
           {canFit && (
             <Tooltip content="Make the animation of this step faster, so that it ends with the voice" relationship="description">
-              <Button disabled={busy} onClick={() => void withErrors(fitAnimationToVoice)}>
+              <Button size="small" disabled={busy} onClick={() => void withErrors(fitAnimationToVoice)}>
                 Fit animation to voice
               </Button>
             </Tooltip>
           )}
           <Tooltip content="Next step (→)" relationship="label">
-            <Button icon={<ArrowRight20Regular />} disabled={busy || t.stepIndex >= steps.length - 1} onClick={() => goToTake(t.stepIndex + 1)} />
+            <Button size="small" icon={<ArrowRight20Regular />} disabled={busy || t.stepIndex >= steps.length - 1} onClick={() => goToTake(t.stepIndex + 1)} />
           </Tooltip>
           {busy ? (
-            <Button appearance="subtle" icon={<Dismiss20Regular />} disabled={t.phase === "saving"} onClick={cancelTake}>
+            <Button size="small" appearance="subtle" icon={<Dismiss20Regular />} disabled={t.phase === "saving"} onClick={cancelTake}>
               Cancel
             </Button>
           ) : (
-            <Button appearance="subtle" icon={<Checkmark20Regular />} onClick={closeTakes}>
+            <Button size="small" appearance="subtle" icon={<Checkmark20Regular />} onClick={closeTakes}>
               Done
             </Button>
           )}
