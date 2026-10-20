@@ -17,6 +17,7 @@ import { insertTable } from "../commands.js";
 import { pickImage } from "../images.js";
 import { withErrors } from "../notify.js";
 import { type Tool, useEditor } from "../store.js";
+import { WidgetsGallery } from "./WidgetsGallery.js";
 
 const useStyles = makeStyles({
   // The toolbar of the viewport (docs/15): a column of tools on the left, as in Blender.
@@ -84,6 +85,7 @@ export function ToolPalette() {
       <Tooltip content="Insert image" relationship="label" positioning="after">
         <ToolbarButton className={styles.btn} icon={<Image20Regular />} appearance="subtle" aria-label="Insert image" onClick={() => void withErrors(pickImage)} />
       </Tooltip>
+      <WidgetsGallery />
     </Toolbar>
   );
 }

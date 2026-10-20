@@ -4,6 +4,7 @@ import { loadAssets } from "../assets.js";
 import { openSceneFromQuery, startAutosave } from "../files.js";
 import { migrateAutosave, startLibraryAutosave } from "../library.js";
 import { Home } from "./Home.js";
+import { SaveWidgetDialog } from "./SaveWidgetDialog.js";
 import { Outliner } from "./Outliner.js";
 import { ViewportHeader } from "./ViewportHeader.js";
 import { StatusBar } from "./StatusBar.js";
@@ -262,6 +263,7 @@ export function App() {
           <ShortcutHelp />
           <ShareDialog />
           <TtsDialog />
+          <SaveWidgetDialog />
           <HistoryDialog />
           <CommandPalette />
           {presenting && <PresentMode />}

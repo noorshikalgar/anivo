@@ -361,6 +361,9 @@ function ElementProperties({ el }: { el: Element }) {
             <IconButton label="Delete (Delete)" icon={<Delete16Regular />} onClick={deleteSelection} />
           </div>
         </Prop>
+        <Prop label="">
+          <Btn onClick={() => useEditor.setState({ saveWidgetOpen: true })}>Save as widget…</Btn>
+        </Prop>
       </Panel>
       <Panel id="el-comments" title="Comments" defaultOpen={false}>
         <Comments kind="element" id={el.id} />
@@ -419,6 +422,9 @@ function SelectionTools({ count }: { count: number }) {
             <IconButton label="Delete (Delete)" icon={<Delete16Regular />} onClick={deleteSelection} />
           </div>
         </Prop>
+        <Prop label="">
+          <Btn onClick={() => useEditor.setState({ saveWidgetOpen: true })}>Save as widget…</Btn>
+        </Prop>
       </Panel>
     </>
   );
@@ -445,6 +451,9 @@ function GroupProperties({ el }: { el: Element }) {
             <IconButton label="Duplicate (Ctrl+D)" icon={<Copy16Regular />} onClick={duplicateSelection} />
             <IconButton label="Delete (Delete)" icon={<Delete16Regular />} onClick={deleteSelection} />
           </div>
+        </Prop>
+        <Prop label="">
+          <Btn onClick={() => useEditor.setState({ saveWidgetOpen: true })}>Save as widget…</Btn>
         </Prop>
       </Panel>
     </>

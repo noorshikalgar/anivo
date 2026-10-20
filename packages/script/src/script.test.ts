@@ -159,6 +159,17 @@ describe("Anivo Script", () => {
     expect(printScene(scene)).toContain("shadow=hard shadow-color=line");
   });
 
+  it("inserts widgets, and arrows and steps can use them", () => {
+    const scene = ok(`widget web browser at=100,100 url="https://anivo.dev"\nwidget kpi stat at=1000,100 size=400x240 value="42 ms" caption="p95"\narrow web -> kpi\nstep "S"\n  enter web, kpi pop\n  pulse kpi-value\n`);
+    expect(scene.elements["web"]!.type).toBe("group");
+    expect(scene.elements["web-url"]!.label?.text).toBe("https://anivo.dev");
+    const v = scene.elements["kpi-value"]!;
+    expect(v.type === "text" && v.content.text).toBe("42 ms");
+    expect(Object.values(scene.elements).some((e) => e.type === "connector")).toBe(true);
+    const bad = applyScript(`widget x nope\n`);
+    expect(!bad.ok && bad.errors[0]!.message).toBe("The widget 'nope' is not known.");
+  });
+
   it("supports a sound on an action and prints it back", () => {
     const text = `box a "A" at=100,100\nstep "S"\n  enter a pop sound=pop sound-gain=-10\n`;
     const scene = ok(text);

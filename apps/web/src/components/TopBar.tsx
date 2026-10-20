@@ -189,6 +189,9 @@ export function TopBar() {
           <MenuItem icon={<Delete16Regular />} secondaryContent="Delete" disabled={!hasSelection} onClick={deleteSelection}>
             Delete
           </MenuItem>
+          <MenuItem disabled={!hasSelection} onClick={() => useEditor.setState({ saveWidgetOpen: true })}>
+            Save as widget…
+          </MenuItem>
           <MenuDivider />
           <MenuItem icon={<Search16Regular />} secondaryContent="F3" onClick={() => useEditor.setState({ paletteOpen: true })}>
             Search commands…
