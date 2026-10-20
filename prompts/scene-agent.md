@@ -92,6 +92,8 @@ step "<title>" [hold=<time>] [cue=<time>]
   flow <connectors> [rate=<n>] [speed=<px/s>] [round-robin] [chain=<connector>] [skip=<connector>]
        [size=<px>] [color=<token>] [shape=dot|square|pill] [icon=<pack:name>] [image=<assetId>]
        [once | count=<n>] [orient] [trail=<0..1>]   (once: one particle travels the arrow; icon: an icon moves, for example icon=lucide:mail size=32)
+       [back-icon=<pack:name>] [back-color=<token>] [back-size|back-speed|back-rate|back-count=<n>] [back-once] [back-delay=<time>]
+                                                 (a back-* setting makes the flow two-way: requests go, answers come back with their own look)
   camera zoom-to <targets> [padding=80] | camera pan at=x,y size=WxH | camera reset
   count <target> from=<n> to=<n> format="{n} <unit>"
   code <target> highlight=<a>-<b> | type=<a>-<b>

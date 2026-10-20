@@ -286,6 +286,23 @@ describe("evaluate", () => {
     expect(evaluate(skip, 1500, { connectorLength: len }).particles.every((p) => p.connectorId === "ab")).toBe(true);
   });
 
+  it("sends particles both ways, each direction with its own settings", () => {
+    const s = scene([
+      { id: "s1", holdMs: 0, actions: [{ id: "f1", type: "flow", targets: ["ab"], durationMs: 2000, flow: { rate: 2, speed: 100, color: "accent", direction: "both", back: { color: "success", rate: 1, shape: "square", count: 1 } } }] },
+    ]);
+    const f = evaluate(s, 1999, { connectorLength: () => 1000 });
+    const fwd = f.particles.filter((p) => !p.reverse);
+    const back = f.particles.filter((p) => p.reverse);
+    expect(fwd).toHaveLength(4);
+    expect(fwd.every((p) => p.color === "accent" && p.shape === "dot")).toBe(true);
+    expect(back).toHaveLength(1);
+    expect(back[0]).toMatchObject({ color: "success", shape: "square" });
+    // Without back settings, both directions alternate with the same settings (as before).
+    const alt = scene([{ id: "s1", holdMs: 0, actions: [{ id: "f1", type: "flow", targets: ["ab"], durationMs: 2000, flow: { rate: 2, speed: 100, direction: "both" } }] }]);
+    const g = evaluate(alt, 1999, { connectorLength: () => 1000 });
+    expect(g.particles.filter((p) => p.reverse)).toHaveLength(2);
+  });
+
   it("delays chained particles by the travel time of the source connector", () => {
     const s = scene([
       { id: "s1", actions: [{ id: "f1", type: "flow", targets: ["ac"], durationMs: 3000, flow: { rate: 1, speed: 100, chainFrom: "ab" } }] },

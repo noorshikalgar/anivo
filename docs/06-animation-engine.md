@@ -140,10 +140,13 @@ interface FlowParams {
   trail?: number;             // 0..1: fading copies behind each particle
   count?: number;             // particles in all; omit for a stream; 1 = one particle travels from start to end
   orient?: boolean;           // turn the particle in the direction of travel
+  back?: {                    // with direction "both": own settings of the particles that go back
+    shape?, icon?, assetId?, size?, color?, speed?, rate?, count?, trail?, orient?, delayMs?
+  };
 }
 ```
 
-A flow with `count` stops after particle `count - 1`. With `count: 1` and `chainFrom`, one particle travels along a chain of arrows, for example a packet from a user to a server. A particle with an unknown icon or an image that is not decoded draws as a dot; lint reports an unknown icon.
+With `direction: "both"` and `back`, the flow is two streams: forward with the main settings, and back with `back` (a missing setting uses the main value). Without `back`, the particles alternate. A flow with `count` stops after particle `count - 1`. With `count: 1` and `chainFrom`, one particle travels along a chain of arrows, for example a packet from a user to a server. A particle with an unknown icon or an image that is not decoded draws as a dot; lint reports an unknown icon.
 
 **Deterministic particle position.** Particles are not simulated. Calculate them from `t`:
 

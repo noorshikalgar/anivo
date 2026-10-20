@@ -465,36 +465,46 @@ function flowParticles(step: TimedStep, t: number, opts: EvaluateOptions, out: P
     const targets = ta.action.targets.filter((id) => !flow.skip.includes(id));
     if (targets.length === 0) continue;
 
-    const chainLen = flow.chainFrom !== undefined ? opts.connectorLength?.(flow.chainFrom) : undefined;
-    const chainDelay = chainLen !== undefined ? (chainLen / flow.speed) * 1000 : 0;
-    const emitStart = windowStart + chainDelay;
-    const emitEnd = windowEnd + chainDelay;
-    const interval = 1000 / flow.rate;
+    // Direction both with own back settings: two streams, each with its settings. Else one stream.
+    const streams: { p: FlowParams; reverse: boolean | "alternate"; delay: number }[] =
+      flow.direction === "both" && flow.back
+        ? [
+            { p: flow, reverse: false, delay: 0 },
+            { p: { ...flow, ...flow.back } as FlowParams, reverse: true, delay: flow.back.delayMs ?? 0 },
+          ]
+        : [{ p: flow, reverse: flow.direction === "reverse" ? true : flow.direction === "both" ? "alternate" : false, delay: 0 }];
+    for (const { p, reverse: rev, delay } of streams) {
+      const chainLen = p.chainFrom !== undefined ? opts.connectorLength?.(p.chainFrom) : undefined;
+      const chainDelay = chainLen !== undefined ? (chainLen / p.speed) * 1000 : 0;
+      const emitStart = windowStart + chainDelay + delay;
+      const emitEnd = windowEnd + chainDelay + delay;
+      const interval = 1000 / p.rate;
 
-    let maxTravel = 0;
-    for (const id of targets) {
-      const len = opts.connectorLength?.(id);
-      maxTravel = Math.max(maxTravel, len !== undefined ? (len / flow.speed) * 1000 : MAX_TRAVEL_MS_UNKNOWN);
-    }
+      let maxTravel = 0;
+      for (const id of targets) {
+        const len = opts.connectorLength?.(id);
+        maxTravel = Math.max(maxTravel, len !== undefined ? (len / p.speed) * 1000 : MAX_TRAVEL_MS_UNKNOWN);
+      }
 
-    const kMin = Math.max(0, Math.ceil((t - maxTravel - emitStart) / interval));
-    let kMax = Math.floor((Math.min(t, emitEnd - 1e-6) - emitStart) / interval);
-    if (flow.count !== undefined) kMax = Math.min(kMax, flow.count - 1);
-    for (let k = kMin; k <= kMax; k++) {
-      const emit = emitStart + k * interval;
-      const age = t - emit;
-      if (age < 0) continue;
-      const distance = (age * flow.speed) / 1000;
-      let chosen: string[];
-      if (flow.distribute === "all") chosen = targets;
-      else if (flow.distribute === "round-robin") chosen = [targets[k % targets.length]!];
-      else chosen = [targets[Math.floor(hash01(k, targets.length) * targets.length)]!];
-      const reverse = flow.direction === "reverse" || (flow.direction === "both" && k % 2 === 1);
-      for (const connectorId of chosen) {
-        const len = opts.connectorLength?.(connectorId);
-        if (len !== undefined && distance > len) continue;
-        if (len === undefined && age > MAX_TRAVEL_MS_UNKNOWN) continue;
-        out.push({ connectorId, distance, reverse, shape: flow.shape, ...(flow.icon ? { icon: flow.icon } : {}), ...(flow.assetId ? { assetId: flow.assetId } : {}), size: flow.size, color: flow.color, trail: flow.trail, orient: flow.orient });
+      const kMin = Math.max(0, Math.ceil((t - maxTravel - emitStart) / interval));
+      let kMax = Math.floor((Math.min(t, emitEnd - 1e-6) - emitStart) / interval);
+      if (p.count !== undefined) kMax = Math.min(kMax, p.count - 1);
+      for (let k = kMin; k <= kMax; k++) {
+        const emit = emitStart + k * interval;
+        const age = t - emit;
+        if (age < 0) continue;
+        const distance = (age * p.speed) / 1000;
+        let chosen: string[];
+        if (p.distribute === "all") chosen = targets;
+        else if (p.distribute === "round-robin") chosen = [targets[k % targets.length]!];
+        else chosen = [targets[Math.floor(hash01(k, targets.length) * targets.length)]!];
+        const reverse = rev === "alternate" ? k % 2 === 1 : rev;
+        for (const connectorId of chosen) {
+          const len = opts.connectorLength?.(connectorId);
+          if (len !== undefined && distance > len) continue;
+          if (len === undefined && age > MAX_TRAVEL_MS_UNKNOWN) continue;
+          out.push({ connectorId, distance, reverse, shape: p.shape, ...(p.icon ? { icon: p.icon } : {}), ...(p.assetId ? { assetId: p.assetId } : {}), size: p.size, color: p.color, trail: p.trail, orient: p.orient });
+        }
       }
     }
   }

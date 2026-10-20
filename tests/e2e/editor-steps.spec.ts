@@ -126,3 +126,15 @@ test("a quick action with no selection asks for the elements, and After previous
   s = (await state(page)) as unknown as S;
   expect(s.scene.steps.find((x) => x.id === "s-pods")!.actions.at(-1)!.delayMs).toBeGreaterThan(400);
 });
+
+test("a two-way flow gets own settings for the way back", async ({ page }) => {
+  await page.getByRole("button", { name: /Traffic flows/ }).click();
+  await page.getByRole("listbox", { name: "Actions" }).getByRole("option", { name: /^Flow/ }).first().click();
+  await page.getByRole("combobox", { name: "Direction" }).click();
+  await page.getByRole("option", { name: "Both" }).click();
+  await page.getByRole("checkbox", { name: "Own settings for the way back" }).click();
+  type S = { scene: { steps: { id: string; actions: { type: string; flow?: { direction: string; back?: Record<string, unknown> } }[] }[] } };
+  const flow = ((await state(page)) as unknown as S).scene.steps.find((x) => x.id === "s-traffic")!.actions.find((a) => a.type === "flow")!.flow!;
+  expect(flow.direction).toBe("both");
+  expect(flow.back).toBeDefined();
+});

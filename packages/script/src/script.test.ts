@@ -144,6 +144,14 @@ describe("Anivo Script", () => {
     expect(again.steps[0]!.actions[0]).toMatchObject({ flow: { shape: "icon", count: 1, orient: true } });
   });
 
+  it("supports own settings for the particles that go back", () => {
+    const scene = ok(`box a "A" at=100,100\nbox b "B" at=600,100\narrow a -> b\nstep "S"\n  flow a->b color=accent back-icon=lucide:check back-color=success back-once back-delay=500ms\n`);
+    expect(scene.steps[0]!.actions[0]).toMatchObject({ flow: { direction: "both", back: { shape: "icon", icon: "lucide:check", color: "success", count: 1, delayMs: 500 } } });
+    const printed = printScene(scene);
+    expect(printed).toContain("back-icon=lucide:check back-color=success back-count=1 back-delay=500ms");
+    expect(ok(printed.replace(/^scene.*\n/, "")).steps[0]!.actions[0]).toMatchObject({ flow: { back: { icon: "lucide:check", count: 1 } } });
+  });
+
   it("supports a sound on an action and prints it back", () => {
     const text = `box a "A" at=100,100\nstep "S"\n  enter a pop sound=pop sound-gain=-10\n`;
     const scene = ok(text);

@@ -235,6 +235,63 @@ function FlowParticle({ step, action, theme }: { step: Step; action: FlowAction;
   );
 }
 
+/** Direction both: own settings for the particles that go back (end to start). */
+function BackFlow({ step, action, theme }: { step: Step; action: FlowAction; theme: string }) {
+  const f = action.flow;
+  const b = f.back;
+  const setBack = (next: Record<string, unknown> | null, label = "Change back particles", mergeKey?: string) => {
+    const flow: Record<string, unknown> = { ...f };
+    if (next === null) delete flow["back"];
+    else {
+      const back: Record<string, unknown> = { ...(b ?? {}), ...next };
+      for (const k of Object.keys(back)) if (back[k] === undefined) delete back[k];
+      flow["back"] = back;
+    }
+    updateAction(step.id, action.id, { flow }, label, mergeKey);
+  };
+  const amount = b?.count === undefined ? "stream" : b.count === 1 ? "once" : "count";
+  return (
+    <>
+      <Prop label="Back">
+        <Check label="Own settings for the way back" checked={!!b} onChange={(v) => setBack(v ? { color: f.color === "accent" ? "success" : "accent" } : null, v ? "Own back settings" : "Same back settings")} />
+      </Prop>
+      {!b && <Note>Both ways alternate with the same particles. Turn on own settings to give the way back its own particle, color, speed, and amount.</Note>}
+      {b && (
+        <>
+          <SelectField
+            label="Back particle"
+            value={b.shape ?? f.shape}
+            options={[
+              { value: "dot", text: "Dot" },
+              { value: "square", text: "Square" },
+              { value: "pill", text: "Pill" },
+              { value: "icon", text: "Icon" },
+            ]}
+            onCommit={(v) => setBack({ shape: v, ...(v === "icon" && !b.icon ? { icon: "lucide:check", size: Math.max(b.size ?? f.size, 28) } : {}) })}
+          />
+          {(b.shape ?? f.shape) === "icon" && <IconField value={b.icon ?? f.icon} onCommit={(v) => setBack({ icon: v })} />}
+          <ColorField label="Back color" theme={theme} value={b.color ?? f.color} onCommit={(v) => setBack({ color: v ?? undefined })} />
+          <NumberField label="Back size (px)" value={b.size ?? f.size} min={2} max={400} step={2} onCommit={(v, k) => setBack({ size: v }, "Change back size", k)} />
+          <NumberField label="Back speed (px/s)" value={b.speed ?? f.speed} min={10} step={50} onCommit={(v, k) => setBack({ speed: v }, "Change back speed", k)} />
+          <SelectField
+            label="Back particles"
+            value={amount}
+            options={[
+              { value: "stream", text: "A stream" },
+              { value: "once", text: "One particle" },
+              { value: "count", text: "A number" },
+            ]}
+            onCommit={(v) => setBack({ count: v === "stream" ? undefined : v === "once" ? 1 : 3 })}
+          />
+          {amount === "stream" && <NumberField label="Back rate (per s)" value={b.rate ?? f.rate} min={0.1} step={0.5} onCommit={(v, k) => setBack({ rate: v }, "Change back rate", k)} />}
+          {amount === "count" && <NumberField label="Back number" value={b.count ?? 3} min={2} max={100} onCommit={(v) => setBack({ count: Math.round(v) })} />}
+          <NumberField label="Back delay (ms)" value={b.delayMs ?? 0} min={0} step={100} onCommit={(v, k) => setBack({ delayMs: Math.round(v) }, "Change back delay", k)} />
+        </>
+      )}
+    </>
+  );
+}
+
 /** The settings of one action. `part`: "what" (effect and its settings), "when" (timing and sound), or "all". */
 export function ActionEditor({ step, action, part = "all" }: { step: Step; action: Action; part?: "all" | "what" | "when" }) {
   const what = part !== "when";
@@ -366,6 +423,7 @@ export function ActionEditor({ step, action, part = "all" }: { step: Step; actio
               onCommit={(v) => set({ flow: { ...action.flow, direction: v } }, "Change flow")}
             />
           </Row>
+          {action.flow.direction === "both" && <BackFlow step={step} action={action} theme={theme} />}
           <Prop label="Skip arrows">
             <TagPicker
               size="medium"
