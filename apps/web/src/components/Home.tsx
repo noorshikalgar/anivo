@@ -24,9 +24,9 @@ import {
   useId,
   useToastController,
 } from "@fluentui/react-components";
-import { Add20Regular, ArrowDownload20Regular, Copy20Regular, Delete20Regular, DocumentArrowUp20Regular, FolderOpen20Regular, MoreHorizontal20Regular, Rename20Regular, Search20Regular } from "@fluentui/react-icons";
+import { Add20Regular, ChevronLeft20Regular, ChevronRight20Regular, ArrowDownload20Regular, Copy20Regular, Delete20Regular, DocumentArrowUp20Regular, FolderOpen20Regular, MoreHorizontal20Regular, Rename20Regular, Search20Regular } from "@fluentui/react-icons";
 import { TEMPLATES } from "@anivo/schema";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { hasFileSystemAccess, newFromTemplate, newScene, openDroppedFile, openFile, openFromLibrary, openRecent, recentFiles, runImport } from "../files.js";
 import { type LibraryEntry, deleteFromLibrary, duplicateInLibrary, libraryFileBytes, listScenes, renameInLibrary } from "../library.js";
 import { withErrors } from "../notify.js";
@@ -55,7 +55,27 @@ const useStyles = makeStyles({
   section: { display: "flex", flexDirection: "column", gap: tokens.spacingVerticalM },
   sectionHead: { display: "flex", alignItems: "center", gap: tokens.spacingHorizontalM, flexWrap: "wrap" },
   sectionTitle: { marginRight: "auto" },
-  templates: { display: "grid", gridAutoFlow: "column", gridAutoColumns: "minmax(220px, 260px)", gap: tokens.spacingHorizontalM, overflowX: "auto", paddingBottom: tokens.spacingVerticalS, scrollSnapType: "x mandatory" },
+  // Padding inside the scroll box: the hover outline of a card is not cut at the edges.
+  templates: { display: "grid", gridAutoFlow: "column", gridAutoColumns: "minmax(220px, 260px)", gap: tokens.spacingHorizontalM, overflowX: "auto", padding: "3px 3px 10px", scrollSnapType: "x proximity", scrollBehavior: "smooth", scrollbarWidth: "thin" },
+  rowWrap: { position: "relative" },
+  rowArrow: {
+    position: "absolute",
+    top: "50%",
+    transform: "translateY(-60%)",
+    zIndex: 2,
+    width: "32px",
+    height: "32px",
+    borderRadius: "16px",
+    border: "1px solid var(--ui-outline)",
+    backgroundColor: "var(--ui-header)",
+    color: "var(--ui-text)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+    ":hover": { backgroundColor: "var(--ui-widget)" },
+  },
   grid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(240px, 100%), 1fr))", gap: tokens.spacingHorizontalL },
   card: {
     position: "relative",
@@ -190,6 +210,31 @@ function SceneCard({ e, onRename, onDelete }: { e: LibraryEntry; onRename: () =>
 export function Home() {
   const styles = useStyles();
   const phone = useMedia(PHONE);
+  // The template row scrolls sideways: arrows show when there is more to see, and the wheel scrolls it.
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [rowEdge, setRowEdge] = useState({ left: false, right: false });
+  const updateEdges = () => {
+    const el = rowRef.current;
+    if (el) setRowEdge({ left: el.scrollLeft > 4, right: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 });
+  };
+  useEffect(() => {
+    const el = rowRef.current;
+    if (!el) return;
+    updateEdges();
+    const ro = new ResizeObserver(updateEdges);
+    ro.observe(el);
+    const wheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && el.scrollWidth > el.clientWidth) {
+        e.preventDefault();
+        el.scrollBy({ left: e.deltaY, behavior: "auto" });
+      }
+    };
+    el.addEventListener("wheel", wheel, { passive: false });
+    return () => {
+      ro.disconnect();
+      el.removeEventListener("wheel", wheel);
+    };
+  }, []);
   const version = useEditor((s) => s.libraryVersion);
   const [scenes, setScenes] = useState<LibraryEntry[] | null>(null);
   const [recent, setRecent] = useState<Awaited<ReturnType<typeof recentFiles>>>([]);
@@ -270,7 +315,18 @@ export function Home() {
           <Text id="home-start" as="h2" size={500} weight="semibold">
             Start a new scene
           </Text>
-          <div className={styles.templates} role="list" aria-label="Templates">
+          <div className={styles.rowWrap}>
+          {rowEdge.left && (
+            <button type="button" className={styles.rowArrow} style={{ left: "-12px" }} aria-label="Scroll the templates left" onClick={() => rowRef.current?.scrollBy({ left: -(rowRef.current.clientWidth * 0.8) })}>
+              <ChevronLeft20Regular />
+            </button>
+          )}
+          {rowEdge.right && (
+            <button type="button" className={styles.rowArrow} style={{ right: "-12px" }} aria-label="Scroll the templates right" onClick={() => rowRef.current?.scrollBy({ left: rowRef.current.clientWidth * 0.8 })}>
+              <ChevronRight20Regular />
+            </button>
+          )}
+          <div ref={rowRef} className={styles.templates} role="list" aria-label="Templates" onScroll={updateEdges}>
             {SIZES.slice(0, 2).map((s) => (
               <div key={s.label} role="listitem" className={styles.card}>
                 <button className={styles.open} onClick={() => newScene({ width: s.width, height: s.height })} aria-label={`Blank ${s.label}`}>
@@ -298,6 +354,7 @@ export function Home() {
                 </Text>
               </div>
             ))}
+          </div>
           </div>
         </section>
 
