@@ -40,13 +40,16 @@ export function KeyLabel({ element, group, values, children }: { element: string
   if (selectedStep === null) return <>{children}</>;
   void playhead;
   const t = stepTimeAtPlayhead();
+  // A theme default color has no value to key.
+  const set = Object.fromEntries(Object.entries(values).filter(([, v]) => v !== undefined && v !== null));
+  const canKey = Object.keys(set).length > 0;
   const keys = keyframesIn(scene, selectedStep).filter((k) => k.element === element && k.group === group);
   const here = t === null ? undefined : keys.find((k) => Math.abs(k.timeMs - t) <= SAME_MS);
-  const label = here ? "Remove the keyframe at the playhead" : t === null ? "Move the playhead into the step to add a keyframe" : "Add a keyframe at the playhead";
+  const label = here ? "Remove the keyframe at the playhead" : t === null ? "Move the playhead into the step to add a keyframe" : !canKey ? "Choose a value first: the theme default has no keyframe" : "Add a keyframe at the playhead";
   const toggle = () => {
     const st = useEditor.getState();
     if (t === null || st.selectedStep === null) return;
-    const ops = here ? deleteKeyframeOps(st.scene, st.selectedStep, here.actionId) : setKeyframeOps(st.scene, st.selectedStep, element, values, t);
+    const ops = here ? deleteKeyframeOps(st.scene, st.selectedStep, here.actionId) : setKeyframeOps(st.scene, st.selectedStep, element, set, t);
     if (ops.length === 0) return;
     st.apply({ label: here ? "Delete keyframe" : "Add keyframe", ops });
     useEditor.setState({ timelineOpen: true, timelineView: "keys" });
@@ -55,7 +58,7 @@ export function KeyLabel({ element, group, values, children }: { element: string
     <span className={s.label}>
       {children}
       <Tooltip content={label} relationship="label">
-        <button type="button" className={s.key} disabled={t === null} onClick={toggle} aria-pressed={here !== undefined} data-key-group={group}>
+        <button type="button" className={s.key} disabled={t === null || (!here && !canKey)} onClick={toggle} aria-pressed={here !== undefined} data-key-group={group}>
           <span className={mergeClasses(s.diamond, keys.length > 0 && s.has, here && s.on)} />
         </button>
       </Tooltip>

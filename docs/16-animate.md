@@ -25,7 +25,7 @@ Users want more control over time: change a property at an exact time, as in a m
    - The keyframe bar: ◀ and ▶ go to the previous and next keyframe. For the selected keyframe: the easing of the tween to it, and Delete.
    - Arrow keys move the focused diamond 100 ms (Shift: 500 ms).
    - Press **K** to turn auto-key on or off. The record button in the timeline header shows the state.
-   - The properties editor has a keyframe button (◆) next to Position, Size, Opacity, Fill, and Stroke. Empty: no keyframes in the step. Outline: keyframes at other times. Full: a keyframe at the playhead. Click to add a keyframe with the current value at the playhead, or to remove the keyframe there. Auto-key can be off.
+   - The properties editor has a keyframe button (◆) next to Position, Size, Opacity, Fill, Stroke, Corner radius, Font size, and Text color. Empty: no keyframes in the step. Outline: keyframes at other times. Full: a keyframe at the playhead. Click to add a keyframe with the current value at the playhead, or to remove the keyframe there. Auto-key can be off.
    - When you move or delete a keyframe, the tween of the next keyframe of that property starts at the new time.
 6. Agents use the same morph actions (`morph a x=600 +400ms dur=600ms`).
 
