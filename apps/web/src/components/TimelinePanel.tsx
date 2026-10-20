@@ -113,7 +113,8 @@ export function TimelinePanel() {
   const trackRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(600);
   const [drag, setDrag] = useState<Drag | null>(null);
-  const [view, setView] = useState<"actions" | "keys">("actions");
+  const view = useEditor((s) => s.timelineView);
+  const setView = (v: "actions" | "keys") => useEditor.setState({ timelineView: v });
   const autoKey = useEditor((s) => s.autoKey);
   const [keyDrag, setKeyDrag] = useState<{ id: string; dx: number } | null>(null);
   const [activeKey, setActiveKey] = useState<string | null>(null);

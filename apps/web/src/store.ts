@@ -67,6 +67,8 @@ interface EditorState {
   pinStepEnd: boolean;
   /** Auto-key: a change in a step makes a keyframe at the playhead (docs/16). */
   autoKey: boolean;
+  /** The view of the timeline: action bars or keyframes. */
+  timelineView: "actions" | "keys";
   /** The active action of the selected step (properties and step tree), or null. */
   activeAction: string | null;
   /** True while the view fits the video: a change of the window size fits it again. */
@@ -256,6 +258,7 @@ export const useEditor = create<EditorState>((set, get) => {
     activeAction: null,
     pinStepEnd: false,
     autoKey: false,
+    timelineView: "actions",
     showGhosts: true,
     maximized: false,
     saveWidgetOpen: false,

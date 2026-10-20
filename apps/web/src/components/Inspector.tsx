@@ -2,6 +2,7 @@
  * The properties editor (docs/15): vertical tabs (Scene, Step, Element) and
  * collapsible panels with property rows.
  */
+import { KeyLabel } from "./KeyButton.js";
 import { evaluate } from "@anivo/engine";
 import type { Element } from "@anivo/schema";
 import { Text, makeStyles, mergeClasses } from "@fluentui/react-components";
@@ -34,7 +35,7 @@ import {
   Warning16Regular,
 } from "@fluentui/react-icons";
 import { useEffect, useMemo } from "react";
-import { type AlignKind, alignSelection, autoLayoutSelection, commitProps, commitSettings, deleteSelection, distributeSelection, duplicateSelection, groupSelection, renameElement, reorderSelection, setElementText, ungroupSelection } from "../commands.js";
+import { type AlignKind, alignSelection, autoLayoutSelection, commitProps, commitSettings, deleteSelection, distributeSelection, duplicateSelection, groupSelection, renameElement, reorderSelection, setElementText, ungroupSelection, visibleAtStepStart } from "../commands.js";
 import { useEditor } from "../store.js";
 import { Comments } from "./Comments.js";
 import { ColorField, NumberField, SelectField, TextField, useThemeColors, useThemeDefault } from "./fields.js";
@@ -94,6 +95,8 @@ function ElementProperties({ el }: { el: Element }) {
   const playhead = useEditor((st) => st.playhead);
   const selectedStep = useEditor((st) => st.selectedStep);
   const autoKey = useEditor((st) => st.autoKey);
+  // A keyframe button next to the property label, when the element can animate in the selected step.
+  const key = (group: string, values: Record<string, unknown>, label: string) => (keyable ? <KeyLabel element={el.id} group={group} values={values}>{label}</KeyLabel> : label);
   const playing = useEditor((st) => st.playing);
   const stepTitle = useEditor((st) => st.scene.steps.find((x) => x.id === st.selectedStep)?.title);
   const colors = useThemeColors(scene.settings.theme);
@@ -121,6 +124,7 @@ function ElementProperties({ el }: { el: Element }) {
     return out;
   }, [timeline, scene.steps, selectedStep, playing, playhead, el.id]);
   if (!f) return null;
+  const keyable = selectedStep !== null && visibleAtStepStart()(el.id);
   const theme = scene.settings.theme;
   const set = (changes: Record<string, unknown>, label?: string, mergeKey?: string) => commitProps(el.id, changes, label, mergeKey);
   // The text at the playhead: in a step, a morph can change it.
@@ -175,19 +179,19 @@ function ElementProperties({ el }: { el: Element }) {
 
       {el.type !== "connector" && (
         <Panel id="el-transform" title="Transform" group={MAIN}>
-          <Prop label="Position">
+          <Prop label={key("position", { x: f.x, y: f.y }, "Position")}>
             <Aligned>
               <DragNumber label="X" inner value={f.x} onCommit={(v, k) => set({ x: v }, "Move element", k)} />
               <DragNumber label="Y" inner value={f.y} onCommit={(v, k) => set({ y: v }, "Move element", k)} />
             </Aligned>
           </Prop>
-          <Prop label="Size">
+          <Prop label={key("size", { width: f.width, height: f.height }, "Size")}>
             <Aligned>
               <DragNumber label="Width" inner value={f.width} min={8} onCommit={(v, k) => set({ width: v }, "Resize element", k)} />
               <DragNumber label="Height" inner value={f.height} min={8} onCommit={(v, k) => set({ height: v }, "Resize element", k)} />
             </Aligned>
           </Prop>
-          <Prop label="Opacity">
+          <Prop label={key("opacity", { opacity: f.opacity }, "Opacity")}>
             <DragNumber label="Opacity" value={Math.round(f.opacity * 100)} min={0} max={100} unit="%" onCommit={(v, k) => set({ opacity: v / 100 }, "Change opacity", k)} />
           </Prop>
         </Panel>
@@ -196,7 +200,7 @@ function ElementProperties({ el }: { el: Element }) {
       {shapeLike && (
         <Panel id="el-shape" title={el.type === "connector" ? "Arrow" : "Appearance"} group={MAIN}>
           {SHAPES.has(el.type) && el.type !== "line" && (
-            <Prop label="Fill">
+            <Prop label={key("fill", { fill: finalColor(f.fill) }, "Fill")}>
               <ColorPick label="Fill" value={finalColor(f.fill)} colors={colors} defaultCss={defFill} onCommit={(v) => set({ fill: v }, "Change fill")} />
             </Prop>
           )}
@@ -232,7 +236,7 @@ function ElementProperties({ el }: { el: Element }) {
             </>
           )}
           {el.type !== "image" && (
-            <Prop label={el.type === "icon" ? "Color" : "Stroke"}>
+            <Prop label={key("stroke", { stroke: finalColor(f.stroke) }, el.type === "icon" ? "Color" : "Stroke")}>
               <ColorPick label={el.type === "icon" ? "Icon color" : "Stroke"} value={finalColor(f.stroke)} colors={colors} defaultCss={el.type === "icon" ? defText : defStroke} onCommit={(v) => set({ stroke: v }, "Change stroke")} />
             </Prop>
           )}
