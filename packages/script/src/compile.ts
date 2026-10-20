@@ -734,6 +734,7 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
         kv.set("direction", { v: t.v.slice(6), pos: t.pos });
       } else if (verb === "move" && (t.v === "curve" || t.v === "orient")) kv.set(t.v, { v: "true", pos: t.pos });
       else if (verb === "flow" && (t.v === "orient" || t.v === "once")) kv.set(t.v === "once" ? "count" : "orient", { v: t.v === "once" ? "1" : "true", pos: t.pos });
+      else if (verb === "flow" && (t.v === "back-once" || t.v === "back-orient")) kv.set(t.v === "back-once" ? "back-count" : "back-orient", { v: t.v === "back-once" ? "1" : "true", pos: t.pos });
       else if (verb === "flow" && ["all", "round-robin", "random", "forward", "reverse", "both"].includes(t.v)) kv.set(["forward", "reverse", "both"].includes(t.v) ? "direction" : "distribute", { v: t.v === "random" ? "random-seeded" : t.v, pos: t.pos });
       else words.push(t);
     }
@@ -882,8 +883,26 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
   } else if (verb === "flow") {
     a["type"] = "flow";
     const flow: Record<string, unknown> = {};
+    const back: Record<string, unknown> = {};
     for (const [k, { v, pos }] of kv) {
       if (common(k, v, pos)) continue;
+      if (k.startsWith("back-")) {
+        // Own settings of the particles that go back (direction both).
+        const bk = k.slice(5);
+        if (["rate", "speed", "size", "trail", "count"].includes(bk)) back[bk] = Number(v);
+        else if (bk === "delay") back["delayMs"] = parseTime(v) ?? 0;
+        else if (bk === "color" || bk === "shape") back[bk] = v;
+        else if (bk === "orient") back["orient"] = v !== "false";
+        else if (bk === "once") back["count"] = 1;
+        else if (bk === "icon") {
+          back["icon"] = v;
+          back["shape"] ??= "icon";
+        } else if (bk === "image") {
+          back["assetId"] = v;
+          back["shape"] ??= "image";
+        } else errors.push(err(pos, `The property '${k}' is not known for flow.`, "Use: back-color, back-icon, back-image, back-shape, back-size, back-speed, back-rate, back-count, back-trail, back-orient, back-delay."));
+        continue;
+      }
       if (k === "rate" || k === "speed" || k === "size" || k === "trail" || k === "count") flow[k] = Number(v);
       else if (k === "color" || k === "shape" || k === "distribute" || k === "direction") flow[k] = v;
       else if (k === "orient") flow["orient"] = v !== "false";
@@ -899,6 +918,10 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
         if (ids[0]) flow["chainFrom"] = ids[0];
       } else if (k === "skip") flow["skip"] = resolveTargets(v.split(",").map((x) => ({ t: "word", v: x, pos }) as Token), pos);
       else errors.push(err(pos, `The property '${k}' is not known for flow.`, "Use: rate, speed, size, color, shape, icon, image, count, once, orient, trail, chain, skip, dur, round-robin, reverse."));
+    }
+    if (Object.keys(back).length) {
+      flow["back"] = back;
+      flow["direction"] ??= "both";
     }
     a["flow"] = flow;
   } else {

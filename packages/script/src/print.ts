@@ -217,6 +217,16 @@ function printAction(a: Action, index: number): string {
     if (f.count === 1) parts.push("once");
     else if (f.count !== undefined) parts.push(`count=${f.count}`);
     if (f.orient) parts.push("orient");
+    if (f.back) {
+      const b = f.back;
+      if (b.shape === "icon" && b.icon) parts.push(`back-icon=${b.icon}`);
+      else if (b.shape === "image" && b.assetId) parts.push(`back-image=${b.assetId}`);
+      else if (b.shape) parts.push(`back-shape=${b.shape}`);
+      if (b.shape !== "icon" && b.icon) parts.push(`back-icon=${b.icon}`);
+      for (const k of ["color", "size", "speed", "rate", "count", "trail"] as const) if (b[k] !== undefined) parts.push(`back-${k}=${b[k]}`);
+      if (b.orient !== undefined) parts.push(`back-orient=${b.orient}`);
+      if (b.delayMs !== undefined) parts.push(`back-delay=${b.delayMs}ms`);
+    }
     if (f.chainFrom) parts.push(`chain=${f.chainFrom}`);
     if (f.skip.length) parts.push(`skip=${f.skip.join(",")}`);
     common();

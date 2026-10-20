@@ -81,6 +81,23 @@ export const FlowParams = z.object({
   trail: z.number().min(0).max(1).default(0).describe("Fading copies behind each particle: 0 (none) to 1."),
   count: z.number().int().positive().optional().describe("Particles in all, then the flow stops. Omit for a stream. 1: one particle travels from start to end."),
   orient: z.boolean().default(false).describe("Turn the particle in the direction of travel."),
+  back: z
+    .object({
+      shape: z.enum(["dot", "square", "pill", "icon", "image"]),
+      icon: z.string().regex(/^[a-z0-9-]+:[a-z0-9-]+$/),
+      assetId: z.string(),
+      size: z.number().positive(),
+      color: Color,
+      speed: z.number().positive(),
+      rate: z.number().positive(),
+      count: z.number().int().positive(),
+      trail: z.number().min(0).max(1),
+      orient: z.boolean(),
+      delayMs: z.number().nonnegative(),
+    })
+    .partial()
+    .optional()
+    .describe("With direction both: own settings of the particles that go back (end to start). A missing setting uses the forward value. Without it, both directions alternate with the same settings."),
 });
 export type FlowParams = z.infer<typeof FlowParams>;
 
