@@ -194,6 +194,37 @@ function ElementProperties({ el }: { el: Element }) {
               <ColorPick label="Fill" value={finalColor(f.fill)} colors={colors} onCommit={(v) => set({ fill: v }, "Change fill")} />
             </Prop>
           )}
+          {el.type === "icon" && (
+            <Prop label="Badge">
+              <ColorPick label="Badge" value={el.style.fill} colors={colors} onCommit={(v) => set({ fill: v }, "Change badge")} />
+            </Prop>
+          )}
+          {(SHAPES.has(el.type) || el.type === "icon") && el.type !== "line" && (
+            <>
+              {el.type !== "icon" && (
+                <Prop label="Gradient">
+                  <ColorPick label="Gradient" value={el.style.gradient} colors={colors} onCommit={(v) => set({ gradient: v }, "Change gradient")} />
+                </Prop>
+              )}
+              <SelectField
+                label="Shadow"
+                value={(el.style.shadow ?? "theme") as "theme"}
+                options={[
+                  { value: "theme", text: "Theme default" },
+                  { value: "none", text: "None" },
+                  { value: "soft", text: "Soft" },
+                  { value: "hard", text: "Hard (pop)" },
+                  { value: "glow", text: "Glow" },
+                ]}
+                onCommit={(v) => set({ shadow: v === "theme" ? null : v }, "Change shadow")}
+              />
+              {el.style.shadow !== undefined && el.style.shadow !== "none" && (
+                <Prop label="Shadow color">
+                  <ColorPick label="Shadow color" value={el.style.shadowColor} colors={colors} onCommit={(v) => set({ shadowColor: v }, "Change shadow color")} />
+                </Prop>
+              )}
+            </>
+          )}
           {el.type !== "image" && (
             <Prop label={el.type === "icon" ? "Color" : "Stroke"}>
               <ColorPick label={el.type === "icon" ? "Icon color" : "Stroke"} value={finalColor(f.stroke)} colors={colors} onCommit={(v) => set({ stroke: v }, "Change stroke")} />
@@ -456,6 +487,8 @@ function SceneProperties() {
             { value: "slate-light", text: "Slate light" },
             { value: "paper-light", text: "Paper light" },
             { value: "night-dark", text: "Night dark" },
+            { value: "pop-light", text: "Pop (bold, hard shadows)" },
+            { value: "neon-dark", text: "Neon (glow)" },
             ...(settings.customTheme ? [{ value: settings.customTheme.name, text: `${settings.customTheme.name} (custom)` }] : []),
           ]}
           onCommit={(v) => commitSettings({ theme: v }, "Change theme")}

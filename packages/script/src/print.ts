@@ -109,6 +109,9 @@ const STYLE_OUT: Record<string, string> = {
   fontFamily: "font",
   roughness: "roughness",
   fontWeight: "weight",
+  shadow: "shadow",
+  shadowColor: "shadow-color",
+  gradient: "gradient",
 };
 
 function styleParts(el: Element): string[] {

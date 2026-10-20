@@ -25,6 +25,8 @@ export interface Ctx2D {
   drawImage(image: never, dx: number, dy: number, dw: number, dh: number): void;
   measureText(text: string): { width: number };
   setLineDash(segments: number[]): void;
+  /** A linear gradient for fillStyle (gradient fills). */
+  createLinearGradient(x0: number, y0: number, x1: number, y1: number): { addColorStop(offset: number, color: string): void };
   fillStyle: unknown;
   strokeStyle: unknown;
   lineWidth: number;

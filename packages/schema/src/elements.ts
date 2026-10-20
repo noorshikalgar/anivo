@@ -17,6 +17,9 @@ export const ElementStyle = z
     textColor: Color,
     textAlign: z.enum(["left", "center", "right"]),
     roughness: z.number().min(0).max(3),
+    shadow: z.enum(["none", "soft", "hard", "glow"]).describe("A shadow under the shape: soft (blur), hard (offset, solid), or glow."),
+    shadowColor: Color.describe("Color of the shadow or the glow. Default: black (soft, hard on dark themes), the text color (hard on light themes), accent (glow)."),
+    gradient: Color.describe("The fill fades from the fill color (top) to this color (bottom)."),
   })
   .partial()
   .describe("Overrides of the theme style. Omit a field to use the theme value.");

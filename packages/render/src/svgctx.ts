@@ -10,9 +10,18 @@ const IDENTITY: M = [1, 0, 0, 1, 0, 0];
 
 const mul = (m: M, n: M): M => [m[0] * n[0] + m[2] * n[1], m[1] * n[0] + m[3] * n[1], m[0] * n[2] + m[2] * n[3], m[1] * n[2] + m[3] * n[3], m[0] * n[4] + m[2] * n[5] + m[4], m[1] * n[4] + m[3] * n[5] + m[5]];
 
+/** A gradient of the SVG context: points in output coordinates. */
+class SvgGradient {
+  stops: [number, string][] = [];
+  constructor(readonly p: [number, number, number, number]) {}
+  addColorStop(offset: number, color: string): void {
+    this.stops.push([offset, color]);
+  }
+}
+
 interface State {
   m: M;
-  fillStyle: string;
+  fillStyle: string | SvgGradient;
   strokeStyle: string;
   lineWidth: number;
   lineCap: string;
@@ -57,7 +66,7 @@ export class SvgContext implements Ctx2D {
 
   // --- state ---
   get fillStyle(): unknown { return this.s.fillStyle; }
-  set fillStyle(v: unknown) { this.s.fillStyle = String(v); }
+  set fillStyle(v: unknown) { this.s.fillStyle = v instanceof SvgGradient ? v : String(v); }
   get strokeStyle(): unknown { return this.s.strokeStyle; }
   set strokeStyle(v: unknown) { this.s.strokeStyle = String(v); }
   get lineWidth(): number { return this.s.lineWidth; }
@@ -82,6 +91,13 @@ export class SvgContext implements Ctx2D {
   scale(x: number, y: number): void { this.s.m = mul(this.s.m, [x, 0, 0, y, 0, 0]); }
   setTransform(a: number, b: number, c: number, d: number, e: number, f: number): void { this.s.m = [a, b, c, d, e, f]; }
   setLineDash(seg: number[]): void { this.s.dash = [...seg]; }
+  createLinearGradient(x0: number, y0: number, x1: number, y1: number): SvgGradient {
+    const m = this.s.m;
+    const t = (x: number, y: number) => [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]] as const;
+    const a = t(x0, y0);
+    const b = t(x1, y1);
+    return new SvgGradient([a[0], a[1], b[0], b[1]]);
+  }
 
   // --- paths (in output coordinates) ---
   private p(x: number, y: number): string {
@@ -110,6 +126,18 @@ export class SvgContext implements Ctx2D {
 
   fill(): void {
     if (!this.path) return;
+    if (this.s.fillStyle instanceof SvgGradient) {
+      const g = this.s.fillStyle;
+      const id = `g${this.nextId++}`;
+      const stops = g.stops.map(([o, c]) => {
+        const p = paint(c);
+        return `<stop offset="${n(o)}" stop-color="${esc(p.color)}"${p.alpha < 1 ? ` stop-opacity="${n(p.alpha)}"` : ""}/>`;
+      });
+      this.defs.push(`<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${n(g.p[0])}" y1="${n(g.p[1])}" x2="${n(g.p[2])}" y2="${n(g.p[3])}">${stops.join("")}</linearGradient>`);
+      const o = this.s.globalAlpha;
+      this.out.push(`<path d="${this.path}" fill="url(#${id})"${o < 1 ? ` fill-opacity="${n(o)}"` : ""}${this.clipAttr()}/>`);
+      return;
+    }
     const { color, alpha } = paint(this.s.fillStyle);
     const o = alpha * this.s.globalAlpha;
     if (o <= 0) return;
@@ -150,7 +178,7 @@ export class SvgContext implements Ctx2D {
   }
 
   fillText(text: string, x: number, y: number): void {
-    const { color, alpha } = paint(this.s.fillStyle);
+    const { color, alpha } = paint(String(this.s.fillStyle));
     const o = alpha * this.s.globalAlpha;
     if (o <= 0 || !text) return;
     const m = this.s.m;

@@ -46,6 +46,7 @@ All features must be available to agents unless the table says "UI only".
 | FR-STYLE-03 | Custom theme editor | P1 | Save as JSON. Import and export a theme file. |
 | FR-STYLE-04 | Per-element style override | P0 | An element can override the theme color. |
 | FR-STYLE-05 | Background: solid color, grid, dots, transparent | P0 | Transparent background is available for export with alpha. |
+| FR-STYLE-08 | Pop-out looks: shadows, gradients, icon badges, bold themes | P2 | Done: style `shadow` (soft, hard, glow) and `shadowColor`, `gradient` (fill fades top to bottom), icon `fill` draws a badge circle, themes `pop-light` (neo-brutalist) and `neon-dark` (glow). The SVG export draws the same (layers, not canvas shadows). |
 
 ## 3. Steps and animation (`FR-STEP`)
 
