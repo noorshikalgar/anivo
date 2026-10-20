@@ -113,6 +113,9 @@ const STYLE_KEYS: Record<string, string> = {
   "text-align": "textAlign",
   font: "fontFamily",
   roughness: "roughness",
+  shadow: "shadow",
+  "shadow-color": "shadowColor",
+  gradient: "gradient",
 };
 
 export function compile(text: string, opts: CompileOptions = {}): CompileResult {

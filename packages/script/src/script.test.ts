@@ -152,6 +152,13 @@ describe("Anivo Script", () => {
     expect(ok(printed.replace(/^scene.*\n/, "")).steps[0]!.actions[0]).toMatchObject({ flow: { back: { icon: "lucide:check", count: 1 } } });
   });
 
+  it("supports shadows, gradients, and icon badges", () => {
+    const scene = ok(`box a "A" at=100,100 fill=accent-soft gradient=teal shadow=hard shadow-color=line\nicon u lucide:user "U" at=600,100 fill=accent\nstep "S"\n  enter a, u pop\n`);
+    expect(scene.elements["a"]!.style).toMatchObject({ gradient: "teal", shadow: "hard", shadowColor: "line" });
+    expect(printScene(scene)).toContain("gradient=teal");
+    expect(printScene(scene)).toContain("shadow=hard shadow-color=line");
+  });
+
   it("supports a sound on an action and prints it back", () => {
     const text = `box a "A" at=100,100\nstep "S"\n  enter a pop sound=pop sound-gain=-10\n`;
     const scene = ok(text);

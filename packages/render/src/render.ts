@@ -1,7 +1,7 @@
 import { type Caption, type ElementFrame, type FrameState, type Particle, captionAt } from "@anivo/engine";
 import { type Polyline, evaluateWithLayout, frameBox, pointAt, polyline, slice } from "@anivo/layout";
 import type { ConnectorElement, Element, Point, Scene, SceneStyle } from "@anivo/schema";
-import { type Rgba, toCss, withAlpha } from "./color.js";
+import { type Rgba, parseHex, toCss, withAlpha } from "./color.js";
 import type { Ctx2D } from "./ctx.js";
 import { TOKEN_COLORS, diffLines, highlightLine } from "./highlight.js";
 import { getIcon } from "./icons.js";
@@ -181,6 +181,35 @@ function applyWipeClip(ctx: Ctx2D, f: ElementFrame, b: Box): void {
   ctx.clip();
 }
 
+/**
+ * A shadow under a shape (docs/05 style "shadow"): soft (blur, made of
+ * layers), hard (a solid offset copy), or glow (a colored halo). Layers, not
+ * a canvas shadow, so the SVG export draws the same picture.
+ */
+function drawShadow(dc: DrawContext, el: Element, kind: OutlineKind, b: Box, radius: number, strokeWidth: number, alpha: number): void {
+  const { ctx, theme } = dc;
+  const mode = el.style.shadow ?? theme.defaults.shadow ?? "none";
+  if (mode === "none") return;
+  const colorToken = el.style.shadowColor ?? theme.defaults.shadowColor;
+  const shape = kind === "line" ? "rectangle" : kind;
+  if (mode === "hard") {
+    const c = colorToken ? resolveToken(theme, colorToken, "stroke", el.type) : theme.dark ? parseHex("#000000") : resolveToken(theme, "text", "textColor", el.type);
+    const off = Math.max(6, strokeWidth * 2.5);
+    ctx.fillStyle = toCss(withAlpha(c, alpha * (theme.dark ? 0.9 : 1)));
+    fillPolyline(ctx, cleanOutline(shape, { x: b.x + off, y: b.y + off, width: b.width, height: b.height }, radius).points);
+    return;
+  }
+  const glow = mode === "glow";
+  const c = colorToken ? resolveToken(theme, colorToken, "stroke", el.type) : glow ? resolveToken(theme, "accent", "stroke", el.type) : parseHex("#000000");
+  const layers = glow ? 7 : 8;
+  for (let i = layers; i >= 1; i--) {
+    const grow = glow ? i * 3.2 : i * 2.2;
+    const dy = glow ? 0 : 6 + i * 0.6;
+    ctx.fillStyle = toCss(withAlpha(c, alpha * (glow ? 0.07 : theme.dark ? 0.09 : 0.05)));
+    fillPolyline(ctx, cleanOutline(shape, { x: b.x - grow, y: b.y - grow + dy, width: b.width + grow * 2, height: b.height + grow * 2 }, radius + grow).points);
+  }
+}
+
 function drawShape(dc: DrawContext, f: ElementFrame, el: Element): void {
   const { ctx, theme } = dc;
   const kind = (f.shape ?? el.type) as OutlineKind;
@@ -198,8 +227,15 @@ function drawShape(dc: DrawContext, f: ElementFrame, el: Element): void {
     fillPolyline(ctx, cleanOutline(kind === "line" ? "rectangle" : kind, { x: b.x - 14, y: b.y - 14, width: b.width + 28, height: b.height + 28 }, radius + 14).points);
   }
 
+  if (kind !== "line" && f.fillProgress > 0) drawShadow(dc, el, kind, b, radius, strokeWidth, f.fillProgress);
   if (kind !== "line" && fill.a > 0 && f.fillProgress > 0) {
-    ctx.fillStyle = toCss(withAlpha(fill, f.fillProgress));
+    const to = el.style.gradient ? resolveToken(theme, el.style.gradient, "fill", el.type) : undefined;
+    if (to) {
+      const g = ctx.createLinearGradient(b.x, b.y, b.x, b.y + b.height);
+      g.addColorStop(0, toCss(withAlpha(fill, f.fillProgress)));
+      g.addColorStop(1, toCss(withAlpha(to, f.fillProgress)));
+      ctx.fillStyle = g;
+    } else ctx.fillStyle = toCss(withAlpha(fill, f.fillProgress));
     fillPolyline(ctx, clean.points);
   }
   if (f.flash > 0 && kind !== "line") {
@@ -238,11 +274,29 @@ function drawShape(dc: DrawContext, f: ElementFrame, el: Element): void {
 function drawIcon(dc: DrawContext, f: ElementFrame, el: Element): void {
   const { ctx, theme } = dc;
   const b = localBox(f);
-  const color = resolveColor(theme, f.stroke ?? "text", "stroke", el.type);
+  let color = resolveColor(theme, f.stroke ?? "text", "stroke", el.type);
   const shape = el.type === "icon" ? getIcon(el.pack, el.name) : undefined;
   ctx.setLineDash([]);
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
+  // A fill on an icon is a badge: a colored circle with the icon inside it.
+  let ib = b;
+  const badge = el.style.fill !== undefined && f.fill !== undefined ? resolveColor(theme, f.fill, "fill", el.type) : undefined;
+  if (badge && badge.a > 0 && f.fillProgress > 0) {
+    const r = Math.min(b.width, b.height) / 2;
+    const cx = b.x + b.width / 2;
+    const cy = b.y + b.height / 2;
+    const disc = { x: cx - r, y: cy - r, width: r * 2, height: r * 2 };
+    drawShadow(dc, el, "ellipse", disc, r, 2, f.fillProgress);
+    ctx.fillStyle = toCss(withAlpha(badge, f.fillProgress));
+    fillPolyline(ctx, cleanOutline("ellipse", disc, r).points);
+    const inset = r * 0.46;
+    ib = { x: cx - r + inset, y: cy - r + inset, width: (r - inset) * 2, height: (r - inset) * 2 };
+    if (f.stroke === undefined) {
+      const lum = 0.2126 * badge.r + 0.7152 * badge.g + 0.0722 * badge.b;
+      color = lum < 0.6 ? { r: 1, g: 1, b: 1, a: 1 } : { r: 0.07, g: 0.07, b: 0.07, a: 1 };
+    }
+  }
 
   if (!shape) {
     // The pack or the icon is not registered: draw a placeholder. Lint reports unknown icons.
@@ -252,9 +306,9 @@ function drawIcon(dc: DrawContext, f: ElementFrame, el: Element): void {
     strokeProgressive(ctx, [clean], clean.length, f.strokeProgress);
   } else {
     const [vx, vy, vw, vh] = shape.viewBox;
-    const sc = Math.min(b.width / vw, b.height / vh);
-    const ox = b.x + (b.width - vw * sc) / 2 - vx * sc;
-    const oy = b.y + (b.height - vh * sc) / 2 - vy * sc;
+    const sc = Math.min(ib.width / vw, ib.height / vh);
+    const ox = ib.x + (ib.width - vw * sc) / 2 - vx * sc;
+    const oy = ib.y + (ib.height - vh * sc) / 2 - vy * sc;
     ctx.save();
     ctx.translate(ox, oy);
     ctx.scale(sc, sc);

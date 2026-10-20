@@ -56,7 +56,7 @@ describe("color", () => {
       return (x! + 0.05) / (y! + 0.05);
     };
     expect(Object.keys(THEMES).length).toBeGreaterThanOrEqual(4);
-    expect(Object.values(THEMES).filter((t) => t.dark)).toHaveLength(2);
+    expect(Object.values(THEMES).filter((t) => t.dark).length).toBeGreaterThanOrEqual(2);
     for (const t of Object.values(THEMES)) {
       expect(Object.keys(t.tokens).sort(), t.name).toEqual(keys);
       expect(contrast(t.tokens["text"]!, t.tokens["surface"]!), `${t.name} text on surface`).toBeGreaterThanOrEqual(4.5);

@@ -9,7 +9,7 @@ export interface Theme {
   tokens: Record<string, string>;
   fonts: { clean: string; sketch: string; code: string };
   /** Default style for each element type, as token names. */
-  defaults: { fill: string; stroke: string; textColor: string; strokeWidth: number; cornerRadius: number; fontSize: number };
+  defaults: { fill: string; stroke: string; textColor: string; strokeWidth: number; cornerRadius: number; fontSize: number; shadow?: "none" | "soft" | "hard" | "glow"; shadowColor?: string };
 }
 
 const slateDarkTokens = {
@@ -94,6 +94,48 @@ const nightDarkTokens = {
   teal: "#4FE3CF",
 };
 
+/** Pop: bold black lines, bright fills, and hard shadows (neo-brutalist). */
+const popLightTokens = {
+  background: "#FFF4E0",
+  grid: "#F0DFC0",
+  surface: "#FFFFFF",
+  "surface-strong": "#FFE7B8",
+  text: "#111111",
+  muted: "#5A5045",
+  line: "#111111",
+  accent: "#2F6BFF",
+  "accent-soft": "#BFD2FF",
+  danger: "#E5383B",
+  "danger-soft": "#FFC9C9",
+  success: "#14A44D",
+  "success-soft": "#B9F5CF",
+  warning: "#F5A300",
+  "warning-soft": "#FFE08A",
+  purple: "#7C4DFF",
+  teal: "#00B3A4",
+};
+
+/** Neon: deep night, bright neon colors, and glow. */
+const neonDarkTokens = {
+  background: "#0A0A1A",
+  grid: "#1A1A38",
+  surface: "#14142B",
+  "surface-strong": "#1F1F45",
+  text: "#F4F4FF",
+  muted: "#9C9CD0",
+  line: "#5D5DFF",
+  accent: "#00E5FF",
+  "accent-soft": "#063A48",
+  danger: "#FF3D7F",
+  "danger-soft": "#40102A",
+  success: "#39FF88",
+  "success-soft": "#0C3B26",
+  warning: "#FFD23F",
+  "warning-soft": "#3D3210",
+  purple: "#B26BFF",
+  teal: "#00FFD5",
+};
+
 const fonts = { clean: "Inter", sketch: "Kalam", code: "JetBrains Mono" };
 const defaults = { fill: "surface", stroke: "line", textColor: "text", strokeWidth: 2, cornerRadius: 12, fontSize: 32 };
 
@@ -102,6 +144,8 @@ export const THEMES: Record<string, Theme> = {
   "slate-light": { name: "slate-light", dark: false, tokens: slateLightTokens, fonts, defaults },
   "paper-light": { name: "paper-light", dark: false, tokens: paperLightTokens, fonts, defaults },
   "night-dark": { name: "night-dark", dark: true, tokens: nightDarkTokens, fonts, defaults: { ...defaults, strokeWidth: 2.5 } },
+  "pop-light": { name: "pop-light", dark: false, tokens: popLightTokens, fonts, defaults: { ...defaults, strokeWidth: 3, cornerRadius: 14, shadow: "hard", shadowColor: "line" } },
+  "neon-dark": { name: "neon-dark", dark: true, tokens: neonDarkTokens, fonts, defaults: { ...defaults, stroke: "accent", strokeWidth: 2, shadow: "glow", shadowColor: "accent" } },
 };
 
 export function getTheme(name: string): Theme {
