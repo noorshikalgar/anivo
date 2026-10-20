@@ -61,6 +61,8 @@ interface EditorState {
   maximized: boolean;
   /** Show the elements that are hidden at the current time, faint (the viewport overlay). */
   showGhosts: boolean;
+  /** True while the playhead stays at the end of the selected step (until the user moves it). */
+  pinStepEnd: boolean;
   /** The active action of the selected step (properties and step tree), or null. */
   activeAction: string | null;
   /** True while the view fits the video: a change of the window size fits it again. */
@@ -194,15 +196,18 @@ export const useEditor = create<EditorState>((set, get) => {
   const bus = new OperationBus(emptyScene());
   bus.subscribe((scene) => {
     const timeline = resolveTimeline(scene);
-    const { selectedStep, selection } = get();
+    const { selectedStep, selection, pinStepEnd, playing } = get();
     const stepExists = selectedStep === null || scene.steps.some((s) => s.id === selectedStep);
+    // With a step selected, the canvas shows the end of the step. A change can make the step
+    // longer (a new action, a morph): the playhead follows the new end, so the change shows at once.
+    const pinned = stepExists && selectedStep !== null && pinStepEnd && !playing;
     set({
       scene,
       timeline,
       version: bus.version,
       selectedStep: stepExists ? selectedStep : null,
       selection: selection.filter((id) => id in scene.elements),
-      playhead: Math.min(get().playhead, timeline.totalMs),
+      playhead: pinned ? stepEndMs(timeline, selectedStep) : Math.min(get().playhead, timeline.totalMs),
     });
   });
 
@@ -245,6 +250,7 @@ export const useEditor = create<EditorState>((set, get) => {
     screen: "home",
     autoFit: true,
     activeAction: null,
+    pinStepEnd: false,
     showGhosts: true,
     maximized: false,
     saveWidgetOpen: false,
@@ -293,14 +299,14 @@ export const useEditor = create<EditorState>((set, get) => {
       set({ autoFit: false, view: { zoom, x: sx - cx / zoom, y: sy - cy / zoom } });
     },
 
-    setPlayhead: (ms) => set({ playhead: Math.max(0, Math.min(ms, get().timeline.totalMs)) }),
+    setPlayhead: (ms) => set({ playhead: Math.max(0, Math.min(ms, get().timeline.totalMs)), pinStepEnd: false }),
 
     play() {
       if (get().playing) return;
       const total = get().timeline.totalMs;
       if (total <= 0) return;
       if (get().playhead >= total) set({ playhead: 0 });
-      set({ playing: true });
+      set({ playing: true, pinStepEnd: false });
       let last = performance.now();
       const tick = (now: number) => {
         if (!get().playing) return;
@@ -323,7 +329,7 @@ export const useEditor = create<EditorState>((set, get) => {
 
     selectStep(id) {
       get().pause();
-      set({ selectedStep: id, playhead: stepEndMs(get().timeline, id) });
+      set({ selectedStep: id, playhead: stepEndMs(get().timeline, id), pinStepEnd: true });
     },
 
     setSelection: (ids) => set({ selection: ids }),

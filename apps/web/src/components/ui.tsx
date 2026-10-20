@@ -539,19 +539,19 @@ export function Btn({ children, onClick, primary, icon, disabled, title, classNa
 // --- color field ----------------------------------------------------------------------------
 
 /** One swatch bar. Click it to choose a color of the scene theme. */
-export function ColorPick({ label, value, colors, onCommit }: { label: string; value: string | undefined; colors: { token: string; css: string }[]; onCommit: (v: string | null) => void }) {
+export function ColorPick({ label, value, colors, onCommit, defaultCss }: { label: string; value: string | undefined; colors: { token: string; css: string }[]; onCommit: (v: string | null) => void; /** The color that Default gives (the theme default). Without it, Default means none. */ defaultCss?: string }) {
   const s = useStyles();
   const [open, setOpen] = useState(false);
   const selected = value ?? "default";
   const css = colors.find((c) => c.token === selected)?.css ?? (value && /^#/.test(value) ? value : undefined);
-  const none = selected === "default" || selected === "transparent";
-  const chip = none ? { backgroundImage: "linear-gradient(135deg, transparent 44%, #d64545 44%, #d64545 56%, transparent 56%)", backgroundColor: "var(--ui-field)" } : { backgroundColor: css ?? "#888" };
+  const none = (selected === "default" && !defaultCss) || selected === "transparent";
+  const chip = selected === "default" && defaultCss ? { backgroundColor: defaultCss } : none ? { backgroundImage: "linear-gradient(135deg, transparent 44%, #d64545 44%, #d64545 56%, transparent 56%)", backgroundColor: "var(--ui-field)" } : { backgroundColor: css ?? "#888" };
   return (
     <Popover open={open} onOpenChange={(_, d) => setOpen(d.open)} positioning="below-start" trapFocus>
       <PopoverTrigger disableButtonEnhancement>
         <button type="button" className={s.color} aria-label={`${label}: ${selected === "default" ? "theme default" : selected}`}>
           <span className={s.colorChip} style={chip} />
-          <span className={s.colorName}>{selected === "default" ? "Default" : selected}</span>
+          <span className={s.colorName}>{selected === "default" ? (defaultCss ? "Default (theme)" : "None") : selected}</span>
         </button>
       </PopoverTrigger>
       <PopoverSurface style={{ padding: "8px", backgroundColor: "var(--ui-menu)" }}>

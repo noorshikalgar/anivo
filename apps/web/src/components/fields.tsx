@@ -151,11 +151,22 @@ export function useThemeColors(theme: string): { token: string; css: string }[] 
   }, [theme, custom]);
 }
 
-export function ColorField({ label, value, theme, onCommit }: { label: string; value: string | undefined; theme: string; onCommit: (v: string | null) => void }) {
+/** The CSS color of a theme default ("fill", "stroke", or "textColor"). */
+export function useThemeDefault(theme: string, role: "fill" | "stroke" | "textColor"): string | undefined {
+  const custom = useEditor((s) => s.scene.settings.customTheme);
+  return useMemo(() => {
+    const t = sceneTheme({ settings: { theme, ...(custom ? { customTheme: custom } : {}) } });
+    const token = t.defaults[role];
+    return t.tokens[token] ?? (token.startsWith("#") ? token : undefined);
+  }, [theme, custom, role]);
+}
+
+export function ColorField({ label, value, theme, onCommit, role }: { label: string; value: string | undefined; theme: string; onCommit: (v: string | null) => void; /** Show the theme default of this role for Default. */ role?: "fill" | "stroke" | "textColor" }) {
   const colors = useThemeColors(theme);
+  const def = useThemeDefault(theme, role ?? "fill");
   return (
     <Prop label={label}>
-      <ColorPick label={label} value={value} colors={colors} onCommit={onCommit} />
+      <ColorPick label={label} value={value} colors={colors} onCommit={onCommit} {...(role && def ? { defaultCss: def } : {})} />
     </Prop>
   );
 }
