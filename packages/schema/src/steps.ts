@@ -108,7 +108,10 @@ const actionBase = {
   durationMs: Ms.optional().describe("Omit to use the default duration for the action type."),
   easing: Easing.optional(),
   staggerMs: Ms.default(0),
-  sound: z.enum(["pop", "click", "whoosh", "ding", "thud"]).optional().describe("A sound when the action starts (FR-AUDIO-10)."),
+  sound: z
+    .enum(["pop", "click", "whoosh", "ding", "thud", "tick", "blip", "chime", "rise", "bubble", "success", "error", "keys", "ticks"])
+    .optional()
+    .describe("A sound when the action starts (FR-AUDIO-10). keys: typing clicks and ticks: counter ticks, for the whole action."),
   soundGainDb: z.number().min(-40).max(6).optional().describe("Volume of the sound in dB. Default -6."),
 };
 

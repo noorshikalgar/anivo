@@ -21,13 +21,13 @@ import {
   TagPickerOption,
   makeStyles,
 } from "@fluentui/react-components";
-import { Add16Regular } from "@fluentui/react-icons";
+import { Add16Regular, Speaker216Regular } from "@fluentui/react-icons";
 import { useEffect, useMemo, useState } from "react";
 import { searchIcons } from "@anivo/render";
 import { pickImageAsset } from "../images.js";
 import { withErrors } from "../notify.js";
 import { addAction, addMotionAlongArrow, updateAction, updateStep } from "../commands.js";
-import { setCue, setStepLine } from "../audio.js";
+import { previewSound, setCue, setStepLine } from "../audio.js";
 import { Comments } from "./Comments.js";
 import { useEditor } from "../store.js";
 import { ColorField, NumberField, Row, SelectField, TextField } from "./fields.js";
@@ -37,6 +37,9 @@ import { Btn, Check, MenuButtonSmall, Note, Panel, Prop } from "./ui.js";
 const useStyles = makeStyles({
   panel: { display: "flex", flexDirection: "column", gap: "2px" },
 });
+
+/** Sound names in the list. */
+const SOUND_TEXT: Partial<Record<string, string>> = { keys: "Keys (typing, whole action)", ticks: "Ticks (counting, whole action)", rise: "Rise (whoosh up)", error: "Error (buzz)", success: "Success (three notes)" };
 
 export const ENTER_EFFECTS = ["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter"] as const;
 export const EMPHASIS_EFFECTS = ["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus"] as const;
@@ -356,9 +359,19 @@ export function ActionEditor({ step, action, part = "all" }: { step: Step; actio
       <SelectField
         label="Sound"
         value={action.sound ?? "none"}
-        options={[{ value: "none", text: "No sound" }, ...SOUNDS.map((x) => ({ value: x, text: label(x) }))]}
-        onCommit={(v) => set({ sound: v === "none" ? null : v }, "Change sound")}
+        options={[{ value: "none", text: "No sound" }, ...SOUNDS.map((x) => ({ value: x, text: SOUND_TEXT[x] ?? label(x) }))]}
+        onCommit={(v) => {
+          set({ sound: v === "none" ? null : v }, "Change sound");
+          if (v !== "none") previewSound(v);
+        }}
       />
+      {action.sound && (
+        <Prop label="">
+          <Btn icon={<Speaker216Regular />} onClick={() => action.sound && previewSound(action.sound)}>
+            Play the sound
+          </Btn>
+        </Prop>
+      )}
         </>
       )}
       {what && (

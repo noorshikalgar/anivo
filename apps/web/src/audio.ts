@@ -6,7 +6,7 @@ import { assetId } from "@anivo/fileio";
 import type { OperationInput } from "@anivo/ops";
 import { type AudioTrack, type ScriptLine, audioSegments, speechInOutput } from "@anivo/schema";
 import { speechIntervals } from "@anivo/ops";
-import { type SoundName, soundCues, synthSound } from "@anivo/engine";
+import { type SynthName, soundCues, synthSound } from "@anivo/engine";
 import { duck, monoAt16k } from "@anivo/export-web";
 import { useEditor } from "./store.js";
 
@@ -117,7 +117,7 @@ export function peaks(buffer: AudioBuffer, count: number): Float32Array {
 let playing: AudioScheduledSourceNode[] = [];
 
 const soundBuffers = new Map<string, AudioBuffer>();
-function soundBuffer(ac: AudioContext, name: SoundName): AudioBuffer {
+function soundBuffer(ac: AudioContext, name: SynthName): AudioBuffer {
   let b = soundBuffers.get(name);
   if (!b) {
     const samples = synthSound(name, ac.sampleRate);
@@ -255,4 +255,16 @@ export function cueAllSteps(): void {
   const { timeline, apply } = useEditor.getState();
   if (!vo) return;
   apply({ label: "Cue all steps", ops: timeline.steps.map((s) => ({ op: "step.update" as const, id: s.id, set: { trigger: { kind: "cue", audioId: vo.id, atMs: Math.round(s.startMs) } } })) });
+}
+
+/** Play one sound now (the preview button of the Sound field). */
+export function previewSound(name: SynthName): void {
+  const ac = audioContext();
+  void ac.resume();
+  const src = ac.createBufferSource();
+  src.buffer = soundBuffer(ac, name === "keys" ? "key" : name === "ticks" ? "tick" : name);
+  const g = ac.createGain();
+  g.gain.value = 0.5;
+  src.connect(g).connect(ac.destination);
+  src.start();
 }
