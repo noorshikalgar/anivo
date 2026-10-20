@@ -170,6 +170,12 @@ describe("Anivo Script", () => {
     expect(!bad.ok && bad.errors[0]!.message).toBe("The widget 'nope' is not known.");
   });
 
+  it("supports a step transition", () => {
+    const scene = ok(`box a "A" at=100,100\nstep "One"\n  enter a fade\nstep "Two" transition=dip transition-dur=800ms\n  pulse a\n`);
+    expect(scene.steps[1]!.transition).toEqual({ kind: "dip", durationMs: 800 });
+    expect(printScene(scene)).toContain('transition=dip transition-dur=800ms');
+  });
+
   it("supports a sound on an action and prints it back", () => {
     const text = `box a "A" at=100,100\nstep "S"\n  enter a pop sound=pop sound-gain=-10\n`;
     const scene = ok(text);

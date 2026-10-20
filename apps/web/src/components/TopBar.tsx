@@ -26,7 +26,9 @@ import {
   ZoomFit16Regular,
 } from "@fluentui/react-icons";
 import { useState } from "react";
-import { deleteSelection, duplicateSelection } from "../commands.js";
+import { deleteSelection, duplicateSelection, insertTable } from "../commands.js";
+import { pickImage } from "../images.js";
+import { WIDGETS, insertWidget } from "../widgets.js";
 import { goHome, hasFileSystemAccess, newScene, openFile, openRecent, recentFiles, runImport, saveFile, saveFileAs } from "../files.js";
 import { notify, withErrors } from "../notify.js";
 import { cueAllSteps, importAudio } from "../audio.js";
@@ -210,6 +212,20 @@ export function TopBar() {
           <MenuItem icon={<Play16Regular />} secondaryContent="F5" onClick={() => (useEditor.getState().pause(), useEditor.setState({ presenting: true }))}>
             Present
           </MenuItem>
+        </BarMenu>
+      )}
+      {!phone && (
+        <BarMenu label="Insert">
+          <MenuItem onClick={() => useEditor.setState({ buildOpen: true })}>Bullet list build…</MenuItem>
+          <MenuDivider />
+          <MenuItem onClick={() => insertTable()}>Table</MenuItem>
+          <MenuItem onClick={() => void withErrors(pickImage)}>Image…</MenuItem>
+          <MenuDivider />
+          {WIDGETS.map((w) => (
+            <MenuItem key={w.name} onClick={() => insertWidget(w)}>
+              {`Widget: ${w.title}`}
+            </MenuItem>
+          ))}
         </BarMenu>
       )}
       <BarMenu label="Audio" icon={<Mic16Regular />}>

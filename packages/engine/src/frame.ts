@@ -88,10 +88,18 @@ export interface Particle {
   orient: boolean;
 }
 
+/** A step transition over the whole frame: progress 0 to 1 over its duration (0.5 at the step start). */
+export interface TransitionFrame {
+  kind: "fade" | "dip" | "flash" | "wipe";
+  progress: number;
+}
+
 export interface FrameState {
   timeMs: number;
   /** Elements in draw order (by `z`, then by `id`). */
   elements: ElementFrame[];
   particles: Particle[];
   camera: Rect;
+  /** A step transition that runs now, if any. */
+  transition?: TransitionFrame;
 }

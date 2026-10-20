@@ -155,3 +155,13 @@ test("with a step selected, a change shows at once: the playhead follows the end
   expect(end1).toBeGreaterThan(end0);
   expect(after.playhead).toBe(end1);
 });
+
+test("Insert, Bullet list build makes the title and point steps", async ({ page }) => {
+  await page.getByRole("button", { name: "Insert", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Bullet list build…" }).click();
+  const dialog = page.getByRole("dialog", { name: "Bullet list build" });
+  await dialog.getByRole("textbox", { name: "Build points, one for each line" }).fill("One\nTwo");
+  await dialog.getByRole("button", { name: "Make the steps" }).click();
+  const titles = ((await state(page)) as unknown as { scene: { steps: { title: string }[] } }).scene.steps.map((s) => s.title);
+  expect(titles.slice(-6)).toEqual(["Start", "Title", "Point 1", "Point 1 up", "Point 2", "Point 2 up"]);
+});

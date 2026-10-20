@@ -642,6 +642,11 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
     if (dur) props["durationMs"] = parseTime(dur.v);
     const notes = p.kv.get("notes");
     if (notes) props["notes"] = notes.v;
+    const tr = p.kv.get("transition");
+    if (tr) {
+      if (!["fade", "dip", "flash", "wipe"].includes(tr.v)) errors.push(err(tr.pos, `The transition '${tr.v}' is not known.`, "Use: fade, dip, flash, wipe."));
+      else props["transition"] = { kind: tr.v, ...(p.kv.get("transition-dur") ? { durationMs: parseTime(p.kv.get("transition-dur")!.v) ?? 600 } : {}) };
+    }
     if (p.flags.has("click")) props["trigger"] = { kind: "click" };
     const actions = line.children.map((c) => compileAction(c, resolveTargets, errors)).filter((a): a is Record<string, unknown> => a !== undefined);
     props["actions"] = actions;

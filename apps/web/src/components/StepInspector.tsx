@@ -497,6 +497,24 @@ export function StepInspector({ step }: { step: Step }) {
         {step.trigger.kind === "cue" && <NumberField label="Cue time (ms)" value={step.trigger.atMs} min={0} step={100} onCommit={(v) => setCue(step.id, v, "Move cue")} />}
         <NumberField label="Hold (ms)" value={step.holdMs} min={0} step={100} onCommit={(v, k) => updateStep(step.id, { holdMs: Math.round(v) }, "Change hold", k)} />
       </Panel>
+      <Panel id="step-transition" title="Transition">
+        <SelectField
+          label="Transition"
+          value={step.transition?.kind ?? "none"}
+          options={[
+            { value: "none", text: "None (cut)" },
+            { value: "fade", text: "Fade through background" },
+            { value: "dip", text: "Dip to black" },
+            { value: "flash", text: "Flash white" },
+            { value: "wipe", text: "Wipe" },
+          ]}
+          onCommit={(v) => updateStep(step.id, { transition: v === "none" ? null : { kind: v, durationMs: step.transition?.durationMs ?? 600 } }, "Change transition")}
+        />
+        {step.transition && (
+          <NumberField label="Duration (ms)" value={step.transition.durationMs} min={100} max={4000} step={100} onCommit={(v, k) => updateStep(step.id, { transition: { ...step.transition!, durationMs: Math.round(v) } }, "Change transition", k)} />
+        )}
+        <Note>The transition covers the whole frame around the start of the step: half before, half after.</Note>
+      </Panel>
 
       <Panel id="step-actions-summary" title={`Actions (${step.actions.length})`}>
         {step.actions.map((a) => (
