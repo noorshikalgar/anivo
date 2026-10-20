@@ -255,7 +255,7 @@ function ElementProperties({ el }: { el: Element }) {
               />
             </>
           )}
-          {(el.type === "rectangle" || el.type === "image") && <NumberField label="Corner radius" value={f.cornerRadius ?? (el.type === "image" ? 0 : 12)} min={0} max={200} onCommit={(v, k) => set({ cornerRadius: v }, "Change corner radius", k)} />}
+          {(el.type === "rectangle" || el.type === "image") && <NumberField label="Corner radius" propLabel={key("cornerRadius", { cornerRadius: f.cornerRadius ?? (el.type === "image" ? 0 : 12) }, "Corner radius")} value={f.cornerRadius ?? (el.type === "image" ? 0 : 12)} min={0} max={200} onCommit={(v, k) => set({ cornerRadius: v }, "Change corner radius", k)} />}
           {(el.type === "rectangle" || el.type === "ellipse" || el.type === "diamond") && selectedStep !== null && (
             <SelectField
               label="Shape in this step"
@@ -341,7 +341,7 @@ function ElementProperties({ el }: { el: Element }) {
 
       {(el.label || el.type === "text") && (
         <Panel id="el-text-style" title="Text style" group={MAIN}>
-          <NumberField label="Font size" value={f.fontSize ?? 32} min={8} max={400} onCommit={(v, k) => set({ fontSize: v }, "Change font size", k)} />
+          <NumberField label="Font size" propLabel={key("fontSize", { fontSize: f.fontSize ?? 32 }, "Font size")} value={f.fontSize ?? 32} min={8} max={400} onCommit={(v, k) => set({ fontSize: v }, "Change font size", k)} />
           <SelectField
             label="Align"
             value={el.style.textAlign ?? "center"}
@@ -352,7 +352,7 @@ function ElementProperties({ el }: { el: Element }) {
             ]}
             onCommit={(v) => set({ textAlign: v }, "Change text align")}
           />
-          <ColorField label="Text color" role="textColor" theme={theme} value={finalColor(f.textColor)} onCommit={(v) => set({ textColor: v }, "Change text color")} />
+          <ColorField label="Text color" propLabel={key("textColor", { textColor: finalColor(f.textColor) }, "Text color")} role="textColor" theme={theme} value={finalColor(f.textColor)} onCommit={(v) => set({ textColor: v }, "Change text color")} />
         </Panel>
       )}
 

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 /**
  * Settings fields of the panels (docs/15). Each field is a property row: the
  * label on the left, the control on the right.
@@ -56,9 +57,9 @@ export function Row({ children }: { children: React.ReactNode }) {
 }
 
 /** Number field: drag to change, click to type (docs/15). A drag passes one merge key: one undo step. */
-export function NumberField({ label, value, onCommit, min, max, step = 1, unit }: { label: string; value: number; onCommit: (v: number, mergeKey?: string) => void; min?: number; max?: number; step?: number; unit?: string }) {
+export function NumberField({ label, value, onCommit, min, max, step = 1, unit, propLabel }: { label: string; value: number; onCommit: (v: number, mergeKey?: string) => void; min?: number; max?: number; step?: number; unit?: string; /** The shown label, for example with a keyframe button. Default: label. */ propLabel?: ReactNode }) {
   return (
-    <Prop label={label}>
+    <Prop label={propLabel ?? label}>
       <DragNumber label={label} value={value} onCommit={onCommit} {...(min !== undefined ? { min } : {})} {...(max !== undefined ? { max } : {})} step={step} {...(unit ? { unit } : {})} />
     </Prop>
   );
@@ -161,11 +162,11 @@ export function useThemeDefault(theme: string, role: "fill" | "stroke" | "textCo
   }, [theme, custom, role]);
 }
 
-export function ColorField({ label, value, theme, onCommit, role }: { label: string; value: string | undefined; theme: string; onCommit: (v: string | null) => void; /** Show the theme default of this role for Default. */ role?: "fill" | "stroke" | "textColor" }) {
+export function ColorField({ label, value, theme, onCommit, role, propLabel }: { label: string; value: string | undefined; theme: string; onCommit: (v: string | null) => void; /** Show the theme default of this role for Default. */ role?: "fill" | "stroke" | "textColor"; /** The shown label. Default: label. */ propLabel?: ReactNode }) {
   const colors = useThemeColors(theme);
   const def = useThemeDefault(theme, role ?? "fill");
   return (
-    <Prop label={label}>
+    <Prop label={propLabel ?? label}>
       <ColorPick label={label} value={value} colors={colors} onCommit={onCommit} {...(role && def ? { defaultCss: def } : {})} />
     </Prop>
   );
