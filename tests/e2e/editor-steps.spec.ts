@@ -138,3 +138,20 @@ test("a two-way flow gets own settings for the way back", async ({ page }) => {
   expect(flow.direction).toBe("both");
   expect(flow.back).toBeDefined();
 });
+
+test("with a step selected, a change shows at once: the playhead follows the end of the step", async ({ page }) => {
+  await page.getByRole("button", { name: /Pods fan out/ }).click();
+  type S = { playhead: number; timeline: { steps: { id: string; endMs: number }[] } };
+  const before = (await state(page)) as unknown as S;
+  const end0 = before.timeline.steps.find((x) => x.id === "s-pods")!.endMs;
+  expect(before.playhead).toBe(end0);
+  // A longer action makes the step longer; the playhead moves to the new end.
+  await page.evaluate(() => {
+    const st = (window as unknown as { __anivo: { getState(): { apply(tx: unknown): unknown } } }).__anivo.getState();
+    st.apply({ ops: [{ op: "action.add", step: "s-pods", action: { type: "emphasis", effect: "pulse", targets: ["lb"], delayMs: 2000, durationMs: 1000 } }] });
+  });
+  const after = (await state(page)) as unknown as S;
+  const end1 = after.timeline.steps.find((x) => x.id === "s-pods")!.endMs;
+  expect(end1).toBeGreaterThan(end0);
+  expect(after.playhead).toBe(end1);
+});

@@ -37,7 +37,7 @@ import { useEffect, useMemo } from "react";
 import { type AlignKind, alignSelection, autoLayoutSelection, commitProps, commitSettings, deleteSelection, distributeSelection, duplicateSelection, groupSelection, renameElement, reorderSelection, setElementText, ungroupSelection } from "../commands.js";
 import { useEditor } from "../store.js";
 import { Comments } from "./Comments.js";
-import { ColorField, NumberField, SelectField, TextField, useThemeColors } from "./fields.js";
+import { ColorField, NumberField, SelectField, TextField, useThemeColors, useThemeDefault } from "./fields.js";
 import { ActionsPanel } from "./ActionsPanel.js";
 import { AddActionMenu, StepInspector } from "./StepInspector.js";
 import { elementIcon } from "./typeIcons.js";
@@ -96,6 +96,9 @@ function ElementProperties({ el }: { el: Element }) {
   const playing = useEditor((st) => st.playing);
   const stepTitle = useEditor((st) => st.scene.steps.find((x) => x.id === st.selectedStep)?.title);
   const colors = useThemeColors(scene.settings.theme);
+  const defFill = useThemeDefault(scene.settings.theme, "fill");
+  const defStroke = useThemeDefault(scene.settings.theme, "stroke");
+  const defText = useThemeDefault(scene.settings.theme, "textColor");
   // Show the values at the current time, so morphs in a step show their result.
   const f = useMemo(() => {
     const t = !playing && selectedStep === null && playhead === 0 ? -1 : playhead;
@@ -191,7 +194,7 @@ function ElementProperties({ el }: { el: Element }) {
         <Panel id="el-shape" title={el.type === "connector" ? "Arrow" : "Appearance"} group={MAIN}>
           {SHAPES.has(el.type) && el.type !== "line" && (
             <Prop label="Fill">
-              <ColorPick label="Fill" value={finalColor(f.fill)} colors={colors} onCommit={(v) => set({ fill: v }, "Change fill")} />
+              <ColorPick label="Fill" value={finalColor(f.fill)} colors={colors} defaultCss={defFill} onCommit={(v) => set({ fill: v }, "Change fill")} />
             </Prop>
           )}
           {el.type === "icon" && (
@@ -227,7 +230,7 @@ function ElementProperties({ el }: { el: Element }) {
           )}
           {el.type !== "image" && (
             <Prop label={el.type === "icon" ? "Color" : "Stroke"}>
-              <ColorPick label={el.type === "icon" ? "Icon color" : "Stroke"} value={finalColor(f.stroke)} colors={colors} onCommit={(v) => set({ stroke: v }, "Change stroke")} />
+              <ColorPick label={el.type === "icon" ? "Icon color" : "Stroke"} value={finalColor(f.stroke)} colors={colors} defaultCss={el.type === "icon" ? defText : defStroke} onCommit={(v) => set({ stroke: v }, "Change stroke")} />
             </Prop>
           )}
           {(SHAPES.has(el.type) || el.type === "connector") && (
@@ -342,7 +345,7 @@ function ElementProperties({ el }: { el: Element }) {
             ]}
             onCommit={(v) => set({ textAlign: v }, "Change text align")}
           />
-          <ColorField label="Text color" theme={theme} value={finalColor(f.textColor)} onCommit={(v) => set({ textColor: v }, "Change text color")} />
+          <ColorField label="Text color" role="textColor" theme={theme} value={finalColor(f.textColor)} onCommit={(v) => set({ textColor: v }, "Change text color")} />
         </Panel>
       )}
 
