@@ -51,3 +51,12 @@ test("rename, duplicate, search, and delete a scene", async ({ page }) => {
   await page.reload();
   await expect(page.getByRole("list", { name: "Your scenes" }).getByRole("article", { name: "My layers" })).toBeVisible();
 });
+
+test("the template row scrolls with its arrows", async ({ page }) => {
+  await openHome(page);
+  const row = page.getByRole("list", { name: "Templates" });
+  await expect(page.getByRole("button", { name: "Scroll the templates left" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Scroll the templates right" }).click();
+  await expect.poll(() => row.evaluate((el) => el.scrollLeft)).toBeGreaterThan(100);
+  await expect(page.getByRole("button", { name: "Scroll the templates left" })).toBeVisible();
+});
