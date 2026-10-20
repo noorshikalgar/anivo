@@ -55,6 +55,8 @@ interface EditorState {
   targetHighlight: string[];
   /** The tab of the properties editor. */
   propTab: "scene" | "step" | "actions" | "element";
+  /** True while the bullet list build dialog is open. */
+  buildOpen: boolean;
   /** True while the "save as widget" dialog is open. */
   saveWidgetOpen: boolean;
   /** The viewport uses the full window (Ctrl+Space). */
@@ -254,6 +256,7 @@ export const useEditor = create<EditorState>((set, get) => {
     showGhosts: true,
     maximized: false,
     saveWidgetOpen: false,
+    buildOpen: false,
     targetHighlight: [],
     layout: readPref("anivo.layout", { showGrid: false, snapGrid: true, snapObjects: true, gridSize: 8 }),
     areas: readPref("anivo.areas", { left: 230, right: 300, outliner: 34, timeline: 200 }),

@@ -5,6 +5,7 @@ import { openSceneFromQuery, startAutosave } from "../files.js";
 import { migrateAutosave, startLibraryAutosave } from "../library.js";
 import { Home } from "./Home.js";
 import { SaveWidgetDialog } from "./SaveWidgetDialog.js";
+import { BuildDialog } from "./BuildDialog.js";
 import { Outliner } from "./Outliner.js";
 import { ViewportHeader } from "./ViewportHeader.js";
 import { StatusBar } from "./StatusBar.js";
@@ -264,6 +265,7 @@ export function App() {
           <ShareDialog />
           <TtsDialog />
           <SaveWidgetDialog />
+          <BuildDialog />
           <HistoryDialog />
           <CommandPalette />
           {presenting && <PresentMode />}

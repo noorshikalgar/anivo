@@ -189,6 +189,13 @@ export const Step = z.object({
   actions: z.array(Action).default([]),
   notes: z.string().optional(),
   scriptLineId: z.string().optional(),
+  transition: z
+    .object({
+      kind: z.enum(["fade", "dip", "flash", "wipe"]).describe("fade: through the background color. dip: through black. flash: through white. wipe: a band of the background color moves across."),
+      durationMs: Ms.default(600),
+    })
+    .optional()
+    .describe("A transition over the whole frame at the start of the step (docs/16)."),
 });
 export type Step = z.infer<typeof Step>;
 export type StepInput = z.input<typeof Step>;

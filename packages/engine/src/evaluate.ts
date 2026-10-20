@@ -533,7 +533,18 @@ export function evaluateAt(prepared: Prepared, timeMs: number, opts: EvaluateOpt
 
   const v = scene.settings.video;
   const camera = i < 0 ? baseCamera : cameraAt(timeline.steps[i]!, i === 0 ? baseCamera : cameras[i - 1]!, baseCamera, state, v.width / v.height, t);
-  return { timeMs: Math.max(0, t), elements: order.map((id) => state[id]!), particles, camera };
+  // A step transition is centered on the step start: half before, half after.
+  let transition: FrameState["transition"];
+  for (const ts of timeline.steps) {
+    const tr = scene.steps[ts.index]!.transition;
+    if (!tr || tr.durationMs <= 0) continue;
+    const from = ts.startMs - tr.durationMs / 2;
+    if (t >= from && t < from + tr.durationMs) {
+      transition = { kind: tr.kind, progress: (t - from) / tr.durationMs };
+      break;
+    }
+  }
+  return { timeMs: Math.max(0, t), elements: order.map((id) => state[id]!), particles, camera, ...(transition ? { transition } : {}) };
 }
 
 const preparedCache = new WeakMap<Scene, Prepared>();

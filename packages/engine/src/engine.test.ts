@@ -286,6 +286,17 @@ describe("evaluate", () => {
     expect(evaluate(skip, 1500, { connectorLength: len }).particles.every((p) => p.connectorId === "ab")).toBe(true);
   });
 
+  it("runs a step transition centered on the step start", () => {
+    const s = scene([
+      { id: "s1", holdMs: 0, actions: [{ id: "e1", type: "enter", effect: "fade", targets: ["a"], durationMs: 1000 }] },
+      { id: "s2", holdMs: 0, transition: { kind: "fade", durationMs: 400 }, actions: [{ id: "e2", type: "exit", effect: "fade", targets: ["a"], durationMs: 500 }] },
+    ]);
+    expect(evaluate(s, 700).transition).toBeUndefined();
+    expect(evaluate(s, 1000).transition).toEqual({ kind: "fade", progress: 0.5 });
+    expect(evaluate(s, 850).transition?.progress).toBeCloseTo(0.125, 5);
+    expect(evaluate(s, 1300).transition).toBeUndefined();
+  });
+
   it("sends particles both ways, each direction with its own settings", () => {
     const s = scene([
       { id: "s1", holdMs: 0, actions: [{ id: "f1", type: "flow", targets: ["ab"], durationMs: 2000, flow: { rate: 2, speed: 100, color: "accent", direction: "both", back: { color: "success", rate: 1, shape: "square", count: 1 } } }] },

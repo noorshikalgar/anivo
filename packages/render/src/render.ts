@@ -784,6 +784,31 @@ export function renderFrame(ctx: Ctx2D, scene: Scene, frame: FrameState, routes:
   ctx.setTransform(sx, 0, 0, sy, -cam.x * sx, -cam.y * sy);
   drawParticles(dc, frame.particles);
   ctx.restore();
+  if (frame.transition) drawTransition(dc, frame.transition, opts);
+}
+
+/** A step transition over the whole output (docs/16 section 3). */
+function drawTransition(dc: DrawContext, tr: { kind: "fade" | "dip" | "flash" | "wipe"; progress: number }, opts: RenderOptions): void {
+  const { ctx, theme } = dc;
+  const p = Math.min(1, Math.max(0, tr.progress));
+  const bg = dc.scene.settings.background.kind === "transparent" ? "background" : (dc.scene.settings.background.color ?? "background");
+  const color = tr.kind === "dip" ? "#000000" : tr.kind === "flash" ? "#ffffff" : toCss(resolveToken(theme, bg, "fill", "rectangle"));
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = color;
+  if (tr.kind === "wipe") {
+    // The band covers from the left up to the step start, then it uncovers from the left.
+    const e = p < 0.5 ? p * 2 : (p - 0.5) * 2;
+    const eased = e * e * (3 - 2 * e);
+    if (p < 0.5) ctx.fillRect(0, 0, opts.width * eased, opts.height);
+    else ctx.fillRect(opts.width * eased, 0, opts.width * (1 - eased), opts.height);
+  } else {
+    // Up to full at the step start, then down.
+    const a = 1 - Math.abs(p - 0.5) * 2;
+    ctx.globalAlpha = a * a * (3 - 2 * a);
+    ctx.fillRect(0, 0, opts.width, opts.height);
+  }
+  ctx.restore();
 }
 
 /**
