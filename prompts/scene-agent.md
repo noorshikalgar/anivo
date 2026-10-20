@@ -102,7 +102,8 @@ step "<title>" [hold=<time>] [cue=<time>]
   code <target> highlight=<a>-<b> | type=<a>-<b>
   move <targets> path="x,y x,y …" [curve] [orient]   (the element center follows the points and stays at the end)
   wait <time>
-  (any action) sound=pop|click|whoosh|ding|thud [sound-gain=<dB>]   (a short sound when the action starts)
+  (any action) sound=pop|click|whoosh|ding|thud|tick|blip|chime|rise|bubble|success|error|keys|ticks [sound-gain=<dB>]
+       (a short sound when the action starts; keys = typing clicks and ticks = counter ticks for the whole action, for typewriter and count)
 ```
 
 - `<targets>` is an ID, a list of IDs separated by commas, or a prefix with `*` (`pod-*`).
