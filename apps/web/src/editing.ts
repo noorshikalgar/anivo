@@ -15,7 +15,7 @@ export type Handle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
 export const HANDLES: Handle[] = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
 
 export const GRID = 8;
-export const snap = (v: number, on: boolean) => (on ? Math.round(v / GRID) * GRID : v);
+export const snap = (v: number, on: boolean, size = GRID) => (on ? Math.round(v / size) * size : v);
 
 /** Scene point from a point in canvas CSS pixels. */
 export function toScene(view: View, cx: number, cy: number): Point {

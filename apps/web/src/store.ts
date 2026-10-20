@@ -47,6 +47,10 @@ interface EditorState {
   exportOpen: boolean;
   /** The voiceover record, while it runs (see record.ts). */
   recording: import("./record.js").RecordingState | null;
+  /** Grid and snap settings of the viewport (kept in this browser). */
+  layout: LayoutPrefs;
+  /** Sizes of the editor areas in px (kept in this browser). */
+  areas: AreaSizes;
   /** Elements that the canvas marks: the targets of the active action in the Actions tab. */
   targetHighlight: string[];
   /** The tab of the properties editor. */
@@ -122,6 +126,54 @@ interface EditorState {
   setIconPicker(at: { x: number; y: number } | null): void;
 }
 
+export interface LayoutPrefs {
+  showGrid: boolean;
+  snapGrid: boolean;
+  snapObjects: boolean;
+  gridSize: number;
+}
+export interface AreaSizes {
+  /** Width of the steps area. */
+  left: number;
+  /** Width of the right column (outliner and properties). */
+  right: number;
+  /** Height of the outliner, in percent of the right column. */
+  outliner: number;
+  /** Height of the timeline tracks. */
+  timeline: number;
+}
+
+function readPref<T extends object>(key: string, fallback: T): T {
+  try {
+    return { ...fallback, ...(JSON.parse(localStorage.getItem(key) ?? "{}") as Partial<T>) };
+  } catch {
+    return fallback;
+  }
+}
+
+/** Save a preference in this browser. */
+export function writePref(key: string, value: unknown): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Storage can be blocked: the preference lasts for this session only.
+  }
+}
+
+/** Change the grid and snap settings. */
+export function setLayout(p: Partial<LayoutPrefs>): void {
+  const layout = { ...useEditor.getState().layout, ...p };
+  useEditor.setState({ layout });
+  writePref("anivo.layout", layout);
+}
+
+/** Change the area sizes. */
+export function setAreas(p: Partial<AreaSizes>): void {
+  const areas = { ...useEditor.getState().areas, ...p };
+  useEditor.setState({ areas });
+  writePref("anivo.areas", areas);
+}
+
 function emptyScene(): Scene {
   const r = loadScene({ schemaVersion: 1, meta: { title: "Untitled" } });
   if (!r.ok) throw new Error("The empty scene is not valid.");
@@ -194,6 +246,8 @@ export const useEditor = create<EditorState>((set, get) => {
     showGhosts: true,
     maximized: false,
     targetHighlight: [],
+    layout: readPref("anivo.layout", { showGrid: false, snapGrid: true, snapObjects: true, gridSize: 8 }),
+    areas: readPref("anivo.areas", { left: 230, right: 300, outliner: 34, timeline: 200 }),
     propTab: "scene",
     drawer: null,
     libraryId: null,

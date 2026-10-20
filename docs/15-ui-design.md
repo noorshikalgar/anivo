@@ -63,3 +63,11 @@ The Actions tab is the place to animate a step. It opens when a step is selected
 2. **Add an action:** quick buttons (Appear, Fade in, Draw, Type, Disappear, Pulse, Glow, Focus, Flow, Zoom, Count). The action uses the selected elements. With no selection, a dialog asks for the elements. The **+** button of the sequence has all actions.
 3. **Sequence:** the actions of the step, with a bar for the time of each action in the step. The canvas marks the targets of the active action with orange dashed boxes.
 4. **What:** the effect and its settings. **Who:** the targets (remove one, choose, use the selection, select on the canvas). **When:** delay, duration, easing (with a curve), stagger, sound, and the buttons With previous and After previous.
+
+## 6. Precision
+
+1. **Grid:** the grid button in the viewport header shows the grid. The **Snap** menu sets the grid size (1, 4, 8, 16, 32, or 64 px), snap to the grid, and snap to other elements (smart guides).
+2. While a move runs, a label shows the position. While a resize runs, a label shows the size.
+3. **Alt:** hold Alt to move or draw with no snap. With one element selected, hold Alt and point at another element: red lines show the distances in px.
+4. Arrow keys move the selection by 1 px; Shift+arrow by 10 px.
+5. **Areas:** drag the edge of the Steps area, the right column, the Outliner, or the timeline to resize it. Double-click an edge to reset it. The editor keeps the sizes and the snap settings in this browser.
