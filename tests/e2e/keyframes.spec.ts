@@ -13,6 +13,8 @@ const seek = async (page: import("@playwright/test").Page, stepRel: number) => {
   await page.mouse.click(box.x + (stepRel / span) * box.width, box.y + box.height / 2);
 };
 
+type Morph = { delayMs: number; durationMs?: number };
+
 test.beforeEach(async ({ page }) => {
   await openEditor(page);
 });
@@ -38,9 +40,9 @@ test("auto-key: moves at two times make two keyframes, and the Keys view edits t
 
   const s = await state(page);
   const step = s.scene.steps.find((x) => x.id === s.selectedStep)!;
-  const morphs = step.actions.filter((a) => a.type === "morph");
+  const morphs = step.actions.filter((a) => a.type === "morph") as unknown as Morph[];
   expect(morphs).toHaveLength(2);
-  expect(morphs.map((m) => [m.delayMs, (m as { durationMs?: number }).durationMs])).toEqual([
+  expect(morphs.map((m) => [m.delayMs, m.durationMs])).toEqual([
     [0, 1000],
     [1000, expect.any(Number)],
   ]);
@@ -50,7 +52,7 @@ test("auto-key: moves at two times make two keyframes, and the Keys view edits t
   // Arrow keys move a keyframe; Delete removes it.
   await keys.first().focus();
   await page.keyboard.press("ArrowRight");
-  const after = (await state(page)).scene.steps.find((x) => x.id === s.selectedStep)!.actions.filter((a) => a.type === "morph");
+  const after = (await state(page)).scene.steps.find((x) => x.id === s.selectedStep)!.actions.filter((a) => a.type === "morph") as unknown as Morph[];
   expect(after.map((m) => m.delayMs)).toEqual([0, 1100]);
   await keys.first().focus();
   await page.keyboard.press("Delete");
