@@ -216,7 +216,11 @@ export function widgetOps(def: WidgetDef, o: WidgetOptions): OperationInput[] {
   for (const p of def.parts) {
     const props: Props = { ...(p.props ?? {}), parentId: o.id, x: Math.round(o.x + p.x * sx), y: Math.round(o.y + p.y * sy), width: Math.max(4, Math.round(p.w * sx)), height: Math.max(4, Math.round(p.h * sy)) };
     const style = props["style"] as Props | undefined;
-    if (style && typeof style["fontSize"] === "number" && k !== 1) props["style"] = { ...style, fontSize: Math.max(12, Math.round((style["fontSize"] as number) * k)) };
+    // A smaller widget keeps its text readable: not under 28 px (or the base size, if smaller).
+    if (style && typeof style["fontSize"] === "number" && k !== 1) {
+      const base = style["fontSize"] as number;
+      props["style"] = { ...style, fontSize: Math.max(Math.min(base, 28), Math.round(base * k)) };
+    }
     if (p.text !== undefined) {
       const t = texts[p.text] ?? "";
       if (p.type === "text") props["content"] = { text: t };

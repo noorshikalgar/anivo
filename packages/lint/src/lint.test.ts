@@ -83,6 +83,11 @@ describe("lintScene", () => {
     expect(codes(far)).not.toContain("camera-crop");
   });
 
+  it("does not report parts of one group that overlap", () => {
+    const s = script(`widget c chat at=100,100\nstep "S"\n  enter c pop\n`);
+    expect(codes(s)).not.toContain("overlap");
+  });
+
   it("finds an empty step, an unused element, an unknown icon, and an unknown color", () => {
     const s = script(`box a "A" at=100,100 fill=pinkish\nicon i nope:nothing "X" at=600,100\nbox z "Z" at=900,600\nstep "Empty"\nstep "S"\n  enter a, i fade\n  exit z fade\n`);
     const c = codes(s);
