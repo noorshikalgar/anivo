@@ -337,7 +337,7 @@ export function ungroupSelection(): void {
 
 const CLIP_PREFIX = "anivo-clipboard:";
 
-interface ClipData {
+export interface ClipData {
   elements: Element[];
 }
 
@@ -356,7 +356,9 @@ export function copyData(ids: string[]): ClipData | undefined {
 }
 
 /** Add copies of elements with new IDs. References inside the copied set point to the copies. */
-export function pasteData(data: ClipData, offset: number): void {
+export function pasteData(data: ClipData, offset: number, move?: { dx: number; dy: number }, label = "Paste"): void {
+  const dx = move?.dx ?? offset;
+  const dy = move?.dy ?? offset;
   const st = useEditor.getState();
   const taken = new Set(Object.keys(st.scene.elements));
   const map = new Map<string, string>();
@@ -378,21 +380,21 @@ export function pasteData(data: ClipData, offset: number): void {
     }
     if (el.type === "connector") {
       const fix = (e: typeof el.start) => {
-        if (e.kind !== "bound") return { ...e, x: e.x + offset, y: e.y + offset };
+        if (e.kind !== "bound") return { ...e, x: e.x + dx, y: e.y + dy };
         const to = map.get(e.elementId);
         return to ? { ...e, elementId: to } : st.scene.elements[e.elementId] ? e : { kind: "free", x: 0, y: 0 };
       };
       props["start"] = fix(el.start);
       props["end"] = fix(el.end);
     } else if (el.type !== "group") {
-      props["x"] = el.x + offset;
-      props["y"] = el.y + offset;
+      props["x"] = el.x + dx;
+      props["y"] = el.y + dy;
     }
     return { op: "element.add", id: map.get(el.id)!, type: el.type, props };
   });
   // A child refers to its group, so add groups first.
   ops.sort((a, b) => ((a as { type: string }).type === "group" ? -1 : 0) - ((b as { type: string }).type === "group" ? -1 : 0));
-  const r = st.apply({ label: "Paste", ops });
+  const r = st.apply({ label, ops });
   if (r.ok) {
     const roots = data.elements.filter((e) => !e.parentId || !map.has(e.parentId)).map((e) => map.get(e.id)!);
     st.setSelection(roots);

@@ -55,6 +55,8 @@ interface EditorState {
   targetHighlight: string[];
   /** The tab of the properties editor. */
   propTab: "scene" | "step" | "actions" | "element";
+  /** True while the "save as widget" dialog is open. */
+  saveWidgetOpen: boolean;
   /** The viewport uses the full window (Ctrl+Space). */
   maximized: boolean;
   /** Show the elements that are hidden at the current time, faint (the viewport overlay). */
@@ -245,6 +247,7 @@ export const useEditor = create<EditorState>((set, get) => {
     activeAction: null,
     showGhosts: true,
     maximized: false,
+    saveWidgetOpen: false,
     targetHighlight: [],
     layout: readPref("anivo.layout", { showGrid: false, snapGrid: true, snapObjects: true, gridSize: 8 }),
     areas: readPref("anivo.areas", { left: 230, right: 300, outliner: 34, timeline: 200 }),

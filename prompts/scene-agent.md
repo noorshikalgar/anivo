@@ -83,6 +83,9 @@ table <id> [no-header] [at=x,y] [size=WxH]   (cells: <id>-r<row>c<col>, for exam
   "<cell>" "<cell>" …   (one line for each row)
 image <id> asset=<asset-id> [fit=contain|cover|fill] [at=x,y] [size=WxH]   (add the file first: anivo image add, or anivo_image_add)
 layout <id>, <id>, … row|column|grid|layered|tree [gap=<px>] [cols=<n>]   (automatic placement; arrows give the order)
+widget <id> <name> [at=x,y] [size=WxH] [<text>="…"]   (a ready-made group; parts are <id>-<part>)
+  names and texts: browser (url, page), phone (screen), server (label), database (label), chat (text), terminal (code),
+  stat (value, caption), step-badge (number, label), progress (label), callout (text), user-card (name, role)
 
 step "<title>" [hold=<time>] [cue=<time>]
   enter <targets> fade|pop|draw-on|slide-up|slide-left|wipe|typewriter [+<delay>] [stagger=<time>]

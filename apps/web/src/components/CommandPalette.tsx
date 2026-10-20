@@ -28,6 +28,7 @@ import { notify, withErrors } from "../notify.js";
 import { shareServer } from "../share.js";
 import { type Tool, useEditor } from "../store.js";
 import { TOOLS } from "./ToolPalette.js";
+import { WIDGETS, insertWidget } from "../widgets.js";
 import { TEMPLATES } from "./TopBar.js";
 
 const useStyles = makeStyles({
@@ -75,6 +76,8 @@ function commands(): Command[] {
     { title: "Save as", keys: "Ctrl+Shift+S", run: () => void withErrors(saveFileAs) },
     { title: "Open", keys: "Ctrl+O", run: () => void withErrors(openFile) },
     { title: "New scene", run: () => newScene() },
+    ...WIDGETS.map((w) => ({ title: `Insert widget: ${w.title}`, run: () => insertWidget(w) })),
+    { title: "Save the selection as a widget", run: () => useEditor.setState({ saveWidgetOpen: true }) },
     { title: "Go to the home screen", run: () => void goHome() },
     { title: "Templates gallery", run: () => useEditor.setState({ galleryOpen: true }) },
     { title: "Import Excalidraw or Mermaid", run: () => void withErrors(runImport) },

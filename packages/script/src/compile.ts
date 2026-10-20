@@ -1,5 +1,5 @@
 import { type LayoutKind, autoLayout } from "@anivo/layout";
-import type { OperationInput } from "@anivo/ops";
+import { type OperationInput, WIDGETS, getWidget, widgetOps } from "@anivo/ops";
 import type { Scene } from "@anivo/schema";
 import { type Line, type Pos, type ScriptError, type Token, parseLines } from "./syntax.js";
 
@@ -128,6 +128,7 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
   const layoutLines: Line[] = [];
   const declared = new Map<string, ElemDecl>();
   const existing = new Set(mode === "append" && opts.base ? Object.keys(opts.base.elements) : []);
+  const widgetOpsList: OperationInput[] = [];
   let camera = { x: 0, y: 0, width: opts.base?.settings.video.width ?? 1920, height: opts.base?.settings.video.height ?? 1080 };
 
   const readProps = (tokens: Token[], from: number) => {
@@ -243,6 +244,27 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
     } else if (ELEMENT_KINDS.has(head.v)) {
       const d = readElement(line);
       if (d) elements.push(d);
+    } else if (head.v === "widget") {
+      // widget <id> <name> [at=x,y] [size=WxH] [<text key>="text"]…: a ready-made group (docs/05 "Widgets").
+      const idTok = line.tokens[1];
+      const nameTok = line.tokens[2];
+      const def = nameTok?.t === "word" ? getWidget(nameTok.v) : undefined;
+      if (idTok?.t !== "word" || !def) {
+        errors.push(err(line.pos, nameTok?.t === "word" ? `The widget '${nameTok.v}' is not known.` : "The widget line needs an ID and a widget name.", `Write: widget web browser at=100,100 url="https://example.com". Widgets: ${WIDGETS.map((w) => w.name).join(", ")}.`));
+        continue;
+      }
+      const p = readProps(line.tokens, 3);
+      const at = p.kv.get("at")?.v.split(",").map(Number) ?? [100, 100];
+      const size = p.kv.get("size") ? parseSize(p.kv.get("size")!.v) : undefined;
+      const texts: Record<string, string> = {};
+      for (const [k, { v, pos }] of p.kv) {
+        if (k === "at" || k === "size") continue;
+        if (!(k in def.texts)) errors.push(err(pos, `The widget '${def.name}' has no text '${k}'.`, `Use: ${Object.keys(def.texts).join(", ") || "no texts"}.`));
+        else texts[k] = v;
+      }
+      const wops = widgetOps(def, { id: idTok.v, x: at[0] ?? 100, y: at[1] ?? 100, ...(size ? { width: size[0], height: size[1] } : {}), texts });
+      widgetOpsList.push(...wops);
+      for (const o of wops) if (o.op === "element.add" && typeof o.id === "string") existing.add(o.id);
     } else if (head.v === "arrow") {
       const a = readArrow(line, errors);
       if (a) arrows.push(a);
@@ -251,7 +273,7 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
     } else if (head.v === "layout") {
       layoutLines.push(line);
     } else {
-      errors.push(err(head.pos, `The statement '${head.v}' is not known.`, "Use: scene, box, ellipse, diamond, text, icon, caption, row, column, grid, group, arrow, layout, step."));
+      errors.push(err(head.pos, `The statement '${head.v}' is not known.`, "Use: scene, box, ellipse, diamond, text, icon, caption, row, column, grid, group, widget, arrow, layout, step."));
     }
   }
   if (errors.length > 0) return { ok: false, errors: errors.slice(0, 20) };
@@ -526,6 +548,7 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
     if (d.icon) Object.assign(props, d.icon);
     push({ op: "element.add", id: d.id, type, props });
   };
+  ops.push(...widgetOpsList);
   elements.forEach((d) => elementOps(d));
 
   // Connectors

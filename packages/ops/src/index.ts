@@ -4,3 +4,4 @@ export * from "./apply.js";
 export * from "./bus.js";
 export * from "./align.js";
 export * from "./takes.js";
+export * from "./widgets.js";
