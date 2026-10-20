@@ -183,7 +183,8 @@ export function lintScene(scene: Scene): LintResult[] {
         const b = shapes[j]!;
         const ea = ctx(a.id);
         const eb = ctx(b.id);
-        if (!ea || !eb || ea.parentId === b.id || eb.parentId === a.id) continue;
+        // Parts of one group (for example a widget) are placed on purpose.
+        if (!ea || !eb || ea.parentId === b.id || eb.parentId === a.id || (ea.parentId !== undefined && ea.parentId === eb.parentId)) continue;
         const ba = boxOf(a);
         const bb = boxOf(b);
         const inter = intersection(ba, bb);
