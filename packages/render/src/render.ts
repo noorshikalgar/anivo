@@ -338,7 +338,12 @@ function drawIcon(dc: DrawContext, f: ElementFrame, el: Element): void {
   }
 
   if (f.label) {
-    const labelBox = { x: b.x - 80, y: b.y + b.height + 4, width: b.width + 160, height: 48 };
+    // The label is under the icon. A long label wraps, and its box grows down (not up into the icon).
+    const width = b.width + 160;
+    ctx.font = fontFor(dc, f, el);
+    const size = f.fontSize ?? el.style.fontSize ?? theme.defaults.fontSize;
+    const lines = wrapText(ctx, f.label, Math.max(10, width - 24)).length;
+    const labelBox = { x: b.x - 80, y: b.y + b.height + 4, width, height: Math.max(48, lines * size * 1.25 + 8) };
     drawLabel(dc, f, el, labelBox, f.fillProgress);
   }
 }
