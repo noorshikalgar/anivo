@@ -58,3 +58,20 @@ test("auto-key: moves at two times make two keyframes, and the Keys view edits t
   await page.keyboard.press("Delete");
   await expect(keys).toHaveCount(1);
 });
+
+test("the keyframe button of a property adds and removes a keyframe at the playhead", async ({ page }) => {
+  await page.getByRole("button", { name: /Traffic flows/ }).click();
+  await page.getByRole("button", { name: "Add step" }).click();
+  const pod = (await state(page)).scene.elements["pod-2"]!;
+  const p = await screen(page, pod.x + pod.width / 2, pod.y + pod.height / 2);
+  await page.mouse.click(p.x, p.y);
+  await page.getByRole("button", { name: "Element", exact: true }).click();
+  const button = page.locator('[data-key-group="position"]');
+  await expect(button).toHaveAttribute("aria-pressed", "false");
+  await button.click();
+  await expect(button).toHaveAttribute("aria-pressed", "true");
+  // The timeline opens on the Keys view.
+  await expect(page.getByRole("slider", { name: /Keyframe Position of pod-2/ })).toHaveCount(1);
+  await button.click();
+  await expect(page.getByRole("slider", { name: /Keyframe Position of pod-2/ })).toHaveCount(0);
+});

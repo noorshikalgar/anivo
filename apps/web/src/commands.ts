@@ -21,7 +21,7 @@ export function movableIds(ids: string[]): string[] {
 }
 
 /** Is the element visible at the start of the selected step? */
-function visibleAtStepStart(): (id: string) => boolean {
+export function visibleAtStepStart(): (id: string) => boolean {
   const { scene, selectedStep } = useEditor.getState();
   const i = scene.steps.findIndex((st) => st.id === selectedStep);
   if (i < 0) return () => false;
@@ -30,16 +30,18 @@ function visibleAtStepStart(): (id: string) => boolean {
   return (id) => state[id]?.visible ?? false;
 }
 
-/**
- * With auto-key on, the time of a new keyframe: the playhead, from the start
- * of the selected step. Null if auto-key is off or the playhead is before the step.
- */
-export function autoKeyTime(): number | null {
-  const { autoKey, selectedStep, timeline, playhead } = useEditor.getState();
-  if (!autoKey || selectedStep === null) return null;
+/** The playhead time from the start of the selected step, or null if the playhead is before the step. */
+export function stepTimeAtPlayhead(): number | null {
+  const { selectedStep, timeline, playhead } = useEditor.getState();
+  if (selectedStep === null) return null;
   const s = timeline.steps.find((x) => x.id === selectedStep);
   if (!s || playhead < s.startMs) return null;
   return playhead - s.startMs;
+}
+
+/** With auto-key on, the time of a new keyframe (see stepTimeAtPlayhead); else null. */
+export function autoKeyTime(): number | null {
+  return useEditor.getState().autoKey ? stepTimeAtPlayhead() : null;
 }
 
 /** Morph values as keyframes at the playhead (auto-key), or null to use the step morph. */
