@@ -28,16 +28,19 @@ import {
   Info16Regular,
   LockClosed16Regular,
   LockOpen16Regular,
+  Sparkle16Regular,
+  TextNumberListLtr16Regular,
   Video16Regular,
   Warning16Regular,
 } from "@fluentui/react-icons";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { type AlignKind, alignSelection, autoLayoutSelection, commitProps, commitSettings, deleteSelection, distributeSelection, duplicateSelection, groupSelection, renameElement, reorderSelection, setElementText, ungroupSelection } from "../commands.js";
 import { useEditor } from "../store.js";
 import { Comments } from "./Comments.js";
 import { ColorField, NumberField, SelectField, TextField, useThemeColors } from "./fields.js";
+import { ActionsPanel } from "./ActionsPanel.js";
 import { AddActionMenu, StepInspector } from "./StepInspector.js";
-import { actionIcon, elementIcon } from "./typeIcons.js";
+import { elementIcon } from "./typeIcons.js";
 import { Aligned, Btn, ColorPick, DragNumber, IconButton, Note, Panel, Prop } from "./ui.js";
 
 const useStyles = makeStyles({
@@ -497,7 +500,7 @@ function SceneProperties() {
   );
 }
 
-type Tab = "scene" | "step" | "element";
+type Tab = "scene" | "step" | "actions" | "element";
 
 export function Inspector() {
   const s = useStyles();
@@ -505,25 +508,33 @@ export function Inspector() {
   const elements = useEditor((st) => st.scene.elements);
   const el = selection.length === 1 ? elements[selection[0]!] : undefined;
   const step = useEditor((st) => (st.selectedStep === null ? undefined : st.scene.steps.find((x) => x.id === st.selectedStep)));
-  const auto: Tab = selection.length > 0 ? "element" : step ? "step" : "scene";
-  const [tab, setTab] = useState<Tab>(auto);
-  // A new selection or a new step shows its tab.
-  useEffect(() => setTab(auto), [auto, selection, step?.id]);
-  const shown: Tab = tab === "element" && selection.length === 0 ? (step ? "step" : "scene") : tab === "step" && !step ? "scene" : tab;
-  const name = shown === "element" ? "Element" : shown === "step" ? "Step" : "Scene";
+  const hasSteps = useEditor((st) => st.scene.steps.length > 0);
+  const tab = useEditor((st) => st.propTab);
+  const setTab = (t: Tab) => useEditor.setState({ propTab: t });
+  // A new selection shows the element; a new step shows its actions.
+  useEffect(() => {
+    if (selection.length > 0) setTab("element");
+  }, [selection]);
+  useEffect(() => {
+    if (step && useEditor.getState().selection.length === 0) setTab("actions");
+    else if (!step && (tab === "step" || tab === "actions") && useEditor.getState().selection.length === 0) setTab("scene");
+  }, [step?.id]);
+  const shown: Tab = tab === "element" && selection.length === 0 ? (step ? "actions" : "scene") : tab === "step" && !step ? "scene" : tab === "actions" && !hasSteps ? "scene" : tab;
+  const name = shown === "element" ? "Element" : shown === "step" ? "Step" : shown === "actions" ? "Actions" : "Scene";
 
   return (
     <aside className={s.root} aria-label="Inspector">
       <nav className={s.tabs} aria-label="Properties tabs">
         <IconButton tool label="Scene" pressed={shown === "scene"} icon={<Video16Regular />} onClick={() => setTab("scene")} />
-        {step && <IconButton tool label="Step" pressed={shown === "step"} icon={actionIcon("enter")} onClick={() => setTab("step")} />}
+        {step && <IconButton tool label="Step" pressed={shown === "step"} icon={<TextNumberListLtr16Regular />} onClick={() => setTab("step")} />}
+        {hasSteps && <IconButton tool label="Actions" pressed={shown === "actions"} icon={<Sparkle16Regular />} onClick={() => setTab("actions")} />}
         {selection.length > 0 && <IconButton tool label="Element" pressed={shown === "element"} icon={el ? elementIcon(el.type) : <Add16Regular />} onClick={() => setTab("element")} />}
       </nav>
       <div className={s.body}>
         <div className={s.title}>
           <Text size={200}>{name}</Text>
           {shown === "element" && el && <span className={s.titleName}>{el.id}</span>}
-          {shown === "step" && step && <span className={s.titleName}>{step.title}</span>}
+          {(shown === "step" || shown === "actions") && step && <span className={s.titleName}>{step.title}</span>}
         </div>
         {shown === "element" ? (
           el ? (
@@ -531,6 +542,8 @@ export function Inspector() {
           ) : (
             <SelectionTools count={selection.length} />
           )
+        ) : shown === "actions" ? (
+          <ActionsPanel />
         ) : shown === "step" && step ? (
           <StepInspector key={step.id} step={step} />
         ) : (

@@ -47,6 +47,10 @@ interface EditorState {
   exportOpen: boolean;
   /** The voiceover record, while it runs (see record.ts). */
   recording: import("./record.js").RecordingState | null;
+  /** Elements that the canvas marks: the targets of the active action in the Actions tab. */
+  targetHighlight: string[];
+  /** The tab of the properties editor. */
+  propTab: "scene" | "step" | "actions" | "element";
   /** The viewport uses the full window (Ctrl+Space). */
   maximized: boolean;
   /** Show the elements that are hidden at the current time, faint (the viewport overlay). */
@@ -189,6 +193,8 @@ export const useEditor = create<EditorState>((set, get) => {
     activeAction: null,
     showGhosts: true,
     maximized: false,
+    targetHighlight: [],
+    propTab: "scene",
     drawer: null,
     libraryId: null,
     libraryVersion: 0,

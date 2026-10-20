@@ -82,6 +82,7 @@ test("the script dialog sets one line for each step", async ({ page }) => {
 
 test("the step inspector edits the script line of the step", async ({ page }) => {
   await page.getByRole("button", { name: /Load balancer/ }).first().click();
+  await page.getByLabel("Inspector").getByRole("button", { name: "Step", exact: true }).click();
   const field = page.getByLabel("Inspector").getByRole("textbox", { name: "Script line" });
   await field.fill("Here is the load balancer.");
   await field.blur();

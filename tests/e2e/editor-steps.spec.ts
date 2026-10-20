@@ -14,7 +14,8 @@ test("Add step adds a step after the selected step and selects it", async ({ pag
   expect(s.scene.steps).toHaveLength(5);
   expect(s.scene.steps[2]!.title).toBe("Step 5");
   expect(s.selectedStep).toBe(s.scene.steps[2]!.id);
-  await expect(page.getByLabel("Inspector").getByText("Step", { exact: true })).toBeVisible();
+  // A new step opens the Actions tab of the properties.
+  await expect(page.getByRole("group", { name: "Quick actions" })).toBeVisible();
 });
 
 test("Add action adds an enter action for the selected element", async ({ page }) => {
@@ -106,4 +107,22 @@ test("Split per element gives each element its own action and keeps the timing",
   await page.getByRole("listbox", { name: "Actions" }).getByRole("option", { name: /^Flow/ }).nth(1).click();
   await page.getByRole("button", { name: "More action commands" }).click();
   await expect(page.getByRole("menuitem", { name: "Split per element" })).toBeDisabled();
+});
+
+test("a quick action with no selection asks for the elements, and After previous chains the timing", async ({ page }) => {
+  await page.getByRole("button", { name: /Pods fan out/ }).click();
+  await page.getByRole("group", { name: "Quick actions" }).getByRole("button", { name: "Pulse" }).click();
+  const dialog = page.getByRole("dialog", { name: "Pulse: choose the elements" });
+  await dialog.getByRole("checkbox").first().waitFor();
+  await dialog.getByText("lb", { exact: true }).click();
+  await dialog.getByRole("button", { name: "Use 1 element" }).click();
+  type S = { scene: { steps: { id: string; actions: { type: string; effect?: string; targets: string[]; delayMs: number }[] }[] }; activeAction: string };
+  let s = (await state(page)) as unknown as S;
+  const step = s.scene.steps.find((x) => x.id === "s-pods")!;
+  const pulse = step.actions.at(-1)!;
+  expect(pulse).toMatchObject({ type: "emphasis", effect: "pulse", targets: ["lb"] });
+  expect(s.activeAction).toBe((pulse as unknown as { id: string }).id);
+  await page.getByRole("button", { name: "After previous" }).click();
+  s = (await state(page)) as unknown as S;
+  expect(s.scene.steps.find((x) => x.id === "s-pods")!.actions.at(-1)!.delayMs).toBeGreaterThan(400);
 });
