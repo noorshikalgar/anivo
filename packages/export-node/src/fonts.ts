@@ -29,6 +29,8 @@ export function registerBundledFonts(dir = bundledFontsDir()): void {
     const family = FAMILY[match[1]!];
     if (family) GlobalFonts.registerFromPath(join(dir, file), family);
   }
+  // Arrows, check marks, and shapes that the Inter subset does not have (scripts/build-symbols-font.py).
+  if (existsSync(join(dir, "anivo-symbols.woff2"))) GlobalFonts.registerFromPath(join(dir, "anivo-symbols.woff2"), "Anivo Symbols");
   if (dir === bundledFontsDir()) registered = true;
 }
 

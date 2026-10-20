@@ -2,6 +2,8 @@ import { type IconPack, registerIconPack } from "@anivo/render";
 
 /** Font files in `assets/fonts`, with their family and weight. */
 export const BUNDLED_FONTS = [
+  // Arrows, check marks, and shapes that the Inter subset does not have (scripts/build-symbols-font.py).
+  { family: "Anivo Symbols", weight: "400", file: "anivo-symbols.woff2" },
   { family: "Inter", weight: "400", file: "inter-latin-400-normal.woff2" },
   { family: "Inter", weight: "500", file: "inter-latin-500-normal.woff2" },
   { family: "Inter", weight: "700", file: "inter-latin-700-normal.woff2" },

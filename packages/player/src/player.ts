@@ -32,6 +32,7 @@ export interface PlayerBundle {
 }
 
 const FONT_FILES: Record<string, { weight: string; file: string }[]> = {
+  "Anivo Symbols": [{ weight: "400", file: "anivo-symbols.woff2" }],
   Inter: [
     { weight: "400", file: "inter-latin-400-normal.woff2" },
     { weight: "500", file: "inter-latin-500-normal.woff2" },

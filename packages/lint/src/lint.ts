@@ -214,7 +214,7 @@ export function lintScene(scene: Scene): LintResult[] {
       }
       // text checks
       const text = el.type === "text" ? el.content.text : f.label;
-      if (text) {
+      if (text && text.trim()) {
         const fontSize = f.fontSize ?? el.style.fontSize ?? theme.defaults.fontSize;
         if (fontSize * scale1080 < 24) add({ code: "tiny-text", level: "warning", ids: [f.id], message: `The text of '${f.id}' is ${Math.round(fontSize)} px. It is hard to read in a video.`, hint: "Use a font size of at least 28 px at 1080p." });
         if (el.type !== "text" && el.type !== "connector" && el.type !== "icon") {

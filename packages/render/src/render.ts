@@ -38,6 +38,8 @@ interface DrawContext {
   routes: Map<string, Polyline>;
 }
 
+/** Fallback font for arrows, check marks, and shapes (assets/fonts/anivo-symbols.woff2). */
+const SYMBOLS = "Anivo Symbols";
 const OUTLINE_KINDS = new Set<string>(["rectangle", "ellipse", "diamond", "line"]);
 
 function strokePolyline(ctx: Ctx2D, points: Point[]): void {
@@ -90,7 +92,7 @@ function fontFor(dc: DrawContext, f: ElementFrame, el: Element): string {
   const size = f.fontSize ?? el.style.fontSize ?? dc.theme.defaults.fontSize;
   const weight = el.style.fontWeight ?? 500;
   const family = el.style.fontFamily ?? (dc.style === "sketch" ? dc.theme.fonts.sketch : dc.theme.fonts.clean);
-  return `${weight} ${size}px "${family}"`;
+  return `${weight} ${size}px "${family}", "${SYMBOLS}"`;
 }
 
 /** Text layout cache (docs/06 "Cache rules"): font, text, and width give the same lines. */
@@ -389,7 +391,7 @@ function drawCode(dc: DrawContext, f: ElementFrame, el: Extract<Element, { type:
   const size = f.fontSize ?? el.style.fontSize ?? 24;
   const lh = size * 1.5;
   const pad = size;
-  const font = `400 ${size}px "${el.style.fontFamily ?? theme.fonts.code}"`;
+  const font = `400 ${size}px "${el.style.fontFamily ?? theme.fonts.code}", "${SYMBOLS}"`;
   ctx.font = font;
   ctx.textBaseline = "middle";
   ctx.textAlign = "left";
@@ -741,7 +743,7 @@ export function drawCaption(ctx: Ctx2D, scene: Scene, timeMs: number, opts: Rend
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalAlpha = 1;
-  ctx.font = `500 ${size}px "${theme.fonts.clean}"`;
+  ctx.font = `500 ${size}px "${theme.fonts.clean}", "${SYMBOLS}"`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   const boxW = Math.max(...cap.lines.map((l) => ctx.measureText(l).width)) + padX * 2;

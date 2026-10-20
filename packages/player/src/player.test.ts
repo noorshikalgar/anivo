@@ -24,8 +24,8 @@ describe("HTML player file", () => {
   registerIconPack({ pack: "lucide", license: "ISC", kind: "stroke", viewBox: [0, 0, 24, 24], strokeWidth: 2, icons: { user: { d: ["M1 1L2 2"], tags: ["person"] }, server: { d: ["M0 0"], tags: [] } } });
 
   it("knows the fonts and icon packs that a scene needs", () => {
-    expect(sceneNeeds(scene)).toEqual({ fonts: ["Inter"], packs: ["lucide"] });
-    expect(sceneNeeds({ ...scene, settings: { ...scene.settings, style: "sketch" } }).fonts).toEqual(["Inter", "Kalam"]);
+    expect(sceneNeeds(scene)).toEqual({ fonts: ["Inter", "Anivo Symbols"], packs: ["lucide"] });
+    expect(sceneNeeds({ ...scene, settings: { ...scene.settings, style: "sketch" } }).fonts).toEqual(["Inter", "Anivo Symbols", "Kalam"]);
   });
 
   it("embeds only the used icons and fonts, and escapes the data", () => {

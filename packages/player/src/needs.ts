@@ -2,7 +2,7 @@ import type { Scene } from "@anivo/schema";
 
 /** Font families and icon packs that a scene needs. */
 export function sceneNeeds(scene: Scene): { fonts: string[]; packs: string[] } {
-  const fonts = new Set(["Inter"]);
+  const fonts = new Set(["Inter", "Anivo Symbols"]);
   if (scene.settings.style === "sketch") fonts.add("Kalam");
   const packs = new Set<string>();
   for (const el of Object.values(scene.elements)) {
