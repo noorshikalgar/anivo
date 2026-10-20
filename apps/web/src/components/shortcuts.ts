@@ -97,6 +97,10 @@ export function useShortcuts(): void {
         // M during play: a cue for the next step at the playhead (docs/08).
         const id = cueAtPlayhead();
         if (id) notify(`Cue set for step '${id}'`, "info");
+      } else if (!mod && !e.altKey && e.key.toLowerCase() === "k") {
+        const on = !st.autoKey;
+        useEditor.setState({ autoKey: on, ...(on ? { timelineOpen: true } : {}) });
+        notify(on ? "Auto-key is on: changes make keyframes at the playhead" : "Auto-key is off", "info");
       } else if (!mod && !e.altKey && e.key.toLowerCase() === "n") {
         addStep();
       } else if (!mod && !e.altKey && TOOL_KEYS[e.key.toLowerCase()]) {

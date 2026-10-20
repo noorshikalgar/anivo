@@ -185,6 +185,8 @@ export function geometryOps(
   visibleAtStepStart: (id: string) => boolean,
   changes: Map<string, Box>,
   current: (id: string) => Box | undefined,
+  /** Auto-key: the keyframe operations for a step change, or null to change the step morph. */
+  keyframe?: (id: string, values: Record<string, number>) => OperationInput[] | null,
 ): OperationInput[] {
   const ops: OperationInput[] = [];
   const step = stepId === null ? undefined : scene.steps.find((s) => s.id === stepId);
@@ -202,6 +204,11 @@ export function geometryOps(
       const base: Record<string, number> = {};
       for (const k of Object.keys(set) as (keyof Box)[]) base[k] = Math.round((el[k] + (box[k] - (now?.[k] ?? el[k]))) * 100) / 100;
       ops.push({ op: "element.update", id, set: base });
+      continue;
+    }
+    const keyed = keyframe?.(id, set);
+    if (keyed) {
+      ops.push(...keyed);
       continue;
     }
     const morph = step.actions.find((a) => a.type === "morph" && a.targets.length === 1 && a.targets[0] === id);

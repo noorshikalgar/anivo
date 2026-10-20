@@ -1,6 +1,6 @@
 import { prepare } from "@anivo/engine";
 import { type LayoutKind, autoLayout, evaluateWithLayout } from "@anivo/layout";
-import type { OperationInput } from "@anivo/ops";
+import { type OperationInput, setKeyframeOps } from "@anivo/ops";
 import type { Element } from "@anivo/schema";
 import { type Box, boundsOf, editorSkip, geometryOps, leafDescendants } from "./editing.js";
 import { notify } from "./notify.js";
@@ -30,10 +30,30 @@ function visibleAtStepStart(): (id: string) => boolean {
   return (id) => state[id]?.visible ?? false;
 }
 
+/**
+ * With auto-key on, the time of a new keyframe: the playhead, from the start
+ * of the selected step. Null if auto-key is off or the playhead is before the step.
+ */
+export function autoKeyTime(): number | null {
+  const { autoKey, selectedStep, timeline, playhead } = useEditor.getState();
+  if (!autoKey || selectedStep === null) return null;
+  const s = timeline.steps.find((x) => x.id === selectedStep);
+  if (!s || playhead < s.startMs) return null;
+  return playhead - s.startMs;
+}
+
+/** Morph values as keyframes at the playhead (auto-key), or null to use the step morph. */
+function keyOps(id: string, values: Record<string, unknown>): OperationInput[] | null {
+  const t = autoKeyTime();
+  const st = useEditor.getState();
+  if (t === null || st.selectedStep === null) return null;
+  return setKeyframeOps(st.scene, st.selectedStep, id, values, t);
+}
+
 /** Apply a geometry change in the base state or as a morph in the selected step. */
 export function commitGeometry(changes: Map<string, Box>, label: string): void {
   const st = useEditor.getState();
-  const ops = geometryOps(st.scene, st.selectedStep, visibleAtStepStart(), changes, currentBoxes());
+  const ops = geometryOps(st.scene, st.selectedStep, visibleAtStepStart(), changes, currentBoxes(), keyOps);
   if (ops.length > 0) st.apply({ label, ops });
 }
 
@@ -176,7 +196,9 @@ export function commitProps(id: string, changes: Record<string, unknown>, label 
   if (Object.keys(style).length > 0) set["style"] = style;
   const ops: OperationInput[] = [];
   if (Object.keys(set).length > 0) ops.push({ op: "element.update", id, set });
-  if (Object.keys(morph).length > 0) {
+  const keyed = Object.keys(morph).length > 0 ? keyOps(id, morph) : null;
+  if (keyed) ops.push(...keyed);
+  else if (Object.keys(morph).length > 0) {
     const step = st.scene.steps.find((s) => s.id === st.selectedStep)!;
     const existing = step.actions.find((a) => a.type === "morph" && a.targets.length === 1 && a.targets[0] === id);
     if (existing && existing.type === "morph") ops.push({ op: "action.update", step: step.id, id: existing.id, set: { to: { ...existing.to, ...morph } } });
