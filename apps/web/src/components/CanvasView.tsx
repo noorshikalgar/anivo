@@ -55,6 +55,8 @@ const useStyles = makeStyles({
 
 /** Opacity of elements that are not visible yet, so the user can see and edit them. */
 const GHOST = 0.28;
+/** The grid size of the viewport settings. */
+const gs = () => useEditor.getState().layout.gridSize;
 
 export function CanvasView() {
   const styles = useStyles();
@@ -65,6 +67,28 @@ export function CanvasView() {
   const last = useRef<{ frame: FrameState; routes: Map<string, Polyline> } | null>(null);
   const drag = useRef<Drag | null>(null);
   const hover = useRef<string | null>(null);
+  /** True while Alt is down: the overlay shows distances (docs/15). */
+  const altDown = useRef(false);
+  useEffect(() => {
+    const on = (e: KeyboardEvent) => {
+      if (e.key !== "Alt" || altDown.current === (e.type === "keydown")) return;
+      altDown.current = e.type === "keydown";
+      requestAnimationFrame(() => draw());
+    };
+    const off = () => {
+      if (!altDown.current) return;
+      altDown.current = false;
+      requestAnimationFrame(() => draw());
+    };
+    window.addEventListener("keydown", on);
+    window.addEventListener("keyup", on);
+    window.addEventListener("blur", off);
+    return () => {
+      window.removeEventListener("keydown", on);
+      window.removeEventListener("keyup", on);
+      window.removeEventListener("blur", off);
+    };
+  }, []);
   const tool = useEditor((s) => s.tool);
 
   // Size the canvases to the container, in device pixels.
@@ -90,7 +114,7 @@ export function CanvasView() {
   useEffect(() => {
     let pending = 0;
     const unsub = useEditor.subscribe((s, prev) => {
-      if (s.scene !== prev.scene || s.view !== prev.view || s.playhead !== prev.playhead || s.viewport !== prev.viewport || s.playing !== prev.playing || s.selection !== prev.selection || s.selectedStep !== prev.selectedStep || s.imagesVersion !== prev.imagesVersion || s.agent !== prev.agent || s.aiActivity !== prev.aiActivity || (s.takes === null) !== (prev.takes === null) || (s.recording === null) !== (prev.recording === null) || s.showGhosts !== prev.showGhosts || s.targetHighlight !== prev.targetHighlight) {
+      if (s.scene !== prev.scene || s.view !== prev.view || s.playhead !== prev.playhead || s.viewport !== prev.viewport || s.playing !== prev.playing || s.selection !== prev.selection || s.selectedStep !== prev.selectedStep || s.imagesVersion !== prev.imagesVersion || s.agent !== prev.agent || s.aiActivity !== prev.aiActivity || (s.takes === null) !== (prev.takes === null) || (s.recording === null) !== (prev.recording === null) || s.showGhosts !== prev.showGhosts || s.targetHighlight !== prev.targetHighlight || s.layout !== prev.layout) {
         if (!pending) pending = requestAnimationFrame(() => ((pending = 0), draw()));
       }
     });
@@ -147,6 +171,34 @@ export function CanvasView() {
     ctx.setLineDash([6, 4]);
     ctx.strokeRect(Math.round(x) + 0.5, Math.round(y) + 0.5, Math.round(w), Math.round(h));
     ctx.setLineDash([]);
+    // The grid (viewport settings): lines at the snap size, a stronger line every 8.
+    const L = useEditor.getState().layout;
+    if (L.showGrid && !playing) {
+      const dprG = window.devicePixelRatio || 1;
+      let step = L.gridSize;
+      while (step * sx < 6 * dprG) step *= 2;
+      const x0 = Math.floor(camera.x / step) * step;
+      const y0 = Math.floor(camera.y / step) * step;
+      ctx.lineWidth = 1;
+      for (let gx = x0; gx <= camera.x + camera.width; gx += step) {
+        const major = Math.round(gx / step) % 8 === 0;
+        ctx.strokeStyle = major ? "rgba(160, 180, 210, 0.16)" : "rgba(160, 180, 210, 0.07)";
+        const px = Math.round((gx - camera.x) * sx) + 0.5;
+        ctx.beginPath();
+        ctx.moveTo(px, 0);
+        ctx.lineTo(px, overlay.height);
+        ctx.stroke();
+      }
+      for (let gy = y0; gy <= camera.y + camera.height; gy += step) {
+        const major = Math.round(gy / step) % 8 === 0;
+        ctx.strokeStyle = major ? "rgba(160, 180, 210, 0.16)" : "rgba(160, 180, 210, 0.07)";
+        const py = Math.round((gy - camera.y) * sy) + 0.5;
+        ctx.beginPath();
+        ctx.moveTo(0, py);
+        ctx.lineTo(overlay.width, py);
+        ctx.stroke();
+      }
+    }
     if (playing) return;
 
     // Selection, hover, handles, and marquee, in device pixels.
@@ -288,6 +340,69 @@ export function CanvasView() {
       }
       ctx.restore();
     }
+    // A label with the position or the size while a move or a resize runs (pixel precision).
+    const pill = (text: string, sxp: number, syp: number, color = accent) => {
+      ctx.save();
+      ctx.font = `${11 * dpr}px Inter, sans-serif`;
+      const w = ctx.measureText(text).width + 10 * dpr;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.roundRect(sxp - w / 2, syp, w, 18 * dpr, 4 * dpr);
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(text, sxp, syp + 9 * dpr + 0.5);
+      ctx.restore();
+    };
+    if (d?.kind === "move" && d.moved) {
+      const first = d.boxes.values().next().value as Box | undefined;
+      if (first) {
+        const b = screenBox({ x: first.x + d.dx, y: first.y + d.dy, width: first.width, height: first.height });
+        pill(`${Math.round(first.x + d.dx)}, ${Math.round(first.y + d.dy)}`, b.x + b.width / 2, b.y + b.height + 8 * dpr);
+      }
+    } else if (d?.kind === "resize") {
+      const b = screenBox(d.next);
+      pill(`${Math.round(d.next.width)} × ${Math.round(d.next.height)}`, b.x + b.width / 2, b.y + b.height + 8 * dpr);
+    }
+    // Alt: the distances between the selected element and the element under the pointer.
+    if (altDown.current && !d && selection.length === 1 && hover.current && hover.current !== selection[0]) {
+      const A = boundsOf(scene, result.frame, result.routes, selection[0]!);
+      const B = boundsOf(scene, result.frame, result.routes, hover.current);
+      if (A && B) {
+        const red = "#F26D6D";
+        ctx.save();
+        ctx.strokeStyle = red;
+        ctx.lineWidth = 1 * dpr;
+        const line = (x1: number, y1: number, x2: number, y2: number, n: number) => {
+          if (n <= 0) return;
+          const p1 = toScreen(view, { x: x1, y: y1 });
+          const p2 = toScreen(view, { x: x2, y: y2 });
+          ctx.beginPath();
+          ctx.moveTo(p1.x * dpr, p1.y * dpr);
+          ctx.lineTo(p2.x * dpr, p2.y * dpr);
+          ctx.stroke();
+          pill(String(Math.round(n)), ((p1.x + p2.x) / 2) * dpr, ((p1.y + p2.y) / 2) * dpr - 9 * dpr, red);
+        };
+        const cy = (Math.max(A.y, B.y) + Math.min(A.y + A.height, B.y + B.height)) / 2;
+        const cx = (Math.max(A.x, B.x) + Math.min(A.x + A.width, B.x + B.width)) / 2;
+        const midY = cy > Math.max(A.y, B.y) - 1 ? cy : A.y + A.height / 2;
+        const midX = cx > Math.max(A.x, B.x) - 1 ? cx : A.x + A.width / 2;
+        const inside = A.x >= B.x && A.y >= B.y && A.x + A.width <= B.x + B.width && A.y + A.height <= B.y + B.height;
+        if (inside) {
+          line(B.x, A.y + A.height / 2, A.x, A.y + A.height / 2, A.x - B.x);
+          line(A.x + A.width, A.y + A.height / 2, B.x + B.width, A.y + A.height / 2, B.x + B.width - A.x - A.width);
+          line(A.x + A.width / 2, B.y, A.x + A.width / 2, A.y, A.y - B.y);
+          line(A.x + A.width / 2, A.y + A.height, A.x + A.width / 2, B.y + B.height, B.y + B.height - A.y - A.height);
+        } else {
+          if (B.x >= A.x + A.width) line(A.x + A.width, midY, B.x, midY, B.x - A.x - A.width);
+          if (A.x >= B.x + B.width) line(B.x + B.width, midY, A.x, midY, A.x - B.x - B.width);
+          if (B.y >= A.y + A.height) line(midX, A.y + A.height, midX, B.y, B.y - A.y - A.height);
+          if (A.y >= B.y + B.height) line(midX, B.y + B.height, midX, A.y, A.y - B.y - B.height);
+        }
+        ctx.restore();
+      }
+    }
     if (d?.kind === "create") {
       const r = screenBox(normalizeRect(d.start, d.end));
       ctx.strokeStyle = accent;
@@ -391,7 +506,7 @@ export function CanvasView() {
       const d = drag.current;
       if (!d) return;
       const q = scenePoint(ev);
-      const grid = !ev.altKey;
+      const grid = !ev.altKey && useEditor.getState().layout.snapGrid;
       if (d.kind === "move") {
         const first = d.boxes.values().next().value;
         let dx = q.x - d.start.x;
@@ -401,10 +516,10 @@ export function CanvasView() {
         const union = all.length
           ? { x: Math.min(...all.map((b) => b.x)) + dx, y: Math.min(...all.map((b) => b.y)) + dy, width: Math.max(...all.map((b) => b.x + b.width)) - Math.min(...all.map((b) => b.x)), height: Math.max(...all.map((b) => b.y + b.height)) - Math.min(...all.map((b) => b.y)) }
           : null;
-        const g = union && grid ? smartGuides(union, d.others, 6 / useEditor.getState().view.zoom) : { dx: null, dy: null, lines: [] };
+        const g = union && !ev.altKey && useEditor.getState().layout.snapObjects ? smartGuides(union, d.others, 6 / useEditor.getState().view.zoom) : { dx: null, dy: null, lines: [] };
         if (first) {
-          dx = g.dx !== null ? dx + g.dx : snap(first.x + dx, grid) - first.x;
-          dy = g.dy !== null ? dy + g.dy : snap(first.y + dy, grid) - first.y;
+          dx = g.dx !== null ? dx + g.dx : snap(first.x + dx, grid, gs()) - first.x;
+          dy = g.dy !== null ? dy + g.dy : snap(first.y + dy, grid, gs()) - first.y;
         }
         d.guides = g.lines;
         if (ev.shiftKey) {
@@ -417,7 +532,7 @@ export function CanvasView() {
         d.dy = dy;
       } else if (d.kind === "resize") {
         const r = resizeBox(d.box, d.handle, q.x - d.start.x, q.y - d.start.y, ev.shiftKey);
-        d.next = { x: snap(r.x, grid), y: snap(r.y, grid), width: Math.max(8, snap(r.width, grid)), height: Math.max(8, snap(r.height, grid)) };
+        d.next = { x: snap(r.x, grid, gs()), y: snap(r.y, grid, gs()), width: Math.max(8, snap(r.width, grid, gs())), height: Math.max(8, snap(r.height, grid, gs())) };
       } else if (d.kind === "marquee") {
         d.end = q;
         if (last.current) {
@@ -458,8 +573,8 @@ export function CanvasView() {
     const st = useEditor.getState();
     if (st.playing) st.pause();
     const p = scenePoint(e);
-    const grid = !e.altKey;
-    const start = { x: snap(p.x, grid), y: snap(p.y, grid) };
+    const grid = !e.altKey && useEditor.getState().layout.snapGrid;
+    const start = { x: snap(p.x, grid, gs()), y: snap(p.y, grid, gs()) };
     if (st.tool === "text") {
       const id = addElement("text", { content: { text: "" }, x: start.x, y: start.y - 30, width: 360, height: 60 }, "Add text");
       if (id) st.setEditingText(id);
@@ -484,7 +599,7 @@ export function CanvasView() {
       if (!d) return;
       const q = scenePoint(ev);
       if (d.kind === "create") {
-        let end = { x: snap(q.x, !ev.altKey), y: snap(q.y, !ev.altKey) };
+        let end = { x: snap(q.x, !ev.altKey && useEditor.getState().layout.snapGrid, gs()), y: snap(q.y, !ev.altKey && useEditor.getState().layout.snapGrid, gs()) };
         if (ev.shiftKey) {
           const size = Math.max(Math.abs(end.x - d.start.x), Math.abs(end.y - d.start.y));
           end = { x: d.start.x + Math.sign(end.x - d.start.x || 1) * size, y: d.start.y + Math.sign(end.y - d.start.y || 1) * size };

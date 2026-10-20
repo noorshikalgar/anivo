@@ -2,7 +2,8 @@ import { Tooltip, makeStyles, mergeClasses } from "@fluentui/react-components";
 import type { Action } from "@anivo/schema";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { updateAction } from "../commands.js";
-import { useEditor } from "../store.js";
+import { setAreas, useEditor } from "../store.js";
+import { Splitter } from "./ui.js";
 import { formatTime } from "./PlaybackBar.js";
 import { describe } from "./StepInspector.js";
 import { actionIcon } from "./typeIcons.js";
@@ -12,7 +13,7 @@ const ROW_H = 22;
 const MIN_MS = 50;
 
 const useStyles = makeStyles({
-  root: { display: "flex", flexDirection: "column", height: "200px", backgroundColor: "var(--ui-list)", color: "var(--ui-text)", minHeight: 0, fontSize: "12px" },
+  root: { position: "relative", display: "flex", flexDirection: "column", backgroundColor: "var(--ui-list)", color: "var(--ui-text)", minHeight: 0, fontSize: "12px" },
   ruler: { display: "flex", height: "22px", flexShrink: 0, backgroundColor: "var(--ui-region)", borderBottom: "1px solid var(--ui-line)" },
   rulerLabel: { width: `${LABEL_W}px`, boxSizing: "border-box", flexShrink: 0, padding: "0 8px", display: "flex", alignItems: "center" },
   rulerTrack: { position: "relative", flexGrow: 1, cursor: "pointer" },
@@ -62,6 +63,8 @@ function tickStep(total: number, width: number): number {
 
 /** Timeline with one track for each action (FR-STEP-17). Drag a bar to change the delay, drag an edge to change the duration. */
 export function TimelinePanel() {
+  const areaH = useEditor((s) => s.areas.timeline);
+  const startH = useRef(areaH);
   const styles = useStyles();
   const scene = useEditor((s) => s.scene);
   const timeline = useEditor((s) => s.timeline);
@@ -157,7 +160,8 @@ export function TimelinePanel() {
   };
 
   return (
-    <div className={styles.root} role="region" aria-label="Timeline">
+    <div className={styles.root} role="region" aria-label="Timeline" style={{ height: `${areaH}px` }}>
+      <Splitter axis="y" label="Resize the timeline" style={{ top: "-3px" }} onStart={() => (startH.current = useEditor.getState().areas.timeline)} onDrag={(d) => setAreas({ timeline: Math.min(600, Math.max(90, startH.current - d)) })} onReset={() => setAreas({ timeline: 200 })} />
       <div className={styles.ruler}>
         <div className={styles.rulerLabel} />
         <div className={styles.rulerTrack} ref={trackRef} onPointerDown={seek} aria-label="Time ruler">

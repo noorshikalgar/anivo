@@ -681,3 +681,39 @@ export function SearchBox({ label, value, onChange }: { label: string; value: st
   const s = useStyles();
   return <input type="search" className={s.search} placeholder="Search" aria-label={label} value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Escape") onChange(""); }} />;
 }
+
+// --- splitter -----------------------------------------------------------------------------
+
+/**
+ * A drag handle on the edge of an area (docs/15): drag to resize the area.
+ * `onDrag` gets the move in px from the start of the drag. Double-click resets.
+ */
+export function Splitter({ axis, label, onStart, onDrag, onReset, style }: { axis: "x" | "y"; label: string; onStart: () => void; onDrag: (delta: number) => void; onReset?: () => void; style?: React.CSSProperties }) {
+  return (
+    <div
+      role="separator"
+      aria-orientation={axis === "x" ? "vertical" : "horizontal"}
+      aria-label={label}
+      title={`${label} (drag; double-click to reset)`}
+      onDoubleClick={onReset}
+      onPointerDown={(e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        const el = e.currentTarget;
+        el.setPointerCapture(e.pointerId);
+        const start = axis === "x" ? e.clientX : e.clientY;
+        onStart();
+        const move = (ev: PointerEvent) => onDrag((axis === "x" ? ev.clientX : ev.clientY) - start);
+        const up = () => {
+          el.removeEventListener("pointermove", move);
+          el.removeEventListener("pointerup", up);
+          document.body.style.cursor = "";
+        };
+        document.body.style.cursor = axis === "x" ? "col-resize" : "row-resize";
+        el.addEventListener("pointermove", move);
+        el.addEventListener("pointerup", up);
+      }}
+      style={{ position: "absolute", zIndex: 5, cursor: axis === "x" ? "col-resize" : "row-resize", touchAction: "none", ...(axis === "x" ? { top: 0, bottom: 0, width: "6px" } : { left: 0, right: 0, height: "6px" }), ...style }}
+    />
+  );
+}

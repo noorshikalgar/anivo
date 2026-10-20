@@ -2,9 +2,9 @@
  * The header of the viewport (docs/15): the View menu, the place in the
  * video, the overlay toggle, and the zoom.
  */
-import { Menu, MenuDivider, MenuItem, MenuItemCheckbox, MenuList, MenuPopover, MenuTrigger, makeStyles } from "@fluentui/react-components";
-import { Eye16Regular, EyeOff16Regular, ZoomFit16Regular } from "@fluentui/react-icons";
-import { useEditor } from "../store.js";
+import { Menu, MenuDivider, MenuGroup, MenuGroupHeader, MenuItem, MenuItemCheckbox, MenuItemRadio, MenuList, MenuPopover, MenuTrigger, makeStyles } from "@fluentui/react-components";
+import { Eye16Regular, EyeOff16Regular, Grid16Regular, AlignLeft16Regular, ZoomFit16Regular } from "@fluentui/react-icons";
+import { setLayout, useEditor } from "../store.js";
 import { formatTime } from "./PlaybackBar.js";
 import { IconButton, MenuButtonSmall } from "./ui.js";
 
@@ -25,6 +25,7 @@ export function ViewportHeader() {
   const steps = useEditor((st) => st.scene.steps);
   const timelineOpen = useEditor((st) => st.timelineOpen);
   const index = steps.findIndex((x) => x.id === selected);
+  const layout = useEditor((st) => st.layout);
   const { fitToVideo, viewport, zoomAt } = useEditor.getState();
   const zoomTo = (z: number) => zoomAt(z / useEditor.getState().view.zoom, viewport.width / 2, viewport.height / 2);
   return (
@@ -60,6 +61,38 @@ export function ViewportHeader() {
         {" · "}
         {formatTime(playhead)}
       </div>
+      <IconButton label={layout.showGrid ? "Hide the grid" : "Show the grid"} pressed={layout.showGrid} tool icon={<Grid16Regular />} onClick={() => setLayout({ showGrid: !layout.showGrid })} />
+      <Menu
+        checkedValues={{ snap: [...(layout.snapGrid ? ["grid"] : []), ...(layout.snapObjects ? ["objects"] : [])], size: [String(layout.gridSize)] }}
+        onCheckedValueChange={(_, d) => (d.name === "snap" ? setLayout({ snapGrid: d.checkedItems.includes("grid"), snapObjects: d.checkedItems.includes("objects") }) : setLayout({ gridSize: Number(d.checkedItems[0]) }))}
+      >
+        <MenuTrigger disableButtonEnhancement>
+          <MenuButtonSmall className={s.menu} icon={<AlignLeft16Regular />} aria-label="Snap settings">
+            Snap
+          </MenuButtonSmall>
+        </MenuTrigger>
+        <MenuPopover>
+          <MenuList>
+            <MenuItemCheckbox name="snap" value="grid">
+              Snap to the grid
+            </MenuItemCheckbox>
+            <MenuItemCheckbox name="snap" value="objects">
+              Snap to other elements (guides)
+            </MenuItemCheckbox>
+            <MenuDivider />
+            <MenuGroup>
+              <MenuGroupHeader>Grid size</MenuGroupHeader>
+              {[1, 4, 8, 16, 32, 64].map((n) => (
+                <MenuItemRadio key={n} name="size" value={String(n)}>
+                  {n === 1 ? "1 px (pixels)" : `${n} px`}
+                </MenuItemRadio>
+              ))}
+            </MenuGroup>
+            <MenuDivider />
+            <MenuItem disabled>Hold Alt: no snap, and distances</MenuItem>
+          </MenuList>
+        </MenuPopover>
+      </Menu>
       <IconButton label={ghosts ? "Hide the faint elements that are not visible now" : "Show the elements that are not visible now (faint)"} pressed={ghosts} icon={<Eye16Regular />} offIcon={<EyeOff16Regular />} onClick={() => useEditor.setState({ showGhosts: !ghosts })} />
       <IconButton label="Fit the video (Shift+1)" icon={<ZoomFit16Regular />} onClick={fitToVideo} />
       <button type="button" className={s.zoom} title="Zoom. Click to fit the video." onClick={fitToVideo}>

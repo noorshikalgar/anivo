@@ -1,5 +1,5 @@
 import { FluentProvider, Spinner, Text, Toast, ToastTitle, Toaster, makeStyles, mergeClasses, tokens, useId, useToastController } from "@fluentui/react-components";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { loadAssets } from "../assets.js";
 import { openSceneFromQuery, startAutosave } from "../files.js";
 import { migrateAutosave, startLibraryAutosave } from "../library.js";
@@ -8,9 +8,10 @@ import { Outliner } from "./Outliner.js";
 import { ViewportHeader } from "./ViewportHeader.js";
 import { StatusBar } from "./StatusBar.js";
 import { COMPACT, useMedia } from "./useMedia.js";
+import { Splitter } from "./ui.js";
 import { openShareFromUrl } from "../share.js";
 import { notify } from "../notify.js";
-import { useEditor } from "../store.js";
+import { setAreas, useEditor } from "../store.js";
 import { darkTheme, lightTheme } from "../theme.js";
 import { CanvasView } from "./CanvasView.js";
 import { CommandPalette } from "./CommandPalette.js";
@@ -58,10 +59,10 @@ const useStyles = makeStyles({
   top: { gridArea: "top", minWidth: 0 },
   // Areas: round corners and a 2 px gap, as in Blender.
   area: { borderRadius: "6px", overflow: "hidden", minHeight: 0, minWidth: 0, gridTemplateColumns: "minmax(0, 1fr)" },
-  steps: { gridArea: "steps", display: "grid", marginLeft: "2px" },
+  steps: { gridArea: "steps", display: "grid", marginLeft: "2px", position: "relative" },
   canvas: { gridArea: "canvas", display: "grid", gridTemplateRows: "auto minmax(0, 1fr)" },
   stage: { position: "relative", display: "grid", minHeight: 0, minWidth: 0 },
-  right: { gridArea: "right", display: "flex", flexDirection: "column", gap: "2px", marginRight: "2px", minHeight: 0, minWidth: 0 },
+  right: { gridArea: "right", display: "flex", flexDirection: "column", gap: "2px", marginRight: "2px", minHeight: 0, minWidth: 0, position: "relative" },
   outliner: { flex: "0 0 34%", display: "grid", minHeight: "80px" },
   inspector: { flex: "1 1 0", display: "grid" },
   play: { gridArea: "play", minWidth: 0, margin: "0 2px" },
@@ -127,6 +128,8 @@ export function App() {
   const screen = useEditor((s) => s.screen);
   const drawer = useEditor((s) => s.drawer);
   const maximized = useEditor((s) => s.maximized);
+  const areas = useEditor((s) => s.areas);
+  const startAreas = useRef(areas);
   const compact = useMedia(COMPACT);
   const medium = useMedia("(max-width: 1279px)");
   useEffect(() => {
@@ -187,13 +190,16 @@ export function App() {
       ) : screen === "home" ? (
         <Home />
       ) : (
-        <div className={mergeClasses(styles.root, compact ? styles.compact : medium && styles.medium, maximized && styles.maximized)}>
+        <div className={mergeClasses(styles.root, compact ? styles.compact : medium && styles.medium, maximized && styles.maximized)} style={compact || maximized ? undefined : { gridTemplateColumns: `${areas.left}px minmax(0, 1fr) ${areas.right}px` }}>
           <div className={styles.top}>
             <TopBar />
           </div>
           {compact && drawer && <div className={styles.scrim} onClick={() => useEditor.setState({ drawer: null })} aria-hidden />}
           <div className={compact ? mergeClasses(styles.drawer, styles.drawerLeft, drawer === "steps" && styles.drawerOpen) : mergeClasses(styles.area, styles.steps, maximized && styles.gone)} inert={compact && drawer !== "steps" ? true : undefined}>
             <StepsPanel />
+            {!compact && (
+              <Splitter axis="x" label="Resize the steps area" style={{ right: 0 }} onStart={() => (startAreas.current = useEditor.getState().areas)} onDrag={(d) => setAreas({ left: Math.min(480, Math.max(160, startAreas.current.left + d)) })} onReset={() => setAreas({ left: 230 })} />
+            )}
           </div>
           <div className={mergeClasses(styles.area, styles.canvas)}>
             <ViewportHeader />
@@ -204,8 +210,24 @@ export function App() {
             </div>
           </div>
           <div className={compact ? mergeClasses(styles.drawer, styles.drawerRight, drawer === "inspector" && styles.drawerOpen) : mergeClasses(styles.right, maximized && styles.gone)} inert={compact && drawer !== "inspector" ? true : undefined}>
-            <div className={mergeClasses(styles.area, styles.outliner)}>
+            {!compact && (
+              <Splitter axis="x" label="Resize the right areas" style={{ left: "-4px" }} onStart={() => (startAreas.current = useEditor.getState().areas)} onDrag={(d) => setAreas({ right: Math.min(560, Math.max(240, startAreas.current.right - d)) })} onReset={() => setAreas({ right: 300 })} />
+            )}
+            <div className={mergeClasses(styles.area, styles.outliner)} style={compact ? undefined : { flex: `0 0 ${areas.outliner}%`, position: "relative" }}>
               <Outliner />
+              {!compact && (
+                <Splitter
+                  axis="y"
+                  label="Resize the outliner"
+                  style={{ bottom: 0 }}
+                  onStart={() => (startAreas.current = useEditor.getState().areas)}
+                  onDrag={(d) => {
+                    const h = (document.querySelector('[aria-label="Outliner"]')?.parentElement?.parentElement?.clientHeight ?? 600) || 600;
+                    setAreas({ outliner: Math.min(75, Math.max(12, startAreas.current.outliner + (d / h) * 100)) });
+                  }}
+                  onReset={() => setAreas({ outliner: 34 })}
+                />
+              )}
             </div>
             <div className={mergeClasses(styles.area, styles.inspector)}>
               <Inspector />
