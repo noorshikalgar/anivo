@@ -21,25 +21,25 @@ import {
   TagPickerOption,
   makeStyles,
 } from "@fluentui/react-components";
-import { Add16Regular, ChevronDown16Regular, ChevronUp16Regular, Delete16Regular, MoreHorizontal16Regular, SplitVertical16Regular, Subtract16Regular } from "@fluentui/react-icons";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Add16Regular } from "@fluentui/react-icons";
+import { useEffect, useMemo, useState } from "react";
 import { searchIcons } from "@anivo/render";
 import { pickImageAsset } from "../images.js";
 import { withErrors } from "../notify.js";
-import { addAction, addMotionAlongArrow, canSplitAction, moveAction, removeAction, splitAction, updateAction, updateStep } from "../commands.js";
+import { addAction, addMotionAlongArrow, updateAction, updateStep } from "../commands.js";
 import { setCue, setStepLine } from "../audio.js";
 import { Comments } from "./Comments.js";
 import { useEditor } from "../store.js";
 import { ColorField, NumberField, Row, SelectField, TextField } from "./fields.js";
 import { actionIcon } from "./typeIcons.js";
-import { Btn, Check, IconButton, ListSideGap, ListView, MenuButtonSmall, Note, Panel, Prop } from "./ui.js";
+import { Btn, Check, MenuButtonSmall, Note, Panel, Prop } from "./ui.js";
 
 const useStyles = makeStyles({
   panel: { display: "flex", flexDirection: "column", gap: "2px" },
 });
 
-const ENTER_EFFECTS = ["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter"] as const;
-const EMPHASIS_EFFECTS = ["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus"] as const;
+export const ENTER_EFFECTS = ["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter"] as const;
+export const EMPHASIS_EFFECTS = ["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus"] as const;
 const EASINGS = ["linear", "ease-in", "ease-out", "ease-in-out", "back-out", "spring-soft", "spring-bouncy"] as const;
 const label = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g, " ");
 
@@ -235,7 +235,10 @@ function FlowParticle({ step, action, theme }: { step: Step; action: FlowAction;
   );
 }
 
-function ActionEditor({ step, action }: { step: Step; action: Action }) {
+/** The settings of one action. `part`: "what" (effect and its settings), "when" (timing and sound), or "all". */
+export function ActionEditor({ step, action, part = "all" }: { step: Step; action: Action; part?: "all" | "what" | "when" }) {
+  const what = part !== "when";
+  const when = part !== "what";
   const styles = useStyles();
   const theme = useEditor((s) => s.scene.settings.theme);
   const elements = useEditor((s) => s.scene.elements);
@@ -245,6 +248,8 @@ function ActionEditor({ step, action }: { step: Step; action: Action }) {
   const duration = action.durationMs ?? defaultDurationMs(action);
   return (
     <div className={styles.panel}>
+      {what && (
+        <>
       {(action.type === "enter" || action.type === "exit") && (
         <SelectField label="Effect" value={action.effect} options={ENTER_EFFECTS.map((e) => ({ value: e, text: label(e) }))} onCommit={(v) => set({ effect: v }, "Change effect")} />
       )}
@@ -274,6 +279,10 @@ function ActionEditor({ step, action }: { step: Step; action: Action }) {
       {action.type === "emphasis" && ["glow", "flash", "highlight"].includes(action.effect) && (
         <ColorField label="Color" theme={theme} value={action.params.color} onCommit={(v) => set({ params: { ...action.params, color: v ?? undefined } }, "Change color")} />
       )}
+        </>
+      )}
+      {when && (
+        <>
       <Row>
         <NumberField label="Delay (ms)" value={action.delayMs} min={0} step={50} onCommit={(v, k) => set({ delayMs: Math.round(v) }, "Change delay", k)} />
         <NumberField label="Duration (ms)" value={duration} min={0} step={50} onCommit={(v, k) => set({ durationMs: Math.round(v) }, "Change duration", k)} />
@@ -293,6 +302,11 @@ function ActionEditor({ step, action }: { step: Step; action: Action }) {
         options={[{ value: "none", text: "No sound" }, ...SOUNDS.map((x) => ({ value: x, text: label(x) }))]}
         onCommit={(v) => set({ sound: v === "none" ? null : v }, "Change sound")}
       />
+        </>
+      )}
+      {what && (
+        <>
+
       {action.type === "motion" && (
         <Row>
           <SelectField label="Path" value={action.motion.curve ? "curve" : "lines"} options={[{ value: "lines", text: "Straight lines" }, { value: "curve", text: "Smooth curve" }]} onCommit={(v) => set({ motion: { ...action.motion, curve: v === "curve" } }, "Change path")} />
@@ -385,6 +399,8 @@ function ActionEditor({ step, action }: { step: Step; action: Action }) {
           />
         </>
       )}
+        </>
+      )}
     </div>
   );
 }
@@ -393,24 +409,6 @@ export function StepInspector({ step }: { step: Step }) {
   const hasVoice = useEditor((s) => s.scene.audio.some((t) => t.kind === "voiceover"));
   const startMs = useEditor((s) => s.timeline.steps.find((t) => t.id === step.id)?.startMs ?? 0);
   const line = useEditor((s) => s.scene.script.find((l) => l.stepId === step.id));
-  const activeId = useEditor((s) => s.activeAction);
-  const setActive = (id: string | null) => useEditor.setState({ activeAction: id });
-  const ids = step.actions.map((a) => a.id).join(",");
-  const prevIds = useRef(ids);
-  useEffect(() => {
-    if (!step.actions.some((a) => a.id === activeId)) setActive(step.actions[0]?.id ?? null);
-  }, [step.id]);
-  // A new action becomes the active one; a removed active action gives its place to a neighbor.
-  useEffect(() => {
-    const before = prevIds.current.split(",").filter(Boolean);
-    const now = step.actions.map((a) => a.id);
-    const added = now.find((id) => !before.includes(id));
-    if (added) setActive(added);
-    else if (activeId === null || !now.includes(activeId)) setActive(now[Math.min(Math.max(0, before.indexOf(activeId ?? "")), now.length - 1)] ?? null);
-    prevIds.current = ids;
-  }, [ids]);
-  const active = step.actions.find((a) => a.id === activeId);
-  const index = active ? step.actions.indexOf(active) : -1;
   return (
     <>
       <Panel id="step-step" title="Settings">
@@ -429,53 +427,15 @@ export function StepInspector({ step }: { step: Step }) {
         <NumberField label="Hold (ms)" value={step.holdMs} min={0} step={100} onCommit={(v, k) => updateStep(step.id, { holdMs: Math.round(v) }, "Change hold", k)} />
       </Panel>
 
-      <Panel id="step-actions" title={`Actions (${step.actions.length})`}>
-        <ListView
-          label="Actions"
-          items={step.actions.map((a) => ({ id: a.id, icon: actionIcon(a.type), text: describe(a), meta: a.targets.length > 2 ? `${a.targets.length} elements` : a.targets.join(", ") }))}
-          active={activeId}
-          onActivate={setActive}
-          empty="No actions. Select elements, then click +."
-          onRowKey={(id, e) => {
-            if (e.key === "Delete" || e.key === "Backspace") {
-              e.preventDefault();
-              removeAction(step.id, id);
-            }
-          }}
-          side={
-            <>
-              <AddActionMenu iconOnly />
-              <IconButton label="Remove action" icon={<Subtract16Regular />} disabled={!active} onClick={() => active && removeAction(step.id, active.id)} />
-              <ListSideGap />
-              <IconButton label="Move up" icon={<ChevronUp16Regular />} disabled={index <= 0} onClick={() => active && moveAction(step.id, active.id, -1)} />
-              <IconButton label="Move down" icon={<ChevronDown16Regular />} disabled={index < 0 || index >= step.actions.length - 1} onClick={() => active && moveAction(step.id, active.id, 1)} />
-              <ListSideGap />
-              <Menu>
-                <MenuTrigger disableButtonEnhancement>
-                  <MenuButtonSmall iconOnly icon={<MoreHorizontal16Regular />} aria-label="More action commands" disabled={!active} />
-                </MenuTrigger>
-                <MenuPopover>
-                  <MenuList>
-                    <MenuItem icon={<SplitVertical16Regular />} disabled={!active || !canSplitAction(active)} onClick={() => active && splitAction(step.id, active.id)}>
-                      Split per element
-                    </MenuItem>
-                    <MenuItem icon={<Delete16Regular />} disabled={!active} onClick={() => active && removeAction(step.id, active.id)}>
-                      Remove action
-                    </MenuItem>
-                  </MenuList>
-                </MenuPopover>
-              </Menu>
-            </>
-          }
-        />
-        {active && <Note>Targets: {active.targets.join(", ") || "none"}</Note>}
+      <Panel id="step-actions-summary" title={`Actions (${step.actions.length})`}>
+        {step.actions.map((a) => (
+          <Note key={a.id}>{`${describe(a)}: ${a.targets.join(", ") || "camera"}`}</Note>
+        ))}
+        {step.actions.length === 0 && <Note>No actions yet.</Note>}
+        <Prop label="">
+          <Btn onClick={() => useEditor.setState({ propTab: "actions" })}>Edit the actions…</Btn>
+        </Prop>
       </Panel>
-
-      {active && (
-        <Panel id="step-action" title={describe(active)}>
-          <ActionEditor key={active.id} step={step} action={active} />
-        </Panel>
-      )}
 
       <Panel id="step-voice" title="Script and notes">
         <TextField label="Script line" multiline value={line?.text ?? ""} placeholder="The words of the voiceover for this step" onCommit={(v) => setStepLine(step.id, v)} />

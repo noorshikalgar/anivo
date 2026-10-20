@@ -90,7 +90,7 @@ export function CanvasView() {
   useEffect(() => {
     let pending = 0;
     const unsub = useEditor.subscribe((s, prev) => {
-      if (s.scene !== prev.scene || s.view !== prev.view || s.playhead !== prev.playhead || s.viewport !== prev.viewport || s.playing !== prev.playing || s.selection !== prev.selection || s.selectedStep !== prev.selectedStep || s.imagesVersion !== prev.imagesVersion || s.agent !== prev.agent || s.aiActivity !== prev.aiActivity || (s.takes === null) !== (prev.takes === null) || (s.recording === null) !== (prev.recording === null) || s.showGhosts !== prev.showGhosts) {
+      if (s.scene !== prev.scene || s.view !== prev.view || s.playhead !== prev.playhead || s.viewport !== prev.viewport || s.playing !== prev.playing || s.selection !== prev.selection || s.selectedStep !== prev.selectedStep || s.imagesVersion !== prev.imagesVersion || s.agent !== prev.agent || s.aiActivity !== prev.aiActivity || (s.takes === null) !== (prev.takes === null) || (s.recording === null) !== (prev.recording === null) || s.showGhosts !== prev.showGhosts || s.targetHighlight !== prev.targetHighlight) {
         if (!pending) pending = requestAnimationFrame(() => ((pending = 0), draw()));
       }
     });
@@ -168,6 +168,24 @@ export function CanvasView() {
       ctx.globalAlpha = 1;
       return b;
     };
+    // The targets of the active action (Actions tab): orange dashed boxes.
+    const highlight = useEditor.getState().targetHighlight;
+    if (highlight.length) {
+      ctx.save();
+      ctx.strokeStyle = "#ffaf29";
+      ctx.fillStyle = "#ffaf29";
+      ctx.lineWidth = 1.5 * dpr;
+      ctx.setLineDash([5 * dpr, 3 * dpr]);
+      ctx.font = `${11 * dpr}px Inter, sans-serif`;
+      for (const id of highlight) {
+        const bounds = boundsOf(scene, result.frame, result.routes, id);
+        if (!bounds) continue;
+        const b = screenBox(bounds);
+        ctx.strokeRect(b.x - 6 * dpr, b.y - 6 * dpr, b.width + 12 * dpr, b.height + 12 * dpr);
+        ctx.fillText(id, b.x - 6 * dpr, b.y - 10 * dpr);
+      }
+      ctx.restore();
+    }
     // Agent presence (docs/09 "Agent presence"): changed elements glow for 2 s; pending changes show dashed.
     const agentState = useEditor.getState().agent;
     const aiActivity = useEditor.getState().aiActivity;

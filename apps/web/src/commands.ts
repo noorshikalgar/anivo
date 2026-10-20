@@ -3,6 +3,7 @@ import { type LayoutKind, autoLayout, evaluateWithLayout } from "@anivo/layout";
 import type { OperationInput } from "@anivo/ops";
 import type { Element } from "@anivo/schema";
 import { type Box, boundsOf, editorSkip, geometryOps, leafDescendants } from "./editing.js";
+import { notify } from "./notify.js";
 import { useEditor } from "./store.js";
 
 /** Element boxes at the current playhead (the base state in the Base view). */
@@ -255,6 +256,7 @@ export function addAction(action: Record<string, unknown>, label = "Add action")
   const st = useEditor.getState();
   if (st.selectedStep === null) return undefined;
   const r = st.apply({ label, ops: [{ op: "action.add", step: st.selectedStep, action }] });
+  if (!r.ok) notify(r.error.message, "error");
   return r.ok ? r.created[0] : undefined;
 }
 

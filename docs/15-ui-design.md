@@ -24,7 +24,7 @@ The editor UI follows the layout and the controls of professional tools, mainly 
 | Steps | Left | A tree: steps, and the actions of each step. Search, add (+) |
 | Viewport | Center | Header (view tools, zoom), toolbar (vertical, left), the canvas |
 | Outliner | Right, top | A tree of the elements, with eye and lock toggles. Search |
-| Properties | Right, bottom | Vertical tabs: Scene, Element, Step. Panels in each tab |
+| Properties | Right, bottom | Vertical tabs: Scene, Step, Actions, Element. Panels in each tab |
 | Timeline | Bottom | Header (play controls, time), the timeline and the audio lanes |
 | Status bar | Bottom edge | Mouse and key hints (left), messages (center), scene numbers (right) |
 
@@ -54,3 +54,12 @@ The light UI uses the same tokens with light values.
 | Ctrl+Space | Maximize the viewport (again: restore the areas) |
 | N | Add a step |
 | Space | Play or pause |
+
+## 5. Actions tab
+
+The Actions tab is the place to animate a step. It opens when a step is selected.
+
+1. **Step bar:** the previous and next step, a list of the steps, and Play this step.
+2. **Add an action:** quick buttons (Appear, Fade in, Draw, Type, Disappear, Pulse, Glow, Focus, Flow, Zoom, Count). The action uses the selected elements. With no selection, a dialog asks for the elements. The **+** button of the sequence has all actions.
+3. **Sequence:** the actions of the step, with a bar for the time of each action in the step. The canvas marks the targets of the active action with orange dashed boxes.
+4. **What:** the effect and its settings. **Who:** the targets (remove one, choose, use the selection, select on the canvas). **When:** delay, duration, easing (with a curve), stagger, sound, and the buttons With previous and After previous.
