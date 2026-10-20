@@ -93,6 +93,7 @@ function ElementProperties({ el }: { el: Element }) {
   const scene = useEditor((st) => st.scene);
   const playhead = useEditor((st) => st.playhead);
   const selectedStep = useEditor((st) => st.selectedStep);
+  const autoKey = useEditor((st) => st.autoKey);
   const playing = useEditor((st) => st.playing);
   const stepTitle = useEditor((st) => st.scene.steps.find((x) => x.id === st.selectedStep)?.title);
   const colors = useThemeColors(scene.settings.theme);
@@ -154,7 +155,9 @@ function ElementProperties({ el }: { el: Element }) {
       )}
       {selectedStep !== null && (
         <Info action={<AddActionMenu />}>
-          Changes to position, size, color, and label animate in step "{stepTitle}" (a morph). To change the element in all steps, select Base in the step list.
+          {autoKey
+            ? `Auto-key is on: changes to position, size, color, and label make a keyframe at the playhead in step "${stepTitle}". Press K to turn it off.`
+            : `Changes to position, size, color, and label animate in step "${stepTitle}" (a morph). To make keyframes at the playhead, press K (auto-key). To change the element in all steps, select Base in the step list.`}
         </Info>
       )}
 

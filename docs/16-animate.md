@@ -21,6 +21,11 @@ Users want more control over time: change a property at an exact time, as in a m
 3. **Auto-key off** (default): a change in a step makes a morph that ends at the end of the step (as before).
 4. **Auto-key on**: a change makes a keyframe at the playhead. If a keyframe of that property is at the playhead, the change updates it.
 5. The Keys view shows the keyframes of the selected step. Drag a diamond to change its time. Delete removes it. Click a diamond to move the playhead to it.
+   - The Keys view shows the selected step only, with 25% more time after its end. Click the ruler after the step end to put a keyframe there: the step gets longer.
+   - The keyframe bar: ◀ and ▶ go to the previous and next keyframe. For the selected keyframe: the easing of the tween to it, and Delete.
+   - Arrow keys move the focused diamond 100 ms (Shift: 500 ms).
+   - Press **K** to turn auto-key on or off. The record button in the timeline header shows the state.
+   - When you move or delete a keyframe, the tween of the next keyframe of that property starts at the new time.
 6. Agents use the same morph actions (`morph a x=600 +400ms dur=600ms`).
 
 ## 3. Step transitions

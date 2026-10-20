@@ -65,6 +65,8 @@ interface EditorState {
   showGhosts: boolean;
   /** True while the playhead stays at the end of the selected step (until the user moves it). */
   pinStepEnd: boolean;
+  /** Auto-key: a change in a step makes a keyframe at the playhead (docs/16). */
+  autoKey: boolean;
   /** The active action of the selected step (properties and step tree), or null. */
   activeAction: string | null;
   /** True while the view fits the video: a change of the window size fits it again. */
@@ -253,6 +255,7 @@ export const useEditor = create<EditorState>((set, get) => {
     autoFit: true,
     activeAction: null,
     pinStepEnd: false,
+    autoKey: false,
     showGhosts: true,
     maximized: false,
     saveWidgetOpen: false,
