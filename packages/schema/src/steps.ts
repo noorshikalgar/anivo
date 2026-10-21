@@ -9,6 +9,7 @@ export const EasingName = z.enum([
   "back-out",
   "spring-soft",
   "spring-bouncy",
+  "hold",
 ]);
 export type EasingName = z.infer<typeof EasingName>;
 

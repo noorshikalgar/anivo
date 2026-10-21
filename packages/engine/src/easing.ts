@@ -98,6 +98,8 @@ const NAMED: Record<string, EaseFn> = {
   "back-out": backOut,
   "spring-soft": spring(120, 20, 1),
   "spring-bouncy": spring(180, 12, 1),
+  // Hold: no tween, the value jumps at the end (a hold key in a video editor).
+  hold: (p) => (p >= 1 ? 1 : 0),
 };
 
 const cache = new Map<string, EaseFn>();

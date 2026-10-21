@@ -59,4 +59,14 @@ describe("keyframes", () => {
     bus.apply({ ops: deleteKeyframeOps(bus.scene, "s2", k1!.actionId) });
     expect(keyframesIn(bus.scene, "s2").map((k) => [k.fromMs, k.timeMs])).toEqual([[0, 2000]]);
   });
+
+  it("a hold key jumps at its time, with no tween", () => {
+    const bus = make();
+    const ops = setKeyframeOps(bus.scene, "s2", "a", { x: 400 }, 1000);
+    const add = ops[0] as { action: Record<string, unknown> };
+    add.action["easing"] = "hold";
+    bus.apply({ ops });
+    expect(xAt(bus, 990)).toBeCloseTo(0, 0);
+    expect(xAt(bus, 1000)).toBeCloseTo(400, 0);
+  });
 });
