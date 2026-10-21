@@ -96,6 +96,7 @@ const QUICK: Quick[] = [
   { label: "Pulse", hint: "Pulse to point at it (emphasis · pulse)", icon: actionIcon("emphasis"), action: { type: "emphasis", effect: "pulse" } },
   { label: "Glow", hint: "Glow (emphasis · glow)", icon: actionIcon("emphasis"), action: { type: "emphasis", effect: "glow" } },
   { label: "Focus", hint: "Dim the rest (emphasis · focus)", icon: actionIcon("emphasis"), action: { type: "emphasis", effect: "focus" } },
+  { label: "One by one", hint: "The elements come in one after the other, in reading order: top to bottom, then left to right (enter · pop, 0.35 s apart)", icon: actionIcon("enter"), action: { type: "enter", effect: "pop", staggerMs: 350 } },
   { label: "Send", hint: "Move elements along an arrow, for example a message (2.4 s). Select the elements and the arrow.", icon: actionIcon("motion"), action: { type: "motion" } },
   { label: "Flow", hint: "Particles move along the arrows (flow)", icon: actionIcon("flow"), action: { type: "flow", flow: {} }, only: ["connector"] },
   { label: "Zoom", hint: "The camera zooms to the elements (camera · zoom-to)", icon: actionIcon("camera"), action: { type: "camera", camera: { op: "zoom-to" } } },
@@ -314,9 +315,21 @@ function StepActions({ step }: { step: Step }) {
       const action = q.action["type"] === "camera" || ids.length > 0 ? { ...q.action, targets: ids, ...(q.action["type"] === "flow" && ids.length > 1 ? { flow: { distribute: "round-robin" } } : {}) } : null;
       if (action) addAction(action, `Add ${q.label.toLowerCase()}`);
     };
-    const ids = fit(selection);
+    // One by one: the targets in reading order, so the stagger goes top to bottom, then left to right.
+    const order = (list: string[]) =>
+      q.label !== "One by one"
+        ? list
+        : [...list].sort((a, b) => {
+            const ea = elements[a];
+            const eb = elements[b];
+            if (!ea || !eb) return 0;
+            const rowA = Math.round(ea.y / 60);
+            const rowB = Math.round(eb.y / 60);
+            return rowA !== rowB ? rowA - rowB : ea.x - eb.x;
+          });
+    const ids = order(fit(selection));
     if (ids.length > 0) add(ids);
-    else setPicker({ title: `${q.label}: choose the elements`, ...(q.only ? { only: q.only } : {}), initial: [], done: add });
+    else setPicker({ title: `${q.label}: choose the elements`, ...(q.only ? { only: q.only } : {}), initial: [], done: (picked) => add(order(picked)) });
   };
 
   const cap = step.caption;

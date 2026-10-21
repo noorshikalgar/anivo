@@ -20,6 +20,7 @@ export const ElementStyle = z
     shadow: z.enum(["none", "soft", "hard", "glow"]).describe("A shadow under the shape: soft (blur), hard (offset, solid), or glow."),
     shadowColor: Color.describe("Color of the shadow or the glow. Default: black (soft, hard on dark themes), the text color (hard on light themes), accent (glow)."),
     gradient: Color.describe("The fill fades from the fill color (top) to this color (bottom)."),
+    origin: z.enum(["center", "top-left", "top", "top-right", "left", "right", "bottom-left", "bottom", "bottom-right"]).describe("The point that scale and rotation turn around (docs/19 R11). Default: center."),
   })
   .partial()
   .describe("Overrides of the theme style. Omit a field to use the theme value.");

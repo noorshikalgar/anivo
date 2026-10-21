@@ -213,6 +213,12 @@ function ElementProperties({ el }: { el: Element }) {
             <DragNumber label="Opacity" value={Math.round(f.opacity * 100)} min={0} max={100} unit="%" onCommit={(v, k) => set({ opacity: v / 100 }, "Change opacity", k)} />
           </Prop>
           <SelectField
+            label="Origin"
+            value={el.style.origin ?? "center"}
+            options={["center", "top-left", "top", "top-right", "left", "right", "bottom-left", "bottom", "bottom-right"].map((o) => ({ value: o, text: o === "center" ? "Center (scale and turn here)" : o.replace("-", " ") }))}
+            onCommit={(v) => set({ origin: v === "center" ? null : v }, "Change origin")}
+          />
+          <SelectField
             label="Follow"
             value={el.follow ?? ""}
             options={[{ value: "", text: "Nothing" }, ...Object.values(scene.elements).filter((e) => e.id !== el.id && e.type !== "connector" && e.type !== "group" && e.follow !== el.id).map((e) => ({ value: e.id, text: e.id }))]}

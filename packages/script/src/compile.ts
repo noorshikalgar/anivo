@@ -99,6 +99,7 @@ const num = (v: string) => (/^-?\d+(\.\d+)?$/.test(v) ? Number(v) : undefined);
 
 /** Style keys in Anivo Script and their schema names. */
 const STYLE_KEYS: Record<string, string> = {
+  origin: "origin",
   fill: "fill",
   stroke: "stroke",
   "stroke-width": "strokeWidth",

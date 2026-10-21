@@ -233,3 +233,11 @@ describe("follow", () => {
     expect(printScene(scene)).toContain("follow=pkt");
   });
 });
+
+describe("origin", () => {
+  it("compiles origin= and prints it back", () => {
+    const scene = ok(`box a "A" at=100,100 origin=bottom\nstep "S"\n  enter a pop\n`);
+    expect(scene.elements["a"]!.style.origin).toBe("bottom");
+    expect(printScene(scene)).toContain("origin=bottom");
+  });
+});

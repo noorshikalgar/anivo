@@ -126,3 +126,10 @@ test("Follow: an element moves with the element it follows", async ({ page }) =>
   await page.getByRole("option", { name: "user", exact: true }).click();
   expect((await state(page)).scene.elements["lb"]!.follow).toBe("user");
 });
+
+test("Origin: scale and turn around a corner or an edge", async ({ page }) => {
+  await selectLb(page);
+  await page.getByRole("combobox", { name: "Origin" }).click();
+  await page.getByRole("option", { name: "bottom", exact: true }).click();
+  expect((await state(page)).scene.elements["lb"]!.style?.["origin"]).toBe("bottom");
+});

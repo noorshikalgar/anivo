@@ -216,3 +216,26 @@ test("Insert, Message types a message and sends it along the arrows", async ({ p
   expect(send!.actions.map((a) => a.motion?.along)).toEqual(["c-user-lb", "c-lb-2"]);
   expect(send!.caption?.text).toContain("pod-2");
 });
+
+test("One by one: the selected elements come in one after the other, top to bottom", async ({ page }) => {
+  await page.getByRole("button", { name: "Add step" }).click();
+  await page.evaluate(() => (window as unknown as { __anivo: { getState(): { setSelection(ids: string[]): void } } }).__anivo.getState().setSelection(["pod-3", "pod-1", "pod-2"]));
+  // A selection shows the Element tab: go back to the Actions tab.
+  await page.evaluate(() => (window as unknown as { __anivo: { setState(p: unknown): void } }).__anivo.setState({ propTab: "actions" }));
+  await page.getByRole("group", { name: "Quick actions" }).getByRole("button", { name: "One by one" }).click();
+  const s = await state(page);
+  const a = s.scene.steps.find((x) => x.id === s.selectedStep)!.actions.at(-1) as unknown as { type: string; staggerMs: number; targets: string[] };
+  expect(a).toMatchObject({ type: "enter", staggerMs: 350, targets: ["pod-1", "pod-2", "pod-3"] });
+});
+
+test("Design and Animate modes", async ({ page }) => {
+  await page.getByRole("button", { name: /Traffic flows/ }).click();
+  await page.getByRole("button", { name: "Design", exact: true }).click();
+  let s = (await state(page)) as unknown as { selectedStep: string | null; timelineOpen: boolean };
+  expect(s.selectedStep).toBeNull();
+  expect(s.timelineOpen).toBe(false);
+  await page.getByRole("button", { name: "Animate", exact: true }).click();
+  s = (await state(page)) as unknown as typeof s;
+  expect(s.timelineOpen).toBe(true);
+  expect(s.selectedStep).not.toBeNull();
+});

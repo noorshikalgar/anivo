@@ -766,9 +766,15 @@ export function renderFrame(ctx: Ctx2D, scene: Scene, frame: FrameState, routes:
       drawConnector(dc, f, el);
     } else {
       const box = frameBox(f);
-      ctx.translate(box.cx, box.cy);
+      // Scale and rotation turn around the origin (docs/19 R11); the shape draws around its center.
+      const o = ORIGINS[el.style.origin ?? "center"] ?? [0.5, 0.5];
+      // The box of frameBox is scaled already: the origin uses the full size.
+      const ox = box.cx + (o[0] - 0.5) * f.width;
+      const oy = box.cy + (o[1] - 0.5) * f.height;
+      ctx.translate(ox, oy);
       if (f.rotation) ctx.rotate((f.rotation * Math.PI) / 180);
       if (f.scale !== 1) ctx.scale(f.scale, f.scale);
+      if (ox !== box.cx || oy !== box.cy) ctx.translate(box.cx - ox, box.cy - oy);
       applyWipeClip(ctx, f, localBox(f));
       if (OUTLINE_KINDS.has(el.type)) drawShape(dc, f, el);
       else if (el.type === "icon") drawIcon(dc, f, el);
@@ -787,6 +793,18 @@ export function renderFrame(ctx: Ctx2D, scene: Scene, frame: FrameState, routes:
   ctx.restore();
   if (frame.transition) drawTransition(dc, frame.transition, opts);
 }
+
+const ORIGINS: Record<string, [number, number]> = {
+  center: [0.5, 0.5],
+  "top-left": [0, 0],
+  top: [0.5, 0],
+  "top-right": [1, 0],
+  left: [0, 0.5],
+  right: [1, 0.5],
+  "bottom-left": [0, 1],
+  bottom: [0.5, 1],
+  "bottom-right": [1, 1],
+};
 
 type Rect4 = { x: number; y: number; width: number; height: number };
 

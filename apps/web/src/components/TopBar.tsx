@@ -4,6 +4,8 @@
 import { Menu, MenuDivider, MenuItem, MenuList, MenuPopover, MenuTrigger, Tooltip, makeStyles, mergeClasses } from "@fluentui/react-components";
 import {
   ArrowExportUp16Regular,
+  DesignIdeas16Regular,
+  GanttChart16Regular,
   ArrowRedo16Regular,
   ArrowUndo16Regular,
   Bot16Regular,
@@ -110,6 +112,20 @@ export function TopBar() {
   useEditor((st) => st.version);
   const { bus, undo, redo, fitToVideo } = useEditor.getState();
   const [recent, setRecent] = useState<Awaited<ReturnType<typeof recentFiles>>>([]);
+  // Design / Animate (docs/19 R10): two modes, like the workspaces of a video or 3D tool.
+  const animate = timelineOpen;
+  const setDesign = () => {
+    const st = useEditor.getState();
+    st.pause();
+    st.selectStep(null);
+    useEditor.setState({ timelineOpen: false, autoKey: false });
+  };
+  const setAnimate = () => {
+    const st = useEditor.getState();
+    useEditor.setState({ timelineOpen: true });
+    if (st.selectedStep === null && st.scene.steps.length > 0) st.selectStep(st.scene.steps[0]!.id);
+    if (st.scene.steps.length === 0) notify("Add a step (N) to animate the elements", "info");
+  };
   const tool = (label: string, icon: React.ReactElement, onClick: () => void, opts: { text?: string; primary?: boolean; pressed?: boolean; disabled?: boolean } = {}) => (
     <Tooltip content={label} relationship="description" withArrow={false}>
       <MenuButtonSmall className={mergeClasses(s.menu, opts.primary && s.primary)} aria-label={opts.text ?? label} aria-pressed={opts.pressed} disabled={opts.disabled} icon={icon} iconOnly={!opts.text || compact} onClick={onClick}>
@@ -265,6 +281,12 @@ export function TopBar() {
         {fileName ? ` · ${fileName}` : ""}
         {dirty ? " •" : ""}
       </div>
+      {!phone && (
+        <div className={s.group} role="group" aria-label="Mode">
+          {tool("Design: lay out the elements. The base state shows, and a change sets the element in all steps.", <DesignIdeas16Regular />, setDesign, { text: "Design", pressed: !animate })}
+          {tool("Animate: the timeline opens. Steps, actions, and keys (K records).", <GanttChart16Regular />, setAnimate, { text: "Animate", pressed: animate })}
+        </div>
+      )}
       <div className={s.group}>
         {!phone && tool("Undo (Ctrl+Z)", <ArrowUndo16Regular />, undo, { disabled: !bus.canUndo })}
         {!phone && tool("Redo (Ctrl+Shift+Z)", <ArrowRedo16Regular />, redo, { disabled: !bus.canRedo })}
