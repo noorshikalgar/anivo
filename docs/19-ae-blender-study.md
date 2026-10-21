@@ -1,6 +1,6 @@
 # 19 — Study: what to take from After Effects and Blender
 
-Status: study and build list, 2026-10-22. Owner request: study After Effects and Blender, compare with Anivo, and make a list of things to take as a reference (not copies). Then build the list, one item at a time.
+Status: study and build list, 2026-10-22. All items R1–R13 are built (PRs #117–#120). Owner request: study After Effects and Blender, compare with Anivo, and make a list of things to take as a reference (not copies). Then build the list, one item at a time.
 
 ## 1. Where Anivo is now
 
@@ -34,18 +34,18 @@ What we do not take: expressions, drivers, node editors, the NLA editor, 3D. The
 
 | # | Item | Size |
 |---|---|---|
-| R1 | `I` insert key, `Alt+I` delete keys at the playhead | S |
-| R2 | Timeline keys: frame step, Home/End, previous and next key; snapping when you drag keys and blocks | M |
-| R3 | Easy Ease shortcuts (F9 family) and a curve editor for one key or block | M |
-| R4 | Timeline filter: only animated, only selected | S |
-| R5 | Onion skin for the selected element | M |
-| R6 | Follow: an element follows another element's motion | M |
-| R7 | Loop region on the ruler (preview loop; export range) | M |
-| R8 | Box select keys; Alt + drag to stretch their times | M |
-| R9 | Sequence: the selected elements enter one after the other | S |
-| R10 | Design / Animate workspace switch | S |
-| R11 | Origin (anchor) for scale and turn | M |
-| R12 | Per-word text reveal and word highlight | M |
-| R13 | Motion blur for fast moves (export) | L |
+| R1 | Done. `I` insert key, `Alt+I` delete keys at the playhead | S |
+| R2 | Done. Timeline keys: frame step, Home/End, previous and next key; snapping when you drag keys and blocks | M |
+| R3 | Done. Easy Ease shortcuts (F9 family) and a curve editor for one key or block | M |
+| R4 | Done. Timeline filter: only animated, only selected | S |
+| R5 | Done. Onion skin for the selected element | M |
+| R6 | Done. Follow: an element follows another element's motion | M |
+| R7 | Done. Loop region on the ruler (preview loop; export range) | M |
+| R8 | Done. Box select keys; Alt + drag to stretch their times | M |
+| R9 | Done. Sequence: the selected elements enter one after the other | S |
+| R10 | Done. Design / Animate workspace switch | S |
+| R11 | Done. Origin (anchor) for scale and turn | M |
+| R12 | Done. Per-word text reveal and word highlight | M |
+| R13 | Done. Motion blur for fast moves (export) | L |
 
 After this list: the installable desktop app (a PWA, like Figma): portable and light.
