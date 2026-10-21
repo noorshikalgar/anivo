@@ -54,7 +54,7 @@ export function KeyLabel({ element, group, values, children }: { element: string
     const ops = here ? deleteKeyframeOps(st.scene, stepId, here.actionId) : setKeyframeOps(st.scene, stepId, element, set, t);
     if (ops.length === 0) return;
     st.apply({ label: here ? "Delete keyframe" : "Add keyframe", ops });
-    useEditor.setState({ timelineOpen: true, timelineView: "keys" });
+    useEditor.setState({ timelineOpen: true });
   };
   return (
     <span className={s.label}>
