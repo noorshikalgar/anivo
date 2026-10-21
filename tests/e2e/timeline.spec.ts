@@ -147,3 +147,25 @@ test("track filter: only animated, only selected", async ({ page }) => {
   await page.getByRole("button", { name: "Selected", exact: true }).click();
   await expect(timeline.getByRole("group", { name: /^Track / })).toHaveCount(1);
 });
+
+test("Alt + drag on the ruler sets a loop region; play goes round in it", async ({ page }) => {
+  const ruler = page.getByLabel("Time ruler");
+  const box = (await ruler.boundingBox())!;
+  const y = box.y + box.height * 0.75;
+  await page.keyboard.down("Alt");
+  await page.mouse.move(box.x + box.width * 0.2, y);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.3, y, { steps: 4 });
+  await page.mouse.up();
+  await page.keyboard.up("Alt");
+  const loop = (await state(page)) as unknown as { loop: { fromMs: number; toMs: number } | null };
+  expect(loop.loop).not.toBeNull();
+  const { fromMs, toMs } = loop.loop!;
+  await page.getByRole("button", { name: /^Play/ }).click();
+  await page.waitForTimeout((toMs - fromMs) * 1.5);
+  const p = (await st(page)).playhead;
+  expect(p).toBeGreaterThanOrEqual(fromMs - 1);
+  expect(p).toBeLessThan(toMs + 1);
+  await page.getByRole("button", { name: "Clear the loop region" }).click();
+  expect(((await state(page)) as unknown as { loop: unknown }).loop).toBeNull();
+});

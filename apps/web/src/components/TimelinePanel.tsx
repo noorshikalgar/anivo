@@ -100,6 +100,7 @@ const useStyles = makeStyles({
   diamondOn: { backgroundColor: "#fff" },
   tween: { position: "absolute", top: "11px", height: "2px", backgroundColor: "#f5b84a", opacity: 0.5, pointerEvents: "none" },
   boundary: { position: "absolute", top: 0, bottom: 0, width: "1px", backgroundColor: "var(--ui-outline)", opacity: 0.5, pointerEvents: "none" },
+  loopBand: { position: "absolute", top: "18px", bottom: 0, backgroundColor: "rgba(59, 130, 246, 0.10)", borderLeft: "2px solid #3b82f6", borderRight: "2px solid #3b82f6", pointerEvents: "none", zIndex: 1 },
   playhead: { position: "absolute", top: 0, bottom: 0, width: "2px", marginLeft: "-1px", backgroundColor: "#e5484d", pointerEvents: "none", zIndex: 2 },
   empty: { padding: "12px", color: "var(--ui-muted)" },
 });
@@ -155,6 +156,7 @@ export function TimelinePanel() {
   const selection = useEditor((s) => s.selection);
   const activeAction = useEditor((s) => s.activeAction);
   const autoKey = useEditor((s) => s.autoKey);
+  const loop = useEditor((s) => s.loop);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [viewW, setViewW] = useState(800);
   const [zoom, setZoom] = useState(1);
@@ -225,6 +227,25 @@ export function TimelinePanel() {
   const startRulerDrag = (e: React.PointerEvent) => {
     const el = e.currentTarget as HTMLElement;
     el.setPointerCapture(e.pointerId);
+    if (e.altKey) {
+      // Alt + drag sets the loop region (docs/19 R7).
+      const r = scrollRef.current!.getBoundingClientRect();
+      const timeAt = (cx: number) => Math.max(0, Math.min(span, Math.round((cx - r.left - LABEL_W + scrollRef.current!.scrollLeft) / pxPerMs)));
+      const a = timeAt(e.clientX);
+      const move = (ev: PointerEvent) => {
+        const b = timeAt(ev.clientX);
+        useEditor.setState({ loop: { fromMs: Math.min(a, b), toMs: Math.max(a, b) } });
+      };
+      const up = (ev: PointerEvent) => {
+        el.removeEventListener("pointermove", move);
+        el.removeEventListener("pointerup", up);
+        const b = timeAt(ev.clientX);
+        useEditor.setState({ loop: Math.abs(b - a) < 100 ? null : { fromMs: Math.min(a, b), toMs: Math.max(a, b) } });
+      };
+      el.addEventListener("pointermove", move);
+      el.addEventListener("pointerup", up);
+      return;
+    }
     // The tracks get focus, so the time keys (arrows, Home, End) work next.
     scrollRef.current?.focus({ preventScroll: true });
     seek(e.clientX);
@@ -600,6 +621,17 @@ export function TimelinePanel() {
           ◆▶
         </button>
         <span>{formatTime(playhead)}</span>
+        {loop ? (
+          <Tooltip content="Play goes round in the loop region. Alt + drag on the ruler to change it." relationship="description">
+            <button type="button" className={mergeClasses(styles.btn, styles.btnOn)} aria-label="Clear the loop region" onClick={() => useEditor.setState({ loop: null })}>
+              ⟳ {formatTime(loop.fromMs)}–{formatTime(loop.toMs)} ✕
+            </button>
+          </Tooltip>
+        ) : (
+          <Tooltip content="Alt + drag on the ruler to set a loop region" relationship="description">
+            <span style={{ color: "var(--ui-muted)" }}>⟳</span>
+          </Tooltip>
+        )}
         {active && activeAct ? (
           <>
             <span style={{ color: "var(--ui-muted)" }}>
@@ -756,6 +788,7 @@ export function TimelinePanel() {
           {timeline.steps.map((ts) => (
             <span key={ts.id} className={styles.boundary} style={{ left: LABEL_W + px(ts.startMs) }} />
           ))}
+          {loop && <span className={styles.loopBand} style={{ left: LABEL_W + px(loop.fromMs), width: px(loop.toMs - loop.fromMs) }} aria-hidden />}
           <span className={styles.playhead} style={{ left: LABEL_W + px(playhead) }} />
         </div>
       </div>

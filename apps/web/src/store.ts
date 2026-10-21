@@ -130,6 +130,8 @@ interface EditorState {
   zoomAt(factor: number, cx: number, cy: number): void;
   setPlayhead(ms: number): void;
   play(): void;
+  /** Loop region (docs/19 R7): while it is set, play goes round in it. */
+  loop: { fromMs: number; toMs: number } | null;
   pause(): void;
   selectStep(id: string | null): void;
   setSelection(ids: string[]): void;
@@ -283,6 +285,7 @@ export const useEditor = create<EditorState>((set, get) => {
     activeAction: null,
     pinStepEnd: false,
     autoKey: false,
+    loop: null,
     arrowEnds: readArrowEnds(),
     showGhosts: true,
     maximized: false,
@@ -340,14 +343,18 @@ export const useEditor = create<EditorState>((set, get) => {
       if (get().playing) return;
       const total = get().timeline.totalMs;
       if (total <= 0) return;
-      if (get().playhead >= total) set({ playhead: 0 });
+      const loop = get().loop;
+      if (loop && (get().playhead < loop.fromMs || get().playhead >= loop.toMs)) set({ playhead: loop.fromMs });
+      else if (!loop && get().playhead >= total) set({ playhead: 0 });
       set({ playing: true, pinStepEnd: false });
       let last = performance.now();
       const tick = (now: number) => {
         if (!get().playing) return;
-        const next = get().playhead + (now - last);
+        let next = get().playhead + (now - last);
         last = now;
-        if (next >= get().timeline.totalMs) {
+        const lp = get().loop;
+        if (lp && next >= lp.toMs) next = lp.fromMs + ((next - lp.fromMs) % Math.max(1, lp.toMs - lp.fromMs));
+        if (!lp && next >= get().timeline.totalMs) {
           set({ playhead: get().timeline.totalMs, playing: false });
           return;
         }
