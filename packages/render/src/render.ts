@@ -812,7 +812,7 @@ const overlap = (a: Rect4, b: Rect4) => Math.max(0, Math.min(a.x + a.width, b.x 
  * other elements, inside the frame (docs/17 P4). Pure: the same frame gives
  * the same place.
  */
-export function placeCaption(box: { width: number; height: number }, cap: { side: string; anchor?: Rect4; anchorId?: string }, cam: Rect4, others: Rect4[]): { x: number; y: number } {
+export function placeCaption(box: { width: number; height: number }, cap: { side: string; anchor?: Rect4; anchorId?: string }, cam: Rect4, others: (Rect4 & { text?: boolean })[]): { x: number; y: number } {
   const margin = Math.round(cam.height * 0.04);
   const clamp = (p: { x: number; y: number }) => ({
     x: Math.min(Math.max(p.x, cam.x + margin), cam.x + cam.width - margin - box.width),
@@ -824,29 +824,37 @@ export function placeCaption(box: { width: number; height: number }, cap: { side
     return clamp({ x, y: cap.side === "bottom" ? cam.y + cam.height - margin - box.height : cam.y + margin });
   }
   const gap = Math.round(cam.height * 0.025);
-  const cx = a.x + a.width / 2 - box.width / 2;
-  const cy = a.y + a.height / 2 - box.height / 2;
-  const sides: Record<string, { x: number; y: number }> = {
-    below: { x: cx, y: a.y + a.height + gap },
-    above: { x: cx, y: a.y - gap - box.height },
-    right: { x: a.x + a.width + gap, y: cy },
-    left: { x: a.x - gap - box.width, y: cy },
+  const sidesOf = (r: Rect4): Record<string, { x: number; y: number }> => {
+    const cx = r.x + r.width / 2 - box.width / 2;
+    const cy = r.y + r.height / 2 - box.height / 2;
+    return {
+      below: { x: cx, y: r.y + r.height + gap },
+      above: { x: cx, y: r.y - gap - box.height },
+      right: { x: r.x + r.width + gap, y: cy },
+      left: { x: r.x - gap - box.width, y: cy },
+    };
   };
-  if (cap.side !== "auto") return clamp(sides[cap.side]!);
-  let best = clamp(sides["below"]!);
+  if (cap.side !== "auto") return clamp(sidesOf(a)[cap.side]!);
+  const inside = (o: Rect4, r: Rect4) => o.x <= r.x + 1 && o.y <= r.y + 1 && o.x + o.width >= r.x + r.width - 1 && o.y + o.height >= r.y + r.height - 1;
+  // The anchor first, then the boxes that contain it (for example a field in a card): the caption can go next to the card.
+  const around = [a, ...others.filter((o) => inside(o, a) && (o.width > a.width + 2 || o.height > a.height + 2)).sort((x, y) => x.width * x.height - y.width * y.height)];
+  let best = clamp(sidesOf(a)["below"]!);
   let bestScore = Infinity;
-  for (const name of ["below", "above", "right", "left"]) {
-    const want = sides[name]!;
-    const p = clamp(want);
-    const r = { ...p, ...box };
-    // Cover less of the other elements and of the anchor; stay near the wanted place.
-    let score = overlap(r, a) * 4 + Math.hypot(p.x - want.x, p.y - want.y) * 20;
-    for (const o of others) score += overlap(r, o);
-    if (score < bestScore - 1) {
-      bestScore = score;
-      best = p;
+  around.forEach((r, level) => {
+    const sides = sidesOf(r);
+    for (const name of ["below", "above", "right", "left"]) {
+      const want = sides[name]!;
+      const p = clamp(want);
+      const c = { ...p, ...box };
+      // Cover less of the anchor and the other elements (text counts 3 times); stay near the wanted place and near the anchor.
+      let score = overlap(c, a) * 4 + Math.hypot(p.x - want.x, p.y - want.y) * 20 + level * 2000;
+      for (const o of others) score += overlap(c, o) * (o.text ? 3 : 1);
+      if (score < bestScore - 1) {
+        bestScore = score;
+        best = p;
+      }
     }
-  }
+  });
   return best;
 }
 
@@ -864,7 +872,7 @@ function drawStepCaption(dc: DrawContext, frame: FrameState, cap: NonNullable<Fr
   const lines = wrapText(ctx, cap.text, maxW - padX * 2);
   const textW = Math.max(...lines.map((l) => ctx.measureText(l).width));
   const box = { width: Math.ceil(textW + padX * 2 + bar), height: lines.length * lineH + padY * 2 };
-  const others = frame.elements.filter((e) => e.visible && e.opacity > 0.05 && e.type !== "group" && e.type !== "connector" && e.id !== cap.anchorId).map((e) => ({ x: e.x, y: e.y, width: e.width, height: e.height }));
+  const others = frame.elements.filter((e) => e.visible && e.opacity > 0.05 && e.type !== "group" && e.type !== "connector" && e.id !== cap.anchorId).map((e) => ({ x: e.x, y: e.y, width: e.width, height: e.height, text: e.type === "text" || !!e.label }));
   const p = placeCaption(box, cap, cam, others);
   ctx.save();
   ctx.globalAlpha = cap.opacity;

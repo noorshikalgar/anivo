@@ -232,8 +232,12 @@ export function lintScene(scene: Scene): LintResult[] {
         const textColor = resolveColor(theme, f.textColor, "textColor", el.type);
         let bg = resolveColor(theme, f.fill, "fill", el.type);
         if (bg.a < 0.5 || el.type === "text" || el.type === "icon" || el.type === "connector") bg = resolveColor(theme, scene.settings.background.color ?? "background", "fill", "rectangle");
-        if (contrast(textColor, bg) < 4.5) {
-          add({ code: "low-contrast", level: "warning", ids: [f.id], ...(stepId ? { step: stepId } : {}), message: `The text of '${f.id}' has low contrast${where} (${contrast(textColor, bg).toFixed(1)}:1).`, hint: "Use a text color with a contrast of at least 4.5:1, for example 'text' on 'surface'." });
+        // Large text (WCAG): 40 px, or 32 px bold, at 1080p needs 3:1.
+        const px = fontSize * scale1080;
+        const bold = Number(el.style.fontWeight ?? 400) >= 700;
+        const need = px >= 40 || (bold && px >= 32) ? 3 : 4.5;
+        if (contrast(textColor, bg) < need) {
+          add({ code: "low-contrast", level: "warning", ids: [f.id], ...(stepId ? { step: stepId } : {}), message: `The text of '${f.id}' has low contrast${where} (${contrast(textColor, bg).toFixed(1)}:1).`, hint: `Use a text color with a contrast of at least ${need}:1, for example 'text' on 'surface'.` });
         }
       }
       // dangling connector
