@@ -35,6 +35,7 @@ const SHORTCUTS: [string, string][] = [
   ["Timeline: zoom", "Ctrl+wheel"],
   ["Timeline: one frame / ten frames / start / end / previous or next key", "← → / Shift+← → / Home / End / ↑ ↓"],
   ["Timeline: drag without snapping", "Shift+drag"],
+  ["Easing of the selected keys: easy ease / slow end / slow start", "F9 / Shift+F9 / Ctrl+Shift+F9"],
   ["Timeline: select many keys / copy / paste keys", "Shift+click / Ctrl+C / Ctrl+V"],
   ["Pan / Zoom", "Space+drag / Ctrl+wheel"],
   ["Fit video to screen", "Shift+1"],

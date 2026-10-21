@@ -4,10 +4,10 @@
  * screen), its action blocks, and its keys. Unfold a row to see a row for
  * each keyed property. Record (K) makes keys at the playhead.
  */
-import { Tooltip, makeStyles, mergeClasses } from "@fluentui/react-components";
+import { Popover, PopoverSurface, PopoverTrigger, Tooltip, makeStyles, mergeClasses } from "@fluentui/react-components";
 import { easingFn, stepIndexAt } from "@anivo/engine";
 import { type Keyframe, type OperationInput, deleteKeyframeOps, keyframesIn, moveKeyframeOps, setKeyframeOps } from "@anivo/ops";
-import { type Action, EasingName, type Scene } from "@anivo/schema";
+import { type Action, type Easing, EasingName, type Scene } from "@anivo/schema";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { updateAction } from "../commands.js";
 import { layerSpans } from "../layers.js";
@@ -15,6 +15,7 @@ import { setAreas, useEditor } from "../store.js";
 import { formatTime } from "./PlaybackBar.js";
 import { describe } from "./StepInspector.js";
 import { actionIcon, elementIcon } from "./typeIcons.js";
+import { CurveEditor } from "./CurveEditor.js";
 import { Splitter } from "./ui.js";
 
 const LABEL_W = 200;
@@ -128,14 +129,14 @@ interface GlobalKey extends Keyframe {
 type Drag = { kind: "move" | "end" | "key"; key: string; dms: number };
 
 /** A small preview of an easing curve: time to the right, value up. */
-function EaseCurve({ name }: { name: string }) {
-  const fn = easingFn(name as never);
+function EaseCurve({ value }: { value: Easing }) {
+  const fn = easingFn(value);
   const pts = Array.from({ length: 25 }, (_, i) => {
     const t = i / 24;
     return `${(2 + t * 40).toFixed(1)},${(18 - fn(t) * 14).toFixed(1)}`;
   }).join(" ");
   return (
-    <svg width="44" height="20" viewBox="0 0 44 20" aria-label={`Easing curve: ${name}`} role="img">
+    <svg width="44" height="20" viewBox="0 0 44 20" aria-hidden>
       <line x1="2" y1="18" x2="42" y2="18" stroke="var(--ui-outline)" />
       <polyline points={pts} fill="none" stroke="#f5b84a" strokeWidth="1.6" />
     </svg>
@@ -389,8 +390,7 @@ export function TimelinePanel() {
   };
 
   /** Apply a change to each selected key, as one history entry. */
-  const eachKey = (ids: string[], label: string, make: (sc: Scene, k: Keyframe) => OperationInput[]) => {
-    const mergeKey = `keys/${label}/${Date.now()}`;
+  const eachKey = (ids: string[], label: string, make: (sc: Scene, k: Keyframe) => OperationInput[], mergeKey = `keys/${label}/${Date.now()}`) => {
     for (const id of ids) {
       const st = useEditor.getState();
       const k = st.scene.steps.flatMap((x) => keyframesIn(st.scene, x.id)).find((x) => x.actionId === id);
@@ -472,7 +472,15 @@ export function TimelinePanel() {
   allKeysRef.current = allKeys;
   const active = allKeys.find((k) => k.actionId === activeKey);
   const activeAct = active ? scene.steps.find((s) => s.id === active.stepId)?.actions.find((a) => a.id === active.actionId) : undefined;
-  const easing = activeAct && "easing" in activeAct && typeof activeAct.easing === "string" ? activeAct.easing : "ease-in-out";
+  const easingVal: Easing = (activeAct && "easing" in activeAct && activeAct.easing) || "ease-in-out";
+  const easing = typeof easingVal === "string" ? easingVal : "custom";
+  const curveDrag = useRef<string | null>(null);
+  const setKeysEasing = (v: Easing, done = true) => {
+    // One history entry for a whole handle drag.
+    curveDrag.current ??= `curve/${Date.now()}`;
+    eachKey(selKeys, "Change easing", (_sc, x) => [{ op: "action.update", step: x.stepId, id: x.actionId, set: { easing: v } }], curveDrag.current);
+    if (done) curveDrag.current = null;
+  };
   const keyTimes = useMemo(() => {
     const own = selection.length > 0 ? allKeys.filter((k) => selection.includes(k.element)) : allKeys;
     return [...new Set(own.map((k) => k.atMs))].sort((a, b) => a - b);
@@ -511,6 +519,18 @@ export function TimelinePanel() {
 
   /** Ctrl or Cmd + C copies the selected keys; Ctrl or Cmd + V pastes them on the selected element, from the playhead. */
   const onKeysClipboard = (e: React.KeyboardEvent) => {
+    // F9: easy ease; Shift+F9: slow end (into the key); Ctrl+Shift+F9: slow start. For the selected keys, or the active block.
+    if (e.key === "F9") {
+      const v: Easing = e.shiftKey && (e.ctrlKey || e.metaKey) ? "ease-in" : e.shiftKey ? "ease-out" : "ease-in-out";
+      e.preventDefault();
+      e.stopPropagation();
+      if (selKeys.length > 0) setKeysEasing(v);
+      else {
+        const st = useEditor.getState();
+        if (st.selectedStep && st.activeAction) updateAction(st.selectedStep, st.activeAction, { easing: v }, "Change easing");
+      }
+      return;
+    }
     const mod = e.ctrlKey || e.metaKey;
     if (!mod) return;
     const k = e.key.toLowerCase();
@@ -580,10 +600,24 @@ export function TimelinePanel() {
             <span style={{ color: "var(--ui-muted)" }}>
               · {selKeys.length > 1 ? `${selKeys.length} keys` : `${active.element} · ${GROUP_NAMES[active.group] ?? active.group} · ${formatTime(active.atMs)}`}
             </span>
-            <EaseCurve name={easing} />
+            <Popover positioning="above-start" withArrow>
+              <PopoverTrigger disableButtonEnhancement>
+                <button type="button" className={styles.btn} aria-label="Edit the easing curve" style={{ padding: 0, display: "flex" }}>
+                  <EaseCurve value={easingVal} />
+                </button>
+              </PopoverTrigger>
+              <PopoverSurface onPointerDown={(e) => e.stopPropagation()} style={{ backgroundColor: "var(--ui-menu)", color: "var(--ui-text)", border: "1px solid var(--ui-outline)" }}>
+                <CurveEditor value={easingVal} onChange={setKeysEasing} />
+              </PopoverSurface>
+            </Popover>
             <label style={{ display: "flex", gap: "4px", alignItems: "center" }}>
               Easing
-              <select className={styles.select} aria-label="Easing of the selected keys" value={easing} onChange={(e) => { const v = e.target.value; eachKey(selKeys, "Change easing", (_sc, x) => [{ op: "action.update", step: x.stepId, id: x.actionId, set: { easing: v } }]); }}>
+              <select className={styles.select} aria-label="Easing of the selected keys" value={easing} onChange={(e) => setKeysEasing(e.target.value as Easing)}>
+                {easing === "custom" && (
+                  <option value="custom" disabled>
+                    custom curve
+                  </option>
+                )}
                 {EasingName.options.map((n) => (
                   <option key={n} value={n}>
                     {n}
