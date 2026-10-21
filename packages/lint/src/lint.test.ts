@@ -55,6 +55,14 @@ describe("lintScene", () => {
     expect(codes(s)).toEqual(expect.arrayContaining(["low-contrast", "tiny-text"]));
   });
 
+  it("large text needs 3:1 contrast, normal text 4.5:1", () => {
+    // success on white is about 3.9:1 in slate-light.
+    const big = script(`scene theme=slate-light\nbox a "OK" at=100,100 size=300x120 fill=surface color=success font-size=44 weight=700\nstep "S"\n  enter a fade\n`);
+    expect(codes(big)).not.toContain("low-contrast");
+    const small = script(`scene theme=slate-light\nbox a "OK" at=100,100 size=300x120 fill=surface color=success font-size=30\nstep "S"\n  enter a fade\n`);
+    expect(codes(small)).toContain("low-contrast");
+  });
+
   it("measures text size against the short side of a portrait video", () => {
     const s = script(`scene size=1080x1920\nbox a "A" at=100,100 size=300x100 font-size=32\nstep "S"\n  enter a fade\n`);
     expect(codes(s)).not.toContain("tiny-text");

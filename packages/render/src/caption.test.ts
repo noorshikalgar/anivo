@@ -24,3 +24,18 @@ describe("caption place", () => {
     expect(top).toEqual({ x: 760, y: Math.round(1080 * 0.04) });
   });
 });
+
+describe("caption place around a card", () => {
+  it("a field inside a card: the caption goes next to the card, not over its text", () => {
+    const card = { x: 100, y: 300, width: 480, height: 420 };
+    const title = { x: 130, y: 320, width: 420, height: 64, text: true };
+    const field = { x: 130, y: 410, width: 420, height: 60, text: true };
+    const hash = { x: 130, y: 500, width: 420, height: 80, text: true };
+    const prev = { x: 130, y: 610, width: 420, height: 80, text: true };
+    const next = { x: 700, y: 300, width: 480, height: 420 };
+    const p = placeCaption({ width: 420, height: 90 }, { side: "auto", anchor: field, anchorId: "f" }, cam, [card, title, hash, prev, next]);
+    const r = { ...p, width: 420, height: 90 };
+    const hits = (o: { x: number; y: number; width: number; height: number }) => r.x < o.x + o.width && r.x + r.width > o.x && r.y < o.y + o.height && r.y + r.height > o.y;
+    expect([title, hash, prev].some(hits)).toBe(false);
+  });
+});
