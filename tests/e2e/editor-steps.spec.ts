@@ -201,3 +201,18 @@ test("a step caption: type it in the Actions tab, and the step holds for reading
   expect(ts.holdEndMs - ts.startMs).toBeGreaterThan(ts0.holdEndMs - ts0.startMs);
   expect(ts.holdEndMs - ts.startMs).toBeGreaterThan(6000);
 });
+
+test("Insert, Message types a message and sends it along the arrows", async ({ page }) => {
+  await page.evaluate(() => (window as unknown as { __anivo: { getState(): { setSelection(ids: string[]): void } } }).__anivo.getState().setSelection(["user", "pod-2"]));
+  await page.getByRole("button", { name: "Insert", exact: true }).click();
+  await page.getByRole("menuitem", { name: /Message/ }).click();
+  const dialog = page.getByRole("dialog", { name: "Message build" });
+  await expect(dialog.getByText("user → lb → pod-2")).toBeVisible();
+  await dialog.getByRole("textbox", { name: "Message text" }).fill("GET /home");
+  await dialog.getByRole("button", { name: "Make the steps" }).click();
+  const s = (await state(page)) as unknown as { scene: { steps: { title: string; caption?: { text: string }; actions: { type: string; motion?: { along?: string } }[] }[] } };
+  const [typing, send] = s.scene.steps.slice(-2);
+  expect(typing!.actions[0]).toMatchObject({ type: "enter" });
+  expect(send!.actions.map((a) => a.motion?.along)).toEqual(["c-user-lb", "c-lb-2"]);
+  expect(send!.caption?.text).toContain("pod-2");
+});

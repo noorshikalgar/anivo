@@ -217,6 +217,7 @@ export function TopBar() {
       {!phone && (
         <BarMenu label="Insert">
           <MenuItem onClick={() => useEditor.setState({ buildOpen: true })}>Bullet list build…</MenuItem>
+          <MenuItem onClick={() => useEditor.setState({ messageOpen: true })}>Message (type, then send)…</MenuItem>
           <MenuDivider />
           <MenuItem onClick={() => insertTable()}>Table</MenuItem>
           <MenuItem onClick={() => void withErrors(pickImage)}>Image…</MenuItem>

@@ -65,3 +65,98 @@ export function bulletListBuild(scene: Scene, o: BulletBuildOptions): OperationI
   });
   return ops;
 }
+
+/** One hop of a message path: a connector, and true to go from its end to its start. */
+export interface Hop {
+  arrow: string;
+  reverse: boolean;
+}
+
+/** The shortest path of arrows from one element to another (either arrow direction), or undefined. */
+export function findArrowPath(scene: Scene, from: string, to: string): Hop[] | undefined {
+  const edges: { a: string; b: string; id: string }[] = [];
+  for (const el of Object.values(scene.elements)) {
+    if (el.type !== "connector" || el.start.kind !== "bound" || el.end.kind !== "bound") continue;
+    edges.push({ a: el.start.elementId, b: el.end.elementId, id: el.id });
+  }
+  const prev = new Map<string, { node: string; hop: Hop }>();
+  const seen = new Set([from]);
+  const queue = [from];
+  while (queue.length > 0) {
+    const n = queue.shift()!;
+    if (n === to) break;
+    for (const e of edges) {
+      const next = e.a === n ? e.b : e.b === n ? e.a : undefined;
+      if (next === undefined || seen.has(next)) continue;
+      seen.add(next);
+      prev.set(next, { node: n, hop: { arrow: e.id, reverse: e.b === n } });
+      queue.push(next);
+    }
+  }
+  if (!seen.has(to) || from === to) return undefined;
+  const path: Hop[] = [];
+  for (let n = to; n !== from; n = prev.get(n)!.node) path.unshift(prev.get(n)!.hop);
+  return path;
+}
+
+export interface MessageBuildOptions {
+  from: string;
+  to: string;
+  text: string;
+  /** The arrows to go along. Default: the shortest path of arrows from `from` to `to`. */
+  path?: Hop[];
+  /** Captions of the two steps. Empty: no caption. */
+  typeCaption?: string;
+  sendCaption?: string;
+  /** Time on each arrow, in ms. */
+  hopMs?: number;
+  /** The bubble fill (a theme token or a color). */
+  fill?: string;
+}
+
+/**
+ * Message (docs/17 P3): a bubble at the sender. Step 1: the text types in the
+ * bubble. Step 2: the bubble moves along each arrow of the path to the
+ * receiver, slow enough to follow.
+ */
+export function messageBuild(scene: Scene, o: MessageBuildOptions): { ops: OperationInput[]; id: string } | { error: string } {
+  const path = o.path ?? findArrowPath(scene, o.from, o.to);
+  if (!path || path.length === 0) return { error: `No arrows go from '${o.from}' to '${o.to}'. Draw an arrow between them first.` };
+  const from = scene.elements[o.from];
+  if (!from) return { error: `Element '${o.from}' does not exist.` };
+  const { height: H, width: W } = scene.settings.video;
+  const size = Math.round(Math.min(W, H) * 0.026);
+  const lines = o.text.split("\n");
+  const w = Math.min(Math.round(W * 0.3), Math.max(120, Math.round(Math.max(...lines.map((l) => l.length)) * size * 0.56 + size * 1.6)));
+  const h = Math.round(lines.length * size * 1.35 + size * 1.1);
+  // Above the sender. The send glides from here onto the arrow.
+  const start = { x: from.x + from.width / 2, y: Math.max(h / 2 + 20, from.y - h / 2 - Math.round(size * 0.8)) };
+  const taken = new Set<string>();
+  const id = free(scene, "msg", taken);
+  const hop = o.hopMs ?? 1600;
+  const name = (eid: string) => {
+    const el = scene.elements[eid];
+    const t = el?.type === "text" ? el.content.text : el && "label" in el && el.label ? el.label.text : eid;
+    return (t || eid).split("\n")[0]!;
+  };
+  const ops: OperationInput[] = [
+    { op: "element.add", id, type: "rectangle", props: { label: { text: o.text }, x: Math.round(start.x - w / 2), y: Math.round(start.y - h / 2), width: w, height: h, style: { fill: o.fill ?? "accent-soft", stroke: "accent", cornerRadius: Math.round(h / 2.4), fontSize: size } } },
+  ];
+  const typeCaption = o.typeCaption ?? `${name(o.from)} types a message.`;
+  const sendCaption = o.sendCaption ?? `The message goes to ${name(o.to)}.`;
+  ops.push({
+    op: "step.add",
+    props: { title: `${name(o.from)} types`, holdMs: 400, ...(typeCaption ? { caption: { text: typeCaption, anchor: id } } : {}), actions: [{ type: "enter", effect: "typewriter", targets: [id], sound: "keys" }] },
+  });
+  ops.push({
+    op: "step.add",
+    props: {
+      title: `To ${name(o.to)}`,
+      holdMs: 500,
+      ...(sendCaption ? { caption: { text: sendCaption, anchor: id } } : {}),
+      // The points are set from the arrow routes when the steps exist (the operation bus syncs them).
+      actions: path.map((p, i) => ({ type: "motion", targets: [id], delayMs: i * (hop + 200), durationMs: hop, easing: "ease-in-out", sound: "whoosh", motion: { points: [{ x: 0, y: 0 }, { x: 0, y: 0 }], along: p.arrow, reverse: p.reverse } })),
+    },
+  });
+  return { ops, id };
+}

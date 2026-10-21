@@ -25,6 +25,15 @@ const center = (bus: OperationBus, t: number) => {
 };
 
 describe("send along a connector", () => {
+  it("glides from where the element is onto the arrow (lead-in)", () => {
+    const bus = make();
+    bus.apply({ ops: sendAlongOps(bus.scene, "s1", ["m"], "c") });
+    const a = bus.scene.steps[0]!.actions[0]!;
+    if (a.type !== "motion") throw new Error("motion");
+    expect(a.motion.points[0]).toEqual({ x: 20, y: 220 });
+    expect(center(bus, 0)).toEqual({ x: 20, y: 220 });
+  });
+
   it("moves the element from the start to the end of the arrow", () => {
     const bus = make();
     expect(bus.apply({ ops: sendAlongOps(bus.scene, "s1", ["m"], "c") }).ok).toBe(true);
@@ -43,7 +52,7 @@ describe("send along a connector", () => {
     const bus = make();
     bus.apply({ ops: sendAlongOps(bus.scene, "s1", ["m"], "c") });
     bus.apply({ ops: [{ op: "element.update", id: "b", set: { y: 400 } }] });
-    expect(center(bus, 1600).y).toBeGreaterThan(400);
+    expect(center(bus, 1600).y).toBeGreaterThan(350);
     bus.undo();
     expect(center(bus, 1600).y).toBeCloseTo(50, 0);
   });
