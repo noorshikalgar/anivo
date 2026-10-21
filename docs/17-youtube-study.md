@@ -34,9 +34,14 @@ Each item is one PR. Each item is a usable workflow in the editor, and an operat
 
 | # | Item | Fixes |
 |---|---|---|
-| P1 | No glow by default in the neon theme. Arrow type control: Line, →, ←, ↔ (one click). The arrow tool remembers the last type. | F4, F5 |
-| P2 | **Send along an arrow**: a motion action that moves an element along a connector route. Quick action "Send" in the Actions tab. Default 1.6 s, ease-in-out. | F3 |
-| P3 | **Message build**: Insert → Message. Choose the sender, the receiver, the arrow, and the text. It makes a bubble at the sender, a step that types the text, and a step that sends it along the arrow. | F2, F3 |
-| P4 | **Step caption**: each step can have a caption (one short line). It shows in one fixed place (top, near the diagram), it types in, and the next caption replaces it. Lint warns if the step is too short to read the caption. | F1, F2 |
-| P5 | **Layers view in the timeline**: one bar for each element, from its enter to its exit. Drag the ends to change the enter and exit time. Click a bar to select the element. | F6 |
-| P6 | New showcase video with the new tools: Alice, Bob, a server; plain network first, then encryption, one idea for each step. | All |
+| P1 | Done. No glow by default in the neon theme. Arrow type control: Line, →, ←, ↔ (one click). The arrow tool remembers the last type. | F4, F5 |
+| P2 | Done. **Send along an arrow**: a motion action that moves an element along a connector route. Quick action "Send" in the Actions tab. Default 1.6 s, ease-in-out. | F3 |
+| P3 | Done. **Message build**: Insert → Message. Choose the sender, the receiver, the arrow, and the text. It makes a bubble at the sender, a step that types the text, and a step that sends it along the arrow. | F2, F3 |
+| P4 | Done. **Step caption**: each step can have a caption (one short line). It shows in one fixed place (top, near the diagram), it types in, and the next caption replaces it. Lint warns if the step is too short to read the caption. | F1, F2 |
+| P5 | Done. **Layers view in the timeline**: one bar for each element, from its enter to its exit. Drag the ends to change the enter and exit time. Click a bar to select the element. | F6 |
+| P6 | Done (anivo-demo/gen_e2ee2.py, 30 steps). New showcase video with the new tools: Alice, Bob, a server; plain network first, then encryption, one idea for each step. | All |
+
+## 4. Done after the plan
+
+- Widgets for explainers: packet (header and body), stamp (ENCRYPTED, 200 OK), envelope, lock badge.
+- Soft colors in all themes: `purple-soft`, `teal-soft`.
