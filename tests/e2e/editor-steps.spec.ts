@@ -227,3 +227,15 @@ test("One by one: the selected elements come in one after the other, top to bott
   const a = s.scene.steps.find((x) => x.id === s.selectedStep)!.actions.at(-1) as unknown as { type: string; staggerMs: number; targets: string[] };
   expect(a).toMatchObject({ type: "enter", staggerMs: 350, targets: ["pod-1", "pod-2", "pod-3"] });
 });
+
+test("Design and Animate modes", async ({ page }) => {
+  await page.getByRole("button", { name: /Traffic flows/ }).click();
+  await page.getByRole("button", { name: "Design", exact: true }).click();
+  let s = (await state(page)) as unknown as { selectedStep: string | null; timelineOpen: boolean };
+  expect(s.selectedStep).toBeNull();
+  expect(s.timelineOpen).toBe(false);
+  await page.getByRole("button", { name: "Animate", exact: true }).click();
+  s = (await state(page)) as unknown as typeof s;
+  expect(s.timelineOpen).toBe(true);
+  expect(s.selectedStep).not.toBeNull();
+});
