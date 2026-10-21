@@ -3,9 +3,12 @@ import { alongPoints, staleAlong } from "@anivo/layout";
 import type { Scene } from "@anivo/schema";
 import type { OperationInput } from "./operations.js";
 
+/** The default time of a send along one arrow: slow enough to follow (owner feedback). */
+export const SEND_MS = 2400;
+
 export interface SendOptions {
   reverse?: boolean;
-  /** Default 1600 ms: slow enough to follow. */
+  /** Default SEND_MS. */
   durationMs?: number;
   delayMs?: number;
 }
@@ -18,7 +21,7 @@ export function sendAlongOps(scene: Scene, stepId: string, targets: string[], co
     {
       op: "action.add",
       step: stepId,
-      action: { type: "motion", targets, durationMs: o.durationMs ?? 1600, delayMs: o.delayMs ?? 0, easing: "ease-in-out", motion: { points, along: connectorId, reverse: o.reverse ?? false } },
+      action: { type: "motion", targets, durationMs: o.durationMs ?? SEND_MS, delayMs: o.delayMs ?? 0, easing: "ease-in-out", motion: { points, along: connectorId, reverse: o.reverse ?? false } },
     },
   ];
 }

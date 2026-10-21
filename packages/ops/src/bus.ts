@@ -133,9 +133,13 @@ export class OperationBus {
     try {
       tx.ops.forEach((op, i) => draft.apply(op, `ops.${i}`));
       // Motions along a connector follow the connector when it moves (docs/17 P2), in the same history entry.
-      const mid = draft.finish();
-      if (mid.steps.some((st) => st.actions.some((a) => a.type === "motion" && a.motion.along))) {
-        syncAlongOps(mid).forEach((op, i) => draft.apply(Operation.parse(op), `sync.${i}`));
+      // A path can start where an earlier path ends, so sync again until nothing changes.
+      for (let pass = 0; pass < 8; pass++) {
+        const mid = draft.finish();
+        if (!mid.steps.some((st) => st.actions.some((a) => a.type === "motion" && a.motion.along))) break;
+        const sync = syncAlongOps(mid);
+        if (sync.length === 0) break;
+        sync.forEach((op, i) => draft.apply(Operation.parse(op), `sync.${pass}.${i}`));
       }
     } catch (err) {
       if (err instanceof OpFailure) return { ok: false, error: err.error };

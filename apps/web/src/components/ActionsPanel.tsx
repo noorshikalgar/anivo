@@ -96,7 +96,7 @@ const QUICK: Quick[] = [
   { label: "Pulse", hint: "Pulse to point at it (emphasis · pulse)", icon: actionIcon("emphasis"), action: { type: "emphasis", effect: "pulse" } },
   { label: "Glow", hint: "Glow (emphasis · glow)", icon: actionIcon("emphasis"), action: { type: "emphasis", effect: "glow" } },
   { label: "Focus", hint: "Dim the rest (emphasis · focus)", icon: actionIcon("emphasis"), action: { type: "emphasis", effect: "focus" } },
-  { label: "Send", hint: "Move elements along an arrow, for example a message (1.6 s). Select the elements and the arrow.", icon: actionIcon("motion"), action: { type: "motion" } },
+  { label: "Send", hint: "Move elements along an arrow, for example a message (2.4 s). Select the elements and the arrow.", icon: actionIcon("motion"), action: { type: "motion" } },
   { label: "Flow", hint: "Particles move along the arrows (flow)", icon: actionIcon("flow"), action: { type: "flow", flow: {} }, only: ["connector"] },
   { label: "Zoom", hint: "The camera zooms to the elements (camera · zoom-to)", icon: actionIcon("camera"), action: { type: "camera", camera: { op: "zoom-to" } } },
   { label: "Count", hint: "Count a number up (count)", icon: actionIcon("counter"), action: { type: "counter", counter: { from: 0, to: 100 } }, only: ["text"] },
