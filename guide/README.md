@@ -11,5 +11,6 @@ Anivo makes explainer videos from diagrams. You draw a diagram, divide it into s
 | [5. Command line](05-command-line.md) | Use the `anivo` CLI in scripts and CI |
 | [6. Self-host](06-self-host.md) | Run Anivo and the optional share server with Docker |
 | [7. Embed and share](07-embed-and-share.md) | Put a video in a web page, or share a link |
+| [8. Animate](08-animate.md) | Steps with captions, the timeline, keys and Record, easing, Follow, loop |
 
 The design documents are in [docs/](../README.md#read-the-documents-in-this-sequence). Read them to change Anivo itself.

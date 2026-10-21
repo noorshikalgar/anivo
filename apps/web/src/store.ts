@@ -130,6 +130,10 @@ interface EditorState {
   zoomAt(factor: number, cx: number, cy: number): void;
   setPlayhead(ms: number): void;
   play(): void;
+  /** The browser can install the app (PWA): show the Install button. */
+  canInstall: boolean;
+  /** A new version of the app is ready (service worker): show a Reload button. */
+  updateReady: boolean;
   /** Loop region (docs/19 R7): while it is set, play goes round in it. */
   loop: { fromMs: number; toMs: number } | null;
   pause(): void;
@@ -286,6 +290,8 @@ export const useEditor = create<EditorState>((set, get) => {
     pinStepEnd: false,
     autoKey: false,
     loop: null,
+    canInstall: false,
+    updateReady: false,
     arrowEnds: readArrowEnds(),
     showGhosts: true,
     maximized: false,

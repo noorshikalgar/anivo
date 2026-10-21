@@ -1,8 +1,10 @@
+import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { serviceWorker } from "./sw-plugin.js";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), serviceWorker(fileURLToPath(new URL("../../assets", import.meta.url)))],
   // Serve assets/ (fonts, icons, templates) at the site root.
   publicDir: "../../assets",
   server: { port: 5173, strictPort: true },

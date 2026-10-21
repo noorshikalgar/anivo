@@ -30,3 +30,24 @@ test("anivo serve opens a scene file in the built web app", async ({ page }) => 
     s.close();
   }
 });
+
+test("the built app works offline after the first visit (service worker)", async ({ page, context }) => {
+  const s = await serveWebApp({ port: 0 });
+  try {
+    await page.addInitScript(() => localStorage.setItem("anivo.tourDone", "1"));
+    const home = s.url.replace(/\?.*$/, "");
+    await page.goto(home);
+    await page.getByRole("heading", { name: "Your scenes" }).waitFor();
+    // Wait until the service worker controls the page.
+    await page.evaluate(async () => {
+      await navigator.serviceWorker.ready;
+      if (!navigator.serviceWorker.controller) await new Promise((r) => navigator.serviceWorker.addEventListener("controllerchange", r, { once: true }));
+    });
+    await context.setOffline(true);
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Your scenes" })).toBeVisible();
+    await context.setOffline(false);
+  } finally {
+    s.close();
+  }
+});

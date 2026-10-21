@@ -8,7 +8,7 @@ import { notify } from "./notify.js";
 import { useEditor } from "./store.js";
 
 /** File System Access API types (Chromium). Other browsers download and upload files. */
-interface FileHandle {
+export interface FileHandle {
   name: string;
   getFile(): Promise<File>;
   createWritable(): Promise<{ write(data: BlobPart): Promise<void>; close(): Promise<void> }>;
@@ -114,6 +114,12 @@ export async function openFile(): Promise<boolean> {
   if (!file) return false;
   openScene(await readFile(file), file.name, null);
   return true;
+}
+
+/** Open a file that the system gives the installed app (File Handling, docs/11). */
+export async function openHandle(handle: FileHandle): Promise<void> {
+  openScene(await readFile(await handle.getFile()), handle.name, handle);
+  await addRecent(handle);
 }
 
 export async function openRecent(r: RecentFile): Promise<void> {

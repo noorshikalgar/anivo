@@ -16,8 +16,8 @@
 
 - **Base** is the picture before step 1. Each step adds one change.
 - Select a step, select elements, then click **Add action**: enter, exit, emphasis (pulse, shake, glow, flash, highlight, focus, wiggle), flow (particles on arrows), camera (zoom to, pan, reset), count (a number that counts), code (highlight lines, type lines, diff).
-- To move or resize an element in a step, select the step and change the element. Anivo adds a morph.
-- **Timeline:** click the timeline button at the right of the playback bar. Drag a bar to change its delay. Drag its edge to change its duration.
+- A move or a change is static (all steps) until you record it: press **K** (Record) and change the element at the playhead, or click **◆** next to a property. See [8. Animate](08-animate.md) for keys, the timeline, easing, and more.
+- **Timeline:** click the timeline button at the right of the playback bar. Each element has a track with its action blocks and keys.
 
 ## Look
 

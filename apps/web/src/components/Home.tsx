@@ -24,6 +24,7 @@ import {
   useId,
   useToastController,
 } from "@fluentui/react-components";
+import { installApp } from "../pwa.js";
 import { Add20Regular, ChevronLeft20Regular, ChevronRight20Regular, ArrowDownload20Regular, Copy20Regular, Delete20Regular, DocumentArrowUp20Regular, FolderOpen20Regular, MoreHorizontal20Regular, Rename20Regular, Search20Regular } from "@fluentui/react-icons";
 import { TEMPLATES } from "@anivo/schema";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -208,6 +209,7 @@ function SceneCard({ e, onRename, onDelete }: { e: LibraryEntry; onRename: () =>
 
 /** The home screen: start a scene, or open one of the library (FR-FILE-09). */
 export function Home() {
+  const canInstall = useEditor((st) => st.canInstall);
   const styles = useStyles();
   const phone = useMedia(PHONE);
   // The template row scrolls sideways: arrows show when there is more to see, and the wheel scrolls it.
@@ -283,9 +285,15 @@ export function Home() {
     >
       <header className={styles.header}>
         <Text size={500} className={styles.brand}>
+          <img src="./app/icon.svg" alt="" width={22} height={22} style={{ verticalAlign: "-4px", marginRight: 8, borderRadius: 5 }} />
           Anivo
         </Text>
         <Input className={styles.search} contentBefore={<Search20Regular />} placeholder="Search scenes and templates" value={query} onChange={(_, d) => setQuery(d.value)} aria-label="Search scenes and templates" />
+        {canInstall && (
+          <Button icon={<ArrowDownload20Regular />} onClick={() => void installApp()} aria-label="Install the app">
+            {phone ? null : "Install app"}
+          </Button>
+        )}
         <Button icon={<FolderOpen20Regular />} onClick={() => void withErrors(openFile)} aria-label="Open file">
           {phone ? null : "Open file"}
         </Button>
