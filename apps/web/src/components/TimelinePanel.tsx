@@ -7,7 +7,8 @@ import { setAreas, useEditor } from "../store.js";
 import { Splitter } from "./ui.js";
 import { formatTime } from "./PlaybackBar.js";
 import { describe } from "./StepInspector.js";
-import { actionIcon } from "./typeIcons.js";
+import { type SpanEnd, layerSpans } from "../layers.js";
+import { actionIcon, elementIcon } from "./typeIcons.js";
 
 const LABEL_W = 200;
 const ROW_H = 22;
@@ -75,6 +76,8 @@ const useStyles = makeStyles({
   },
   diamondSel: { backgroundColor: "#fff" },
   empty: { padding: "10px 12px", color: "var(--ui-muted)" },
+  layerBar: { position: "absolute", top: "4px", bottom: "4px", borderRadius: "3px", backgroundColor: "var(--ui-widget)", boxShadow: "inset 0 0 0 1px var(--ui-outline)", cursor: "pointer", overflow: "hidden" },
+  layerCap: { position: "absolute", top: 0, bottom: 0, backgroundColor: "var(--ui-select)", cursor: "ew-resize", touchAction: "none", ":focus-visible": { outline: "1px solid #fff" } },
   keyBar: { display: "flex", alignItems: "center", gap: "6px", height: "26px", padding: "0 8px", flexShrink: 0, backgroundColor: "var(--ui-region)", borderBottom: "1px solid var(--ui-line)", fontVariantNumeric: "tabular-nums" },
   keyBarSelect: { height: "20px", fontSize: "11px", backgroundColor: "var(--ui-field)", color: "var(--ui-text)", border: "1px solid var(--ui-outline)", borderRadius: "3px" },
 });
@@ -114,7 +117,10 @@ export function TimelinePanel() {
   const [width, setWidth] = useState(600);
   const [drag, setDrag] = useState<Drag | null>(null);
   const view = useEditor((s) => s.timelineView);
-  const setView = (v: "actions" | "keys") => useEditor.setState({ timelineView: v });
+  const setView = (v: "actions" | "keys" | "layers") => useEditor.setState({ timelineView: v });
+  const selection = useEditor((s) => s.selection);
+  const layers = useMemo(() => (view === "layers" ? layerSpans(scene, timeline) : []), [view, scene, timeline]);
+  const [capDrag, setCapDrag] = useState<{ key: string; dx: number } | null>(null);
   const autoKey = useEditor((s) => s.autoKey);
   const [keyDrag, setKeyDrag] = useState<{ id: string; dx: number } | null>(null);
   const [activeKey, setActiveKey] = useState<string | null>(null);
@@ -255,6 +261,25 @@ export function TimelinePanel() {
     el.addEventListener("pointerup", up);
   };
 
+  /** Drag the in or out end of a layer bar: it changes the delay of the enter or exit action. */
+  const startCapDrag = (e: React.PointerEvent, id: string, end: SpanEnd) => {
+    e.stopPropagation();
+    const el = e.currentTarget as HTMLElement;
+    el.setPointerCapture(e.pointerId);
+    const x0 = e.clientX;
+    const key = `${id}/${end.actionId}`;
+    const move = (ev: PointerEvent) => setCapDrag({ key, dx: ev.clientX - x0 });
+    const up = (ev: PointerEvent) => {
+      el.removeEventListener("pointermove", move);
+      el.removeEventListener("pointerup", up);
+      setCapDrag(null);
+      const dms = Math.round(((ev.clientX - x0) * msPerPx) / 10) * 10;
+      if (Math.abs(ev.clientX - x0) > 2) updateAction(end.stepId, end.actionId, { delayMs: Math.max(0, end.delayMs + dms) }, "Change layer time");
+    };
+    el.addEventListener("pointermove", move);
+    el.addEventListener("pointerup", up);
+  };
+
   const keyKeyDown = (e: React.KeyboardEvent, k: Keyframe) => {
     const st = useEditor.getState();
     if (e.key === "Delete" || e.key === "Backspace") {
@@ -280,6 +305,9 @@ export function TimelinePanel() {
           <div className={styles.modes} role="tablist" aria-label="Timeline view">
             <button type="button" role="tab" aria-selected={view === "actions"} className={mergeClasses(styles.mode, view === "actions" && styles.modeOn)} onClick={() => setView("actions")}>
               Actions
+            </button>
+            <button type="button" role="tab" aria-selected={view === "layers"} className={mergeClasses(styles.mode, view === "layers" && styles.modeOn)} onClick={() => setView("layers")}>
+              Layers
             </button>
             <button type="button" role="tab" aria-selected={view === "keys"} className={mergeClasses(styles.mode, view === "keys" && styles.modeOn)} onClick={() => setView("keys")}>
               Keys
@@ -359,6 +387,63 @@ export function TimelinePanel() {
         );
       })()}
       <div className={styles.body}>
+        {view === "layers" &&
+          layers.map(({ id, spans }) => (
+            <div key={id} className={mergeClasses(styles.row, selection.includes(id) && styles.selectedStep)}>
+              <div className={styles.label} onClick={() => useEditor.getState().setSelection([id])} style={{ cursor: "pointer" }}>
+                <span className={styles.labelIcon} style={{ paddingLeft: 0 }}>
+                  {scene.elements[id] ? elementIcon(scene.elements[id]!.type) : null}
+                </span>
+                {id}
+              </div>
+              <div className={styles.track}>
+                {spans.map((sp, i) => {
+                  const shift = (end: SpanEnd | undefined) => (end && capDrag?.key === `${id}/${end.actionId}` ? Math.round((capDrag.dx * msPerPx) / 10) * 10 : 0);
+                  const enterShift = Math.max(-(sp.enter?.delayMs ?? 0), shift(sp.enter));
+                  const exitShift = Math.max(-(sp.exit?.delayMs ?? 0), shift(sp.exit));
+                  const start = sp.startMs + enterShift;
+                  const end = sp.endMs + exitShift;
+                  const cap = (end2: SpanEnd, kind: "enter" | "exit") => (
+                    <span
+                      key={kind}
+                      className={styles.layerCap}
+                      role="slider"
+                      tabIndex={0}
+                      aria-label={`${kind === "enter" ? "In" : "Out"} time of ${id}`}
+                      aria-valuemin={0}
+                      aria-valuemax={total}
+                      aria-valuenow={kind === "enter" ? start : end}
+                      style={kind === "enter" ? { left: 0, width: Math.max(6, px(end2.endMs) - px(end2.startMs)) } : { right: 0, width: Math.max(6, px(end2.endMs) - px(end2.startMs)) }}
+                      onPointerDown={(e) => startCapDrag(e, id, end2)}
+                      onKeyDown={(e) => {
+                        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const d = (e.key === "ArrowLeft" ? -1 : 1) * (e.shiftKey ? 500 : 100);
+                        updateAction(end2.stepId, end2.actionId, { delayMs: Math.max(0, end2.delayMs + d) }, kind === "enter" ? "Change in time" : "Change out time", `layer/${end2.actionId}`);
+                      }}
+                    />
+                  );
+                  return (
+                    <Tooltip key={i} content={`${id}: ${formatTime(start)} to ${formatTime(end)}${sp.enter ? "" : " (in the base)"}`} relationship="description">
+                      <div
+                        className={styles.layerBar}
+                        style={{ left: px(start), width: Math.max(4, px(end) - px(start)) }}
+                        onClick={() => {
+                          const st = useEditor.getState();
+                          st.setSelection([id]);
+                          if (sp.enter) st.selectStep(sp.enter.stepId);
+                        }}
+                      >
+                        {sp.enter && cap(sp.enter, "enter")}
+                        {sp.exit && cap(sp.exit, "exit")}
+                      </div>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         {view === "keys" && !keyStep && <div className={styles.empty}>Select a step to see its keyframes.</div>}
         {view === "keys" && keyStep && keyRows.length === 0 && (
           <div className={styles.empty}>No keyframes in this step. Turn on Key, move the playhead, then move or change an element.</div>

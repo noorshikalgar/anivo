@@ -49,3 +49,15 @@ test("click a bar to select its step, click the ruler to move the playhead", asy
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
   expect((await st(page)).playhead).toBeGreaterThan(1000);
 });
+
+test("the Layers view shows when each element is on the screen, and its in time can change", async ({ page }) => {
+  await page.getByRole("tab", { name: "Layers" }).click();
+  const inLb = page.getByRole("slider", { name: "In time of lb" });
+  await expect(inLb).toHaveCount(1);
+  type A = { id: string; delayMs: number; targets: string[]; type: string };
+  const enterLb = async () => ((await st(page)).scene.steps.flatMap((x) => x.actions) as unknown as A[]).find((a) => a.type === "enter" && a.targets.includes("lb"))!;
+  const before = await enterLb();
+  await inLb.focus();
+  await page.keyboard.press("Shift+ArrowRight");
+  expect((await enterLb()).delayMs).toBe(before.delayMs + 500);
+});
