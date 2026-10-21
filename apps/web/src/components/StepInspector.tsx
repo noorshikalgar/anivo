@@ -333,6 +333,17 @@ export function ActionEditor({ step, action, part = "all" }: { step: Step; actio
       {(action.type === "enter" || action.type === "exit") && (action.effect === "pop" || action.effect === "scale") && (
         <NumberField label="Start scale" value={action.params.fromScale ?? (action.effect === "pop" ? 0.6 : 0)} min={0} max={2} step={0.1} onCommit={(v) => set({ params: { ...action.params, fromScale: v } }, "Change scale")} />
       )}
+      {(action.type === "enter" || action.type === "exit") && action.effect === "typewriter" && (
+        <SelectField
+          label="Type by"
+          value={action.params.unit ?? "char"}
+          options={[
+            { value: "char", text: "Letter" },
+            { value: "word", text: "Word" },
+          ]}
+          onCommit={(v) => set({ params: { ...action.params, unit: v as "char" | "word" } }, "Change typing")}
+        />
+      )}
       {action.type === "emphasis" && ["pulse", "shake", "wiggle"].includes(action.effect) && (
         <NumberField label="Count" value={action.params.count ?? (action.effect === "pulse" ? 2 : action.effect === "shake" ? 4 : 3)} min={1} max={20} onCommit={(v) => set({ params: { ...action.params, count: Math.round(v) } }, "Change count")} />
       )}

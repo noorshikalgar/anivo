@@ -139,9 +139,19 @@ function applyEnterExit(f: ElementFrame, action: Extract<Action, { type: "enter"
       f.wipe = { direction: params.direction ?? "right", p: clamp01(p) };
       break;
     case "typewriter":
-      f.textReveal = clamp01(p);
+      f.textReveal = params.unit === "word" && f.label ? wordReveal(f.label, clamp01(p)) : clamp01(p);
       break;
   }
+}
+
+/** Word by word (docs/19 R12): the share of the characters up to the end of the last word that shows. */
+function wordReveal(text: string, p: number): number {
+  const ends: number[] = [];
+  const re = /\S+/g;
+  for (let m = re.exec(text); m; m = re.exec(text)) ends.push(m.index + m[0].length);
+  if (ends.length === 0 || p >= 1) return 1;
+  const k = Math.floor(p * ends.length);
+  return k === 0 ? 0 : ends[k - 1]! / text.length;
 }
 
 function applyMorph(f: ElementFrame, to: MorphableProps, p: number): void {
