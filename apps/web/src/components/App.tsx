@@ -151,7 +151,7 @@ export function App() {
       <Toast>
         <ToastTitle>{notice.text}</ToastTitle>
       </Toast>,
-      { intent: notice.intent, timeout: notice.intent === "error" ? 8000 : 2500, position: "bottom" },
+      { intent: notice.intent, timeout: notice.intent === "error" ? 8000 : 2500, position: "top-end" },
     );
   }, [notice]);
 
@@ -252,7 +252,7 @@ export function App() {
           <div className={styles.status}>
             <StatusBar />
           </div>
-          <Toaster toasterId={toasterId} />
+          <Toaster toasterId={toasterId} offset={{ vertical: 44, horizontal: 12 }} />
           {/* Outside the canvas tree: React events from a dialog portal bubble to its React parents. */}
           <IconPicker />
           <ExportDialog />

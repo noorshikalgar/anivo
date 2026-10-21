@@ -24,6 +24,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { notify } from "../notify.js";
 import { useEditor } from "../store.js";
 import { Row, SelectField } from "./fields.js";
+import { formatTime } from "./PlaybackBar.js";
+import { Check } from "./ui.js";
 
 const useStyles = makeStyles({
   surface: { maxWidth: "560px", width: "100%" },
@@ -71,6 +73,8 @@ export function ExportDialog() {
   const [quality, setQuality] = useState<"draft" | "standard" | "high">("standard");
   const [from, setFrom] = useState("0");
   const [to, setTo] = useState(String(Math.max(0, scene.steps.length - 1)));
+  const loop = useEditor((s) => s.loop);
+  const [useLoop, setUseLoop] = useState(false);
   const [captions, setCaptions] = useState<"none" | "bottom" | "top" | "srt" | "vtt">("none");
   const [progress, setProgress] = useState<number | null>(null);
   const [eta, setEta] = useState<number | null>(null);
@@ -95,11 +99,12 @@ export function ExportDialog() {
   const fromIndex = Math.min(last, Math.max(0, Number(from) || 0));
   const toIndex = Math.min(last, Math.max(0, Number(to) || 0));
   const range = useMemo(() => {
+    if (useLoop && loop) return { startMs: loop.fromMs, endMs: loop.toMs };
     if (timeline.steps.length === 0) return { startMs: 0, endMs: 0 };
     const a = Math.min(fromIndex, toIndex);
     const b = Math.max(fromIndex, toIndex);
     return { startMs: timeline.steps[a]!.startMs, endMs: timeline.steps[b]!.holdEndMs };
-  }, [timeline, fromIndex, toIndex]);
+  }, [timeline, fromIndex, toIndex, useLoop, loop]);
   const seconds = (range.endMs - range.startMs) / 1000;
   const gifH = Math.round((Number(gifWidth) * v.height) / v.width);
   const gifEstimate = estimateGifBytes(Number(gifWidth), gifH, Math.ceil(seconds * Number(gifFps)));
@@ -249,7 +254,8 @@ export function ExportDialog() {
                 <MessageBarBody>The scene has no captions. Add a script and link each line to a step.</MessageBarBody>
               </MessageBar>
             )}
-            {needsSteps && scene.steps.length > 0 && (
+            {needsSteps && loop && <Check label={`Only the loop region (${formatTime(loop.fromMs)} to ${formatTime(loop.toMs)})`} checked={useLoop} onChange={setUseLoop} />}
+            {needsSteps && scene.steps.length > 0 && !(useLoop && loop) && (
               <Row>
                 <SelectField label="From step" value={String(fromIndex)} options={stepOptions} onCommit={setFrom} />
                 <SelectField label="To step" value={String(toIndex)} options={stepOptions} onCommit={setTo} />

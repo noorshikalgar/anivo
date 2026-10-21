@@ -212,6 +212,12 @@ function ElementProperties({ el }: { el: Element }) {
           <Prop label={key("opacity", { opacity: f.opacity }, "Opacity")}>
             <DragNumber label="Opacity" value={Math.round(f.opacity * 100)} min={0} max={100} unit="%" onCommit={(v, k) => set({ opacity: v / 100 }, "Change opacity", k)} />
           </Prop>
+          <SelectField
+            label="Follow"
+            value={el.follow ?? ""}
+            options={[{ value: "", text: "Nothing" }, ...Object.values(scene.elements).filter((e) => e.id !== el.id && e.type !== "connector" && e.type !== "group" && e.follow !== el.id).map((e) => ({ value: e.id, text: e.id }))]}
+            onCommit={(v) => void useEditor.getState().apply({ label: v ? `Follow ${v}` : "Stop following", ops: [{ op: "element.update", id: el.id, set: { follow: v || null } }] })}
+          />
         </Panel>
       )}
 

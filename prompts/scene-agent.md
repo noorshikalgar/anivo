@@ -112,7 +112,7 @@ step "<title>" [hold=<time>] [cue=<time>] [caption="<one sentence>" [near=<id>] 
 - A connector ID is `<from>-><to>` (`user->lb`).
 - Times have units: `300ms`, `1.5s`.
 - Declare all elements at the top level. A step contains actions only.
-- Style keys: `fill`, `stroke`, `stroke-width`, `style=dashed`, `radius`, `font-size`, `color` (text), `text-align`, `weight`, `opacity`, `rotate`, `shadow=soft|hard|glow|none`, `shadow-color=<token>`, `gradient=<token>` (the fill fades to this color).
+- Style keys: `fill`, `stroke`, `stroke-width`, `style=dashed`, `radius`, `font-size`, `color` (text), `text-align`, `weight`, `opacity`, `rotate`, `shadow=soft|hard|glow|none`, `shadow-color=<token>`, `gradient=<token>` (the fill fades to this color), `follow=<id>` (the element moves with that element, for example a label on a packet that you send).
 - An icon with `fill=<token>` is a badge: a colored circle with the icon inside.
 - Themes: `slate-dark`, `slate-light`, `paper-light`, `night-dark`, `pop-light` (bold lines, bright fills, hard shadows), `neon-dark` (neon colors and glow).
 - Run `anivo print` (or call `anivo_scene_get` with format `script`) to see a scene in this language.

@@ -119,3 +119,10 @@ test("the outliner selects, hides, and locks elements", async ({ page }) => {
   expect(s.scene.elements["pod-2"]!.locked).toBe(true);
   expect(s.scene.elements["pod-3"]!.editorHidden).toBe(true);
 });
+
+test("Follow: an element moves with the element it follows", async ({ page }) => {
+  await selectLb(page);
+  await page.getByRole("combobox", { name: "Follow" }).click();
+  await page.getByRole("option", { name: "user", exact: true }).click();
+  expect((await state(page)).scene.elements["lb"]!.follow).toBe("user");
+});

@@ -45,6 +45,7 @@ const base = {
   id: ElementId,
   z: z.string().min(1).describe("Fractional index for the draw order."),
   parentId: ElementId.optional().describe("Set if the element is in a group."),
+  follow: ElementId.optional().describe("Move with this element: when it moves from its base place, this element moves by the same amount (docs/19 R6). For example a label that rides with a packet."),
   x: z.number().default(0),
   y: z.number().default(0),
   width: z.number().nonnegative().default(0),

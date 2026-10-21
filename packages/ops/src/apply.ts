@@ -595,6 +595,13 @@ export class Draft {
         delete rest.parentId;
         this.elements[other.id] = rest;
       }
+      // A follower stays where it is now, and does not follow any more.
+      if (this.elements[other.id]?.follow === id) {
+        this.touch(other.id);
+        const rest = { ...this.elements[other.id]! };
+        delete rest.follow;
+        this.elements[other.id] = rest;
+      }
       if (other.type === "connector") {
         const c = this.elements[other.id] as ConnectorElement;
         const fix = (end: ConnectorElement["start"]) =>
@@ -650,6 +657,7 @@ export class Draft {
     for (const other of Object.values(this.elements)) {
       let next: Element = other;
       if (other.parentId === from) next = { ...next, parentId: to };
+      if (other.follow === from) next = { ...next, follow: to };
       if (next.type === "connector") {
         const sw = (e: ConnectorElement["start"]) => (e.kind === "bound" && e.elementId === from ? { ...e, elementId: to } : e);
         const start = sw(next.start);

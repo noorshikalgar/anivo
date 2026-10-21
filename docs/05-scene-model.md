@@ -49,6 +49,7 @@ interface ElementBase {
   type: ElementType;
   z: string;                     // fractional index
   parentId?: ElementId;          // set if the element is in a group
+  follow?: ElementId;            // moves by the amount that this element moves from its base place (docs/19 R6)
   x: number; y: number;          // top-left, scene pixels
   width: number; height: number;
   rotation: number;              // degrees
