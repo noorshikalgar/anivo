@@ -40,7 +40,9 @@ describe("message build", () => {
     expect(steps.map((s) => s.caption?.text)).toEqual([undefined, "Alice types a message.", "The message goes to Bob."]);
     const tl = resolveTimeline(bus.scene);
     const end = evaluate(bus.scene, tl.steps[2]!.endMs).elements.find((e) => e.id === b.id)!;
-    expect(end.x + end.width / 2).toBeGreaterThan(1400);
+    // It arrives next to Bob (x 1500), not on him.
+    expect(end.x + end.width / 2).toBeGreaterThan(1300);
+    expect(end.x + end.width).toBeLessThanOrEqual(1500);
     // Each hop takes 1.6 s: the send step is long enough to follow.
     expect(tl.steps[2]!.endMs - tl.steps[2]!.startMs).toBeGreaterThanOrEqual(3200);
   });

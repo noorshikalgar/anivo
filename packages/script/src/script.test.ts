@@ -211,7 +211,9 @@ describe("move along an arrow", () => {
     const a = scene.steps[0]!.actions[0]!;
     expect(a).toMatchObject({ type: "motion", durationMs: 1600, motion: { along: "c-a-b", reverse: true } });
     if (a.type !== "motion") throw new Error("motion");
-    expect(a.motion.points[0]!.x).toBeGreaterThan(500);
+    // A lead-in from the element center, then the route from the arrow end (back).
+    expect(a.motion.points[0]!.x).toBeLessThan(200);
+    expect(a.motion.points[1]!.x).toBeGreaterThan(500);
     expect(printScene(scene)).toContain("move m along=c-a-b back");
   });
 });

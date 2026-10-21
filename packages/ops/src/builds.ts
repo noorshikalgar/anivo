@@ -3,7 +3,6 @@
  * A build makes plain elements, steps, and actions. The user can change all
  * of them after.
  */
-import { alongPoints } from "@anivo/layout";
 import type { Scene } from "@anivo/schema";
 import type { OperationInput } from "./operations.js";
 
@@ -123,7 +122,6 @@ export interface MessageBuildOptions {
 export function messageBuild(scene: Scene, o: MessageBuildOptions): { ops: OperationInput[]; id: string } | { error: string } {
   const path = o.path ?? findArrowPath(scene, o.from, o.to);
   if (!path || path.length === 0) return { error: `No arrows go from '${o.from}' to '${o.to}'. Draw an arrow between them first.` };
-  const first = alongPoints(scene, scene.steps.at(-1)?.id ?? "", path[0]!.arrow, path[0]!.reverse);
   const from = scene.elements[o.from];
   if (!from) return { error: `Element '${o.from}' does not exist.` };
   const { height: H, width: W } = scene.settings.video;
@@ -131,7 +129,8 @@ export function messageBuild(scene: Scene, o: MessageBuildOptions): { ops: Opera
   const lines = o.text.split("\n");
   const w = Math.min(Math.round(W * 0.3), Math.max(120, Math.round(Math.max(...lines.map((l) => l.length)) * size * 0.56 + size * 1.6)));
   const h = Math.round(lines.length * size * 1.35 + size * 1.1);
-  const start = first?.[0] ?? { x: from.x + from.width / 2, y: from.y - h };
+  // Above the sender. The send glides from here onto the arrow.
+  const start = { x: from.x + from.width / 2, y: Math.max(h / 2 + 20, from.y - h / 2 - Math.round(size * 0.8)) };
   const taken = new Set<string>();
   const id = free(scene, "msg", taken);
   const hop = o.hopMs ?? 1600;
