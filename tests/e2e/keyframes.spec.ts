@@ -199,3 +199,49 @@ test("F9 eases the selected key; the curve editor sets a custom curve", async ({
   const e = (await easingNow()) as { cubicBezier: number[] };
   expect(e.cubicBezier[2]).toBeLessThan(0.64);
 });
+
+test("box select keys, then Alt + drag stretches their times", async ({ page }) => {
+  await page.getByRole("button", { name: /Traffic flows/ }).first().click();
+  await page.getByRole("button", { name: "Add step" }).click();
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("k");
+  const pod = (await state(page)).scene.elements["pod-2"]!;
+  await seek(page, 500);
+  const p = await screen(page, pod.x + pod.width / 2, pod.y + pod.height / 2);
+  await page.mouse.click(p.x, p.y);
+  await page.keyboard.press("Shift+ArrowUp");
+  await seek(page, 1000);
+  await page.keyboard.press("Shift+ArrowUp");
+  await page.keyboard.press("k");
+  const keys = page.getByRole("slider", { name: /Keyframe Position of pod-2/ });
+  await expect(keys).toHaveCount(2);
+  await keys.nth(1).scrollIntoViewIfNeeded();
+  const a = (await keys.nth(0).boundingBox())!;
+  const b = (await keys.nth(1).boundingBox())!;
+  // Box select from left of the first key to right of the second.
+  await page.mouse.move(a.x - 15, a.y - 6);
+  await page.mouse.down();
+  await page.mouse.move(b.x + b.width + 15, b.y + b.height + 6, { steps: 5 });
+  await page.mouse.up();
+  await expect(page.getByText("2 keys")).toBeVisible();
+  // Alt + drag the second key: twice as far from the first.
+  type M = { delayMs: number; durationMs: number };
+  const timesNow = async () => {
+    const s = await state(page);
+    return (s.scene.steps.find((x) => x.id === s.selectedStep)!.actions.filter((x) => x.type === "morph") as unknown as M[]).map((m) => m.delayMs + m.durationMs);
+  };
+  const before = await timesNow();
+  // The tracks can scroll during the box drag: measure again.
+  await keys.nth(1).scrollIntoViewIfNeeded();
+  const a2 = (await keys.nth(0).boundingBox())!;
+  const b2 = (await keys.nth(1).boundingBox())!;
+  await page.keyboard.down("Alt");
+  await page.mouse.move(b2.x + b2.width / 2, b2.y + b2.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(b2.x + b2.width / 2 + (b2.x - a2.x), b2.y + b2.height / 2, { steps: 6 });
+  await page.mouse.up();
+  await page.keyboard.up("Alt");
+  const after = await timesNow();
+  expect(after[0]).toBe(before[0]);
+  expect(after[1]! - after[0]!).toBeGreaterThan((before[1]! - before[0]!) * 1.6);
+});

@@ -100,6 +100,7 @@ const useStyles = makeStyles({
   diamondOn: { backgroundColor: "#fff" },
   tween: { position: "absolute", top: "11px", height: "2px", backgroundColor: "#f5b84a", opacity: 0.5, pointerEvents: "none" },
   boundary: { position: "absolute", top: 0, bottom: 0, width: "1px", backgroundColor: "var(--ui-outline)", opacity: 0.5, pointerEvents: "none" },
+  boxSel: { position: "absolute", border: "1px dashed #f5b84a", backgroundColor: "rgba(245, 184, 74, 0.1)", pointerEvents: "none", zIndex: 5 },
   loopBand: { position: "absolute", top: "18px", bottom: 0, backgroundColor: "rgba(59, 130, 246, 0.10)", borderLeft: "2px solid #3b82f6", borderRight: "2px solid #3b82f6", pointerEvents: "none", zIndex: 1 },
   playhead: { position: "absolute", top: 0, bottom: 0, width: "2px", marginLeft: "-1px", backgroundColor: "#e5484d", pointerEvents: "none", zIndex: 2 },
   empty: { padding: "12px", color: "var(--ui-muted)" },
@@ -128,7 +129,7 @@ interface GlobalKey extends Keyframe {
   fromAtMs: number;
 }
 
-type Drag = { kind: "move" | "end" | "key"; key: string; dms: number };
+type Drag = { kind: "move" | "end" | "key" | "scale"; key: string; dms: number };
 
 /** A small preview of an easing curve: time to the right, value up. */
 function EaseCurve({ value }: { value: Easing }) {
@@ -405,7 +406,67 @@ export function TimelinePanel() {
     );
   };
 
-  const keyAt = (k: GlobalKey) => (drag?.kind === "key" && (drag.key === k.actionId || (selKeys.includes(drag.key) && selKeys.includes(k.actionId))) ? Math.max(k.fromAtMs + MIN_MS, k.atMs + drag.dms) : k.atMs);
+  /** Scale (Alt + drag, docs/19 R8): the selected keys stretch from the earliest one, so the dragged key moves by dms. */
+  const scaleOf = (ids: string[], draggedAt: number, dms: number) => {
+    const times = allKeysRef.current.filter((x) => ids.includes(x.actionId)).map((x) => x.atMs);
+    const pivot = Math.min(...times);
+    const f = draggedAt - pivot > 1 ? Math.max(0.05, (draggedAt + dms - pivot) / (draggedAt - pivot)) : 1;
+    return (t: number) => Math.round(pivot + (t - pivot) * f);
+  };
+  const keyAt = (k: GlobalKey) => {
+    if (!drag || !(drag.key === k.actionId || (selKeys.includes(drag.key) && selKeys.includes(k.actionId)))) return k.atMs;
+    if (drag.kind === "key") return Math.max(k.fromAtMs + MIN_MS, k.atMs + drag.dms);
+    if (drag.kind === "scale") {
+      const lead = allKeysRef.current.find((x) => x.actionId === drag.key);
+      return lead ? scaleOf(selKeys, lead.atMs, drag.dms)(k.atMs) : k.atMs;
+    }
+    return k.atMs;
+  };
+
+  const [box, setBox] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
+  /** Box select (docs/19 R8): drag on an empty part of the tracks to select the keys inside. Shift adds. */
+  const startBoxSelect = (e: React.PointerEvent<HTMLDivElement>) => {
+    const t = e.target as HTMLElement;
+    if (e.button !== 0 || t.closest("[data-key],[data-action],button,[role=button]")) return;
+    const host = e.currentTarget;
+    const view = scrollRef.current!.getBoundingClientRect();
+    // Not on the labels (sticky at the left) or the ruler (sticky at the top).
+    if (e.clientX - view.left < LABEL_W || e.clientY - view.top < 40) return;
+    const r0 = host.getBoundingClientRect();
+    const p0 = { x: e.clientX - r0.left, y: e.clientY - r0.top };
+    e.preventDefault();
+    host.setPointerCapture(e.pointerId);
+    const base = e.shiftKey ? selKeys : [];
+    let moved = false;
+    // Content coordinates: they stay right when the tracks scroll during the drag.
+    const local = (cx: number, cy: number) => {
+      const r = host.getBoundingClientRect();
+      return { x: cx - r.left, y: cy - r.top };
+    };
+    const move = (ev: PointerEvent) => {
+      const p = local(ev.clientX, ev.clientY);
+      moved ||= Math.hypot(p.x - p0.x, p.y - p0.y) > 3;
+      if (moved) setBox({ x0: p0.x, y0: p0.y, x1: p.x, y1: p.y });
+    };
+    const up = (ev: PointerEvent) => {
+      host.removeEventListener("pointermove", move);
+      host.removeEventListener("pointerup", up);
+      setBox(null);
+      if (!moved) return;
+      const p = local(ev.clientX, ev.clientY);
+      const a = { x: Math.min(p0.x, p.x), y: Math.min(p0.y, p.y), x2: Math.max(p0.x, p.x), y2: Math.max(p0.y, p.y) };
+      const hit = [...host.querySelectorAll<HTMLElement>("[data-key]")]
+        .filter((d) => {
+          const b = d.getBoundingClientRect();
+          const c = local(b.left + b.width / 2, b.top + b.height / 2);
+          return c.x >= a.x && c.x <= a.x2 && c.y >= a.y && c.y <= a.y2;
+        })
+        .map((d) => d.dataset["key"]!);
+      setSelKeys([...new Set([...base, ...hit])]);
+    };
+    host.addEventListener("pointermove", move);
+    host.addEventListener("pointerup", up);
+  };
 
   /** Keys in the order to move them: the last first when they move later, so a key does not stop at its neighbor. */
   const byTime = (ids: string[], dms: number) => {
@@ -449,9 +510,10 @@ export function TimelinePanel() {
                 e.stopPropagation();
                 return;
               }
+              const scale = e.altKey && group.length > 1;
               startDrag(
                 e,
-                "key",
+                scale ? "scale" : "key",
                 k.actionId,
                 () => {
                   // A click with no drag selects this key only.
@@ -461,7 +523,12 @@ export function TimelinePanel() {
                   if (st.selectedStep !== k.stepId) st.selectStep(k.stepId);
                   useEditor.setState({ playhead: k.atMs, pinStepEnd: false });
                 },
-                (dms) => eachKey(byTime(group, dms), "Move keyframes", (sc, x) => moveKeyframeOps(sc, x.stepId, x.actionId, x.timeMs + dms)),
+                (dms) => {
+                  if (!scale) return eachKey(byTime(group, dms), "Move keyframes", (sc, x) => moveKeyframeOps(sc, x.stepId, x.actionId, x.timeMs + dms));
+                  const to = scaleOf(group, k.atMs, dms);
+                  const at = new Map(allKeysRef.current.map((x) => [x.actionId, x.atMs]));
+                  eachKey(byTime(group, dms), "Stretch keyframes", (sc, x) => moveKeyframeOps(sc, x.stepId, x.actionId, x.timeMs + (to(at.get(x.actionId) ?? 0) - (at.get(x.actionId) ?? 0))));
+                },
                 k.atMs,
                 (t) => group.includes(t.key),
               );
@@ -696,7 +763,7 @@ export function TimelinePanel() {
         </span>
       </div>
       <div className={styles.scroll} ref={scrollRef} onWheel={onWheel} tabIndex={0} aria-label="Timeline tracks" onKeyDown={onTimeKeys}>
-        <div style={{ width: LABEL_W + trackW, position: "relative" }}>
+        <div style={{ width: LABEL_W + trackW, position: "relative" }} onPointerDown={startBoxSelect}>
           <div className={styles.ruler}>
             <div className={styles.corner}>Elements</div>
             <div className={styles.rulerTrack} style={{ width: trackW }} onPointerDown={startRulerDrag} aria-label="Time ruler">
@@ -788,6 +855,7 @@ export function TimelinePanel() {
           {timeline.steps.map((ts) => (
             <span key={ts.id} className={styles.boundary} style={{ left: LABEL_W + px(ts.startMs) }} />
           ))}
+          {box && <span className={styles.boxSel} style={{ left: Math.min(box.x0, box.x1), top: Math.min(box.y0, box.y1), width: Math.abs(box.x1 - box.x0), height: Math.abs(box.y1 - box.y0) }} aria-hidden />}
           {loop && <span className={styles.loopBand} style={{ left: LABEL_W + px(loop.fromMs), width: px(loop.toMs - loop.fromMs) }} aria-hidden />}
           <span className={styles.playhead} style={{ left: LABEL_W + px(playhead) }} />
         </div>
