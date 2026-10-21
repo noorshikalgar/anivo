@@ -189,6 +189,53 @@ export const WIDGETS: WidgetDef[] = [
       { id: "role", type: "text", x: 120, y: 64, w: 240, h: 38, text: "role", props: s({ fontSize: 24, textColor: "muted", textAlign: "left" }) },
     ],
   },
+  {
+    name: "packet",
+    title: "Packet",
+    description: "A data packet with a header and a body, for example an HTTP request. Send it along an arrow.",
+    width: 300,
+    height: 150,
+    texts: { header: "GET /home", body: "Host: example.com" },
+    parts: [
+      { id: "card", type: "rectangle", x: 0, y: 0, w: 300, h: 150, props: s({ fill: "surface", stroke: "accent", cornerRadius: 14 }) },
+      { id: "header", type: "rectangle", x: 0, y: 0, w: 300, h: 56, text: "header", props: s({ fill: "accent", stroke: none, cornerRadius: 14, fontSize: 28, fontWeight: 700, textColor: "background" }) },
+      { id: "body", type: "text", x: 16, y: 66, w: 268, h: 70, text: "body", props: s({ fontSize: 24, textColor: "muted", textAlign: "left" }) },
+    ],
+  },
+  {
+    name: "stamp",
+    title: "Stamp",
+    description: "A tilted stamp with a short word, for example ENCRYPTED or 200 OK.",
+    width: 320,
+    height: 110,
+    texts: { text: "ENCRYPTED" },
+    parts: [{ id: "stamp", type: "rectangle", x: 0, y: 0, w: 320, h: 110, text: "text", props: { rotation: -8, style: { fill: none, stroke: "success", strokeWidth: 6, cornerRadius: 12, fontSize: 44, fontWeight: 700, textColor: "success" } } }],
+  },
+  {
+    name: "envelope",
+    title: "Envelope",
+    description: "A letter icon with a label: a message or an email.",
+    width: 200,
+    height: 190,
+    texts: { label: "Message" },
+    parts: [
+      { id: "icon", type: "icon", x: 40, y: 0, w: 120, h: 120, props: { pack: "lucide", name: "mail", style: { fill: "accent" } } },
+      { id: "label", type: "text", x: 0, y: 130, w: 200, h: 54, text: "label", props: s({ fontSize: 30 }) },
+    ],
+  },
+  {
+    name: "lock",
+    title: "Lock badge",
+    description: "A lock in a circle with a label: locked, encrypted, or secure.",
+    width: 220,
+    height: 220,
+    texts: { label: "Locked" },
+    parts: [
+      { id: "circle", type: "ellipse", x: 40, y: 0, w: 140, h: 140, props: s({ fill: "success-soft", stroke: "success", strokeWidth: 3 }) },
+      { id: "icon", type: "icon", x: 70, y: 30, w: 80, h: 80, props: { pack: "lucide", name: "lock", style: { stroke: "success" } } },
+      { id: "label", type: "text", x: 0, y: 156, w: 220, h: 56, text: "label", props: s({ fontSize: 30, textColor: "success", fontWeight: 700 }) },
+    ],
+  },
 ];
 
 export function getWidget(name: string): WidgetDef | undefined {

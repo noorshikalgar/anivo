@@ -141,7 +141,7 @@ export function SelectField<T extends string>({ label, value, options, onCommit 
 }
 
 /** Color tokens of the scene theme. "default" uses the theme default for the element. */
-const COLOR_TOKENS = ["default", "transparent", "surface", "surface-strong", "text", "muted", "line", "accent", "accent-soft", "success", "success-soft", "warning", "warning-soft", "danger", "danger-soft", "purple", "teal"];
+const COLOR_TOKENS = ["default", "transparent", "surface", "surface-strong", "text", "muted", "line", "accent", "accent-soft", "success", "success-soft", "warning", "warning-soft", "danger", "danger-soft", "purple", "purple-soft", "teal", "teal-soft"];
 
 /** The colors of the scene theme, for a color field. */
 export function useThemeColors(theme: string): { token: string; css: string }[] {

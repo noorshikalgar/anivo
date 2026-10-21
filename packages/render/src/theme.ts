@@ -30,6 +30,8 @@ const slateDarkTokens = {
   "warning-soft": "#4A3714",
   purple: "#A78BFA",
   teal: "#2DD4BF",
+  "purple-soft": "#2E2650",
+  "teal-soft": "#123B3A",
 };
 
 const slateLightTokens = {
@@ -50,6 +52,8 @@ const slateLightTokens = {
   "warning-soft": "#FCEFD5",
   purple: "#7C5CE0",
   teal: "#0E9F8E",
+  "purple-soft": "#ECE6FC",
+  "teal-soft": "#D5F2EE",
 };
 
 /** Warm paper look. Good with the sketch style. */
@@ -71,6 +75,8 @@ const paperLightTokens = {
   "warning-soft": "#FBEBC8",
   purple: "#6D4BB8",
   teal: "#13807A",
+  "purple-soft": "#EBE3F5",
+  "teal-soft": "#D8EEEC",
 };
 
 /** High contrast dark look. Good for small text on phones. */
@@ -92,6 +98,8 @@ const nightDarkTokens = {
   "warning-soft": "#4A3510",
   purple: "#C3A6FF",
   teal: "#4FE3CF",
+  "purple-soft": "#30264D",
+  "teal-soft": "#14403C",
 };
 
 /** Pop: bold black lines, bright fills, and hard shadows (neo-brutalist). */
@@ -113,6 +121,8 @@ const popLightTokens = {
   "warning-soft": "#FFE08A",
   purple: "#7C4DFF",
   teal: "#00B3A4",
+  "purple-soft": "#E9E0FF",
+  "teal-soft": "#CCF3EF",
 };
 
 /** Neon: deep night and bright neon colors. No glow by default: a glow on all shapes is too much (docs/17 F4). */
@@ -134,6 +144,8 @@ const neonDarkTokens = {
   "warning-soft": "#3D3210",
   purple: "#B26BFF",
   teal: "#00FFD5",
+  "purple-soft": "#2A1745",
+  "teal-soft": "#063A35",
 };
 
 const fonts = { clean: "Inter", sketch: "Kalam", code: "JetBrains Mono" };
