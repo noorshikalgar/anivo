@@ -1,5 +1,6 @@
-import { motionPath } from "../motionPath.js";
-import type { FrameState } from "@anivo/engine";
+import { keyTimesOf, motionPath } from "../motionPath.js";
+import { type FrameState, evaluate } from "@anivo/engine";
+import { formatTime } from "./PlaybackBar.js";
 import { type Polyline, evaluateWithLayout } from "@anivo/layout";
 import { type Ctx2D, renderFrame } from "@anivo/render";
 import type { Point } from "@anivo/schema";
@@ -244,6 +245,29 @@ export function CanvasView() {
     // The motion path of the selected element (docs/18 T3): a dashed line through its position keys, with a dot for each key.
     if (selection.length === 1) {
       const mp = motionPath(scene, useEditor.getState().timeline, selection[0]!);
+      // Onion skin (docs/19 R5): faint outlines of the element at the key before and the key after the playhead.
+      const now = useEditor.getState().playhead;
+      if (useEditor.getState().layout.onion) {
+        const times = [...new Set(keyTimesOf(scene, useEditor.getState().timeline, selection[0]!))].sort((a, b) => a - b);
+        const prev = [...times].reverse().find((t) => t < now - 20);
+        const next = times.find((t) => t > now + 20);
+        ctx.save();
+        ctx.lineWidth = 1.5 * dpr;
+        ctx.setLineDash([4 * dpr, 3 * dpr]);
+        ctx.font = `${10 * dpr}px Inter, sans-serif`;
+        for (const [t, color] of [[prev, "rgba(239, 68, 68, 0.75)"], [next, "rgba(34, 197, 94, 0.75)"]] as const) {
+          if (t === undefined) continue;
+          const f = evaluate(scene, t).elements.find((e) => e.id === selection[0]);
+          if (!f || !f.visible) continue;
+          const b = screenBox({ x: f.x, y: f.y, width: f.width, height: f.height });
+          ctx.strokeStyle = color;
+          ctx.fillStyle = color;
+          ctx.globalAlpha = 0.9;
+          ctx.strokeRect(b.x, b.y, b.width, b.height);
+          ctx.fillText(formatTime(t), b.x, b.y - 4 * dpr);
+        }
+        ctx.restore();
+      }
       const toS = (q: Point) => {
         const r = toScreen(view, q);
         return { x: r.x * dpr, y: r.y * dpr };

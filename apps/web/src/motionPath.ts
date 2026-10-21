@@ -49,3 +49,10 @@ export function motionPath(scene: Scene, timeline: Timeline, id: string): Motion
   for (const step of scene.steps) for (const a of step.actions) if (a.type === "motion" && a.targets.includes(id)) moves.push(a.motion.points);
   return { ...(start ? { start } : {}), keys, moves };
 }
+
+/** The global times of all keys of an element (any property), for the onion skin. */
+export function keyTimesOf(scene: Scene, timeline: Timeline, id: string): number[] {
+  const out: number[] = [];
+  for (const ts of timeline.steps) for (const k of keyframesIn(scene, ts.id)) if (k.element === id) out.push(ts.startMs + k.timeMs);
+  return out;
+}
