@@ -125,7 +125,7 @@ interface GlobalKey extends Keyframe {
   fromAtMs: number;
 }
 
-type Drag = { kind: "move" | "end" | "key"; key: string; dx: number };
+type Drag = { kind: "move" | "end" | "key"; key: string; dms: number };
 
 /** A small preview of an easing curve: time to the right, value up. */
 function EaseCurve({ name }: { name: string }) {
@@ -221,6 +221,8 @@ export function TimelinePanel() {
   const startRulerDrag = (e: React.PointerEvent) => {
     const el = e.currentTarget as HTMLElement;
     el.setPointerCapture(e.pointerId);
+    // The tracks get focus, so the time keys (arrows, Home, End) work next.
+    scrollRef.current?.focus({ preventScroll: true });
     seek(e.clientX);
     const move = (ev: PointerEvent) => seek(ev.clientX);
     const up = () => {
@@ -231,22 +233,50 @@ export function TimelinePanel() {
     el.addEventListener("pointerup", up);
   };
 
-  /** Drag a block (move it or change its duration) or a key. A click with no move selects. */
-  const startDrag = (e: React.PointerEvent, kind: Drag["kind"], key: string, onClick: () => void, onDrop: (dms: number) => void) => {
+  /** Times that a drag snaps to (docs/19 R2): the playhead, step borders, keys, and block edges. */
+  const snapTimes = (skip: (t: { key: string }) => boolean) => {
+    const out: number[] = [useEditor.getState().playhead];
+    for (const ts of timeline.steps) out.push(ts.startMs, ts.holdEndMs);
+    for (const k of allKeysRef.current) if (!skip({ key: k.actionId })) out.push(k.atMs);
+    for (const list of rows.blocks.values()) for (const b of list) if (!skip({ key: b.key })) out.push(b.startMs, b.endMs);
+    return out;
+  };
+
+  /**
+   * Drag a block (move it or change its duration) or a key. A click with no
+   * move selects. baseMs: the time of the dragged edge; it snaps to near
+   * times (8 px), unless Shift is down.
+   */
+  const startDrag = (e: React.PointerEvent, kind: Drag["kind"], key: string, onClick: () => void, onDrop: (dms: number) => void, baseMs?: number, skip: (t: { key: string }) => boolean = (t) => t.key === key) => {
     e.stopPropagation();
     const el = e.currentTarget as HTMLElement;
     el.setPointerCapture(e.pointerId);
     const x0 = e.clientX;
     let moved = false;
+    const targets = baseMs === undefined ? [] : snapTimes(skip);
+    const toDms = (ev: PointerEvent) => {
+      const raw = msOf(ev.clientX - x0);
+      if (baseMs === undefined || ev.shiftKey) return raw;
+      const want = baseMs + raw;
+      let best = raw;
+      let dist = 8 / pxPerMs;
+      for (const t of targets) {
+        if (Math.abs(t - want) < dist) {
+          dist = Math.abs(t - want);
+          best = Math.round(t - baseMs);
+        }
+      }
+      return best;
+    };
     const move = (ev: PointerEvent) => {
       moved ||= Math.abs(ev.clientX - x0) > 2;
-      if (moved) setDrag({ kind, key, dx: ev.clientX - x0 });
+      if (moved) setDrag({ kind, key, dms: toDms(ev) });
     };
     const up = (ev: PointerEvent) => {
       el.removeEventListener("pointermove", move);
       el.removeEventListener("pointerup", up);
       setDrag(null);
-      if (moved) onDrop(msOf(ev.clientX - x0));
+      if (moved) onDrop(toDms(ev));
       else onClick();
     };
     el.addEventListener("pointermove", move);
@@ -296,8 +326,8 @@ export function TimelinePanel() {
 
   const renderBlock = (b: Block, elId: string) => {
     const d = drag && drag.key === b.key ? drag : null;
-    const delay = d?.kind === "move" ? Math.max(0, b.action.delayMs + msOf(d.dx)) : b.action.delayMs;
-    const dur = d?.kind === "end" ? Math.max(MIN_MS, durationOf(b) + msOf(d.dx)) : durationOf(b);
+    const delay = d?.kind === "move" ? Math.max(0, b.action.delayMs + d.dms) : b.action.delayMs;
+    const dur = d?.kind === "end" ? Math.max(MIN_MS, durationOf(b) + d.dms) : durationOf(b);
     const start = b.startMs + (delay - b.action.delayMs);
     const label = describe(b.action);
     const on = activeAction === b.action.id && selectedStep === b.stepId;
@@ -324,6 +354,7 @@ export function TimelinePanel() {
                 if (elId) selectEl(elId);
               },
               (dms) => moveBlock(b, dms),
+              b.startMs,
             )
           }
           onKeyDown={(e) => {
@@ -341,7 +372,7 @@ export function TimelinePanel() {
             <span
               className={styles.edge}
               data-edge="end"
-              onPointerDown={(e) => startDrag(e, "end", b.key, () => undefined, (dms) => updateAction(b.stepId, b.action.id, { durationMs: Math.max(MIN_MS, durationOf(b) + dms) }, "Change duration"))}
+              onPointerDown={(e) => startDrag(e, "end", b.key, () => undefined, (dms) => updateAction(b.stepId, b.action.id, { durationMs: Math.max(MIN_MS, durationOf(b) + dms) }, "Change duration"), b.endMs)}
             />
           )}
         </div>
@@ -349,7 +380,7 @@ export function TimelinePanel() {
     );
   };
 
-  const keyAt = (k: GlobalKey) => (drag?.kind === "key" && (drag.key === k.actionId || (selKeys.includes(drag.key) && selKeys.includes(k.actionId))) ? Math.max(k.fromAtMs + MIN_MS, k.atMs + msOf(drag.dx)) : k.atMs);
+  const keyAt = (k: GlobalKey) => (drag?.kind === "key" && (drag.key === k.actionId || (selKeys.includes(drag.key) && selKeys.includes(k.actionId))) ? Math.max(k.fromAtMs + MIN_MS, k.atMs + drag.dms) : k.atMs);
 
   /** Keys in the order to move them: the last first when they move later, so a key does not stop at its neighbor. */
   const byTime = (ids: string[], dms: number) => {
@@ -407,6 +438,8 @@ export function TimelinePanel() {
                   useEditor.setState({ playhead: k.atMs, pinStepEnd: false });
                 },
                 (dms) => eachKey(byTime(group, dms), "Move keyframes", (sc, x) => moveKeyframeOps(sc, x.stepId, x.actionId, x.timeMs + dms)),
+                k.atMs,
+                (t) => group.includes(t.key),
               );
             }}
             onKeyDown={(e) => {
@@ -449,6 +482,31 @@ export function TimelinePanel() {
     if (t === undefined) return;
     useEditor.getState().pause();
     useEditor.setState({ playhead: t, pinStepEnd: false });
+  };
+
+  /**
+   * Time keys when the timeline has focus (docs/19 R2): ←/→ one frame, Shift
+   * ten frames, Home/End, ↑/↓ the previous or next key.
+   */
+  const onTimeKeys = (e: React.KeyboardEvent) => {
+    if (e.target !== e.currentTarget || e.ctrlKey || e.metaKey || e.altKey) return;
+    const st = useEditor.getState();
+    const frame = 1000 / scene.settings.video.fps;
+    let t: number | undefined;
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") t = st.playhead + (e.key === "ArrowLeft" ? -1 : 1) * frame * (e.shiftKey ? 10 : 1);
+    else if (e.key === "Home") t = 0;
+    else if (e.key === "End") t = st.timeline.totalMs;
+    else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      goKey(e.key === "ArrowUp" ? -1 : 1);
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    if (t === undefined) return;
+    e.preventDefault();
+    e.stopPropagation();
+    st.pause();
+    useEditor.setState({ playhead: Math.max(0, Math.min(span, Math.round(t * 1000) / 1000)), pinStepEnd: false });
   };
 
   /** Ctrl or Cmd + C copies the selected keys; Ctrl or Cmd + V pastes them on the selected element, from the playhead. */
@@ -559,7 +617,7 @@ export function TimelinePanel() {
           </button>
         </span>
       </div>
-      <div className={styles.scroll} ref={scrollRef} onWheel={onWheel}>
+      <div className={styles.scroll} ref={scrollRef} onWheel={onWheel} tabIndex={0} aria-label="Timeline tracks" onKeyDown={onTimeKeys}>
         <div style={{ width: LABEL_W + trackW, position: "relative" }}>
           <div className={styles.ruler}>
             <div className={styles.corner}>Elements</div>
