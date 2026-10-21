@@ -107,6 +107,18 @@ claude mcp add anivo -- npx -y @anivo/cli mcp --root ./videos
 
 - Also publish a standalone binary (P2) with Node SEA for users without Node.
 
+## Installed web app (PWA)
+
+The web app can install as an app, like Figma in the browser: its own window, an icon in the app list and the dock, and it works offline. This is the light desktop form. It needs no installer and no code signing.
+
+1. **Install.** Chrome and Edge show an **Install** button (Home and the top bar), when the browser offers to install the app. On macOS Safari: File › Add to Dock. On iPad and iPhone: Share › Add to Home Screen.
+2. **Offline.** A service worker (`sw.js`, made by the build from `apps/web/sw-plugin.ts`) keeps the app shell, the fonts, the icon packs, and the templates. Pages use the network first, so a new version shows when you are online. Speech models load on demand and are kept the first time. The share server and the agent bridge (`/api`) always use the network.
+3. **Files.** The installed app opens `.anivo` files from the system (File Handling API, Chrome and Edge): double-click a file, or "Open with Anivo".
+4. **Updates.** When a new version is ready, the top bar shows **Update**. Anivo does not reload by itself, so unsaved work is safe.
+5. **Shortcut.** The app icon has a "New scene" shortcut.
+
+Files: `assets/manifest.webmanifest`, `assets/app/` (icons), `apps/web/src/pwa.ts`.
+
 ## Desktop app (deferred)
 
 > **NOTE:** Decision 2026-10-17: the desktop app is the last phase. Do not build it before the start gate in [13](13-roadmap.md#phase-6--desktop-app-deferred) passes. Until then, the CLI gives ProRes, PNG sequence, and whisper.cpp. The web bridge gives live agents. The sections below are the plan for that later phase. Examine the Electron decision again before phase 6 starts.

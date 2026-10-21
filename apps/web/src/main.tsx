@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./components/App.js";
 import { loadScene } from "@anivo/schema";
+import { setupPwa } from "./pwa.js";
 import { useEditor } from "./store.js";
 
 // Test hook: Playwright reads and drives the editor store in development builds.
@@ -27,6 +28,8 @@ if (import.meta.env.DEV) {
   };
   (window as unknown as { __anivoBench: unknown }).__anivoBench = async (style: "clean" | "sketch") => (await import("./dev/bench.js")).benchFrames(style);
 }
+
+setupPwa();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

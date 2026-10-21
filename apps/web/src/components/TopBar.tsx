@@ -3,6 +3,8 @@
  */
 import { Menu, MenuDivider, MenuItem, MenuList, MenuPopover, MenuTrigger, Tooltip, makeStyles, mergeClasses } from "@fluentui/react-components";
 import {
+  ArrowClockwise16Regular,
+  ArrowDownload16Regular,
   ArrowExportUp16Regular,
   DesignIdeas16Regular,
   GanttChart16Regular,
@@ -37,6 +39,7 @@ import { cueAllSteps, importAudio } from "../audio.js";
 import { startRecording } from "../record.js";
 import { openTakes } from "../takes.js";
 import { shareServer } from "../share.js";
+import { applyUpdate, installApp } from "../pwa.js";
 import { useEditor } from "../store.js";
 import { MenuButtonSmall } from "./ui.js";
 import { COMPACT, PHONE, useMedia } from "./useMedia.js";
@@ -104,6 +107,8 @@ export function TopBar() {
   const hasVoice = useEditor((st) => st.scene.audio.some((t) => t.kind === "voiceover"));
   const agentOn = useEditor((st) => st.agent !== null);
   const timelineOpen = useEditor((st) => st.timelineOpen);
+  const canInstall = useEditor((st) => st.canInstall);
+  const updateReady = useEditor((st) => st.updateReady);
   const hasSelection = useEditor((st) => st.selection.length > 0);
   const drawer = useEditor((st) => st.drawer);
   const compact = useMedia(COMPACT);
@@ -288,6 +293,8 @@ export function TopBar() {
         </div>
       )}
       <div className={s.group}>
+        {updateReady && tool("A new version of Anivo is ready. Save your work, then reload.", <ArrowClockwise16Regular />, () => void applyUpdate(), { text: "Update" })}
+        {canInstall && !phone && tool("Install Anivo as an app: its own window, works offline, opens .anivo files", <ArrowDownload16Regular />, () => void installApp(), { text: "Install" })}
         {!phone && tool("Undo (Ctrl+Z)", <ArrowUndo16Regular />, undo, { disabled: !bus.canUndo })}
         {!phone && tool("Redo (Ctrl+Shift+Z)", <ArrowRedo16Regular />, redo, { disabled: !bus.canRedo })}
         <span className={s.sep} />
