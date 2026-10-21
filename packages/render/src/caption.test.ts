@@ -39,3 +39,37 @@ describe("caption place around a card", () => {
     expect([title, hash, prev].some(hits)).toBe(false);
   });
 });
+
+describe("motion blur", () => {
+  it("draws faint copies of a fast element when motion blur is on", async () => {
+    const { loadScene } = await import("@anivo/schema");
+    const { renderScene } = await import("./render.js");
+    const make = (blur: boolean) => {
+      const r = loadScene({
+        schemaVersion: 1,
+        meta: { title: "B" },
+        settings: { motionBlur: blur },
+        elements: { a: { type: "rectangle", z: "a0", x: 0, y: 100, width: 100, height: 100 } },
+        steps: [{ id: "s1", actions: [{ id: "m", type: "morph", targets: ["a"], to: { x: 1600 }, durationMs: 500, easing: "linear" }] }],
+      });
+      if (!r.ok) throw new Error("scene");
+      return r.scene;
+    };
+    // Count fill calls with a recording context.
+    const calls = (blur: boolean) => {
+      let fills = 0;
+      const ctx = new Proxy({} as Record<string, unknown>, {
+        get: (t, k) => {
+          if (k === "fill" || k === "fillRect") return () => void fills++;
+          if (k === "measureText") return () => ({ width: 10 });
+          if (k === "createLinearGradient") return () => ({ addColorStop: () => undefined });
+          return k in t ? t[k as string] : () => undefined;
+        },
+        set: (t, k, v) => ((t[k as string] = v), true),
+      });
+      renderScene(ctx as never, make(blur), 250, { width: 960, height: 540 });
+      return fills;
+    };
+    expect(calls(true)).toBeGreaterThan(calls(false));
+  });
+});

@@ -42,6 +42,7 @@ export const EffectParams = z
     color: Color,
     width: z.number(),
     dimTo: z.number().min(0).max(1),
+    unit: z.enum(["char", "word"]).describe("typewriter: show the text one character (default) or one word at a time (docs/19 R12)."),
   })
   .partial();
 export type EffectParams = z.infer<typeof EffectParams>;

@@ -57,3 +57,20 @@ describe("step caption anchor", () => {
     expect(c.anchor).toEqual({ x: 100, y: 100, width: 300, height: 250 });
   });
 });
+
+describe("typewriter by word", () => {
+  it("shows whole words only", () => {
+    const r = loadScene({
+      schemaVersion: 1,
+      meta: { title: "W" },
+      elements: { t: { type: "text", z: "a0", x: 0, y: 0, width: 600, height: 60, content: { text: "one two three four" } } },
+      steps: [{ id: "s1", actions: [{ id: "e", type: "enter", effect: "typewriter", targets: ["t"], durationMs: 1000, easing: "linear", params: { unit: "word" } }] }],
+    });
+    if (!r.ok) throw new Error("scene");
+    const reveal = (ms: number) => evaluate(r.scene, ms).elements.find((e) => e.id === "t")!.textReveal;
+    expect(reveal(100)).toBe(0);
+    expect(reveal(300)).toBeCloseTo(3 / 18, 5);
+    expect(reveal(600)).toBeCloseTo(7 / 18, 5);
+    expect(reveal(1000)).toBe(1);
+  });
+});

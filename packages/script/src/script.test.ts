@@ -241,3 +241,11 @@ describe("origin", () => {
     expect(printScene(scene)).toContain("origin=bottom");
   });
 });
+
+describe("typewriter by word", () => {
+  it("compiles unit=word and prints it back", () => {
+    const scene = ok(`text t "Hello big world" at=100,100\nstep "S"\n  enter t typewriter unit=word\n`);
+    expect(scene.steps[0]!.actions[0]).toMatchObject({ params: { unit: "word" } });
+    expect(printScene(scene)).toContain("typewriter unit=word");
+  });
+});

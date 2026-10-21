@@ -43,7 +43,7 @@ import { ColorField, NumberField, SelectField, TextField, useThemeColors, useThe
 import { ActionsPanel } from "./ActionsPanel.js";
 import { AddActionMenu, StepInspector } from "./StepInspector.js";
 import { elementIcon } from "./typeIcons.js";
-import { Aligned, Btn, ColorPick, DragNumber, IconButton, Note, Panel, Prop } from "./ui.js";
+import { Aligned, Btn, Check, ColorPick, DragNumber, IconButton, Note, Panel, Prop } from "./ui.js";
 
 const useStyles = makeStyles({
   root: {
@@ -568,6 +568,9 @@ function SceneProperties() {
         />
       </Panel>
       <Panel id="scene-video" title="Video">
+        <Prop label="">
+          <Check label="Motion blur for fast moves (in the video)" checked={settings.motionBlur ?? false} onChange={(v) => commitSettings({ motionBlur: v }, v ? "Motion blur on" : "Motion blur off")} />
+        </Prop>
         <SelectField
           label="Size"
           value={VIDEO_SIZES.some((o) => o.value === size) ? size : "1920x1080"}

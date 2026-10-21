@@ -26,6 +26,8 @@ export interface RenderOptions {
   ghostHidden?: number;
   /** Elements that the editor does not draw ("hidden in editor"). Exports do not set it. */
   skipIds?: ReadonlySet<string>;
+  /** Do not draw the background (for passes over a frame). */
+  noBackground?: boolean;
   /** Burned-in captions (docs/08 "Captions"). Make the list one time with `sceneCaptions`. */
   captions?: { list: Caption[]; position?: "bottom" | "top" };
 }
@@ -744,7 +746,7 @@ export function renderFrame(ctx: Ctx2D, scene: Scene, frame: FrameState, routes:
     routes,
   };
   const view: FrameState = opts.camera ? { ...frame, camera: opts.camera } : frame;
-  drawBackground(dc, view, opts);
+  if (!opts.noBackground) drawBackground(dc, view, opts);
   const cam = view.camera;
   const ghost = opts.ghostHidden ?? 0;
   const sx = opts.width / cam.width;
@@ -971,10 +973,38 @@ export function drawCaption(ctx: Ctx2D, scene: Scene, timeMs: number, opts: Rend
   ctx.restore();
 }
 
+/**
+ * Motion blur (docs/19 R13): for elements that moved more than 3 px since the
+ * last frame, draw faint copies at two earlier times of the frame (a
+ * shutter of half a frame). Pure: it only evaluates the scene again.
+ */
+function drawMotionBlur(ctx: Ctx2D, scene: Scene, frame: FrameState, timeMs: number, opts: RenderOptions): void {
+  const frameMs = 1000 / scene.settings.video.fps;
+  const now = new Map(frame.elements.map((f) => [f.id, f]));
+  for (const [share, alpha] of [
+    [0.25, 0.22],
+    [0.5, 0.12],
+  ] as const) {
+    const t = Math.max(0, timeMs - frameMs * share * 2);
+    const past = evaluateWithLayout(scene, t);
+    const moving = new Set<string>();
+    for (const f of past.frame.elements) {
+      const n = now.get(f.id);
+      if (n && f.visible && n.visible && f.type !== "connector" && Math.hypot(n.x - f.x, n.y - f.y) > 3) moving.add(f.id);
+    }
+    if (moving.size === 0) return;
+    const skip = new Set(frame.elements.map((f) => f.id).filter((id) => !moving.has(id)));
+    // No captions, transitions, or particles in the faint copies.
+    const ghost: FrameState = { timeMs: t, camera: frame.camera, particles: [], elements: past.frame.elements.map((f) => (moving.has(f.id) ? { ...f, opacity: f.opacity * alpha } : f)) };
+    renderFrame(ctx, scene, ghost, past.routes, { ...opts, noBackground: true, skipIds: skip });
+  }
+}
+
 /** Evaluate and draw the scene at `timeMs`. */
 export function renderScene(ctx: Ctx2D, scene: Scene, timeMs: number, opts: RenderOptions): FrameState {
   const { frame, routes } = evaluateWithLayout(scene, timeMs);
   renderFrame(ctx, scene, frame, routes, opts);
+  if (scene.settings.motionBlur && timeMs > 0) drawMotionBlur(ctx, scene, frame, timeMs, opts);
   drawCaption(ctx, scene, timeMs, opts);
   return frame;
 }

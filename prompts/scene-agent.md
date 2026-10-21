@@ -89,7 +89,7 @@ widget <id> <name> [at=x,y] [size=WxH] [<text>="…"]   (a ready-made group; par
 
 step "<title>" [hold=<time>] [cue=<time>] [caption="<one sentence>" [near=<id>] [side=auto|above|below|left|right|top|bottom]]
   (caption: types in next to the element that changes; the step holds until a viewer can read it. Use one idea and one caption for each step.)
-  enter <targets> fade|pop|draw-on|slide-up|slide-left|wipe|typewriter [+<delay>] [stagger=<time>]
+  enter <targets> fade|pop|draw-on|slide-up|slide-left|wipe|typewriter [+<delay>] [stagger=<time>]   (typewriter unit=word: one word at a time)
   exit <targets> <effect>
   morph <targets> key=value…
   pulse|shake|glow|flash|highlight|focus <targets>

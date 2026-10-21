@@ -57,6 +57,7 @@ export const SceneSettings = z.object({
       defaultIconPack: z.string().default("lucide"),
     })
     .default({ enterEffect: "fade", easing: "ease-out", defaultIconPack: "lucide" }),
+  motionBlur: z.boolean().optional().describe("Video export: fast moves get a soft trail (docs/19 R13). The editor does not show it."),
 });
 export type SceneSettings = z.infer<typeof SceneSettings>;
 

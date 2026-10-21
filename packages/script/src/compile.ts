@@ -888,7 +888,8 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
       if (k === "direction") params["direction"] = v;
       else if (k === "distance") params["distance"] = Number(v);
       else if (k === "scale" || k === "from-scale") params["fromScale"] = Number(v);
-      else errors.push(err(pos, `The property '${k}' is not known for ${verb}.`, "Use: dur, stagger, easing, direction, distance, scale."));
+      else if (k === "unit" && (v === "word" || v === "char")) params["unit"] = v;
+      else errors.push(err(pos, `The property '${k}' is not known for ${verb}.`, "Use: dur, stagger, easing, direction, distance, scale, unit=word."));
     }
     if (Object.keys(params).length) a["params"] = params;
   } else if (verb === "morph") {

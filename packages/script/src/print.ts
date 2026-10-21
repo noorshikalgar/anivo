@@ -197,6 +197,7 @@ function printAction(a: Action, index: number): string {
     if (a.params.direction) parts.push(`direction=${a.params.direction}`);
     if (a.params.distance !== undefined) parts.push(`distance=${a.params.distance}`);
     if (a.params.fromScale !== undefined) parts.push(`scale=${a.params.fromScale}`);
+    if (a.params.unit === "word") parts.push("unit=word");
   } else if (a.type === "morph") {
     parts.push("morph", targets);
     for (const [k, v] of Object.entries(a.to)) if (v !== undefined) parts.push(`${MORPH_OUT[k] ?? k}=${typeof v === "string" ? q(v) : n(v)}`);
