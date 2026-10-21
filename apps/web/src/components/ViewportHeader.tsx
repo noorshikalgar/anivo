@@ -30,7 +30,13 @@ export function ViewportHeader() {
   const zoomTo = (z: number) => zoomAt(z / useEditor.getState().view.zoom, viewport.width / 2, viewport.height / 2);
   return (
     <div className={s.root} role="toolbar" aria-label="Viewport">
-      <Menu checkedValues={{ view: [...(ghosts ? ["ghosts"] : []), ...(timelineOpen ? ["timeline"] : [])] }} onCheckedValueChange={(_, d) => useEditor.setState({ showGhosts: d.checkedItems.includes("ghosts"), timelineOpen: d.checkedItems.includes("timeline") })}>
+      <Menu
+        checkedValues={{ view: [...(ghosts ? ["ghosts"] : []), ...(timelineOpen ? ["timeline"] : []), ...(layout.onion ? ["onion"] : [])] }}
+        onCheckedValueChange={(_, d) => {
+          useEditor.setState({ showGhosts: d.checkedItems.includes("ghosts"), timelineOpen: d.checkedItems.includes("timeline") });
+          setLayout({ onion: d.checkedItems.includes("onion") });
+        }}
+      >
         <MenuTrigger disableButtonEnhancement>
           <MenuButtonSmall className={s.menu}>View</MenuButtonSmall>
         </MenuTrigger>
@@ -48,6 +54,9 @@ export function ViewportHeader() {
             </MenuItemCheckbox>
             <MenuItemCheckbox name="view" value="timeline">
               Timeline
+            </MenuItemCheckbox>
+            <MenuItemCheckbox name="view" value="onion">
+              Onion skin (the selection at its previous and next keys)
             </MenuItemCheckbox>
             <MenuDivider />
             <MenuItem secondaryContent="Ctrl+Space" onClick={() => useEditor.setState((st) => ({ maximized: !st.maximized }))}>

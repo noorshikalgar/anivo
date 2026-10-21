@@ -12,6 +12,8 @@ const seek = async (page: import("@playwright/test").Page, stepRel: number) => {
   });
   // The lower half of the ruler: the upper half has the step sections.
   await page.mouse.click(box.x + ((at + stepRel) / span) * box.width, box.y + box.height * 0.75);
+  // The ruler gives focus to the timeline (its arrow keys step frames). These tests nudge the selection next, as after a click on the canvas.
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
 };
 
 type Morph = { delayMs: number; durationMs?: number };
@@ -153,4 +155,47 @@ test("select many keys with Shift: delete them together; copy keys and paste the
   await keys.nth(1).click({ modifiers: ["Shift"] });
   await page.keyboard.press("Delete");
   await expect(keys).toHaveCount(0);
+});
+
+test("I inserts a position key at the playhead, Alt+I deletes it", async ({ page }) => {
+  await page.getByRole("button", { name: /Traffic flows/ }).first().click();
+  const pod = (await state(page)).scene.elements["pod-2"]!;
+  const p = await screen(page, pod.x + pod.width / 2, pod.y + pod.height / 2);
+  await page.mouse.click(p.x, p.y);
+  await page.keyboard.press("i");
+  await expect(page.getByRole("slider", { name: /Keyframe Position of pod-2/ })).toHaveCount(1);
+  expect((await state(page)).tool).toBe("select");
+  await page.keyboard.press("Alt+i");
+  await expect(page.getByRole("slider", { name: /Keyframe Position of pod-2/ })).toHaveCount(0);
+});
+
+test("F9 eases the selected key; the curve editor sets a custom curve", async ({ page }) => {
+  await page.getByRole("button", { name: /Traffic flows/ }).first().click();
+  const pod = (await state(page)).scene.elements["pod-2"]!;
+  const p = await screen(page, pod.x + pod.width / 2, pod.y + pod.height / 2);
+  await page.mouse.click(p.x, p.y);
+  await page.keyboard.press("i");
+  const key = page.getByRole("slider", { name: /Keyframe Position of pod-2/ });
+  await key.click();
+  type M = { type: string; easing?: unknown; targets: string[] };
+  const easingNow = async () => {
+    const s = (await state(page)) as unknown as { scene: { steps: { actions: M[] }[] } };
+    return s.scene.steps.flatMap((x) => x.actions).find((a) => a.type === "morph" && a.targets[0] === "pod-2")!.easing;
+  };
+  await page.keyboard.press("Shift+F9");
+  expect(await easingNow()).toBe("ease-out");
+  await page.keyboard.press("F9");
+  expect(await easingNow()).toBe("ease-in-out");
+  await page.getByRole("button", { name: "Edit the easing curve" }).click();
+  await page.getByRole("button", { name: "Overshoot" }).click();
+  expect(await easingNow()).toEqual({ cubicBezier: [0.34, 1.56, 0.64, 1] });
+  // Drag the end handle: still a cubic bezier, one undo entry.
+  const h = page.getByRole("slider", { name: "End handle" });
+  const b = (await h.boundingBox())!;
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(b.x - 20, b.y + 30, { steps: 5 });
+  await page.mouse.up();
+  const e = (await easingNow()) as { cubicBezier: number[] };
+  expect(e.cubicBezier[2]).toBeLessThan(0.64);
 });

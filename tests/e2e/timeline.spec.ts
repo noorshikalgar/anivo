@@ -73,3 +73,77 @@ test("zoom in and out, and Fit", async ({ page }) => {
   await page.getByRole("button", { name: "Fit the timeline" }).click();
   expect((await ruler.boundingBox())!.width).toBeCloseTo(w0, 0);
 });
+
+test("drag a block into another step: the action moves to that step, and one undo moves it back", async ({ page }) => {
+  type A = { id: string; type: string; targets: string[] };
+  const s0 = (await state(page)) as unknown as { scene: { steps: { id: string; actions: A[] }[] }; timeline: { totalMs: number; steps: { id: string; startMs: number }[] } };
+  const enter = s0.scene.steps[1]!.actions.find((a) => a.type === "enter" && a.targets.includes("lb"))!;
+  const block = page.getByRole("group", { name: "Track lb" }).locator(`[data-action="${enter.id}"]`);
+  await block.scrollIntoViewIfNeeded();
+  const box = (await block.boundingBox())!;
+  const ruler = (await page.getByLabel("Time ruler").boundingBox())!;
+  const span = Math.max(1000, s0.timeline.totalMs + 3000);
+  const step4 = s0.timeline.steps[3]!;
+  // From the block start to 0.5 s into step 4.
+  const targetX = ruler.x + ((step4.startMs + 500) / span) * ruler.width;
+  await page.mouse.move(box.x + 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move((box.x + targetX) / 2, box.y + box.height / 2, { steps: 5 });
+  await page.mouse.move(targetX, box.y + box.height / 2, { steps: 5 });
+  await page.mouse.up();
+  const s1 = (await state(page)) as unknown as typeof s0 & { selectedStep: string };
+  expect(s1.scene.steps[1]!.actions.some((a) => a.id === enter.id)).toBe(false);
+  expect(s1.scene.steps[3]!.actions.some((a) => a.id === enter.id)).toBe(true);
+  expect(s1.selectedStep).toBe(step4.id);
+  await page.keyboard.press("Control+z");
+  const s2 = (await state(page)) as unknown as typeof s0;
+  expect(s2.scene.steps[1]!.actions.some((a) => a.id === enter.id)).toBe(true);
+});
+
+test("time keys: arrows step one frame (Shift ten), Home and End", async ({ page }) => {
+  const ruler = page.getByLabel("Time ruler");
+  const box = (await ruler.boundingBox())!;
+  await page.mouse.click(box.x + box.width * 0.3, box.y + box.height * 0.75);
+  const t0 = (await st(page)).playhead;
+  await page.keyboard.press("ArrowRight");
+  expect((await st(page)).playhead).toBeCloseTo(t0 + 1000 / 60, 1);
+  await page.keyboard.press("Shift+ArrowLeft");
+  expect((await st(page)).playhead).toBeCloseTo(t0 + 1000 / 60 - 10000 / 60, 1);
+  await page.keyboard.press("Home");
+  expect((await st(page)).playhead).toBe(0);
+  await page.keyboard.press("End");
+  expect((await st(page)).playhead).toBeGreaterThan(5000);
+});
+
+test("a dragged block snaps to the playhead", async ({ page }) => {
+  type A = { id: string; type: string; targets: string[]; delayMs: number };
+  const s0 = (await state(page)) as unknown as { scene: { steps: { id: string; actions: A[] }[] }; timeline: { totalMs: number; steps: { id: string; startMs: number }[] } };
+  const enter = s0.scene.steps[1]!.actions.find((a) => a.type === "enter" && a.targets.includes("lb"))!;
+  const t = s0.timeline.steps[1]!.startMs + 400;
+  await page.evaluate((ms) => (window as unknown as { __anivo: { setState(p: unknown): void } }).__anivo.setState({ playhead: ms, pinStepEnd: false }), t);
+  const block = page.getByRole("group", { name: "Track lb" }).locator(`[data-action="${enter.id}"]`);
+  await block.scrollIntoViewIfNeeded();
+  const box = (await block.boundingBox())!;
+  const ruler = (await page.getByLabel("Time ruler").boundingBox())!;
+  const span = Math.max(1000, s0.timeline.totalMs + 3000);
+  // Drop the block start 3 px from the playhead: it snaps.
+  const target = ruler.x + (t / span) * ruler.width + 3;
+  await page.mouse.move(box.x + 1, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(target, box.y + box.height / 2, { steps: 6 });
+  await page.mouse.up();
+  const s1 = (await state(page)) as unknown as typeof s0;
+  expect(s1.scene.steps[1]!.actions.find((a) => a.id === enter.id)!.delayMs).toBe(400);
+});
+
+test("track filter: only animated, only selected", async ({ page }) => {
+  const timeline = page.getByRole("region", { name: "Timeline" });
+  const all = await timeline.getByRole("group", { name: /^Track / }).count();
+  await page.evaluate(() => (window as unknown as { __anivo: { getState(): { apply(t: unknown): unknown } } }).__anivo.getState().apply({ label: "Add", ops: [{ op: "element.add", id: "still", type: "rectangle", props: { x: 10, y: 10, width: 50, height: 50 } }] }));
+  await expect(timeline.getByRole("group", { name: /^Track / })).toHaveCount(all + 1);
+  await page.getByRole("button", { name: "Animated", exact: true }).click();
+  await expect(timeline.getByRole("group", { name: "Track still" })).toHaveCount(0);
+  await page.evaluate(() => (window as unknown as { __anivo: { getState(): { setSelection(ids: string[]): void } } }).__anivo.getState().setSelection(["lb"]));
+  await page.getByRole("button", { name: "Selected", exact: true }).click();
+  await expect(timeline.getByRole("group", { name: /^Track / })).toHaveCount(1);
+});

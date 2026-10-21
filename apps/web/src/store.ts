@@ -143,6 +143,8 @@ export interface LayoutPrefs {
   snapGrid: boolean;
   snapObjects: boolean;
   gridSize: number;
+  /** Onion skin: faint outlines of the selected element at its previous and next keys (docs/19 R5). */
+  onion: boolean;
 }
 export interface AreaSizes {
   /** Width of the steps area. */
@@ -288,7 +290,7 @@ export const useEditor = create<EditorState>((set, get) => {
     buildOpen: false,
     messageOpen: false,
     targetHighlight: [],
-    layout: readPref("anivo.layout", { showGrid: false, snapGrid: true, snapObjects: true, gridSize: 8 }),
+    layout: readPref("anivo.layout", { showGrid: false, snapGrid: true, snapObjects: true, gridSize: 8, onion: true }),
     areas: readPref("anivo.areas", { left: 230, right: 300, outliner: 34, timeline: 200 }),
     propTab: "scene",
     drawer: null,

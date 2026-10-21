@@ -1,6 +1,6 @@
 import { prepare, stepIndexAt } from "@anivo/engine";
 import { type LayoutKind, autoLayout, evaluateWithLayout } from "@anivo/layout";
-import { type OperationInput, hasKeys, sendAlongOps, setKeyframeOps } from "@anivo/ops";
+import { type OperationInput, deleteKeyframeOps, hasKeys, keyframesIn, sendAlongOps, setKeyframeOps } from "@anivo/ops";
 import type { Element } from "@anivo/schema";
 import { type Box, boundsOf, editorSkip, geometryOps, leafDescendants } from "./editing.js";
 import { notify } from "./notify.js";
@@ -556,4 +556,54 @@ export function addMotionAlongArrow(targets?: string[], connector?: string, reve
   const ops = sendAlongOps(st.scene, st.selectedStep, ids, conn, { reverse });
   if (ops.length === 0) return false;
   return st.apply({ label: "Send along arrow", ops }).ok;
+}
+
+
+/**
+ * Insert keys at the playhead for the selected elements, with their values
+ * now (Blender: I). all: position, size, opacity, and colors; else position.
+ * Returns the number of elements that got keys.
+ */
+export function insertKeysAtPlayhead(all: boolean): number {
+  const st = useEditor.getState();
+  const at = keyAtPlayhead();
+  if (!at) return 0;
+  const { frame } = evaluateWithLayout(st.scene, st.playhead);
+  const mergeKey = `insert-keys/${Date.now()}`;
+  let n = 0;
+  for (const id of movableIds(st.selection)) {
+    const f = frame.elements.find((e) => e.id === id);
+    if (!f) continue;
+    const values: Record<string, unknown> = { x: Math.round(f.x), y: Math.round(f.y) };
+    if (all) {
+      Object.assign(values, { width: Math.round(f.width), height: Math.round(f.height), opacity: f.opacity });
+      const el = st.scene.elements[id]!;
+      for (const k of ["fill", "stroke", "textColor"] as const) {
+        const v = (el.style as Record<string, unknown>)[k];
+        if (typeof v === "string") values[k] = v;
+      }
+    }
+    const s2 = useEditor.getState();
+    const ops = setKeyframeOps(s2.scene, at.stepId, id, values, at.t);
+    if (ops.length && s2.apply({ label: all ? "Insert keys" : "Insert position key", ops, mergeKey }).ok) n++;
+  }
+  if (n > 0) useEditor.setState({ timelineOpen: true });
+  return n;
+}
+
+/** Delete the keys of the selected elements at the playhead (Blender: Alt+I). Returns how many. */
+export function deleteKeysAtPlayhead(): number {
+  const st = useEditor.getState();
+  const at = keyAtPlayhead();
+  if (!at) return 0;
+  const ids = new Set(movableIds(st.selection));
+  const mergeKey = `delete-keys/${Date.now()}`;
+  let n = 0;
+  for (const k of keyframesIn(st.scene, at.stepId)) {
+    if (!ids.has(k.element) || Math.abs(k.timeMs - at.t) > 20) continue;
+    const s2 = useEditor.getState();
+    const ops = deleteKeyframeOps(s2.scene, at.stepId, k.actionId);
+    if (ops.length && s2.apply({ label: "Delete keys", ops, mergeKey }).ok) n++;
+  }
+  return n;
 }

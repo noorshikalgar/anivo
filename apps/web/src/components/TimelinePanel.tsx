@@ -4,10 +4,10 @@
  * screen), its action blocks, and its keys. Unfold a row to see a row for
  * each keyed property. Record (K) makes keys at the playhead.
  */
-import { Tooltip, makeStyles, mergeClasses } from "@fluentui/react-components";
+import { Popover, PopoverSurface, PopoverTrigger, Tooltip, makeStyles, mergeClasses } from "@fluentui/react-components";
 import { easingFn, stepIndexAt } from "@anivo/engine";
 import { type Keyframe, type OperationInput, deleteKeyframeOps, keyframesIn, moveKeyframeOps, setKeyframeOps } from "@anivo/ops";
-import { type Action, EasingName, type Scene } from "@anivo/schema";
+import { type Action, type Easing, EasingName, type Scene } from "@anivo/schema";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { updateAction } from "../commands.js";
 import { layerSpans } from "../layers.js";
@@ -15,6 +15,7 @@ import { setAreas, useEditor } from "../store.js";
 import { formatTime } from "./PlaybackBar.js";
 import { describe } from "./StepInspector.js";
 import { actionIcon, elementIcon } from "./typeIcons.js";
+import { CurveEditor } from "./CurveEditor.js";
 import { Splitter } from "./ui.js";
 
 const LABEL_W = 200;
@@ -40,6 +41,7 @@ const useStyles = makeStyles({
     ":disabled": { opacity: 0.5, cursor: "default" },
   },
   rec: { display: "inline-flex", alignItems: "center", gap: "4px" },
+  btnOn: { backgroundColor: "var(--ui-select) !important", color: "#fff" },
   recOn: { backgroundColor: "#e5484d !important", color: "#fff" },
   recDot: { width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "var(--ui-muted)" },
   recDotOn: { backgroundColor: "#fff" },
@@ -125,17 +127,17 @@ interface GlobalKey extends Keyframe {
   fromAtMs: number;
 }
 
-type Drag = { kind: "move" | "end" | "key"; key: string; dx: number };
+type Drag = { kind: "move" | "end" | "key"; key: string; dms: number };
 
 /** A small preview of an easing curve: time to the right, value up. */
-function EaseCurve({ name }: { name: string }) {
-  const fn = easingFn(name as never);
+function EaseCurve({ value }: { value: Easing }) {
+  const fn = easingFn(value);
   const pts = Array.from({ length: 25 }, (_, i) => {
     const t = i / 24;
     return `${(2 + t * 40).toFixed(1)},${(18 - fn(t) * 14).toFixed(1)}`;
   }).join(" ");
   return (
-    <svg width="44" height="20" viewBox="0 0 44 20" aria-label={`Easing curve: ${name}`} role="img">
+    <svg width="44" height="20" viewBox="0 0 44 20" aria-hidden>
       <line x1="2" y1="18" x2="42" y2="18" stroke="var(--ui-outline)" />
       <polyline points={pts} fill="none" stroke="#f5b84a" strokeWidth="1.6" />
     </svg>
@@ -157,6 +159,8 @@ export function TimelinePanel() {
   const [viewW, setViewW] = useState(800);
   const [zoom, setZoom] = useState(1);
   const [open, setOpen] = useState<Set<string>>(new Set());
+  /** Track filter (docs/19 R4): all, only tracks with actions or keys, or only the selection. */
+  const [filter, setFilter] = useState<"all" | "animated" | "selected">("all");
   const [drag, setDrag] = useState<Drag | null>(null);
   /** Selected keys (action IDs). Shift + click adds one. The last is the active key. */
   const [selKeys, setSelKeys] = useState<string[]>([]);
@@ -221,6 +225,8 @@ export function TimelinePanel() {
   const startRulerDrag = (e: React.PointerEvent) => {
     const el = e.currentTarget as HTMLElement;
     el.setPointerCapture(e.pointerId);
+    // The tracks get focus, so the time keys (arrows, Home, End) work next.
+    scrollRef.current?.focus({ preventScroll: true });
     seek(e.clientX);
     const move = (ev: PointerEvent) => seek(ev.clientX);
     const up = () => {
@@ -231,22 +237,50 @@ export function TimelinePanel() {
     el.addEventListener("pointerup", up);
   };
 
-  /** Drag a block (move it or change its duration) or a key. A click with no move selects. */
-  const startDrag = (e: React.PointerEvent, kind: Drag["kind"], key: string, onClick: () => void, onDrop: (dms: number) => void) => {
+  /** Times that a drag snaps to (docs/19 R2): the playhead, step borders, keys, and block edges. */
+  const snapTimes = (skip: (t: { key: string }) => boolean) => {
+    const out: number[] = [useEditor.getState().playhead];
+    for (const ts of timeline.steps) out.push(ts.startMs, ts.holdEndMs);
+    for (const k of allKeysRef.current) if (!skip({ key: k.actionId })) out.push(k.atMs);
+    for (const list of rows.blocks.values()) for (const b of list) if (!skip({ key: b.key })) out.push(b.startMs, b.endMs);
+    return out;
+  };
+
+  /**
+   * Drag a block (move it or change its duration) or a key. A click with no
+   * move selects. baseMs: the time of the dragged edge; it snaps to near
+   * times (8 px), unless Shift is down.
+   */
+  const startDrag = (e: React.PointerEvent, kind: Drag["kind"], key: string, onClick: () => void, onDrop: (dms: number) => void, baseMs?: number, skip: (t: { key: string }) => boolean = (t) => t.key === key) => {
     e.stopPropagation();
     const el = e.currentTarget as HTMLElement;
     el.setPointerCapture(e.pointerId);
     const x0 = e.clientX;
     let moved = false;
+    const targets = baseMs === undefined ? [] : snapTimes(skip);
+    const toDms = (ev: PointerEvent) => {
+      const raw = msOf(ev.clientX - x0);
+      if (baseMs === undefined || ev.shiftKey) return raw;
+      const want = baseMs + raw;
+      let best = raw;
+      let dist = 8 / pxPerMs;
+      for (const t of targets) {
+        if (Math.abs(t - want) < dist) {
+          dist = Math.abs(t - want);
+          best = Math.round(t - baseMs);
+        }
+      }
+      return best;
+    };
     const move = (ev: PointerEvent) => {
       moved ||= Math.abs(ev.clientX - x0) > 2;
-      if (moved) setDrag({ kind, key, dx: ev.clientX - x0 });
+      if (moved) setDrag({ kind, key, dms: toDms(ev) });
     };
     const up = (ev: PointerEvent) => {
       el.removeEventListener("pointermove", move);
       el.removeEventListener("pointerup", up);
       setDrag(null);
-      if (moved) onDrop(msOf(ev.clientX - x0));
+      if (moved) onDrop(toDms(ev));
       else onClick();
     };
     el.addEventListener("pointermove", move);
@@ -269,10 +303,35 @@ export function TimelinePanel() {
 
   const durationOf = (b: Block) => b.endMs - b.startMs;
 
+  /**
+   * Move an action by dms. If its start goes into another step, the action
+   * moves to that step (docs/18 T6), at the same place in time.
+   */
+  const moveBlock = (b: Block, dms: number) => {
+    const st = useEditor.getState();
+    const ts = st.timeline.steps.find((x) => x.id === b.stepId);
+    if (!ts) return;
+    const start = Math.max(0, ts.startMs + b.action.delayMs + dms);
+    const i = Math.max(0, stepIndexAt(st.timeline, start));
+    const to = st.timeline.steps[i]!;
+    if (to.id === b.stepId) return updateAction(b.stepId, b.action.id, { delayMs: Math.max(0, b.action.delayMs + dms) }, "Move action");
+    const r = st.apply({
+      label: "Move action to another step",
+      ops: [
+        { op: "action.remove", step: b.stepId, id: b.action.id },
+        { op: "action.add", step: to.id, action: { ...b.action, delayMs: Math.round(start - to.startMs) } },
+      ],
+    });
+    if (r.ok) {
+      st.selectStep(to.id);
+      useEditor.setState({ activeAction: b.action.id });
+    }
+  };
+
   const renderBlock = (b: Block, elId: string) => {
     const d = drag && drag.key === b.key ? drag : null;
-    const delay = d?.kind === "move" ? Math.max(0, b.action.delayMs + msOf(d.dx)) : b.action.delayMs;
-    const dur = d?.kind === "end" ? Math.max(MIN_MS, durationOf(b) + msOf(d.dx)) : durationOf(b);
+    const delay = d?.kind === "move" ? Math.max(0, b.action.delayMs + d.dms) : b.action.delayMs;
+    const dur = d?.kind === "end" ? Math.max(MIN_MS, durationOf(b) + d.dms) : durationOf(b);
     const start = b.startMs + (delay - b.action.delayMs);
     const label = describe(b.action);
     const on = activeAction === b.action.id && selectedStep === b.stepId;
@@ -298,7 +357,8 @@ export function TimelinePanel() {
                 useEditor.setState({ activeAction: b.action.id, propTab: "actions" });
                 if (elId) selectEl(elId);
               },
-              (dms) => updateAction(b.stepId, b.action.id, { delayMs: Math.max(0, b.action.delayMs + dms) }, "Move action"),
+              (dms) => moveBlock(b, dms),
+              b.startMs,
             )
           }
           onKeyDown={(e) => {
@@ -316,7 +376,7 @@ export function TimelinePanel() {
             <span
               className={styles.edge}
               data-edge="end"
-              onPointerDown={(e) => startDrag(e, "end", b.key, () => undefined, (dms) => updateAction(b.stepId, b.action.id, { durationMs: Math.max(MIN_MS, durationOf(b) + dms) }, "Change duration"))}
+              onPointerDown={(e) => startDrag(e, "end", b.key, () => undefined, (dms) => updateAction(b.stepId, b.action.id, { durationMs: Math.max(MIN_MS, durationOf(b) + dms) }, "Change duration"), b.endMs)}
             />
           )}
         </div>
@@ -324,7 +384,7 @@ export function TimelinePanel() {
     );
   };
 
-  const keyAt = (k: GlobalKey) => (drag?.kind === "key" && (drag.key === k.actionId || (selKeys.includes(drag.key) && selKeys.includes(k.actionId))) ? Math.max(k.fromAtMs + MIN_MS, k.atMs + msOf(drag.dx)) : k.atMs);
+  const keyAt = (k: GlobalKey) => (drag?.kind === "key" && (drag.key === k.actionId || (selKeys.includes(drag.key) && selKeys.includes(k.actionId))) ? Math.max(k.fromAtMs + MIN_MS, k.atMs + drag.dms) : k.atMs);
 
   /** Keys in the order to move them: the last first when they move later, so a key does not stop at its neighbor. */
   const byTime = (ids: string[], dms: number) => {
@@ -333,8 +393,7 @@ export function TimelinePanel() {
   };
 
   /** Apply a change to each selected key, as one history entry. */
-  const eachKey = (ids: string[], label: string, make: (sc: Scene, k: Keyframe) => OperationInput[]) => {
-    const mergeKey = `keys/${label}/${Date.now()}`;
+  const eachKey = (ids: string[], label: string, make: (sc: Scene, k: Keyframe) => OperationInput[], mergeKey = `keys/${label}/${Date.now()}`) => {
     for (const id of ids) {
       const st = useEditor.getState();
       const k = st.scene.steps.flatMap((x) => keyframesIn(st.scene, x.id)).find((x) => x.actionId === id);
@@ -382,6 +441,8 @@ export function TimelinePanel() {
                   useEditor.setState({ playhead: k.atMs, pinStepEnd: false });
                 },
                 (dms) => eachKey(byTime(group, dms), "Move keyframes", (sc, x) => moveKeyframeOps(sc, x.stepId, x.actionId, x.timeMs + dms)),
+                k.atMs,
+                (t) => group.includes(t.key),
               );
             }}
             onKeyDown={(e) => {
@@ -414,7 +475,15 @@ export function TimelinePanel() {
   allKeysRef.current = allKeys;
   const active = allKeys.find((k) => k.actionId === activeKey);
   const activeAct = active ? scene.steps.find((s) => s.id === active.stepId)?.actions.find((a) => a.id === active.actionId) : undefined;
-  const easing = activeAct && "easing" in activeAct && typeof activeAct.easing === "string" ? activeAct.easing : "ease-in-out";
+  const easingVal: Easing = (activeAct && "easing" in activeAct && activeAct.easing) || "ease-in-out";
+  const easing = typeof easingVal === "string" ? easingVal : "custom";
+  const curveDrag = useRef<string | null>(null);
+  const setKeysEasing = (v: Easing, done = true) => {
+    // One history entry for a whole handle drag.
+    curveDrag.current ??= `curve/${Date.now()}`;
+    eachKey(selKeys, "Change easing", (_sc, x) => [{ op: "action.update", step: x.stepId, id: x.actionId, set: { easing: v } }], curveDrag.current);
+    if (done) curveDrag.current = null;
+  };
   const keyTimes = useMemo(() => {
     const own = selection.length > 0 ? allKeys.filter((k) => selection.includes(k.element)) : allKeys;
     return [...new Set(own.map((k) => k.atMs))].sort((a, b) => a - b);
@@ -426,8 +495,45 @@ export function TimelinePanel() {
     useEditor.setState({ playhead: t, pinStepEnd: false });
   };
 
+  /**
+   * Time keys when the timeline has focus (docs/19 R2): ←/→ one frame, Shift
+   * ten frames, Home/End, ↑/↓ the previous or next key.
+   */
+  const onTimeKeys = (e: React.KeyboardEvent) => {
+    if (e.target !== e.currentTarget || e.ctrlKey || e.metaKey || e.altKey) return;
+    const st = useEditor.getState();
+    const frame = 1000 / scene.settings.video.fps;
+    let t: number | undefined;
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") t = st.playhead + (e.key === "ArrowLeft" ? -1 : 1) * frame * (e.shiftKey ? 10 : 1);
+    else if (e.key === "Home") t = 0;
+    else if (e.key === "End") t = st.timeline.totalMs;
+    else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      goKey(e.key === "ArrowUp" ? -1 : 1);
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    if (t === undefined) return;
+    e.preventDefault();
+    e.stopPropagation();
+    st.pause();
+    useEditor.setState({ playhead: Math.max(0, Math.min(span, Math.round(t * 1000) / 1000)), pinStepEnd: false });
+  };
+
   /** Ctrl or Cmd + C copies the selected keys; Ctrl or Cmd + V pastes them on the selected element, from the playhead. */
   const onKeysClipboard = (e: React.KeyboardEvent) => {
+    // F9: easy ease; Shift+F9: slow end (into the key); Ctrl+Shift+F9: slow start. For the selected keys, or the active block.
+    if (e.key === "F9") {
+      const v: Easing = e.shiftKey && (e.ctrlKey || e.metaKey) ? "ease-in" : e.shiftKey ? "ease-out" : "ease-in-out";
+      e.preventDefault();
+      e.stopPropagation();
+      if (selKeys.length > 0) setKeysEasing(v);
+      else {
+        const st = useEditor.getState();
+        if (st.selectedStep && st.activeAction) updateAction(st.selectedStep, st.activeAction, { easing: v }, "Change easing");
+      }
+      return;
+    }
     const mod = e.ctrlKey || e.metaKey;
     if (!mod) return;
     const k = e.key.toLowerCase();
@@ -455,6 +561,8 @@ export function TimelinePanel() {
       }
     }
   };
+
+  const shown = rows.ids.filter((id) => (filter === "all" ? true : filter === "selected" ? selection.includes(id) : (rows.blocks.get(id)?.length ?? 0) > 0 || (rows.keys.get(id)?.length ?? 0) > 0));
 
   const tick = tickStep(pxPerMs);
   const ticks: number[] = [];
@@ -497,10 +605,24 @@ export function TimelinePanel() {
             <span style={{ color: "var(--ui-muted)" }}>
               · {selKeys.length > 1 ? `${selKeys.length} keys` : `${active.element} · ${GROUP_NAMES[active.group] ?? active.group} · ${formatTime(active.atMs)}`}
             </span>
-            <EaseCurve name={easing} />
+            <Popover positioning="above-start" withArrow>
+              <PopoverTrigger disableButtonEnhancement>
+                <button type="button" className={styles.btn} aria-label="Edit the easing curve" style={{ padding: 0, display: "flex" }}>
+                  <EaseCurve value={easingVal} />
+                </button>
+              </PopoverTrigger>
+              <PopoverSurface onPointerDown={(e) => e.stopPropagation()} style={{ backgroundColor: "var(--ui-menu)", color: "var(--ui-text)", border: "1px solid var(--ui-outline)" }}>
+                <CurveEditor value={easingVal} onChange={setKeysEasing} />
+              </PopoverSurface>
+            </Popover>
             <label style={{ display: "flex", gap: "4px", alignItems: "center" }}>
               Easing
-              <select className={styles.select} aria-label="Easing of the selected keys" value={easing} onChange={(e) => { const v = e.target.value; eachKey(selKeys, "Change easing", (_sc, x) => [{ op: "action.update", step: x.stepId, id: x.actionId, set: { easing: v } }]); }}>
+              <select className={styles.select} aria-label="Easing of the selected keys" value={easing} onChange={(e) => setKeysEasing(e.target.value as Easing)}>
+                {easing === "custom" && (
+                  <option value="custom" disabled>
+                    custom curve
+                  </option>
+                )}
                 {EasingName.options.map((n) => (
                   <option key={n} value={n}>
                     {n}
@@ -522,7 +644,14 @@ export function TimelinePanel() {
         ) : (
           <span style={{ color: "var(--ui-muted)" }}>Click a block or a ◆ to edit it. Ctrl + wheel zooms.</span>
         )}
-        <span style={{ marginLeft: "auto", display: "flex", gap: "2px" }}>
+        <span style={{ marginLeft: "auto", display: "flex", gap: "2px" }} role="group" aria-label="Show tracks">
+          {(["all", "animated", "selected"] as const).map((f) => (
+            <button key={f} type="button" aria-pressed={filter === f} className={mergeClasses(styles.btn, filter === f && styles.btnOn)} onClick={() => setFilter(f)}>
+              {f === "all" ? "All" : f === "animated" ? "Animated" : "Selected"}
+            </button>
+          ))}
+        </span>
+        <span style={{ display: "flex", gap: "2px" }}>
           <button type="button" className={styles.btn} aria-label="Zoom out the timeline" onClick={() => setZoom((z) => Math.max(1, z / 1.5))}>
             −
           </button>
@@ -534,7 +663,7 @@ export function TimelinePanel() {
           </button>
         </span>
       </div>
-      <div className={styles.scroll} ref={scrollRef} onWheel={onWheel}>
+      <div className={styles.scroll} ref={scrollRef} onWheel={onWheel} tabIndex={0} aria-label="Timeline tracks" onKeyDown={onTimeKeys}>
         <div style={{ width: LABEL_W + trackW, position: "relative" }}>
           <div className={styles.ruler}>
             <div className={styles.corner}>Elements</div>
@@ -574,8 +703,8 @@ export function TimelinePanel() {
               </div>
             </div>
           )}
-          {rows.ids.length === 0 && <div className={styles.empty}>No elements yet. Draw on the canvas.</div>}
-          {rows.ids.map((id) => {
+          {shown.length === 0 && <div className={styles.empty}>{rows.ids.length === 0 ? "No elements yet. Draw on the canvas." : filter === "selected" ? "Select elements to see their tracks." : "No animated elements."}</div>}
+          {shown.map((id) => {
             const el = scene.elements[id]!;
             const keys = rows.keys.get(id) ?? [];
             const groups = [...new Set(keys.map((k) => k.group))];

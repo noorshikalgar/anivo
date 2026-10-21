@@ -40,16 +40,16 @@ What we do not change: steps stay. They are the beats of the story, the place of
 
 ## 5. Plan
 
-T0 (done first, owner report): "the timeline tracks the object from creation to its place". Before, each change in a step made a morph, so placing a new element was animated. Now a change is static, unless Record is on or the property has keys (docs/16 §2).
+T0 (done, owner report): "the timeline tracks the object from creation to its place". Before, each change in a step made a morph, so placing a new element was animated. Now a change is static, unless Record is on or the property has keys (docs/16 §2).
 
 
 | # | Item |
 |---|---|
-| T1 | **Tracks view**: one row for each element, with life bar, action blocks, and keys, on global time. Steps as sections on the ruler. Replaces the Actions, Layers, and Keys tabs (Actions stay in the properties panel). |
-| T2 | Twirl-down property rows with keys, in global time (keys of all steps). Record (auto-key) works in all steps from the playhead. |
-| T3 | Motion path on the canvas, with draggable key dots. |
-| T4 | Easing panel for the selected keys and blocks: presets, hold, curve preview. |
-| T5 | Multi-select, drag together, copy and paste of keys and blocks. |
-| T6 | Drag a block across a step border to move it to that step. |
+| T1 | Done. **Tracks view**: one row for each element, with life bar, action blocks, and keys, on global time. Steps as sections on the ruler. Replaces the Actions, Layers, and Keys tabs (Actions stay in the properties panel). |
+| T2 | Done. Twirl-down property rows with keys, in global time (keys of all steps). Record (auto-key) works in all steps from the playhead. |
+| T3 | Done. Motion path on the canvas, with draggable key dots. |
+| T4 | Done. Easing panel for the selected keys and blocks: presets, hold, curve preview. |
+| T5 | Done. Multi-select, drag together, copy and paste of keys and blocks. |
+| T6 | Done. Drag a block across a step border to move it to that step. |
 
 Each item: a usable workflow first, then tests, then the next item.
