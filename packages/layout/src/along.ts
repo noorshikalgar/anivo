@@ -27,6 +27,13 @@ export function alongPoints(scene: Scene, stepId: string, connectorId: string, r
     const f = evaluateWithLayout(scene, ts.startMs + target.delayMs - 1).frame.elements.find((e) => e.id === target.id);
     if (f) {
       const c = round({ x: f.x + f.width / 2, y: f.y + f.height / 2 });
+      // An element that is on the arrow already goes on from its place, not back to the arrow start.
+      const near = closestOnPath(pts, c);
+      if (near.distance <= Math.max(f.width, f.height) / 2 + 8 && near.index > 0) {
+        pts.splice(0, near.index, near.point);
+      } else if (near.distance <= Math.max(f.width, f.height) / 2 + 8) {
+        pts[0] = near.point;
+      }
       if (Math.hypot(c.x - pts[0]!.x, c.y - pts[0]!.y) > 4) pts.unshift(c);
       // Stop before the element at the end touches it: the target arrives next to it, not on it.
       const a = pts[pts.length - 2]!;
@@ -41,6 +48,23 @@ export function alongPoints(scene: Scene, stepId: string, connectorId: string, r
     }
   }
   return pts;
+}
+
+/** The point of a path nearest to p: the point, its distance, and the index of the next path point. */
+function closestOnPath(pts: Point[], p: Point): { point: Point; distance: number; index: number } {
+  let best = { point: pts[0]!, distance: Infinity, index: 0 };
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i]!;
+    const b = pts[i + 1]!;
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const l2 = dx * dx + dy * dy;
+    const t = l2 === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2));
+    const q = { x: a.x + dx * t, y: a.y + dy * t };
+    const d = Math.hypot(p.x - q.x, p.y - q.y);
+    if (d < best.distance - 1e-6) best = { point: round(q), distance: d, index: i + 1 };
+  }
+  return best;
 }
 
 /** Motion actions with `along` whose points are not the connector route now. */

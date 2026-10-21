@@ -107,3 +107,15 @@ describe("send along two arrows in two steps", () => {
     expect(second.motion.points[0]!.y).toBeGreaterThan(400);
   });
 });
+
+describe("an element on the arrow already", () => {
+  it("goes on from its place to the end, not back to the start", () => {
+    const bus = make();
+    // m sits on the arrow, half way (the arrow goes from a at x 100 to b at x 600, y 50).
+    bus.apply({ ops: [{ op: "element.update", id: "m", set: { x: 330, y: 30 } }, ...sendAlongOps(bus.scene, "s1", ["m"], "c")] });
+    const xs = [0, 400, 800, 1200, 1600, 2000, 2400].map((t) => center(bus, t).x);
+    for (let i = 1; i < xs.length; i++) expect(xs[i]!).toBeGreaterThanOrEqual(xs[i - 1]! - 0.5);
+    expect(xs[0]).toBeCloseTo(350, 0);
+  });
+});
+
