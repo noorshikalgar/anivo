@@ -515,11 +515,12 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
         continue;
       }
       if (k === "opacity") props["opacity"] = Number(v);
+      else if (k === "follow") props["follow"] = v;
       else if (k === "rotate" || k === "rotation") props["rotation"] = Number(v);
       else if (k === "style" && ["solid", "dashed", "dotted"].includes(v)) style["strokeStyle"] = v;
       else if (k === "weight") style["fontWeight"] = Number(v);
       else if (STYLE_KEYS[k]) style[STYLE_KEYS[k]] = num(v) ?? v;
-      else errors.push(err(pos, `The property '${k}' is not known for ${d.kind}.`, "Use: at, size, fill, stroke, stroke-width, style, radius, font-size, color, text-align, opacity, rotate, weight."));
+      else errors.push(err(pos, `The property '${k}' is not known for ${d.kind}.`, "Use: at, size, fill, stroke, stroke-width, style, radius, font-size, color, text-align, opacity, rotate, weight, follow."));
     }
     if (d.flags.has("dashed")) style["strokeStyle"] = "dashed";
     if (d.flags.has("dotted")) style["strokeStyle"] = "dotted";

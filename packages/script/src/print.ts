@@ -61,6 +61,7 @@ export function printScene(scene: Scene): string {
     parts.push(...styleParts(el));
     if (el.opacity !== 1) parts.push(`opacity=${n(el.opacity)}`);
     if (el.rotation !== 0) parts.push(`rotate=${n(el.rotation)}`);
+    if (el.follow) parts.push(`follow=${el.follow}`);
     out.push(indent + parts.join(" "));
   };
 

@@ -545,7 +545,34 @@ export function evaluateAt(prepared: Prepared, timeMs: number, opts: EvaluateOpt
     }
   }
   const caption = i >= 0 ? stepCaptionAt(scene, timeline.steps, i, t, state) : undefined;
-  return { timeMs: Math.max(0, t), elements: order.map((id) => state[id]!), particles, camera, ...(caption ? { caption } : {}), ...(transition ? { transition } : {}) };
+  const followed = applyFollow(scene, base, state);
+  return { timeMs: Math.max(0, t), elements: order.map((id) => followed[id] ?? state[id]!), particles, camera, ...(caption ? { caption } : {}), ...(transition ? { transition } : {}) };
+}
+
+/**
+ * Follow (docs/19 R6): an element with `follow` moves by the amount that its
+ * leader moved from the leader's base place. A chain of leaders adds up (at
+ * most 8). Only the output frame changes, so steps do not add it twice.
+ */
+function applyFollow(scene: Scene, base: StateMap, state: StateMap): StateMap {
+  const out: StateMap = {};
+  const delta = (id: string, depth: number): { dx: number; dy: number } => {
+    const el = scene.elements[id];
+    if (!el?.follow || depth > 8) return { dx: 0, dy: 0 };
+    const lead = state[el.follow];
+    const lead0 = base[el.follow];
+    if (!lead || !lead0) return { dx: 0, dy: 0 };
+    const up = delta(el.follow, depth + 1);
+    return { dx: lead.x - lead0.x + up.dx, dy: lead.y - lead0.y + up.dy };
+  };
+  for (const el of Object.values(scene.elements)) {
+    if (!el.follow) continue;
+    const f = state[el.id];
+    if (!f) continue;
+    const d = delta(el.id, 0);
+    if (d.dx !== 0 || d.dy !== 0) out[el.id] = { ...f, x: f.x + d.dx, y: f.y + d.dy };
+  }
+  return out;
 }
 
 const CAPTION_FADE_MS = 250;

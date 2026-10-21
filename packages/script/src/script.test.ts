@@ -225,3 +225,11 @@ describe("step caption", () => {
     expect(printScene(scene)).toContain('caption="Alice says hi" near=a side=below');
   });
 });
+
+describe("follow", () => {
+  it("compiles follow= and prints it back", () => {
+    const scene = ok(`box pkt "GET" at=100,300\ntext tag "HTTPS" at=100,250 follow=pkt\nstep "S"\n  enter pkt fade\n`);
+    expect(scene.elements["tag"]!.follow).toBe("pkt");
+    expect(printScene(scene)).toContain("follow=pkt");
+  });
+});

@@ -87,6 +87,9 @@ export function checkReferences(scene: Scene): SchemaIssue[] {
     if (el.parentId !== undefined && !has(el.parentId)) {
       issues.push({ path: `elements.${el.id}.parentId`, message: `The parent '${el.parentId}' does not exist.` });
     }
+    if (el.follow !== undefined && (!has(el.follow) || el.follow === el.id)) {
+      issues.push({ path: `elements.${el.id}.follow`, message: el.follow === el.id ? `'${el.id}' cannot follow itself.` : `The element '${el.follow}' to follow does not exist. Use one of: ${known()}.` });
+    }
     if (el.type === "connector") {
       for (const end of ["start", "end"] as const) {
         const e = el[end];

@@ -18,6 +18,7 @@ export interface El {
   start?: { kind: string; elementId?: string };
   end?: { kind: string; elementId?: string };
   startHead?: string;
+  follow?: string;
   endHead?: string;
 }
 
