@@ -1,3 +1,4 @@
+import { motionPath } from "../motionPath.js";
 import type { FrameState } from "@anivo/engine";
 import { type Polyline, evaluateWithLayout } from "@anivo/layout";
 import { type Ctx2D, renderFrame } from "@anivo/render";
@@ -240,6 +241,48 @@ export function CanvasView() {
       }
       ctx.restore();
     }
+    // The motion path of the selected element (docs/18 T3): a dashed line through its position keys, with a dot for each key.
+    if (selection.length === 1) {
+      const mp = motionPath(scene, useEditor.getState().timeline, selection[0]!);
+      const toS = (q: Point) => {
+        const r = toScreen(view, q);
+        return { x: r.x * dpr, y: r.y * dpr };
+      };
+      ctx.save();
+      ctx.lineWidth = 1.5 * dpr;
+      ctx.strokeStyle = "rgba(20, 184, 166, 0.9)";
+      ctx.setLineDash([3 * dpr, 4 * dpr]);
+      for (const m of mp.moves) {
+        ctx.beginPath();
+        m.forEach((q, i) => (i ? ctx.lineTo(toS(q).x, toS(q).y) : ctx.moveTo(toS(q).x, toS(q).y)));
+        ctx.stroke();
+      }
+      if (mp.keys.length) {
+        ctx.strokeStyle = "rgba(245, 184, 74, 0.95)";
+        ctx.setLineDash([6 * dpr, 4 * dpr]);
+        ctx.beginPath();
+        const pts = [...(mp.start ? [mp.start] : []), ...mp.keys.map((k) => k.point)];
+        pts.forEach((q, i) => (i ? ctx.lineTo(toS(q).x, toS(q).y) : ctx.moveTo(toS(q).x, toS(q).y)));
+        ctx.stroke();
+        ctx.setLineDash([]);
+        const now = useEditor.getState().playhead;
+        for (const k of mp.keys) {
+          const q = toS(k.point);
+          const r = (Math.abs(k.atMs - now) < 20 ? 7 : 5) * dpr;
+          ctx.fillStyle = Math.abs(k.atMs - now) < 20 ? "#ffffff" : "#f5b84a";
+          ctx.strokeStyle = "rgba(0,0,0,0.6)";
+          ctx.beginPath();
+          ctx.moveTo(q.x, q.y - r);
+          ctx.lineTo(q.x + r, q.y);
+          ctx.lineTo(q.x, q.y + r);
+          ctx.lineTo(q.x - r, q.y);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
     // Agent presence (docs/09 "Agent presence"): changed elements glow for 2 s; pending changes show dashed.
     const agentState = useEditor.getState().agent;
     const aiActivity = useEditor.getState().aiActivity;
@@ -463,6 +506,39 @@ export function CanvasView() {
     return null;
   }
 
+  /** Drag a key dot of the motion path: it moves the position of that key. */
+  function startKeyDotDrag(e: React.PointerEvent<HTMLDivElement>, p: Point): boolean {
+    const st = useEditor.getState();
+    if (st.selection.length !== 1) return false;
+    const id = st.selection[0]!;
+    const tol = 8 / st.view.zoom;
+    // A dot at the element center now is the element itself: a drag there moves the element (and its key).
+    const f = last.current?.frame.elements.find((x) => x.id === id);
+    const here = f ? { x: f.x + f.width / 2, y: f.y + f.height / 2 } : undefined;
+    const key = motionPath(st.scene, st.timeline, id).keys.find((k) => Math.abs(k.point.x - p.x) <= tol && Math.abs(k.point.y - p.y) <= tol && !(here && Math.hypot(here.x - k.point.x, here.y - k.point.y) < tol));
+    if (!key) return false;
+    const el = e.currentTarget;
+    const grab = { x: p.x - key.point.x, y: p.y - key.point.y };
+    const valuesAt = (q: Point) => ({ x: Math.round(q.x - grab.x - key.width / 2), y: Math.round(q.y - grab.y - key.height / 2) });
+    let mergeKey: string | undefined;
+    const move = (ev: PointerEvent) => {
+      const v = valuesAt(scenePoint(ev));
+      const s2 = useEditor.getState();
+      const a = s2.scene.steps.find((x) => x.id === key.stepId)?.actions.find((x) => x.id === key.actionId);
+      if (!a || a.type !== "morph") return;
+      s2.apply({ label: "Move keyframe position", ops: [{ op: "action.update", step: key.stepId, id: key.actionId, set: { to: { ...a.to, ...v } } }], mergeKey: (mergeKey ??= `keydot/${key.actionId}/${Date.now()}`) });
+    };
+    const up = () => {
+      el.removeEventListener("pointermove", move);
+      el.removeEventListener("pointerup", up);
+    };
+    el.addEventListener("pointermove", move);
+    el.addEventListener("pointerup", up);
+    // Go to the key, so the canvas shows the element at the key.
+    useEditor.setState({ playhead: key.atMs, pinStepEnd: false });
+    return true;
+  }
+
   function requestDraw() {
     requestAnimationFrame(draw);
   }
@@ -474,6 +550,7 @@ export function CanvasView() {
     const el = e.currentTarget;
     el.setPointerCapture(e.pointerId);
 
+    if (startKeyDotDrag(e, p)) return;
     const h = handleAt(p);
     if (h) {
       const box = currentBox(st.selection[0]!)!;

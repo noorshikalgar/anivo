@@ -95,3 +95,32 @@ test("a property with a keyframe records the next change at the playhead, with R
   expect(morphs).toHaveLength(2);
   expect(s.scene.elements["pod-2"]!.x).toBe(pod.x);
 });
+
+test("the motion path shows the position keys on the canvas; drag a key dot to change the key", async ({ page }) => {
+  await page.getByRole("button", { name: /Traffic flows/ }).first().click();
+  await page.getByRole("button", { name: "Add step" }).click();
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("k");
+  const pod = (await state(page)).scene.elements["pod-2"]!;
+  await seek(page, 1000);
+  const p = await screen(page, pod.x + pod.width / 2, pod.y + pod.height / 2);
+  await page.mouse.click(p.x, p.y);
+  for (let i = 0; i < 10; i++) await page.keyboard.press("Shift+ArrowUp");
+  await page.keyboard.press("k");
+  // The key is at the center of pod-2 at 1 s: 100 px up.
+  const keyAt = await screen(page, pod.x + pod.width / 2, pod.y + pod.height / 2 - 100);
+  await page.mouse.move(keyAt.x, keyAt.y);
+  await page.mouse.down();
+  await page.mouse.move(keyAt.x + 30, keyAt.y + 10, { steps: 4 });
+  await page.mouse.move(keyAt.x + 60, keyAt.y + 20, { steps: 4 });
+  await page.mouse.up();
+  const s = await state(page);
+  const morph = s.scene.steps.find((x) => x.id === s.selectedStep)!.actions.find((a) => a.type === "morph") as unknown as { to: { x: number; y: number } };
+  expect(morph.to.x).toBeGreaterThan(pod.x + 20);
+  expect(morph.to.y).toBeGreaterThan(pod.y - 100);
+  // One undo restores the key.
+  await page.keyboard.press("Control+z");
+  const u = await state(page);
+  const back = u.scene.steps.find((x) => x.id === u.selectedStep)!.actions.find((a) => a.type === "morph") as unknown as { to: { x?: number; y: number } };
+  expect(back.to).toEqual({ y: pod.y - 100 });
+});
