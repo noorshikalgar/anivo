@@ -269,6 +269,31 @@ export function TimelinePanel() {
 
   const durationOf = (b: Block) => b.endMs - b.startMs;
 
+  /**
+   * Move an action by dms. If its start goes into another step, the action
+   * moves to that step (docs/18 T6), at the same place in time.
+   */
+  const moveBlock = (b: Block, dms: number) => {
+    const st = useEditor.getState();
+    const ts = st.timeline.steps.find((x) => x.id === b.stepId);
+    if (!ts) return;
+    const start = Math.max(0, ts.startMs + b.action.delayMs + dms);
+    const i = Math.max(0, stepIndexAt(st.timeline, start));
+    const to = st.timeline.steps[i]!;
+    if (to.id === b.stepId) return updateAction(b.stepId, b.action.id, { delayMs: Math.max(0, b.action.delayMs + dms) }, "Move action");
+    const r = st.apply({
+      label: "Move action to another step",
+      ops: [
+        { op: "action.remove", step: b.stepId, id: b.action.id },
+        { op: "action.add", step: to.id, action: { ...b.action, delayMs: Math.round(start - to.startMs) } },
+      ],
+    });
+    if (r.ok) {
+      st.selectStep(to.id);
+      useEditor.setState({ activeAction: b.action.id });
+    }
+  };
+
   const renderBlock = (b: Block, elId: string) => {
     const d = drag && drag.key === b.key ? drag : null;
     const delay = d?.kind === "move" ? Math.max(0, b.action.delayMs + msOf(d.dx)) : b.action.delayMs;
@@ -298,7 +323,7 @@ export function TimelinePanel() {
                 useEditor.setState({ activeAction: b.action.id, propTab: "actions" });
                 if (elId) selectEl(elId);
               },
-              (dms) => updateAction(b.stepId, b.action.id, { delayMs: Math.max(0, b.action.delayMs + dms) }, "Move action"),
+              (dms) => moveBlock(b, dms),
             )
           }
           onKeyDown={(e) => {

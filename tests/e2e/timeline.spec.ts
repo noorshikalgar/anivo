@@ -73,3 +73,29 @@ test("zoom in and out, and Fit", async ({ page }) => {
   await page.getByRole("button", { name: "Fit the timeline" }).click();
   expect((await ruler.boundingBox())!.width).toBeCloseTo(w0, 0);
 });
+
+test("drag a block into another step: the action moves to that step, and one undo moves it back", async ({ page }) => {
+  type A = { id: string; type: string; targets: string[] };
+  const s0 = (await state(page)) as unknown as { scene: { steps: { id: string; actions: A[] }[] }; timeline: { totalMs: number; steps: { id: string; startMs: number }[] } };
+  const enter = s0.scene.steps[1]!.actions.find((a) => a.type === "enter" && a.targets.includes("lb"))!;
+  const block = page.getByRole("group", { name: "Track lb" }).locator(`[data-action="${enter.id}"]`);
+  await block.scrollIntoViewIfNeeded();
+  const box = (await block.boundingBox())!;
+  const ruler = (await page.getByLabel("Time ruler").boundingBox())!;
+  const span = Math.max(1000, s0.timeline.totalMs + 3000);
+  const step4 = s0.timeline.steps[3]!;
+  // From the block start to 0.5 s into step 4.
+  const targetX = ruler.x + ((step4.startMs + 500) / span) * ruler.width;
+  await page.mouse.move(box.x + 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move((box.x + targetX) / 2, box.y + box.height / 2, { steps: 5 });
+  await page.mouse.move(targetX, box.y + box.height / 2, { steps: 5 });
+  await page.mouse.up();
+  const s1 = (await state(page)) as unknown as typeof s0 & { selectedStep: string };
+  expect(s1.scene.steps[1]!.actions.some((a) => a.id === enter.id)).toBe(false);
+  expect(s1.scene.steps[3]!.actions.some((a) => a.id === enter.id)).toBe(true);
+  expect(s1.selectedStep).toBe(step4.id);
+  await page.keyboard.press("Control+z");
+  const s2 = (await state(page)) as unknown as typeof s0;
+  expect(s2.scene.steps[1]!.actions.some((a) => a.id === enter.id)).toBe(true);
+});
