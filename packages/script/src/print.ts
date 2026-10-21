@@ -114,6 +114,7 @@ const STYLE_OUT: Record<string, string> = {
   fontWeight: "weight",
   shadow: "shadow",
   shadowColor: "shadow-color",
+  origin: "origin",
   gradient: "gradient",
 };
 
