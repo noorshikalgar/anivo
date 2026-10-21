@@ -67,6 +67,8 @@ interface EditorState {
   pinStepEnd: boolean;
   /** Auto-key: a change in a step makes a keyframe at the playhead (docs/16). */
   autoKey: boolean;
+  /** The arrowheads of a new arrow: the last arrow type the user chose. */
+  arrowEnds: ArrowEnds;
   /** The view of the timeline: action bars or keyframes. */
   timelineView: "actions" | "keys";
   /** The active action of the selected step (properties and step tree), or null. */
@@ -171,6 +173,27 @@ export function writePref(key: string, value: unknown): void {
 }
 
 /** Change the grid and snap settings. */
+/** Arrow types: a line, an arrow at the end or the start, or arrows at both ends. */
+export type ArrowEnds = "none" | "end" | "start" | "both";
+
+function readArrowEnds(): ArrowEnds {
+  try {
+    const v = localStorage.getItem("anivo.arrowEnds");
+    return v === "none" || v === "start" || v === "both" ? v : "end";
+  } catch {
+    return "end";
+  }
+}
+
+export function setArrowEnds(v: ArrowEnds): void {
+  try {
+    localStorage.setItem("anivo.arrowEnds", v);
+  } catch {
+    // No storage: the choice lasts until reload.
+  }
+  useEditor.setState({ arrowEnds: v });
+}
+
 export function setLayout(p: Partial<LayoutPrefs>): void {
   const layout = { ...useEditor.getState().layout, ...p };
   useEditor.setState({ layout });
@@ -259,6 +282,7 @@ export const useEditor = create<EditorState>((set, get) => {
     pinStepEnd: false,
     autoKey: false,
     timelineView: "actions",
+    arrowEnds: readArrowEnds(),
     showGhosts: true,
     maximized: false,
     saveWidgetOpen: false,

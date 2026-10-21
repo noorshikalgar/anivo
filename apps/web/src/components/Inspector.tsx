@@ -3,6 +3,7 @@
  * collapsible panels with property rows.
  */
 import { KeyLabel } from "./KeyButton.js";
+
 import { evaluate } from "@anivo/engine";
 import type { Element } from "@anivo/schema";
 import { Text, makeStyles, mergeClasses } from "@fluentui/react-components";
@@ -36,7 +37,7 @@ import {
 } from "@fluentui/react-icons";
 import { useEffect, useMemo } from "react";
 import { type AlignKind, alignSelection, autoLayoutSelection, commitProps, commitSettings, deleteSelection, distributeSelection, duplicateSelection, groupSelection, renameElement, reorderSelection, setElementText, ungroupSelection, visibleAtStepStart } from "../commands.js";
-import { useEditor } from "../store.js";
+import { type ArrowEnds, setArrowEnds, useEditor } from "../store.js";
 import { Comments } from "./Comments.js";
 import { ColorField, NumberField, SelectField, TextField, useThemeColors, useThemeDefault } from "./fields.js";
 import { ActionsPanel } from "./ActionsPanel.js";
@@ -85,6 +86,24 @@ function Info({ warn, children, action }: { warn?: boolean; children: React.Reac
         <span>{children}</span>
         {action}
       </div>
+    </div>
+  );
+}
+
+const ARROW_TYPES: { value: ArrowEnds; text: string; label: string }[] = [
+  { value: "none", text: "—", label: "Line" },
+  { value: "end", text: "→", label: "Arrow at the end" },
+  { value: "start", text: "←", label: "Arrow at the start" },
+  { value: "both", text: "↔", label: "Arrows at both ends" },
+];
+
+/** One click for the arrow type (docs/17 F5). The arrow tool uses the last type. */
+function ArrowTypes({ value, onChange }: { value: ArrowEnds; onChange: (v: ArrowEnds) => void }) {
+  return (
+    <div role="group" aria-label="Arrow type" style={{ display: "flex", gap: "2px" }}>
+      {ARROW_TYPES.map((t) => (
+        <IconButton key={t.value} label={t.label} pressed={value === t.value} icon={<span style={{ fontSize: "15px", lineHeight: 1 }}>{t.text}</span>} onClick={() => onChange(t.value)} />
+      ))}
     </div>
   );
 }
@@ -292,6 +311,16 @@ function ElementProperties({ el }: { el: Element }) {
                 ]}
                 onCommit={(v) => set({ route: v }, "Change route")}
               />
+              <Prop label="Type">
+                <ArrowTypes
+                  value={el.startHead === "none" ? (el.endHead === "none" ? "none" : "end") : el.endHead === "none" ? "start" : "both"}
+                  onChange={(v) => {
+                    setArrowEnds(v);
+                    const head = (on: boolean, now: string) => (on ? (now === "none" ? "arrow" : now) : "none");
+                    set({ startHead: head(v === "start" || v === "both", el.startHead), endHead: head(v === "end" || v === "both", el.endHead) }, "Change arrow type");
+                  }}
+                />
+              </Prop>
               {(["startHead", "endHead"] as const).map((k) => (
                 <SelectField
                   key={k}

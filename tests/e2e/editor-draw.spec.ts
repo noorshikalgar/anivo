@@ -80,3 +80,23 @@ test("code tool adds a code block that the panel can edit", async ({ page }) => 
   await code.blur();
   await expect.poll(async () => ((await state(page)).scene.elements[id!] as unknown as { code: string }).code).toBe("print('hi')");
 });
+
+test("the arrow type changes in one click, and the next arrow uses it", async ({ page }) => {
+  await page.keyboard.press("a");
+  await drag(page, await screen(page, 730, 540), await screen(page, 1310, 285));
+  const id = () => state(page).then((s) => Object.keys(s.scene.elements).find((k) => k.startsWith("c-lb-pod-1"))!);
+  const first = await id();
+  await page.getByRole("button", { name: "Arrows at both ends" }).click();
+  let c = (await state(page)).scene.elements[first]!;
+  expect([c.startHead, c.endHead]).toEqual(["arrow", "arrow"]);
+  await page.getByRole("button", { name: "Line", exact: true }).click();
+  c = (await state(page)).scene.elements[first]!;
+  expect([c.startHead, c.endHead]).toEqual(["none", "none"]);
+  // The arrow tool remembers the type.
+  const before = Object.keys((await state(page)).scene.elements);
+  await page.keyboard.press("a");
+  await drag(page, await screen(page, 730, 540), await screen(page, 1310, 795));
+  const [next] = await newIds(page, before);
+  c = (await state(page)).scene.elements[next!]!;
+  expect([c.startHead, c.endHead]).toEqual(["none", "none"]);
+});
