@@ -9,15 +9,20 @@ test.beforeEach(async ({ page }) => {
   await page.getByRole("button", { name: "Show the timeline" }).click();
 });
 
-test("the timeline shows a track for each action", async ({ page }) => {
-  const s = await st(page);
-  const count = s.scene.steps.reduce((n, x) => n + x.actions.length, 0);
-  await expect(page.getByRole("region", { name: "Timeline" }).getByRole("slider")).toHaveCount(count);
+test("the timeline has one track for each element, and steps as sections on the ruler", async ({ page }) => {
+  const s = (await state(page)) as unknown as S & { scene: { elements: Record<string, { type: string }> } };
+  const count = Object.values(s.scene.elements).filter((e) => e.type !== "group").length;
+  const timeline = page.getByRole("region", { name: "Timeline" });
+  await expect(timeline.getByRole("group", { name: /^Track / })).toHaveCount(count);
+  await expect(timeline.getByRole("button", { name: /^Step section \d+$/ })).toHaveCount(s.scene.steps.length);
+  await timeline.getByRole("button", { name: "Step section 3" }).click();
+  expect((await st(page)).selectedStep).toBe(s.scene.steps[2]!.id);
 });
 
 test("drag a bar to change the delay, drag its end to change the duration", async ({ page }) => {
-  const bar = page.getByRole("slider", { name: /in step 2/ }).first();
   const before = (await st(page)).scene.steps[1]!.actions[0]!;
+  const bar = page.locator(`[data-action="${before.id}"]`).first();
+  await bar.scrollIntoViewIfNeeded();
   let box = (await bar.boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
@@ -50,14 +55,21 @@ test("click a bar to select its step, click the ruler to move the playhead", asy
   expect((await st(page)).playhead).toBeGreaterThan(1000);
 });
 
-test("the Layers view shows when each element is on the screen, and its in time can change", async ({ page }) => {
-  await page.getByRole("tab", { name: "Layers" }).click();
-  const inLb = page.getByRole("slider", { name: "In time of lb" });
-  await expect(inLb).toHaveCount(1);
+test("the enter block of an element is its in time: arrow keys move it", async ({ page }) => {
   type A = { id: string; delayMs: number; targets: string[]; type: string };
   const enterLb = async () => ((await st(page)).scene.steps.flatMap((x) => x.actions) as unknown as A[]).find((a) => a.type === "enter" && a.targets.includes("lb"))!;
   const before = await enterLb();
-  await inLb.focus();
+  const block = page.getByRole("group", { name: "Track lb" }).locator(`[data-action="${before.id}"]`);
+  await block.focus();
   await page.keyboard.press("Shift+ArrowRight");
   expect((await enterLb()).delayMs).toBe(before.delayMs + 500);
+});
+
+test("zoom in and out, and Fit", async ({ page }) => {
+  const ruler = page.getByLabel("Time ruler");
+  const w0 = (await ruler.boundingBox())!.width;
+  await page.getByRole("button", { name: "Zoom in the timeline" }).click();
+  expect((await ruler.boundingBox())!.width).toBeGreaterThan(w0 * 1.4);
+  await page.getByRole("button", { name: "Fit the timeline" }).click();
+  expect((await ruler.boundingBox())!.width).toBeCloseTo(w0, 0);
 });

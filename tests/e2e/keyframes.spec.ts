@@ -1,16 +1,17 @@
 import { expect, test } from "@playwright/test";
 import { openEditor, screen, state } from "./helpers.js";
 
-/** Click the Keys ruler at a time of the selected step (the Keys view can go past the step end). */
+/** Click the ruler at a time from the start of the selected step (the ruler goes 3 s past the end). */
 const seek = async (page: import("@playwright/test").Page, stepRel: number) => {
   const ruler = page.getByLabel("Time ruler");
   const box = (await ruler.boundingBox())!;
-  const { span } = await page.evaluate(() => {
-    const st = (window as unknown as { __anivo: { getState(): { timeline: { steps: { id: string; startMs: number; holdEndMs: number }[] }; selectedStep: string } } }).__anivo.getState();
+  const { at, span } = await page.evaluate(() => {
+    const st = (window as unknown as { __anivo: { getState(): { timeline: { totalMs: number; steps: { id: string; startMs: number }[] }; selectedStep: string } } }).__anivo.getState();
     const s = st.timeline.steps.find((x) => x.id === st.selectedStep)!;
-    return { span: Math.max(1000, s.holdEndMs - s.startMs) * 1.25 };
+    return { at: s.startMs, span: Math.max(1000, st.timeline.totalMs + 3000) };
   });
-  await page.mouse.click(box.x + (stepRel / span) * box.width, box.y + box.height / 2);
+  // The lower half of the ruler: the upper half has the step sections.
+  await page.mouse.click(box.x + ((at + stepRel) / span) * box.width, box.y + box.height * 0.75);
 };
 
 type Morph = { delayMs: number; durationMs?: number };
@@ -24,7 +25,6 @@ test("auto-key: moves at two times make two keyframes, and the Keys view edits t
   await page.getByRole("button", { name: "Add step" }).click();
   await page.keyboard.press("Escape");
   await page.keyboard.press("k");
-  await page.getByRole("tab", { name: "Keys" }).click();
   expect((await state(page) as unknown as { autoKey: boolean }).autoKey).toBe(true);
   await expect(page.getByRole("button", { name: "Record keyframes" })).toHaveAttribute("aria-pressed", "true");
 
@@ -85,7 +85,6 @@ test("a property with a keyframe records the next change at the playhead, with R
   await page.getByRole("button", { name: "Element", exact: true }).click();
   // The ◆ of Position: a key at the playhead (the start of the empty step).
   await page.locator('[data-key-group="position"]').click();
-  await page.getByRole("tab", { name: "Keys" }).click();
   await seek(page, 1000);
   // The timeline opened, so the canvas moved: find pod-2 again.
   const p2 = await screen(page, pod.x + pod.width / 2, pod.y + pod.height / 2);

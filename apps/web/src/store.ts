@@ -71,8 +71,6 @@ interface EditorState {
   autoKey: boolean;
   /** The arrowheads of a new arrow: the last arrow type the user chose. */
   arrowEnds: ArrowEnds;
-  /** The view of the timeline: action bars or keyframes. */
-  timelineView: "actions" | "keys" | "layers";
   /** The active action of the selected step (properties and step tree), or null. */
   activeAction: string | null;
   /** True while the view fits the video: a change of the window size fits it again. */
@@ -283,7 +281,6 @@ export const useEditor = create<EditorState>((set, get) => {
     activeAction: null,
     pinStepEnd: false,
     autoKey: false,
-    timelineView: "actions",
     arrowEnds: readArrowEnds(),
     showGhosts: true,
     maximized: false,
