@@ -135,3 +135,15 @@ test("a dragged block snaps to the playhead", async ({ page }) => {
   const s1 = (await state(page)) as unknown as typeof s0;
   expect(s1.scene.steps[1]!.actions.find((a) => a.id === enter.id)!.delayMs).toBe(400);
 });
+
+test("track filter: only animated, only selected", async ({ page }) => {
+  const timeline = page.getByRole("region", { name: "Timeline" });
+  const all = await timeline.getByRole("group", { name: /^Track / }).count();
+  await page.evaluate(() => (window as unknown as { __anivo: { getState(): { apply(t: unknown): unknown } } }).__anivo.getState().apply({ label: "Add", ops: [{ op: "element.add", id: "still", type: "rectangle", props: { x: 10, y: 10, width: 50, height: 50 } }] }));
+  await expect(timeline.getByRole("group", { name: /^Track / })).toHaveCount(all + 1);
+  await page.getByRole("button", { name: "Animated", exact: true }).click();
+  await expect(timeline.getByRole("group", { name: "Track still" })).toHaveCount(0);
+  await page.evaluate(() => (window as unknown as { __anivo: { getState(): { setSelection(ids: string[]): void } } }).__anivo.getState().setSelection(["lb"]));
+  await page.getByRole("button", { name: "Selected", exact: true }).click();
+  await expect(timeline.getByRole("group", { name: /^Track / })).toHaveCount(1);
+});

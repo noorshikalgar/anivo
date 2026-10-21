@@ -41,6 +41,7 @@ const useStyles = makeStyles({
     ":disabled": { opacity: 0.5, cursor: "default" },
   },
   rec: { display: "inline-flex", alignItems: "center", gap: "4px" },
+  btnOn: { backgroundColor: "var(--ui-select) !important", color: "#fff" },
   recOn: { backgroundColor: "#e5484d !important", color: "#fff" },
   recDot: { width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "var(--ui-muted)" },
   recDotOn: { backgroundColor: "#fff" },
@@ -158,6 +159,8 @@ export function TimelinePanel() {
   const [viewW, setViewW] = useState(800);
   const [zoom, setZoom] = useState(1);
   const [open, setOpen] = useState<Set<string>>(new Set());
+  /** Track filter (docs/19 R4): all, only tracks with actions or keys, or only the selection. */
+  const [filter, setFilter] = useState<"all" | "animated" | "selected">("all");
   const [drag, setDrag] = useState<Drag | null>(null);
   /** Selected keys (action IDs). Shift + click adds one. The last is the active key. */
   const [selKeys, setSelKeys] = useState<string[]>([]);
@@ -559,6 +562,8 @@ export function TimelinePanel() {
     }
   };
 
+  const shown = rows.ids.filter((id) => (filter === "all" ? true : filter === "selected" ? selection.includes(id) : (rows.blocks.get(id)?.length ?? 0) > 0 || (rows.keys.get(id)?.length ?? 0) > 0));
+
   const tick = tickStep(pxPerMs);
   const ticks: number[] = [];
   for (let t = 0; t <= span; t += tick) ticks.push(t);
@@ -639,7 +644,14 @@ export function TimelinePanel() {
         ) : (
           <span style={{ color: "var(--ui-muted)" }}>Click a block or a ◆ to edit it. Ctrl + wheel zooms.</span>
         )}
-        <span style={{ marginLeft: "auto", display: "flex", gap: "2px" }}>
+        <span style={{ marginLeft: "auto", display: "flex", gap: "2px" }} role="group" aria-label="Show tracks">
+          {(["all", "animated", "selected"] as const).map((f) => (
+            <button key={f} type="button" aria-pressed={filter === f} className={mergeClasses(styles.btn, filter === f && styles.btnOn)} onClick={() => setFilter(f)}>
+              {f === "all" ? "All" : f === "animated" ? "Animated" : "Selected"}
+            </button>
+          ))}
+        </span>
+        <span style={{ display: "flex", gap: "2px" }}>
           <button type="button" className={styles.btn} aria-label="Zoom out the timeline" onClick={() => setZoom((z) => Math.max(1, z / 1.5))}>
             −
           </button>
@@ -691,8 +703,8 @@ export function TimelinePanel() {
               </div>
             </div>
           )}
-          {rows.ids.length === 0 && <div className={styles.empty}>No elements yet. Draw on the canvas.</div>}
-          {rows.ids.map((id) => {
+          {shown.length === 0 && <div className={styles.empty}>{rows.ids.length === 0 ? "No elements yet. Draw on the canvas." : filter === "selected" ? "Select elements to see their tracks." : "No animated elements."}</div>}
+          {shown.map((id) => {
             const el = scene.elements[id]!;
             const keys = rows.keys.get(id) ?? [];
             const groups = [...new Set(keys.map((k) => k.group))];
