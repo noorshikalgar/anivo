@@ -647,6 +647,13 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
       if (!["fade", "dip", "flash", "wipe"].includes(tr.v)) errors.push(err(tr.pos, `The transition '${tr.v}' is not known.`, "Use: fade, dip, flash, wipe."));
       else props["transition"] = { kind: tr.v, ...(p.kv.get("transition-dur") ? { durationMs: parseTime(p.kv.get("transition-dur")!.v) ?? 600 } : {}) };
     }
+    const cap = p.kv.get("caption");
+    if (cap) {
+      const side = p.kv.get("side")?.v ?? "auto";
+      if (!["auto", "above", "below", "left", "right", "top", "bottom"].includes(side)) errors.push(err(p.kv.get("side")!.pos, `The side '${side}' is not known.`, "Use: auto, above, below, left, right, top, bottom."));
+      const near = p.kv.get("near")?.v;
+      props["caption"] = { text: cap.v, side, ...(near ? { anchor: near } : {}) };
+    }
     if (p.flags.has("click")) props["trigger"] = { kind: "click" };
     const actions = line.children.map((c) => compileAction(c, resolveTargets, errors)).filter((a): a is Record<string, unknown> => a !== undefined);
     props["actions"] = actions;
