@@ -124,3 +124,33 @@ test("the motion path shows the position keys on the canvas; drag a key dot to c
   const back = u.scene.steps.find((x) => x.id === u.selectedStep)!.actions.find((a) => a.type === "morph") as unknown as { to: { x?: number; y: number } };
   expect(back.to).toEqual({ y: pod.y - 100 });
 });
+
+test("select many keys with Shift: delete them together; copy keys and paste them on another element", async ({ page }) => {
+  await page.getByRole("button", { name: /Traffic flows/ }).first().click();
+  await page.getByRole("button", { name: "Add step" }).click();
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("k");
+  const pod = (await state(page)).scene.elements["pod-2"]!;
+  await seek(page, 800);
+  const p = await screen(page, pod.x + pod.width / 2, pod.y + pod.height / 2);
+  await page.mouse.click(p.x, p.y);
+  await page.keyboard.press("Shift+ArrowUp");
+  await seek(page, 1600);
+  await page.keyboard.press("Shift+ArrowUp");
+  await page.keyboard.press("k");
+  const keys = page.getByRole("slider", { name: /Keyframe Position of pod-2/ });
+  await expect(keys).toHaveCount(2);
+  // Copy both, paste on pod-1.
+  await keys.nth(0).click();
+  await keys.nth(1).click({ modifiers: ["Shift"] });
+  await page.keyboard.press("Control+c");
+  await page.evaluate(() => (window as unknown as { __anivo: { getState(): { setSelection(ids: string[]): void } } }).__anivo.getState().setSelection(["pod-1"]));
+  await keys.nth(0).focus();
+  await page.keyboard.press("Control+v");
+  await expect(page.getByRole("slider", { name: /Keyframe Position of pod-1/ })).toHaveCount(2);
+  // Delete both keys of pod-2 at once.
+  await keys.nth(0).click();
+  await keys.nth(1).click({ modifiers: ["Shift"] });
+  await page.keyboard.press("Delete");
+  await expect(keys).toHaveCount(0);
+});

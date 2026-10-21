@@ -5,8 +5,9 @@
  * each keyed property. Record (K) makes keys at the playhead.
  */
 import { Tooltip, makeStyles, mergeClasses } from "@fluentui/react-components";
-import { type Keyframe, deleteKeyframeOps, keyframesIn, moveKeyframeOps } from "@anivo/ops";
-import { type Action, EasingName } from "@anivo/schema";
+import { easingFn, stepIndexAt } from "@anivo/engine";
+import { type Keyframe, type OperationInput, deleteKeyframeOps, keyframesIn, moveKeyframeOps, setKeyframeOps } from "@anivo/ops";
+import { type Action, EasingName, type Scene } from "@anivo/schema";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { updateAction } from "../commands.js";
 import { layerSpans } from "../layers.js";
@@ -126,6 +127,21 @@ interface GlobalKey extends Keyframe {
 
 type Drag = { kind: "move" | "end" | "key"; key: string; dx: number };
 
+/** A small preview of an easing curve: time to the right, value up. */
+function EaseCurve({ name }: { name: string }) {
+  const fn = easingFn(name as never);
+  const pts = Array.from({ length: 25 }, (_, i) => {
+    const t = i / 24;
+    return `${(2 + t * 40).toFixed(1)},${(18 - fn(t) * 14).toFixed(1)}`;
+  }).join(" ");
+  return (
+    <svg width="44" height="20" viewBox="0 0 44 20" aria-label={`Easing curve: ${name}`} role="img">
+      <line x1="2" y1="18" x2="42" y2="18" stroke="var(--ui-outline)" />
+      <polyline points={pts} fill="none" stroke="#f5b84a" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
 export function TimelinePanel() {
   const styles = useStyles();
   const areaH = useEditor((s) => s.areas.timeline);
@@ -142,7 +158,11 @@ export function TimelinePanel() {
   const [zoom, setZoom] = useState(1);
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [drag, setDrag] = useState<Drag | null>(null);
-  const [activeKey, setActiveKey] = useState<string | null>(null);
+  /** Selected keys (action IDs). Shift + click adds one. The last is the active key. */
+  const [selKeys, setSelKeys] = useState<string[]>([]);
+  const activeKey = selKeys.at(-1) ?? null;
+  const allKeysRef = useRef<GlobalKey[]>([]);
+  const clip = useRef<{ group: string; values: Record<string, unknown>; relMs: number; easing?: unknown }[] | null>(null);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -304,7 +324,25 @@ export function TimelinePanel() {
     );
   };
 
-  const keyAt = (k: GlobalKey) => (drag?.kind === "key" && drag.key === k.actionId ? Math.max(k.fromAtMs + MIN_MS, k.atMs + msOf(drag.dx)) : k.atMs);
+  const keyAt = (k: GlobalKey) => (drag?.kind === "key" && (drag.key === k.actionId || (selKeys.includes(drag.key) && selKeys.includes(k.actionId))) ? Math.max(k.fromAtMs + MIN_MS, k.atMs + msOf(drag.dx)) : k.atMs);
+
+  /** Keys in the order to move them: the last first when they move later, so a key does not stop at its neighbor. */
+  const byTime = (ids: string[], dms: number) => {
+    const at = new Map(allKeysRef.current.map((k) => [k.actionId, k.atMs]));
+    return [...ids].sort((a, b) => ((at.get(a) ?? 0) - (at.get(b) ?? 0)) * (dms > 0 ? -1 : 1));
+  };
+
+  /** Apply a change to each selected key, as one history entry. */
+  const eachKey = (ids: string[], label: string, make: (sc: Scene, k: Keyframe) => OperationInput[]) => {
+    const mergeKey = `keys/${label}/${Date.now()}`;
+    for (const id of ids) {
+      const st = useEditor.getState();
+      const k = st.scene.steps.flatMap((x) => keyframesIn(st.scene, x.id)).find((x) => x.actionId === id);
+      if (!k) continue;
+      const ops = make(st.scene, k);
+      if (ops.length) st.apply({ label, ops, mergeKey });
+    }
+  };
 
   const renderKey = (k: GlobalKey, showTween: boolean) => {
     const at = keyAt(k);
@@ -314,7 +352,7 @@ export function TimelinePanel() {
         {showTween && <span className={styles.tween} style={{ left: px(k.fromAtMs), width: Math.max(0, px(at) - px(k.fromAtMs)) }} />}
         <Tooltip content={`${name} · ${formatTime(at)} · ${Object.entries(k.values).map(([p, v]) => `${p} ${String(v)}`).join(", ")}`} relationship="description">
           <span
-            className={mergeClasses(styles.diamond, activeKey === k.actionId && styles.diamondOn)}
+            className={mergeClasses(styles.diamond, selKeys.includes(k.actionId) && styles.diamondOn)}
             style={{ left: px(at) }}
             role="slider"
             tabIndex={0}
@@ -323,41 +361,47 @@ export function TimelinePanel() {
             aria-valuemax={span}
             aria-valuenow={at}
             data-key={k.actionId}
-            onFocus={() => setActiveKey(k.actionId)}
+            onFocus={() => setSelKeys((prev) => (prev.includes(k.actionId) ? prev : [k.actionId]))}
             onPointerDown={(e) => {
-              setActiveKey(k.actionId);
+              const group = e.shiftKey ? (selKeys.includes(k.actionId) ? selKeys.filter((x) => x !== k.actionId) : [...selKeys, k.actionId]) : selKeys.includes(k.actionId) ? selKeys : [k.actionId];
+              setSelKeys(group);
+              if (e.shiftKey) {
+                e.stopPropagation();
+                return;
+              }
               startDrag(
                 e,
                 "key",
                 k.actionId,
                 () => {
+                  // A click with no drag selects this key only.
+                  setSelKeys([k.actionId]);
                   selectEl(k.element);
                   const st = useEditor.getState();
                   if (st.selectedStep !== k.stepId) st.selectStep(k.stepId);
                   useEditor.setState({ playhead: k.atMs, pinStepEnd: false });
                 },
-                (dms) => {
-                  const st = useEditor.getState();
-                  const ops = moveKeyframeOps(st.scene, k.stepId, k.actionId, k.timeMs + dms);
-                  if (ops.length) st.apply({ label: "Move keyframe", ops });
-                },
+                (dms) => eachKey(byTime(group, dms), "Move keyframes", (sc, x) => moveKeyframeOps(sc, x.stepId, x.actionId, x.timeMs + dms)),
               );
             }}
             onKeyDown={(e) => {
               const st = useEditor.getState();
+              const ids = selKeys.includes(k.actionId) ? selKeys : [k.actionId];
               if (e.key === "Delete" || e.key === "Backspace") {
                 e.preventDefault();
                 e.stopPropagation();
-                const ops = deleteKeyframeOps(st.scene, k.stepId, k.actionId);
-                if (ops.length) st.apply({ label: "Delete keyframe", ops });
+                eachKey(ids, "Delete keyframes", (sc, x) => deleteKeyframeOps(sc, x.stepId, x.actionId));
+                setSelKeys([]);
                 return;
               }
               if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
               e.preventDefault();
               e.stopPropagation();
               const d = (e.key === "ArrowLeft" ? -1 : 1) * (e.shiftKey ? 500 : 100);
-              const ops = moveKeyframeOps(st.scene, k.stepId, k.actionId, k.timeMs + d);
-              if (ops.length) st.apply({ label: "Move keyframe", ops, mergeKey: `key/${k.actionId}` });
+              if (ids.length === 1) {
+                const ops = moveKeyframeOps(st.scene, k.stepId, k.actionId, k.timeMs + d);
+                if (ops.length) st.apply({ label: "Move keyframe", ops, mergeKey: `key/${k.actionId}` });
+              } else eachKey(byTime(ids, d), "Move keyframes", (sc, x) => moveKeyframeOps(sc, x.stepId, x.actionId, x.timeMs + d));
             }}
           />
         </Tooltip>
@@ -367,6 +411,7 @@ export function TimelinePanel() {
 
   // The keyframe bar: the selected key, its easing, and previous / next key.
   const allKeys = useMemo(() => [...rows.keys.values()].flat(), [rows]);
+  allKeysRef.current = allKeys;
   const active = allKeys.find((k) => k.actionId === activeKey);
   const activeAct = active ? scene.steps.find((s) => s.id === active.stepId)?.actions.find((a) => a.id === active.actionId) : undefined;
   const easing = activeAct && "easing" in activeAct && typeof activeAct.easing === "string" ? activeAct.easing : "ease-in-out";
@@ -379,6 +424,36 @@ export function TimelinePanel() {
     if (t === undefined) return;
     useEditor.getState().pause();
     useEditor.setState({ playhead: t, pinStepEnd: false });
+  };
+
+  /** Ctrl or Cmd + C copies the selected keys; Ctrl or Cmd + V pastes them on the selected element, from the playhead. */
+  const onKeysClipboard = (e: React.KeyboardEvent) => {
+    const mod = e.ctrlKey || e.metaKey;
+    if (!mod) return;
+    const k = e.key.toLowerCase();
+    if (k === "c" && selKeys.length > 0) {
+      const ks = allKeys.filter((x) => selKeys.includes(x.actionId));
+      const t0 = Math.min(...ks.map((x) => x.atMs));
+      clip.current = ks.map((x) => ({ group: x.group, values: x.values, relMs: x.atMs - t0 }));
+      e.preventDefault();
+      e.stopPropagation();
+    } else if (k === "v" && clip.current && clip.current.length > 0) {
+      const st = useEditor.getState();
+      if (st.selection.length !== 1) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const target = st.selection[0]!;
+      const mergeKey = `paste-keys/${Date.now()}`;
+      for (const c of clip.current) {
+        const s2 = useEditor.getState();
+        const at = s2.playhead + c.relMs;
+        const i = stepIndexAt(s2.timeline, at);
+        if (i < 0) continue;
+        const ts = s2.timeline.steps[i]!;
+        const ops = setKeyframeOps(s2.scene, ts.id, target, c.values, at - ts.startMs);
+        if (ops.length) s2.apply({ label: "Paste keyframes", ops, mergeKey });
+      }
+    }
   };
 
   const tick = tickStep(pxPerMs);
@@ -401,7 +476,7 @@ export function TimelinePanel() {
   };
 
   return (
-    <div className={styles.root} role="region" aria-label="Timeline" style={{ height: `${areaH}px` }}>
+    <div className={styles.root} role="region" aria-label="Timeline" style={{ height: `${areaH}px` }} onKeyDown={onKeysClipboard}>
       <Splitter axis="y" label="Resize the timeline" style={{ top: "-3px" }} onStart={() => (startH.current = useEditor.getState().areas.timeline)} onDrag={(d) => setAreas({ timeline: Math.min(700, Math.max(110, startH.current - d)) })} onReset={() => setAreas({ timeline: 240 })} />
       <div className={styles.bar} role="toolbar" aria-label="Timeline tools">
         <Tooltip content="Record (K): while it is on, a change to an element makes a keyframe at the playhead. While it is off, a change sets the element in all steps." relationship="description">
@@ -420,11 +495,12 @@ export function TimelinePanel() {
         {active && activeAct ? (
           <>
             <span style={{ color: "var(--ui-muted)" }}>
-              · {active.element} · {GROUP_NAMES[active.group] ?? active.group} · {formatTime(active.atMs)}
+              · {selKeys.length > 1 ? `${selKeys.length} keys` : `${active.element} · ${GROUP_NAMES[active.group] ?? active.group} · ${formatTime(active.atMs)}`}
             </span>
+            <EaseCurve name={easing} />
             <label style={{ display: "flex", gap: "4px", alignItems: "center" }}>
               Easing
-              <select className={styles.select} value={easing} onChange={(e) => updateAction(active.stepId, active.actionId, { easing: e.target.value }, "Change easing")}>
+              <select className={styles.select} aria-label="Easing of the selected keys" value={easing} onChange={(e) => { const v = e.target.value; eachKey(selKeys, "Change easing", (_sc, x) => [{ op: "action.update", step: x.stepId, id: x.actionId, set: { easing: v } }]); }}>
                 {EasingName.options.map((n) => (
                   <option key={n} value={n}>
                     {n}
@@ -436,10 +512,8 @@ export function TimelinePanel() {
               type="button"
               className={styles.btn}
               onClick={() => {
-                const st = useEditor.getState();
-                const ops = deleteKeyframeOps(st.scene, active.stepId, active.actionId);
-                if (ops.length) st.apply({ label: "Delete keyframe", ops });
-                setActiveKey(null);
+                eachKey(selKeys, "Delete keyframes", (sc, x) => deleteKeyframeOps(sc, x.stepId, x.actionId));
+                setSelKeys([]);
               }}
             >
               Delete key
