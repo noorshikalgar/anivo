@@ -313,10 +313,10 @@ export function TimelinePanel() {
               Keys
             </button>
           </div>
-          <Tooltip content="Auto-key: when you move or change an element in a step, Anivo makes a keyframe at the playhead (K)" relationship="description">
-            <button type="button" aria-pressed={autoKey} aria-label="Auto-key" className={mergeClasses(styles.mode, styles.rec, autoKey && styles.recOn)} onClick={() => useEditor.setState({ autoKey: !autoKey })}>
+          <Tooltip content="Record (K): while it is on, a change to an element makes a keyframe at the playhead. While it is off, a change sets the element in all steps." relationship="description">
+            <button type="button" aria-pressed={autoKey} aria-label="Record keyframes" className={mergeClasses(styles.mode, styles.rec, autoKey && styles.recOn)} onClick={() => useEditor.setState({ autoKey: !autoKey })}>
               <span className={mergeClasses(styles.recDot, autoKey && styles.recDotOn)} />
-              Key
+              Record
             </button>
           </Tooltip>
         </div>

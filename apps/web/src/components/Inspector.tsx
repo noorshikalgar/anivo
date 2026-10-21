@@ -36,7 +36,7 @@ import {
   Warning16Regular,
 } from "@fluentui/react-icons";
 import { useEffect, useMemo } from "react";
-import { type AlignKind, alignSelection, autoLayoutSelection, commitProps, commitSettings, deleteSelection, distributeSelection, duplicateSelection, groupSelection, renameElement, reorderSelection, setElementText, ungroupSelection, visibleAtStepStart } from "../commands.js";
+import { type AlignKind, alignSelection, autoLayoutSelection, commitProps, commitSettings, deleteSelection, distributeSelection, duplicateSelection, groupSelection, renameElement, reorderSelection, setElementText, ungroupSelection } from "../commands.js";
 import { type ArrowEnds, setArrowEnds, useEditor } from "../store.js";
 import { Comments } from "./Comments.js";
 import { ColorField, NumberField, SelectField, TextField, useThemeColors, useThemeDefault } from "./fields.js";
@@ -117,7 +117,6 @@ function ElementProperties({ el }: { el: Element }) {
   // A keyframe button next to the property label, when the element can animate in the selected step.
   const key = (group: string, values: Record<string, unknown>, label: string) => (keyable ? <KeyLabel element={el.id} group={group} values={values}>{label}</KeyLabel> : label);
   const playing = useEditor((st) => st.playing);
-  const stepTitle = useEditor((st) => st.scene.steps.find((x) => x.id === st.selectedStep)?.title);
   const colors = useThemeColors(scene.settings.theme);
   const defFill = useThemeDefault(scene.settings.theme, "fill");
   const defStroke = useThemeDefault(scene.settings.theme, "stroke");
@@ -143,7 +142,7 @@ function ElementProperties({ el }: { el: Element }) {
     return out;
   }, [timeline, scene.steps, selectedStep, playing, playhead, el.id]);
   if (!f) return null;
-  const keyable = selectedStep !== null && visibleAtStepStart()(el.id);
+  const keyable = selectedStep !== null;
   const theme = scene.settings.theme;
   const set = (changes: Record<string, unknown>, label?: string, mergeKey?: string) => commitProps(el.id, changes, label, mergeKey);
   // The text at the playhead: in a step, a morph can change it.
@@ -179,8 +178,8 @@ function ElementProperties({ el }: { el: Element }) {
       {selectedStep !== null && (
         <Info action={<AddActionMenu />}>
           {autoKey
-            ? `Auto-key is on: changes to position, size, color, and label make a keyframe at the playhead in step "${stepTitle}". Press K to turn it off.`
-            : `Changes to position, size, color, and label animate in step "${stepTitle}" (a morph). To make keyframes at the playhead, press K (auto-key). To change the element in all steps, select Base in the step list.`}
+            ? "Recording: a change to position, size, color, or label makes a keyframe at the playhead. Press K to stop."
+            : "A change sets the element in all steps. To animate a property, click its ◆ (a keyframe at the playhead), or press K to record. A property with keyframes records its changes."}
         </Info>
       )}
 

@@ -117,3 +117,13 @@ export function deleteKeyframeOps(scene: Scene, stepId: string, actionId: string
   }
   return ops;
 }
+
+/**
+ * Has the element keys (morphs) for any of these properties, in any step?
+ * Like a stopwatch that is on in a video editor: then a change at the
+ * playhead makes a key, else the change is static (docs/18).
+ */
+export function hasKeys(scene: Scene, element: string, props: string[]): boolean {
+  const groups = new Set(props.map(groupOf));
+  return scene.steps.some((s) => s.actions.some((a) => a.type === "morph" && a.targets.includes(element) && Object.keys(a.to).some((k) => groups.has(groupOf(k)))));
+}

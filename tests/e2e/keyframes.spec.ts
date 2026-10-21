@@ -26,7 +26,7 @@ test("auto-key: moves at two times make two keyframes, and the Keys view edits t
   await page.keyboard.press("k");
   await page.getByRole("tab", { name: "Keys" }).click();
   expect((await state(page) as unknown as { autoKey: boolean }).autoKey).toBe(true);
-  await expect(page.getByRole("button", { name: "Auto-key" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Record keyframes" })).toHaveAttribute("aria-pressed", "true");
 
   const pod = (await state(page)).scene.elements["pod-2"]!;
   // Select pod-2, then move it at 1 s and at 2 s of the step.
@@ -74,4 +74,25 @@ test("the keyframe button of a property adds and removes a keyframe at the playh
   await expect(page.getByRole("slider", { name: /Keyframe Position of pod-2/ })).toHaveCount(1);
   await button.click();
   await expect(page.getByRole("slider", { name: /Keyframe Position of pod-2/ })).toHaveCount(0);
+});
+
+test("a property with a keyframe records the next change at the playhead, with Record off", async ({ page }) => {
+  await page.getByRole("button", { name: /Traffic flows/ }).click();
+  await page.getByRole("button", { name: "Add step" }).click();
+  const pod = (await state(page)).scene.elements["pod-2"]!;
+  const p = await screen(page, pod.x + pod.width / 2, pod.y + pod.height / 2);
+  await page.mouse.click(p.x, p.y);
+  await page.getByRole("button", { name: "Element", exact: true }).click();
+  // The ◆ of Position: a key at the playhead (the start of the empty step).
+  await page.locator('[data-key-group="position"]').click();
+  await page.getByRole("tab", { name: "Keys" }).click();
+  await seek(page, 1000);
+  // The timeline opened, so the canvas moved: find pod-2 again.
+  const p2 = await screen(page, pod.x + pod.width / 2, pod.y + pod.height / 2);
+  await page.mouse.click(p2.x, p2.y);
+  await page.keyboard.press("Shift+ArrowRight");
+  const s = await state(page);
+  const morphs = s.scene.steps.find((x) => x.id === s.selectedStep)!.actions.filter((a) => a.type === "morph");
+  expect(morphs).toHaveLength(2);
+  expect(s.scene.elements["pod-2"]!.x).toBe(pod.x);
 });

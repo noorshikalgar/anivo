@@ -18,17 +18,28 @@ test("drag moves an element in the base state, and undo restores it", async ({ p
   expect((await state(page)).scene.elements["lb"]).toMatchObject({ x: before.x, y: before.y });
 });
 
-test("drag in a step records a morph for an element that is already visible", async ({ page }) => {
+test("drag in a step with Record off moves the element in all steps (no animation)", async ({ page }) => {
   await page.getByRole("button", { name: /Traffic flows/ }).click();
   const lb = (await state(page)).scene.elements["lb"]!;
   const from = await screen(page, lb.x + lb.width / 2, lb.y + lb.height / 2);
   await drag(page, from, { x: from.x, y: from.y + 100 });
   const s = await state(page);
+  expect(s.scene.elements["lb"]!.y).toBeGreaterThan(lb.y + 50);
+  expect(s.scene.steps.find((st) => st.id === "s-traffic")!.actions.some((a) => a.type === "morph")).toBe(false);
+});
+
+test("drag in a step with Record on makes a keyframe at the playhead", async ({ page }) => {
+  await page.getByRole("button", { name: /Traffic flows/ }).click();
+  await page.keyboard.press("k");
+  const lb = (await state(page)).scene.elements["lb"]!;
+  const from = await screen(page, lb.x + lb.width / 2, lb.y + lb.height / 2);
+  await drag(page, from, { x: from.x, y: from.y + 100 });
+  const s = await state(page);
   expect(s.scene.elements["lb"]!.y).toBe(lb.y);
-  const step = s.scene.steps.find((st) => st.id === "s-traffic")!;
-  const morph = step.actions.find((a) => a.type === "morph");
+  const morph = s.scene.steps.find((st) => st.id === "s-traffic")!.actions.find((a) => a.type === "morph");
   expect(morph?.targets).toEqual(["lb"]);
   expect(morph?.to?.["y"]).toBeGreaterThan(lb.y);
+  await expect(page.getByText("● Recording keyframes (K to stop)")).toBeVisible();
 });
 
 test("marquee selects the elements inside the rectangle", async ({ page }) => {

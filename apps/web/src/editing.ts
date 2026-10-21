@@ -181,15 +181,12 @@ export function previewFrame(scene: Scene, frame: FrameState, changes: Map<strin
  */
 export function geometryOps(
   scene: Scene,
-  stepId: string | null,
-  visibleAtStepStart: (id: string) => boolean,
   changes: Map<string, Box>,
   current: (id: string) => Box | undefined,
-  /** Auto-key: the keyframe operations for a step change, or null to change the step morph. */
+  /** The key operations for a change, or null for a static change (docs/18). */
   keyframe?: (id: string, values: Record<string, number>) => OperationInput[] | null,
 ): OperationInput[] {
   const ops: OperationInput[] = [];
-  const step = stepId === null ? undefined : scene.steps.find((s) => s.id === stepId);
   for (const [id, box] of changes) {
     const el: Element | undefined = scene.elements[id];
     if (!el || el.type === "connector") continue;
@@ -199,21 +196,15 @@ export function geometryOps(
       if (now === undefined || Math.abs(box[k] - now[k]) > 1e-6) set[k] = Math.round(box[k] * 100) / 100;
     }
     if (Object.keys(set).length === 0) continue;
-    if (!step || !visibleAtStepStart(id)) {
-      // Base change: apply the delta to the base geometry, so earlier morphs keep their offsets.
-      const base: Record<string, number> = {};
-      for (const k of Object.keys(set) as (keyof Box)[]) base[k] = Math.round((el[k] + (box[k] - (now?.[k] ?? el[k]))) * 100) / 100;
-      ops.push({ op: "element.update", id, set: base });
-      continue;
-    }
     const keyed = keyframe?.(id, set);
     if (keyed) {
       ops.push(...keyed);
       continue;
     }
-    const morph = step.actions.find((a) => a.type === "morph" && a.targets.length === 1 && a.targets[0] === id);
-    if (morph && morph.type === "morph") ops.push({ op: "action.update", step: step.id, id: morph.id, set: { to: { ...morph.to, ...set } } });
-    else ops.push({ op: "action.add", step: step.id, action: { type: "morph", targets: [id], to: set } });
+    // Static change: apply the delta to the base geometry, so keys of other properties keep their offsets.
+    const base: Record<string, number> = {};
+    for (const k of Object.keys(set) as (keyof Box)[]) base[k] = Math.round((el[k] + (box[k] - (now?.[k] ?? el[k]))) * 100) / 100;
+    ops.push({ op: "element.update", id, set: base });
   }
   return ops;
 }

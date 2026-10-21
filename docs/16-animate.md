@@ -18,8 +18,8 @@ Users want more control over time: change a property at an exact time, as in a m
 
 1. The data model does not change. Steps contain actions. A keyframe of property P at time T in step S is a morph action in S, on one element, with `to.P`, that ends at T.
 2. The morph starts at the keyframe before it (in the same step), or at the start of the step. So: `delayMs = previous time`, `durationMs = T - previous time`.
-3. **Auto-key off** (default): a change in a step makes a morph that ends at the end of the step (as before).
-4. **Auto-key on**: a change makes a keyframe at the playhead. If a keyframe of that property is at the playhead, the change updates it.
+3. **Record off** (default): a change sets the property in all steps (a static change, no animation). Exception: a property that has keys already records the change as a key at the playhead (like a stopwatch that is on). (Changed 2026-10-22, docs/18: before, each change in a step made a morph.)
+4. **Record on** (K, red frame on the canvas): a change makes a keyframe at the playhead, in the step that contains the playhead. If a keyframe of that property is at the playhead, the change updates it.
 5. The Keys view shows the keyframes of the selected step. Drag a diamond to change its time. Delete removes it. Click a diamond to move the playhead to it.
    - The Keys view shows the selected step only, with 25% more time after its end. Click the ruler after the step end to put a keyframe there: the step gets longer.
    - The keyframe bar: ◀ and ▶ go to the previous and next keyframe. For the selected keyframe: the easing of the tween to it, and Delete.

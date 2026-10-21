@@ -1,7 +1,7 @@
 import { Tooltip, makeStyles, mergeClasses } from "@fluentui/react-components";
 import { deleteKeyframeOps, keyframesIn, setKeyframeOps } from "@anivo/ops";
 import type { ReactNode } from "react";
-import { stepTimeAtPlayhead } from "../commands.js";
+import { keyAtPlayhead } from "../commands.js";
 import { useEditor } from "../store.js";
 
 const useStyles = makeStyles({
@@ -39,17 +39,19 @@ export function KeyLabel({ element, group, values, children }: { element: string
   const playhead = useEditor((st) => st.playhead);
   if (selectedStep === null) return <>{children}</>;
   void playhead;
-  const t = stepTimeAtPlayhead();
+  const at = keyAtPlayhead();
+  const t = at?.t ?? null;
+  const stepId = at?.stepId ?? selectedStep;
   // A theme default color has no value to key.
   const set = Object.fromEntries(Object.entries(values).filter(([, v]) => v !== undefined && v !== null));
   const canKey = Object.keys(set).length > 0;
-  const keys = keyframesIn(scene, selectedStep).filter((k) => k.element === element && k.group === group);
+  const keys = keyframesIn(scene, stepId).filter((k) => k.element === element && k.group === group);
   const here = t === null ? undefined : keys.find((k) => Math.abs(k.timeMs - t) <= SAME_MS);
   const label = here ? "Remove the keyframe at the playhead" : t === null ? "Move the playhead into the step to add a keyframe" : !canKey ? "Choose a value first: the theme default has no keyframe" : "Add a keyframe at the playhead";
   const toggle = () => {
     const st = useEditor.getState();
-    if (t === null || st.selectedStep === null) return;
-    const ops = here ? deleteKeyframeOps(st.scene, st.selectedStep, here.actionId) : setKeyframeOps(st.scene, st.selectedStep, element, set, t);
+    if (t === null) return;
+    const ops = here ? deleteKeyframeOps(st.scene, stepId, here.actionId) : setKeyframeOps(st.scene, stepId, element, set, t);
     if (ops.length === 0) return;
     st.apply({ label: here ? "Delete keyframe" : "Add keyframe", ops });
     useEditor.setState({ timelineOpen: true, timelineView: "keys" });
