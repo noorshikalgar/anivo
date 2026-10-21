@@ -191,6 +191,14 @@ export const Step = z.object({
   actions: z.array(Action).default([]),
   notes: z.string().optional(),
   scriptLineId: z.string().optional(),
+  caption: z
+    .object({
+      text: z.string().min(1).max(240).describe("One short sentence that tells what happens in this step."),
+      anchor: ElementId.optional().describe("The element that the caption shows next to. Default: the first target of the step."),
+      side: z.enum(["auto", "above", "below", "left", "right", "top", "bottom"]).default("auto").describe("auto: next to the anchor, where it covers the least. top and bottom: a band at the edge of the frame."),
+    })
+    .optional()
+    .describe("A step caption (docs/17 P4): it types in at the step start, and the step holds until a viewer can read it."),
   transition: z
     .object({
       kind: z.enum(["fade", "dip", "flash", "wipe"]).describe("fade: through the background color. dip: through black. flash: through white. wipe: a band of the background color moves across."),

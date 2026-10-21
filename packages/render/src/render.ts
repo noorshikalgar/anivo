@@ -783,8 +783,112 @@ export function renderFrame(ctx: Ctx2D, scene: Scene, frame: FrameState, routes:
   ctx.save();
   ctx.setTransform(sx, 0, 0, sy, -cam.x * sx, -cam.y * sy);
   drawParticles(dc, frame.particles);
+  if (frame.caption) drawStepCaption(dc, frame, frame.caption, cam);
   ctx.restore();
   if (frame.transition) drawTransition(dc, frame.transition, opts);
+}
+
+type Rect4 = { x: number; y: number; width: number; height: number };
+
+function roundRectPath(ctx: Ctx2D, x: number, y: number, w: number, h: number, r: number): void {
+  const k = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + k, y);
+  ctx.lineTo(x + w - k, y);
+  ctx.arc(x + w - k, y + k, k, -Math.PI / 2, 0);
+  ctx.lineTo(x + w, y + h - k);
+  ctx.arc(x + w - k, y + h - k, k, 0, Math.PI / 2);
+  ctx.lineTo(x + k, y + h);
+  ctx.arc(x + k, y + h - k, k, Math.PI / 2, Math.PI);
+  ctx.lineTo(x, y + k);
+  ctx.arc(x + k, y + k, k, Math.PI, (3 * Math.PI) / 2);
+  ctx.closePath();
+}
+
+const overlap = (a: Rect4, b: Rect4) => Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
+
+/**
+ * Place a caption box: next to the anchor where it covers the least of the
+ * other elements, inside the frame (docs/17 P4). Pure: the same frame gives
+ * the same place.
+ */
+export function placeCaption(box: { width: number; height: number }, cap: { side: string; anchor?: Rect4; anchorId?: string }, cam: Rect4, others: Rect4[]): { x: number; y: number } {
+  const margin = Math.round(cam.height * 0.04);
+  const clamp = (p: { x: number; y: number }) => ({
+    x: Math.min(Math.max(p.x, cam.x + margin), cam.x + cam.width - margin - box.width),
+    y: Math.min(Math.max(p.y, cam.y + margin), cam.y + cam.height - margin - box.height),
+  });
+  const a = cap.anchor;
+  if (!a || cap.side === "top" || cap.side === "bottom") {
+    const x = cam.x + (cam.width - box.width) / 2;
+    return clamp({ x, y: cap.side === "bottom" ? cam.y + cam.height - margin - box.height : cam.y + margin });
+  }
+  const gap = Math.round(cam.height * 0.025);
+  const cx = a.x + a.width / 2 - box.width / 2;
+  const cy = a.y + a.height / 2 - box.height / 2;
+  const sides: Record<string, { x: number; y: number }> = {
+    below: { x: cx, y: a.y + a.height + gap },
+    above: { x: cx, y: a.y - gap - box.height },
+    right: { x: a.x + a.width + gap, y: cy },
+    left: { x: a.x - gap - box.width, y: cy },
+  };
+  if (cap.side !== "auto") return clamp(sides[cap.side]!);
+  let best = clamp(sides["below"]!);
+  let bestScore = Infinity;
+  for (const name of ["below", "above", "right", "left"]) {
+    const want = sides[name]!;
+    const p = clamp(want);
+    const r = { ...p, ...box };
+    // Cover less of the other elements and of the anchor; stay near the wanted place.
+    let score = overlap(r, a) * 4 + Math.hypot(p.x - want.x, p.y - want.y) * 20;
+    for (const o of others) score += overlap(r, o);
+    if (score < bestScore - 1) {
+      bestScore = score;
+      best = p;
+    }
+  }
+  return best;
+}
+
+/** The step caption (docs/17 P4): a card with the text, that types in. Scene coordinates. */
+function drawStepCaption(dc: DrawContext, frame: FrameState, cap: NonNullable<FrameState["caption"]>, cam: Rect4): void {
+  const { ctx, theme } = dc;
+  const v = dc.scene.settings.video;
+  const size = Math.round(Math.min(v.width, v.height) * 0.037);
+  const padX = Math.round(size * 0.7);
+  const padY = Math.round(size * 0.45);
+  const lineH = Math.round(size * 1.3);
+  const bar = Math.max(3, Math.round(size * 0.12));
+  ctx.font = `500 ${size}px "${theme.fonts.clean}", "${SYMBOLS}"`;
+  const maxW = Math.round(cam.width * (cap.anchor ? 0.42 : 0.7));
+  const lines = wrapText(ctx, cap.text, maxW - padX * 2);
+  const textW = Math.max(...lines.map((l) => ctx.measureText(l).width));
+  const box = { width: Math.ceil(textW + padX * 2 + bar), height: lines.length * lineH + padY * 2 };
+  const others = frame.elements.filter((e) => e.visible && e.opacity > 0.05 && e.type !== "group" && e.type !== "connector" && e.id !== cap.anchorId).map((e) => ({ x: e.x, y: e.y, width: e.width, height: e.height }));
+  const p = placeCaption(box, cap, cam, others);
+  ctx.save();
+  ctx.globalAlpha = cap.opacity;
+  roundRectPath(ctx, p.x, p.y, box.width, box.height, Math.round(size * 0.35));
+  ctx.fillStyle = toCss(withAlpha(resolveToken(theme, "surface", "fill", "rectangle"), 0.96));
+  ctx.fill();
+  ctx.strokeStyle = toCss(withAlpha(resolveToken(theme, "text", "textColor", "text"), 0.12));
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.fillStyle = toCss(resolveToken(theme, "accent", "fill", "rectangle"));
+  roundRectPath(ctx, p.x, p.y, bar * 2, box.height, bar);
+  ctx.fill();
+  ctx.fillStyle = toCss(resolveToken(theme, "text", "textColor", "text"));
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  // Typing: show the first characters, line by line.
+  let left = Math.round(cap.text.length * cap.reveal);
+  lines.forEach((l, i) => {
+    if (left <= 0) return;
+    const part = l.slice(0, left);
+    left -= l.length + 1;
+    ctx.fillText(part, p.x + bar + padX, p.y + padY + lineH * (i + 0.5));
+  });
+  ctx.restore();
 }
 
 /** A step transition over the whole output (docs/16 section 3). */

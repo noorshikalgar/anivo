@@ -94,12 +94,25 @@ export interface TransitionFrame {
   progress: number;
 }
 
+export interface CaptionFrame {
+  text: string;
+  /** Share of the characters that show (typing), 0 to 1. */
+  reveal: number;
+  opacity: number;
+  side: "auto" | "above" | "below" | "left" | "right" | "top" | "bottom";
+  /** The box of the anchor element now, in scene pixels. None: the caption uses a band. */
+  anchor?: Rect;
+  anchorId?: string;
+}
+
 export interface FrameState {
   timeMs: number;
   /** Elements in draw order (by `z`, then by `id`). */
   elements: ElementFrame[];
   particles: Particle[];
   camera: Rect;
+  /** The step caption that shows now, if any (docs/17 P4). */
+  caption?: CaptionFrame;
   /** A step transition that runs now, if any. */
   transition?: TransitionFrame;
 }

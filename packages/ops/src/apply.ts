@@ -607,9 +607,15 @@ export class Draft {
         }
       }
     }
-    if (this.steps.some((s) => s.actions.some((a) => a.targets.includes(id) || (a.type === "flow" && (a.flow.chainFrom === id || a.flow.skip.includes(id)))))) {
+    const refers = (a: Step["actions"][number]) => a.targets.includes(id) || (a.type === "flow" && (a.flow.chainFrom === id || a.flow.skip.includes(id))) || (a.type === "motion" && a.motion.along === id);
+    if (this.steps.some((s) => s.caption?.anchor === id || s.actions.some(refers))) {
       this.touchSteps();
       for (const step of this.steps) {
+        if (step.caption?.anchor === id) {
+          const caption = { ...step.caption };
+          delete caption.anchor;
+          step.caption = caption;
+        }
         step.actions = step.actions
           .map((a) => {
             let next = { ...a, targets: a.targets.filter((t) => t !== id) } as typeof a;
@@ -617,6 +623,12 @@ export class Draft {
               const flow = { ...next.flow, skip: next.flow.skip.filter((s) => s !== id) };
               if (flow.chainFrom === id) delete flow.chainFrom;
               next = { ...next, flow };
+            }
+            // The motion keeps its last points when its arrow goes.
+            if (next.type === "motion" && next.motion.along === id) {
+              const motion = { ...next.motion, reverse: false };
+              delete motion.along;
+              next = { ...next, motion };
             }
             return next;
           })
@@ -651,8 +663,10 @@ export class Draft {
     }
     this.touchSteps();
     for (const step of this.steps) {
+      if (step.caption?.anchor === from) step.caption = { ...step.caption, anchor: to };
       step.actions = step.actions.map((a) => {
         let next = { ...a, targets: a.targets.map((t) => (t === from ? to : t)) } as typeof a;
+        if (next.type === "motion" && next.motion.along === from) next = { ...next, motion: { ...next.motion, along: to } };
         if (next.type === "flow") {
           const flow = { ...next.flow, skip: next.flow.skip.map((s) => (s === from ? to : s)) };
           if (flow.chainFrom === from) flow.chainFrom = to;

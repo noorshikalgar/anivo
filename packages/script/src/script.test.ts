@@ -215,3 +215,11 @@ describe("move along an arrow", () => {
     expect(printScene(scene)).toContain("move m along=c-a-b back");
   });
 });
+
+describe("step caption", () => {
+  it("compiles caption, near, and side, and prints them back", () => {
+    const scene = ok(`box a "A" at=100,100\nstep "Hi" caption="Alice says hi" near=a side=below\n  enter a fade\n`);
+    expect(scene.steps[0]!.caption).toEqual({ text: "Alice says hi", anchor: "a", side: "below" });
+    expect(printScene(scene)).toContain('caption="Alice says hi" near=a side=below');
+  });
+});

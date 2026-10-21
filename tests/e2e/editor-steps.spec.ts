@@ -187,3 +187,17 @@ test("Send moves an element along an arrow, and it follows the arrow when the ar
   const after = await last();
   expect(after.motion.points.at(-1)!.y).toBeGreaterThan(send.motion.points.at(-1)!.y + 100);
 });
+
+test("a step caption: type it in the Actions tab, and the step holds for reading", async ({ page }) => {
+  await page.getByRole("button", { name: /Load balancer/ }).first().click();
+  const before = (await state(page)) as unknown as { timeline: { steps: { id: string; holdEndMs: number; startMs: number }[] }; selectedStep: string };
+  const ts0 = before.timeline.steps.find((x) => x.id === before.selectedStep)!;
+  const field = page.getByRole("textbox", { name: "Caption" });
+  await field.fill("The load balancer sends each request to one pod, so no pod gets too much work");
+  await field.press("Tab");
+  const s = (await state(page)) as unknown as typeof before & { scene: { steps: { id: string; caption?: { text: string; side: string } }[] } };
+  expect(s.scene.steps.find((x) => x.id === s.selectedStep)!.caption).toMatchObject({ side: "auto" });
+  const ts = s.timeline.steps.find((x) => x.id === s.selectedStep)!;
+  expect(ts.holdEndMs - ts.startMs).toBeGreaterThan(ts0.holdEndMs - ts0.startMs);
+  expect(ts.holdEndMs - ts.startMs).toBeGreaterThan(6000);
+});

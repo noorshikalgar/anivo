@@ -26,6 +26,17 @@ export interface TimedStep {
   holdEndMs: number;
   trigger: Scene["steps"][number]["trigger"]["kind"];
   actions: TimedAction[];
+  /** The step caption times, if the step has a caption. */
+  caption?: { startMs: number; typedMs: number; readEndMs: number };
+}
+
+/**
+ * Caption timing (docs/17 P4): it types at about 35 characters each second (at
+ * most 1.5 s), then it stays for reading: 0.4 s for each word, minimum 2 s.
+ */
+export function captionTiming(text: string): { typeMs: number; readMs: number } {
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  return { typeMs: Math.min(1500, Math.round(text.length * 28)), readMs: Math.max(2000, words * 400) };
 }
 
 export interface TimelineWarning {
@@ -118,8 +129,15 @@ export function resolveTimeline(scene: Scene): Timeline {
     }
 
     const endMs = step.durationMs !== undefined ? startMs + step.durationMs : contentEnd;
-    const holdEndMs = endMs + step.holdMs;
-    steps.push({ id: step.id, index, startMs, endMs, holdEndMs, trigger: step.trigger.kind, actions });
+    let holdEndMs = endMs + step.holdMs;
+    let caption: TimedStep["caption"];
+    if (step.caption) {
+      // The step holds until a viewer can read the caption.
+      const c = captionTiming(step.caption.text);
+      caption = { startMs, typedMs: startMs + c.typeMs, readEndMs: startMs + c.typeMs + c.readMs };
+      holdEndMs = Math.max(holdEndMs, caption.readEndMs);
+    }
+    steps.push({ id: step.id, index, startMs, endMs, holdEndMs, trigger: step.trigger.kind, actions, ...(caption ? { caption } : {}) });
     cursor = holdEndMs;
   });
 

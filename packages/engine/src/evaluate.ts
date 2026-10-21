@@ -1,5 +1,5 @@
 import type { Action, Color, Element, FlowParams, MorphableProps, Rect, Scene } from "@anivo/schema";
-import type { ElementFrame, FrameColor, FrameState, Particle } from "./frame.js";
+import type { CaptionFrame, ElementFrame, FrameColor, FrameState, Particle } from "./frame.js";
 import { type TimedAction, type TimedStep, type Timeline, resolveTimeline, stepIndexAt } from "./timeline.js";
 
 type StateMap = Record<string, ElementFrame>;
@@ -544,7 +544,31 @@ export function evaluateAt(prepared: Prepared, timeMs: number, opts: EvaluateOpt
       break;
     }
   }
-  return { timeMs: Math.max(0, t), elements: order.map((id) => state[id]!), particles, camera, ...(transition ? { transition } : {}) };
+  const caption = i >= 0 ? stepCaptionAt(scene, timeline.steps, i, t, state) : undefined;
+  return { timeMs: Math.max(0, t), elements: order.map((id) => state[id]!), particles, camera, ...(caption ? { caption } : {}), ...(transition ? { transition } : {}) };
+}
+
+const CAPTION_FADE_MS = 250;
+
+/** The caption of step i at time t. A step with no caption fades out the caption of the step before. */
+function stepCaptionAt(scene: Scene, steps: TimedStep[], i: number, t: number, state: StateMap): CaptionFrame | undefined {
+  let k = i;
+  let fadeOut = 1;
+  if (!steps[i]!.caption) {
+    if (i === 0 || !steps[i - 1]!.caption || t >= steps[i]!.startMs + CAPTION_FADE_MS) return undefined;
+    k = i - 1;
+    fadeOut = 1 - (t - steps[i]!.startMs) / CAPTION_FADE_MS;
+  }
+  const ts = steps[k]!;
+  const c = scene.steps[ts.index]!.caption!;
+  const timing = ts.caption!;
+  if (t < timing.startMs) return undefined;
+  const reveal = timing.typedMs <= timing.startMs ? 1 : Math.min(1, (t - timing.startMs) / (timing.typedMs - timing.startMs));
+  const fadeIn = Math.min(1, (t - timing.startMs) / 150);
+  const anchorId = c.side === "top" || c.side === "bottom" ? undefined : (c.anchor ?? ts.actions.find((a) => a.target !== "" && state[a.target]?.type !== "connector")?.target);
+  const af = anchorId ? state[anchorId] : undefined;
+  const anchor = af && af.visible ? { x: af.x, y: af.y, width: af.width, height: af.height } : undefined;
+  return { text: c.text, reveal, opacity: Math.max(0, Math.min(fadeIn, fadeOut)), side: c.side, ...(anchor ? { anchor, anchorId } : {}) };
 }
 
 const preparedCache = new WeakMap<Scene, Prepared>();

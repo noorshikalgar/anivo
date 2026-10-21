@@ -47,4 +47,18 @@ describe("send along a connector", () => {
     bus.undo();
     expect(center(bus, 1600).y).toBeCloseTo(50, 0);
   });
+
+  it("rename keeps the arrow and the caption anchor; remove keeps the last path", () => {
+    const bus = make();
+    bus.apply({ ops: [...sendAlongOps(bus.scene, "s1", ["m"], "c"), { op: "step.update", id: "s1", set: { caption: { text: "Hi", anchor: "b" } } }] });
+    bus.apply({ ops: [{ op: "element.rename", id: "c", to: "c2" }, { op: "element.rename", id: "b", to: "bob" }] });
+    let step = bus.scene.steps[0]!;
+    const motion = step.actions[0]!.type === "motion" ? step.actions[0]!.motion : undefined;
+    expect(motion?.along).toBe("c2");
+    expect(step.caption?.anchor).toBe("bob");
+    expect(bus.apply({ ops: [{ op: "element.remove", ids: ["c2"] }] }).ok).toBe(true);
+    step = bus.scene.steps[0]!;
+    expect(step.actions[0]).toMatchObject({ type: "motion" });
+    expect((step.actions[0] as { motion: { along?: string } }).motion.along).toBeUndefined();
+  });
 });

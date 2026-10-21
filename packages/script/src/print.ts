@@ -79,6 +79,7 @@ export function printScene(scene: Scene): string {
     out.push("");
     const parts = [`step ${q(step.title)}`, `id=${step.id}`];
     if (step.holdMs !== 500) parts.push(`hold=${step.holdMs}ms`);
+    if (step.caption) parts.push(`caption=${q(step.caption.text)}`, ...(step.caption.anchor ? [`near=${step.caption.anchor}`] : []), ...(step.caption.side !== "auto" ? [`side=${step.caption.side}`] : []));
     if (step.transition) parts.push(`transition=${step.transition.kind}${step.transition.durationMs !== 600 ? ` transition-dur=${step.transition.durationMs}ms` : ""}`);
     if (step.durationMs !== undefined) parts.push(`dur=${step.durationMs}ms`);
     if (step.trigger.kind === "click") parts.push("click");

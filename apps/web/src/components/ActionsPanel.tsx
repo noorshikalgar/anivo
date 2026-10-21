@@ -9,7 +9,7 @@
  * 4. The active action has three panels: What (the effect), Who (the
  *    targets), and When (the timing and the sound).
  */
-import { easingFn } from "@anivo/engine";
+import { captionTiming, easingFn } from "@anivo/engine";
 import { type Action, DEFAULT_EASING, type Element, type Step } from "@anivo/schema";
 import { Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, makeStyles } from "@fluentui/react-components";
 import {
@@ -28,9 +28,9 @@ import {
   Target16Regular,
 } from "@fluentui/react-icons";
 import { type ReactElement, useEffect, useMemo, useState } from "react";
-import { addAction, addMotionAlongArrow, addStep, canSplitAction, moveAction, removeAction, splitAction, updateAction } from "../commands.js";
+import { addAction, addMotionAlongArrow, addStep, canSplitAction, moveAction, removeAction, splitAction, updateAction, updateStep } from "../commands.js";
 import { useEditor } from "../store.js";
-import { Select } from "./fields.js";
+import { Select, SelectField, TextField } from "./fields.js";
 import { formatTime } from "./PlaybackBar.js";
 import { ActionEditor, AddActionMenu, describe } from "./StepInspector.js";
 import { actionIcon, elementIcon } from "./typeIcons.js";
@@ -319,8 +319,49 @@ function StepActions({ step }: { step: Step }) {
     else setPicker({ title: `${q.label}: choose the elements`, ...(q.only ? { only: q.only } : {}), initial: [], done: add });
   };
 
+  const cap = step.caption;
+  const setCaption = (c: Step["caption"] | null, label: string, mergeKey?: string) => updateStep(step.id, { caption: c }, label, mergeKey);
+  const anchorOptions = [{ value: "", text: "Auto (first target)" }, ...Object.values(elements).filter((e) => e.type !== "connector" && e.type !== "group").map((e) => ({ value: e.id, text: e.id }))];
+
   return (
     <>
+      <Panel id="act-caption" title="Caption">
+        <TextField
+          label="Caption"
+          multiline
+          placeholder="One sentence: what happens in this step"
+          value={cap?.text ?? ""}
+          onCommit={(v) => {
+            const text = v.trim();
+            setCaption(text ? { side: "auto", ...(cap ?? {}), text } : null, text ? "Change caption" : "Remove caption");
+            return undefined;
+          }}
+        />
+        {cap && (
+          <>
+            <SelectField label="Next to" value={cap.anchor ?? ""} options={anchorOptions} onCommit={(v) => {
+                const rest = { ...cap };
+                delete rest.anchor;
+                setCaption(v ? { ...rest, anchor: v } : rest, "Change caption place");
+              }} />
+            <SelectField
+              label="Side"
+              value={cap.side}
+              options={[
+                { value: "auto", text: "Auto (covers the least)" },
+                { value: "below", text: "Below" },
+                { value: "above", text: "Above" },
+                { value: "right", text: "Right" },
+                { value: "left", text: "Left" },
+                { value: "top", text: "Top of the frame" },
+                { value: "bottom", text: "Bottom of the frame" },
+              ]}
+              onCommit={(v) => setCaption({ ...cap, side: v as NonNullable<Step["caption"]>["side"] }, "Change caption place")}
+            />
+            <Note>The caption types in at the step start. The step holds for {Math.round(captionTiming(cap.text).typeMs / 100 + captionTiming(cap.text).readMs / 100) / 10} s so that viewers can read it.</Note>
+          </>
+        )}
+      </Panel>
       <Panel id="act-add" title="Add an action">
         <div className={s.quick} role="group" aria-label="Quick actions">
           {QUICK.map((q) => (
