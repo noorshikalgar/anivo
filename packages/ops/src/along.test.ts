@@ -38,23 +38,23 @@ describe("send along a connector", () => {
     const bus = make();
     expect(bus.apply({ ops: sendAlongOps(bus.scene, "s1", ["m"], "c") }).ok).toBe(true);
     expect(center(bus, 0).x).toBeLessThan(150);
-    expect(center(bus, 1600).x).toBeGreaterThan(550);
-    expect(center(bus, 1600).y).toBeCloseTo(50, 0);
+    expect(center(bus, 2400).x).toBeGreaterThan(550);
+    expect(center(bus, 2400).y).toBeCloseTo(50, 0);
   });
 
   it("back goes from the end to the start", () => {
     const bus = make();
     bus.apply({ ops: sendAlongOps(bus.scene, "s1", ["m"], "c", { reverse: true }) });
-    expect(center(bus, 1600).x).toBeLessThan(150);
+    expect(center(bus, 2400).x).toBeLessThan(150);
   });
 
   it("follows the arrow when an end element moves, in the same undo step", () => {
     const bus = make();
     bus.apply({ ops: sendAlongOps(bus.scene, "s1", ["m"], "c") });
     bus.apply({ ops: [{ op: "element.update", id: "b", set: { y: 400 } }] });
-    expect(center(bus, 1600).y).toBeGreaterThan(350);
+    expect(center(bus, 2400).y).toBeGreaterThan(350);
     bus.undo();
-    expect(center(bus, 1600).y).toBeCloseTo(50, 0);
+    expect(center(bus, 2400).y).toBeCloseTo(50, 0);
   });
 
   it("rename keeps the arrow and the caption anchor; remove keeps the last path", () => {
@@ -69,5 +69,41 @@ describe("send along a connector", () => {
     step = bus.scene.steps[0]!;
     expect(step.actions[0]).toMatchObject({ type: "motion" });
     expect((step.actions[0] as { motion: { along?: string } }).motion.along).toBeUndefined();
+  });
+});
+
+describe("send along two arrows in two steps", () => {
+  it("the second send starts where the first ended, not at the corner", () => {
+    const r = loadScene({
+      schemaVersion: 1,
+      meta: { title: "Two" },
+      elements: {
+        a: { type: "rectangle", z: "a0", x: 0, y: 400, width: 100, height: 100 },
+        s: { type: "rectangle", z: "a1", x: 600, y: 400, width: 100, height: 100 },
+        b: { type: "rectangle", z: "a2", x: 1200, y: 400, width: 100, height: 100 },
+        up: { type: "connector", z: "a3", start: { kind: "bound", elementId: "a" }, end: { kind: "bound", elementId: "s" } },
+        down: { type: "connector", z: "a4", start: { kind: "bound", elementId: "s" }, end: { kind: "bound", elementId: "b" } },
+        m: { type: "rectangle", z: "a5", x: 20, y: 200, width: 60, height: 40 },
+      },
+      steps: [
+        { id: "s1", holdMs: 0, actions: [] },
+        { id: "s2", holdMs: 0, actions: [] },
+      ],
+    });
+    if (!r.ok) throw new Error("scene");
+    const bus = new OperationBus(r.scene);
+    // Both motions come in one transaction with placeholder points, as a script does.
+    const placeholder = [{ x: 0, y: 0 }, { x: 0, y: 0 }];
+    bus.apply({
+      ops: [
+        { op: "action.add", step: "s1", action: { type: "motion", targets: ["m"], durationMs: 1000, motion: { points: placeholder, along: "up" } } },
+        { op: "action.add", step: "s2", action: { type: "motion", targets: ["m"], durationMs: 1000, motion: { points: placeholder, along: "down" } } },
+      ],
+    });
+    const second = bus.scene.steps[1]!.actions[0]!;
+    if (second.type !== "motion") throw new Error("motion");
+    // The lead-in starts left of the server (where the first send ended), not at 0,0.
+    expect(second.motion.points[0]!.x).toBeGreaterThan(400);
+    expect(second.motion.points[0]!.y).toBeGreaterThan(400);
   });
 });

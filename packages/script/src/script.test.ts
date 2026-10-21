@@ -209,7 +209,7 @@ describe("move along an arrow", () => {
   it("compiles, follows the arrow route, and prints back", () => {
     const scene = ok(`box a "A" at=0,0\nbox b "B" at=900,0\narrow a -> b\nbox m "M" at=0,400\nstep "Send"\n  move m along=c-a-b back\n`);
     const a = scene.steps[0]!.actions[0]!;
-    expect(a).toMatchObject({ type: "motion", durationMs: 1600, motion: { along: "c-a-b", reverse: true } });
+    expect(a).toMatchObject({ type: "motion", durationMs: 2400, motion: { along: "c-a-b", reverse: true } });
     if (a.type !== "motion") throw new Error("motion");
     // A lead-in from the element center, then the route from the arrow end (back).
     expect(a.motion.points[0]!.x).toBeLessThan(200);

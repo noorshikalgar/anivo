@@ -181,7 +181,7 @@ test("Send moves an element along an arrow, and it follows the arrow when the ar
     return s.scene.steps.find((x) => x.id === s.selectedStep)!.actions.at(-1) as unknown as M;
   };
   const send = await last();
-  expect(send).toMatchObject({ type: "motion", durationMs: 1600, motion: { along: "c-lb-2" } });
+  expect(send).toMatchObject({ type: "motion", durationMs: 2400, motion: { along: "c-lb-2" } });
   // Move pod-2 in the base: the path follows the arrow.
   await page.evaluate(() => (window as unknown as { __anivo: { getState(): { apply(t: unknown): unknown } } }).__anivo.getState().apply({ label: "Move", ops: [{ op: "element.update", id: "pod-2", set: { y: 900 } }] }));
   const after = await last();

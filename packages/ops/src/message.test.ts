@@ -43,8 +43,8 @@ describe("message build", () => {
     // It arrives next to Bob (x 1500), not on him.
     expect(end.x + end.width / 2).toBeGreaterThan(1300);
     expect(end.x + end.width).toBeLessThanOrEqual(1500);
-    // Each hop takes 1.6 s: the send step is long enough to follow.
-    expect(tl.steps[2]!.endMs - tl.steps[2]!.startMs).toBeGreaterThanOrEqual(3200);
+    // Each hop takes 2.4 s: the send step is long enough to follow.
+    expect(tl.steps[2]!.endMs - tl.steps[2]!.startMs).toBeGreaterThanOrEqual(4800);
   });
 
   it("says why when no arrows connect the two elements", () => {

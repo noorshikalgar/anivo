@@ -4,6 +4,7 @@
  * of them after.
  */
 import type { Scene } from "@anivo/schema";
+import { SEND_MS } from "./along.js";
 import type { OperationInput } from "./operations.js";
 
 export interface BulletBuildOptions {
@@ -133,7 +134,7 @@ export function messageBuild(scene: Scene, o: MessageBuildOptions): { ops: Opera
   const start = { x: from.x + from.width / 2, y: Math.max(h / 2 + 20, from.y - h / 2 - Math.round(size * 0.8)) };
   const taken = new Set<string>();
   const id = free(scene, "msg", taken);
-  const hop = o.hopMs ?? 1600;
+  const hop = o.hopMs ?? SEND_MS;
   const name = (eid: string) => {
     const el = scene.elements[eid];
     const t = el?.type === "text" ? el.content.text : el && "label" in el && el.label ? el.label.text : eid;

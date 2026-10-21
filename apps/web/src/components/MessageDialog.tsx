@@ -62,7 +62,7 @@ export function MessageDialog() {
         <DialogBody>
           <DialogTitle>Message</DialogTitle>
           <DialogContent style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <Note>The text types in a bubble at the sender. In the next step, the bubble moves along the arrows to the receiver (1.6 s on each arrow).</Note>
+            <Note>The text types in a bubble at the sender. In the next step, the bubble moves along the arrows to the receiver (2.4 s on each arrow).</Note>
             <SelectField label="From" value={from} options={options} onCommit={setFrom} />
             <SelectField label="To" value={to} options={options} onCommit={setTo} />
             <Prop label="Path">

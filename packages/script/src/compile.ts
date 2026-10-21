@@ -1,5 +1,5 @@
 import { type LayoutKind, autoLayout } from "@anivo/layout";
-import { type OperationInput, WIDGETS, getWidget, widgetOps } from "@anivo/ops";
+import { type OperationInput, SEND_MS, WIDGETS, getWidget, widgetOps } from "@anivo/ops";
 import type { Scene } from "@anivo/schema";
 import { type Line, type Pos, type ScriptError, type Token, parseLines } from "./syntax.js";
 
@@ -925,7 +925,7 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
       else errors.push(err(pos, `The property '${k}' is not known for move.`, "Use: path, along, back, curve, orient, dur, easing, stagger."));
     }
     if (!motion["points"]) errors.push(err(line.pos, "The move has no path.", 'Write: move a path="100,200 400,200 400,600" or move bubble along=c-alice-server'));
-    if (motion["along"] && !a["durationMs"]) a["durationMs"] = 1600;
+    if (motion["along"] && !a["durationMs"]) a["durationMs"] = SEND_MS;
     a["motion"] = motion;
   } else if (verb === "flow") {
     a["type"] = "flow";

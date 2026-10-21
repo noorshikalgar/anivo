@@ -31,12 +31,12 @@ export interface TimedStep {
 }
 
 /**
- * Caption timing (docs/17 P4): it types at about 35 characters each second (at
- * most 1.5 s), then it stays for reading: 0.4 s for each word, minimum 2 s.
+ * Caption timing (docs/17 P4): it types at about 28 characters each second (at
+ * most 2 s), then it stays for reading: 0.45 s for each word, minimum 2.5 s.
  */
 export function captionTiming(text: string): { typeMs: number; readMs: number } {
   const words = text.trim().split(/\s+/).filter(Boolean).length;
-  return { typeMs: Math.min(1500, Math.round(text.length * 28)), readMs: Math.max(2000, words * 400) };
+  return { typeMs: Math.min(2000, Math.round(text.length * 35)), readMs: Math.max(2500, words * 450) };
 }
 
 export interface TimelineWarning {
