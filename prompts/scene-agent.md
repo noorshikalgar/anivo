@@ -101,6 +101,7 @@ step "<title>" [hold=<time>] [cue=<time>]
   count <target> from=<n> to=<n> format="{n} <unit>"
   code <target> highlight=<a>-<b> | type=<a>-<b>
   move <targets> path="x,y x,y …" [curve] [orient]   (the element center follows the points and stays at the end)
+  move <targets> along=<arrow> [back]               (send along an arrow route, for example a message bubble; 1.6 s by default)
   wait <time>
   (any action) sound=pop|click|whoosh|ding|thud|tick|blip|chime|rise|bubble|success|error|keys|ticks [sound-gain=<dB>]
        (a short sound when the action starts; keys = typing clicks and ticks = counter ticks for the whole action, for typewriter and count)

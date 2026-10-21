@@ -165,6 +165,8 @@ export const MotionAction = z.object({
     points: z.array(Point).min(2).describe("Scene points. The element center goes from the first to the last point."),
     curve: z.boolean().default(false).describe("A smooth curve through the points, not straight lines."),
     orient: z.boolean().default(false).describe("Turn the element along the path."),
+    along: ElementId.optional().describe("A connector. The points are the route of this connector at the step start (docs/17 P2). Sync them with the sync operation when the connector moves."),
+    reverse: z.boolean().default(false).describe("With along: go from the connector end to its start."),
   }),
 });
 

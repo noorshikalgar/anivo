@@ -51,7 +51,7 @@ export function describe(a: Action): string {
   if (a.type === "morph") return `Morph · ${Object.keys(a.to).join(", ")}`;
   if (a.type === "camera") return `Camera · ${a.camera.op}`;
   if (a.type === "counter") return `Count · ${a.counter.from} to ${a.counter.to}`;
-  if (a.type === "motion") return `Move along a path · ${a.motion.points.length} points`;
+  if (a.type === "motion") return a.motion.along ? `Send along ${a.motion.along}${a.motion.reverse ? " (back)" : ""}` : `Move along a path · ${a.motion.points.length} points`;
   if (a.type === "code") return `Code · ${a.code.op}${a.code.lines ? ` ${a.code.lines[0]}-${a.code.lines[1]}` : ""}`;
   return label(a.type);
 }
@@ -101,8 +101,8 @@ export function AddActionMenu({ iconOnly }: { iconOnly?: boolean }) {
             <MenuItem icon={actionIcon("flow")} disabled={connectors.length === 0} onClick={() => addAction({ type: "flow", targets: connectors, flow: connectors.length > 1 ? { distribute: "round-robin" } : {} }, "Add flow")}>
               Flow {connectors.length === 0 ? "(select an arrow)" : ""}
             </MenuItem>
-            <MenuItem icon={actionIcon("motion")} disabled={connectors.length !== 1 || selection.length < 2 || step === null} onClick={addMotionAlongArrow}>
-              Move along the selected arrow
+            <MenuItem icon={actionIcon("motion")} disabled={connectors.length !== 1 || selection.length < 2 || step === null} onClick={() => void addMotionAlongArrow()}>
+              Send along the selected arrow
             </MenuItem>
             <MenuItem icon={actionIcon("counter")} disabled={texts.length === 0} onClick={() => addAction({ type: "counter", targets: texts, counter: { from: 0, to: 100 } }, "Add count")}>
               Count {texts.length === 0 ? "(select a text)" : ""}
@@ -377,7 +377,20 @@ export function ActionEditor({ step, action, part = "all" }: { step: Step; actio
       {what && (
         <>
 
-      {action.type === "motion" && (
+      {action.type === "motion" && action.motion.along && (
+        <Row>
+          <SelectField
+            label="Arrow"
+            value={action.motion.along}
+            options={Object.values(useEditor.getState().scene.elements)
+              .filter((e) => e.type === "connector")
+              .map((e) => ({ value: e.id, text: e.id }))}
+            onCommit={(v) => set({ motion: { ...action.motion, along: v } }, "Change arrow")}
+          />
+          <SelectField label="Direction" value={action.motion.reverse ? "back" : "forward"} options={[{ value: "forward", text: "Start to end" }, { value: "back", text: "End to start" }]} onCommit={(v) => set({ motion: { ...action.motion, reverse: v === "back" } }, "Change direction")} />
+        </Row>
+      )}
+      {action.type === "motion" && !action.motion.along && (
         <Row>
           <SelectField label="Path" value={action.motion.curve ? "curve" : "lines"} options={[{ value: "lines", text: "Straight lines" }, { value: "curve", text: "Smooth curve" }]} onCommit={(v) => set({ motion: { ...action.motion, curve: v === "curve" } }, "Change path")} />
           <SelectField label="Turn" value={action.motion.orient ? "yes" : "no"} options={[{ value: "no", text: "Keep angle" }, { value: "yes", text: "Turn along path" }]} onCommit={(v) => set({ motion: { ...action.motion, orient: v === "yes" } }, "Change turn")} />
