@@ -12,6 +12,8 @@ const seek = async (page: import("@playwright/test").Page, stepRel: number) => {
   });
   // The lower half of the ruler: the upper half has the step sections.
   await page.mouse.click(box.x + ((at + stepRel) / span) * box.width, box.y + box.height * 0.75);
+  // The ruler gives focus to the timeline (its arrow keys step frames). These tests nudge the selection next, as after a click on the canvas.
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
 };
 
 type Morph = { delayMs: number; durationMs?: number };
