@@ -46,15 +46,23 @@ test("X field moves the element", async ({ page }) => {
   expect((await state(page)).scene.elements["lb"]!.x).toBe(640);
 });
 
-test("a fill change in a step becomes a morph", async ({ page }) => {
+test("a fill change in a step is static, and with Record on it becomes a keyframe", async ({ page }) => {
   await page.getByRole("button", { name: /Traffic flows/ }).click();
   await selectLb(page);
   await page.getByRole("button", { name: /^Fill:/ }).click();
   await page.getByRole("radiogroup", { name: "Fill" }).getByRole("radio", { name: "success", exact: true }).click();
-  const s = await state(page);
-  expect(s.scene.elements["lb"]!.style?.["fill"]).toBe("accent-soft");
+  let s = await state(page);
+  expect(s.scene.elements["lb"]!.style?.["fill"]).toBe("success");
+  expect(s.scene.steps.find((st) => st.id === "s-traffic")!.actions.some((a) => a.type === "morph")).toBe(false);
+  await page.keyboard.press("Escape");
+  await selectLb(page);
+  await page.keyboard.press("k");
+  await page.getByRole("button", { name: /^Fill:/ }).click();
+  await page.getByRole("radiogroup", { name: "Fill" }).getByRole("radio", { name: "danger", exact: true }).click();
+  s = await state(page);
+  expect(s.scene.elements["lb"]!.style?.["fill"]).toBe("success");
   const morph = s.scene.steps.find((st) => st.id === "s-traffic")!.actions.find((a) => a.type === "morph");
-  expect(morph).toMatchObject({ targets: ["lb"], to: { fill: "success" } });
+  expect(morph).toMatchObject({ targets: ["lb"], to: { fill: "danger" } });
 });
 
 test("scene panel changes the style", async ({ page }) => {
@@ -66,6 +74,7 @@ test("scene panel changes the style", async ({ page }) => {
 test("a base edit warns when a step morph sets the property at the playhead", async ({ page }) => {
   await page.getByRole("button", { name: /Traffic flows/ }).click();
   await selectLb(page);
+  await page.keyboard.press("k");
   await page.getByRole("button", { name: /^Fill:/ }).click();
   await page.getByRole("radiogroup", { name: "Fill" }).getByRole("radio", { name: "success", exact: true }).click();
   await page.evaluate(() => {

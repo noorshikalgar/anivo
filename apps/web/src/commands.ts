@@ -1,6 +1,6 @@
-import { prepare } from "@anivo/engine";
+import { prepare, stepIndexAt } from "@anivo/engine";
 import { type LayoutKind, autoLayout, evaluateWithLayout } from "@anivo/layout";
-import { type OperationInput, sendAlongOps, setKeyframeOps } from "@anivo/ops";
+import { type OperationInput, hasKeys, sendAlongOps, setKeyframeOps } from "@anivo/ops";
 import type { Element } from "@anivo/schema";
 import { type Box, boundsOf, editorSkip, geometryOps, leafDescendants } from "./editing.js";
 import { notify } from "./notify.js";
@@ -30,32 +30,37 @@ export function visibleAtStepStart(): (id: string) => boolean {
   return (id) => state[id]?.visible ?? false;
 }
 
-/** The playhead time from the start of the selected step, or null if the playhead is before the step. */
-export function stepTimeAtPlayhead(): number | null {
-  const { selectedStep, timeline, playhead } = useEditor.getState();
-  if (selectedStep === null) return null;
-  const s = timeline.steps.find((x) => x.id === selectedStep);
-  if (!s || playhead < s.startMs) return null;
-  return playhead - s.startMs;
+/**
+ * Where a key goes: the step that contains the playhead, and the time in it.
+ * Null in the Base view (no step selected) or before the first step.
+ */
+export function keyAtPlayhead(): { stepId: string; t: number } | null {
+  const { selectedStep, timeline, playhead, scene } = useEditor.getState();
+  if (selectedStep === null || scene.steps.length === 0) return null;
+  const i = stepIndexAt(timeline, playhead);
+  if (i < 0) return null;
+  const ts = timeline.steps[i]!;
+  return { stepId: ts.id, t: playhead - ts.startMs };
 }
 
-/** With auto-key on, the time of a new keyframe (see stepTimeAtPlayhead); else null. */
-export function autoKeyTime(): number | null {
-  return useEditor.getState().autoKey ? stepTimeAtPlayhead() : null;
-}
-
-/** Morph values as keyframes at the playhead (auto-key), or null to use the step morph. */
+/**
+ * The key operations for a change, or null for a static change (docs/18).
+ * As in a video editor: with Record off, a change to a property with no keys
+ * changes it in all steps. With Record on, or when the property has keys
+ * already, the change makes a key at the playhead.
+ */
 function keyOps(id: string, values: Record<string, unknown>): OperationInput[] | null {
-  const t = autoKeyTime();
   const st = useEditor.getState();
-  if (t === null || st.selectedStep === null) return null;
-  return setKeyframeOps(st.scene, st.selectedStep, id, values, t);
+  const at = keyAtPlayhead();
+  if (!at || Object.keys(values).length === 0) return null;
+  if (!st.autoKey && !hasKeys(st.scene, id, Object.keys(values))) return null;
+  return setKeyframeOps(st.scene, at.stepId, id, values, at.t);
 }
 
-/** Apply a geometry change in the base state or as a morph in the selected step. */
+/** Apply a geometry change: a key at the playhead (see keyOps), or a static change. */
 export function commitGeometry(changes: Map<string, Box>, label: string): void {
   const st = useEditor.getState();
-  const ops = geometryOps(st.scene, st.selectedStep, visibleAtStepStart(), changes, currentBoxes(), keyOps);
+  const ops = geometryOps(st.scene, changes, currentBoxes(), keyOps);
   if (ops.length > 0) st.apply({ label, ops });
 }
 
@@ -184,28 +189,21 @@ export function commitProps(id: string, changes: Record<string, unknown>, label 
   const st = useEditor.getState();
   const el = st.scene.elements[id];
   if (!el) return;
-  const inStep = st.selectedStep !== null && visibleAtStepStart()(id);
-  const morph: Record<string, unknown> = {};
+  // Keys first: properties that can animate make keys at the playhead when Record is on or they have keys.
+  const morph = Object.fromEntries(Object.entries(changes).filter(([k]) => MORPHABLE.has(k)));
+  const keyed = keyOps(id, morph);
+  const ops: OperationInput[] = keyed ? [...keyed] : [];
   const set: Record<string, unknown> = {};
   const style: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(changes)) {
-    if (inStep && MORPHABLE.has(k)) morph[k] = v;
-    else if (STYLE_KEYS.has(k)) style[k] = v;
+    if (keyed && k in morph) continue;
+    if (STYLE_KEYS.has(k)) style[k] = v;
     else if (k === "label" && el.type === "text") set["content"] = { text: String(v ?? "") };
     else if (k === "label") set["label"] = v === "" || v === null ? null : { text: v };
     else set[k] = v;
   }
   if (Object.keys(style).length > 0) set["style"] = style;
-  const ops: OperationInput[] = [];
-  if (Object.keys(set).length > 0) ops.push({ op: "element.update", id, set });
-  const keyed = Object.keys(morph).length > 0 ? keyOps(id, morph) : null;
-  if (keyed) ops.push(...keyed);
-  else if (Object.keys(morph).length > 0) {
-    const step = st.scene.steps.find((s) => s.id === st.selectedStep)!;
-    const existing = step.actions.find((a) => a.type === "morph" && a.targets.length === 1 && a.targets[0] === id);
-    if (existing && existing.type === "morph") ops.push({ op: "action.update", step: step.id, id: existing.id, set: { to: { ...existing.to, ...morph } } });
-    else ops.push({ op: "action.add", step: step.id, action: { type: "morph", targets: [id], to: morph } });
-  }
+  if (Object.keys(set).length > 0) ops.unshift({ op: "element.update", id, set });
   if (ops.length > 0) st.apply({ label, ops, ...(mergeKey ? { mergeKey } : {}) });
 }
 

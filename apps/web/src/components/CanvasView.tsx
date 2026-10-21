@@ -90,6 +90,8 @@ export function CanvasView() {
     };
   }, []);
   const tool = useEditor((s) => s.tool);
+  // Record (auto-key) shows a red frame, so a change is not recorded by mistake.
+  const recording = useEditor((s) => s.autoKey && s.selectedStep !== null);
 
   // Size the canvases to the container, in device pixels.
   useEffect(() => {
@@ -781,6 +783,11 @@ export function CanvasView() {
       <canvas ref={overlayRef} className={styles.canvas} aria-hidden="true" />
       <ToolPalette />
       <TextEditor />
+      {recording && (
+        <div aria-live="polite" style={{ position: "absolute", inset: 0, boxShadow: "inset 0 0 0 3px #e5484d", pointerEvents: "none" }}>
+          <span style={{ position: "absolute", top: 8, left: "50%", transform: "translateX(-50%)", background: "#e5484d", color: "#fff", fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 10 }}>● Recording keyframes (K to stop)</span>
+        </div>
+      )}
     </div>
   );
 }

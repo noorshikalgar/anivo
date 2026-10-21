@@ -100,7 +100,7 @@ export function useShortcuts(): void {
       } else if (!mod && !e.altKey && e.key.toLowerCase() === "k") {
         const on = !st.autoKey;
         useEditor.setState({ autoKey: on, ...(on ? { timelineOpen: true } : {}) });
-        notify(on ? "Auto-key is on: changes make keyframes at the playhead" : "Auto-key is off", "info");
+        notify(on ? "Recording: changes make keyframes at the playhead" : "Recording is off: changes set the element in all steps", "info");
       } else if (!mod && !e.altKey && e.key.toLowerCase() === "n") {
         addStep();
       } else if (!mod && !e.altKey && TOOL_KEYS[e.key.toLowerCase()]) {

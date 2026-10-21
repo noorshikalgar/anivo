@@ -40,6 +40,9 @@ What we do not change: steps stay. They are the beats of the story, the place of
 
 ## 5. Plan
 
+T0 (done first, owner report): "the timeline tracks the object from creation to its place". Before, each change in a step made a morph, so placing a new element was animated. Now a change is static, unless Record is on or the property has keys (docs/16 §2).
+
+
 | # | Item |
 |---|---|
 | T1 | **Tracks view**: one row for each element, with life bar, action blocks, and keys, on global time. Steps as sections on the ruler. Replaces the Actions, Layers, and Keys tabs (Actions stay in the properties panel). |
