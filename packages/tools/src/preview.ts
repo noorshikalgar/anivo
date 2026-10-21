@@ -28,7 +28,8 @@ export function stepTime(scene: Scene, step: number | string | undefined, at: Pr
   const t = tl.steps[i];
   if (!t) throw new ToolError(`The step '${step}' does not exist.`, `Use a number from 0 (base) to ${tl.steps.length}, or one of: ${scene.steps.map((s) => s.id).join(", ")}.`);
   if (at === "start") return t.startMs;
-  if (at === "end") return Math.max(t.startMs, t.endMs - 1);
+  // The end shows the caption typed in full, too.
+  if (at === "end") return Math.max(t.startMs, Math.max(t.endMs, t.caption?.typedMs ?? 0) - 1);
   return t.startMs + at;
 }
 

@@ -550,6 +550,31 @@ export function evaluateAt(prepared: Prepared, timeMs: number, opts: EvaluateOpt
 
 const CAPTION_FADE_MS = 250;
 
+/** The box of a visible element, or for a group, the union box of its visible parts. */
+function anchorBox(scene: Scene, id: string, state: StateMap): Rect | undefined {
+  const el = scene.elements[id];
+  if (!el) return undefined;
+  if (el.type !== "group") {
+    const f = state[id];
+    return f && f.visible && f.opacity > 0 ? { x: f.x, y: f.y, width: f.width, height: f.height } : undefined;
+  }
+  let box: Rect | undefined;
+  for (const child of Object.values(scene.elements)) {
+    if (child.parentId !== id) continue;
+    const b = anchorBox(scene, child.id, state);
+    if (!b) continue;
+    if (!box) box = { ...b };
+    else {
+      const x2 = Math.max(box.x + box.width, b.x + b.width);
+      const y2 = Math.max(box.y + box.height, b.y + b.height);
+      box = { x: Math.min(box.x, b.x), y: Math.min(box.y, b.y), width: 0, height: 0 };
+      box.width = x2 - box.x;
+      box.height = y2 - box.y;
+    }
+  }
+  return box;
+}
+
 /** The caption of step i at time t. A step with no caption fades out the caption of the step before. */
 function stepCaptionAt(scene: Scene, steps: TimedStep[], i: number, t: number, state: StateMap): CaptionFrame | undefined {
   let k = i;
@@ -566,8 +591,7 @@ function stepCaptionAt(scene: Scene, steps: TimedStep[], i: number, t: number, s
   const reveal = timing.typedMs <= timing.startMs ? 1 : Math.min(1, (t - timing.startMs) / (timing.typedMs - timing.startMs));
   const fadeIn = Math.min(1, (t - timing.startMs) / 150);
   const anchorId = c.side === "top" || c.side === "bottom" ? undefined : (c.anchor ?? ts.actions.find((a) => a.target !== "" && state[a.target]?.type !== "connector")?.target);
-  const af = anchorId ? state[anchorId] : undefined;
-  const anchor = af && af.visible ? { x: af.x, y: af.y, width: af.width, height: af.height } : undefined;
+  const anchor = anchorId ? anchorBox(scene, anchorId, state) : undefined;
   return { text: c.text, reveal, opacity: Math.max(0, Math.min(fadeIn, fadeOut)), side: c.side, ...(anchor ? { anchor, anchorId } : {}) };
 }
 

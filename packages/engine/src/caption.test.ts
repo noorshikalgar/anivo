@@ -39,3 +39,21 @@ describe("step caption", () => {
     expect(evaluate(s, tl.steps[1]!.startMs + 400).caption).toBeUndefined();
   });
 });
+
+describe("step caption anchor", () => {
+  it("a group anchor uses the box of its parts", () => {
+    const r = loadScene({
+      schemaVersion: 1,
+      meta: { title: "G" },
+      elements: {
+        g: { type: "group", z: "a0" },
+        p1: { type: "rectangle", z: "a1", parentId: "g", x: 100, y: 100, width: 100, height: 100 },
+        p2: { type: "rectangle", z: "a2", parentId: "g", x: 300, y: 150, width: 100, height: 200 },
+      },
+      steps: [{ id: "s1", caption: { text: "A group", anchor: "g" }, actions: [{ id: "e", type: "enter", effect: "fade", targets: ["g"] }] }],
+    });
+    if (!r.ok) throw new Error("scene");
+    const c = evaluate(r.scene, 1500).caption!;
+    expect(c.anchor).toEqual({ x: 100, y: 100, width: 300, height: 250 });
+  });
+});
