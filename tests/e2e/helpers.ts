@@ -17,6 +17,8 @@ export interface El {
   parentId?: string;
   start?: { kind: string; elementId?: string };
   end?: { kind: string; elementId?: string };
+  startHead?: string;
+  endHead?: string;
 }
 
 export interface Action {

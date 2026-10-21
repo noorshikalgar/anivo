@@ -115,7 +115,7 @@ const popLightTokens = {
   teal: "#00B3A4",
 };
 
-/** Neon: deep night, bright neon colors, and glow. */
+/** Neon: deep night and bright neon colors. No glow by default: a glow on all shapes is too much (docs/17 F4). */
 const neonDarkTokens = {
   background: "#0A0A1A",
   grid: "#1A1A38",
@@ -145,7 +145,7 @@ export const THEMES: Record<string, Theme> = {
   "paper-light": { name: "paper-light", dark: false, tokens: paperLightTokens, fonts, defaults },
   "night-dark": { name: "night-dark", dark: true, tokens: nightDarkTokens, fonts, defaults: { ...defaults, strokeWidth: 2.5 } },
   "pop-light": { name: "pop-light", dark: false, tokens: popLightTokens, fonts, defaults: { ...defaults, strokeWidth: 3, cornerRadius: 14, shadow: "hard", shadowColor: "line" } },
-  "neon-dark": { name: "neon-dark", dark: true, tokens: neonDarkTokens, fonts, defaults: { ...defaults, stroke: "accent", strokeWidth: 2, shadow: "glow", shadowColor: "accent" } },
+  "neon-dark": { name: "neon-dark", dark: true, tokens: neonDarkTokens, fonts, defaults: { ...defaults, stroke: "accent", strokeWidth: 2 } },
 };
 
 export function getTheme(name: string): Theme {

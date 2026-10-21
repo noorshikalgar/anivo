@@ -627,7 +627,8 @@ export function CanvasView() {
         const len = Math.hypot(d.end.x - d.start.x, d.end.y - d.start.y);
         if (len * useEditor.getState().view.zoom > 6) {
           const endOf = (id: string | null, pt: Point) => (id ? { kind: "bound", elementId: id } : { kind: "free", x: Math.round(pt.x), y: Math.round(pt.y) });
-          addElement("connector", { start: endOf(d.from, d.start), end: endOf(d.to, d.end), endHead: "arrow" }, "Add arrow");
+          const ends = useEditor.getState().arrowEnds;
+          addElement("connector", { start: endOf(d.from, d.start), end: endOf(d.to, d.end), startHead: ends === "start" || ends === "both" ? "arrow" : "none", endHead: ends === "end" || ends === "both" ? "arrow" : "none" }, "Add arrow");
         }
         useEditor.getState().setTool("select");
       }
