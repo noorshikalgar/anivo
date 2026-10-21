@@ -154,3 +154,15 @@ test("select many keys with Shift: delete them together; copy keys and paste the
   await page.keyboard.press("Delete");
   await expect(keys).toHaveCount(0);
 });
+
+test("I inserts a position key at the playhead, Alt+I deletes it", async ({ page }) => {
+  await page.getByRole("button", { name: /Traffic flows/ }).first().click();
+  const pod = (await state(page)).scene.elements["pod-2"]!;
+  const p = await screen(page, pod.x + pod.width / 2, pod.y + pod.height / 2);
+  await page.mouse.click(p.x, p.y);
+  await page.keyboard.press("i");
+  await expect(page.getByRole("slider", { name: /Keyframe Position of pod-2/ })).toHaveCount(1);
+  expect((await state(page)).tool).toBe("select");
+  await page.keyboard.press("Alt+i");
+  await expect(page.getByRole("slider", { name: /Keyframe Position of pod-2/ })).toHaveCount(0);
+});

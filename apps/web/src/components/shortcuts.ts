@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { addStep, copySelection, deleteSelection, duplicateSelection, groupSelection, nudgeSelection, pasteFromClipboard, selectAll, toggleHideSelection, toggleLockSelection, ungroupSelection } from "../commands.js";
+import { addStep, copySelection, deleteKeysAtPlayhead, insertKeysAtPlayhead, deleteSelection, duplicateSelection, groupSelection, nudgeSelection, pasteFromClipboard, selectAll, toggleHideSelection, toggleLockSelection, ungroupSelection } from "../commands.js";
 import { cueAtPlayhead } from "../audio.js";
 import { pasteImage } from "../images.js";
 import { cancelRecording, nextStep } from "../record.js";
@@ -97,6 +97,16 @@ export function useShortcuts(): void {
         // M during play: a cue for the next step at the playhead (docs/08).
         const id = cueAtPlayhead();
         if (id) notify(`Cue set for step '${id}'`, "info");
+      } else if (!mod && e.code === "KeyI" && st.selection.length > 0 && st.selectedStep !== null) {
+        // I: a key at the playhead (Shift: all properties). Alt+I: delete the keys at the playhead.
+        e.preventDefault();
+        if (e.altKey) {
+          const n = deleteKeysAtPlayhead();
+          notify(n ? `Deleted ${n} key${n > 1 ? "s" : ""} at the playhead` : "No keys at the playhead", "info");
+        } else {
+          const n = insertKeysAtPlayhead(e.shiftKey);
+          notify(n ? `${e.shiftKey ? "Keys" : "Position key"} at the playhead for ${n} element${n > 1 ? "s" : ""}` : "Move the playhead into a step to add keys", "info");
+        }
       } else if (!mod && !e.altKey && e.key.toLowerCase() === "k") {
         const on = !st.autoKey;
         useEditor.setState({ autoKey: on, ...(on ? { timelineOpen: true } : {}) });

@@ -29,6 +29,11 @@ const SHORTCUTS: [string, string][] = [
   ["Move selection (10 px with Shift)", "Arrow keys"],
   ["Edit the text of the selection", "Enter"],
   ["Cue at the playhead (while playing)", "M"],
+  ["Record keyframes on or off", "K"],
+  ["Key at the playhead: position / all properties (with a selection)", "I / Shift+I"],
+  ["Delete the keys at the playhead", "Alt+I"],
+  ["Timeline: zoom", "Ctrl+wheel"],
+  ["Timeline: select many keys / copy / paste keys", "Shift+click / Ctrl+C / Ctrl+V"],
   ["Pan / Zoom", "Space+drag / Ctrl+wheel"],
   ["Fit video to screen", "Shift+1"],
 ];
