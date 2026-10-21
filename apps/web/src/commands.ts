@@ -1,6 +1,6 @@
 import { prepare } from "@anivo/engine";
 import { type LayoutKind, autoLayout, evaluateWithLayout } from "@anivo/layout";
-import { type OperationInput, setKeyframeOps } from "@anivo/ops";
+import { type OperationInput, sendAlongOps, setKeyframeOps } from "@anivo/ops";
 import type { Element } from "@anivo/schema";
 import { type Box, boundsOf, editorSkip, geometryOps, leafDescendants } from "./editing.js";
 import { notify } from "./notify.js";
@@ -544,14 +544,18 @@ export function autoLayoutSelection(kind: LayoutKind): void {
  * Motion path (FR-STEP-15): the selected elements move along the selected arrow,
  * in the selected step. The path is a copy of the arrow route at the step start.
  */
-export function addMotionAlongArrow(): void {
+/**
+ * Send elements along an arrow (docs/17 P2): a motion that follows the arrow
+ * route, and follows the arrow when it moves. Without arguments: the selected
+ * arrow and the other selected elements.
+ */
+export function addMotionAlongArrow(targets?: string[], connector?: string, reverse = false): boolean {
   const st = useEditor.getState();
-  if (st.selectedStep === null) return;
-  const conns = st.selection.filter((id) => st.scene.elements[id]?.type === "connector");
-  const targets = st.selection.filter((id) => st.scene.elements[id] && st.scene.elements[id]!.type !== "connector");
-  if (conns.length !== 1 || targets.length === 0) return;
-  const start = st.timeline.steps.find((s) => s.id === st.selectedStep)?.startMs ?? 0;
-  const route = evaluateWithLayout(st.scene, Math.max(0, start - 1)).routes.get(conns[0]!);
-  if (!route || route.points.length < 2) return;
-  addAction({ type: "motion", targets, motion: { points: route.points.map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) })) } }, "Add motion path");
+  if (st.selectedStep === null) return false;
+  const conn = connector ?? st.selection.find((id) => st.scene.elements[id]?.type === "connector");
+  const ids = targets ?? st.selection.filter((id) => st.scene.elements[id] && st.scene.elements[id]!.type !== "connector");
+  if (!conn || ids.length === 0) return false;
+  const ops = sendAlongOps(st.scene, st.selectedStep, ids, conn, { reverse });
+  if (ops.length === 0) return false;
+  return st.apply({ label: "Send along arrow", ops }).ok;
 }

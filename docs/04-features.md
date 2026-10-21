@@ -68,7 +68,7 @@ See [06 — Animation engine](06-animation-engine.md) for the full model.
 | FR-STEP-12 | Step trigger: `auto` (after the previous step), `click` (present mode), `cue` (voiceover time) | P0 (`auto`, `click`), P1 (`cue`) | |
 | FR-STEP-13 | Scrub the playhead | P0 | Each playhead position shows the correct frame. Scrub does not depend on play history. |
 | FR-STEP-14 | Path morph between different shape types | P2 | Done: morph `shape` (rectangle, ellipse, diamond); both outlines resample to 96 points. Script: `morph a shape=ellipse`. Inspector: "Shape in this step". |
-| FR-STEP-15 | Motion path: move an element along a drawn path | P2 | Done: `motion` action (points, curve, orient). Editor: Add action › Move along the selected arrow. Script: `move a path="x,y x,y …" [curve] [orient]`. |
+| FR-STEP-15 | Motion path: move an element along a drawn path | P2 | Done: `motion` action (points, curve, orient). Editor: Actions › Send (or Add action › Send along the selected arrow). Script: `move a path="x,y x,y …" [curve] [orient]`, or `move a along=<arrow> [back]` (follows the arrow route, also when the arrow moves; default 1.6 s). |
 | FR-STEP-16 | Hold: a step can hold the last state for a duration | P0 | |
 | FR-STEP-17 | Timeline panel with tracks for each action | P1 | Drag action edges to change delay and duration. UI only for drag. Operations exist for the same change. |
 | FR-STEP-18 | Own delay for each element of an action | P2 | Done: **Split per element** in the action editor (enter, exit, morph, emphasis, move) makes one action for each target. The stagger becomes the delay of each new action, so the timing does not change. Agents: `action.remove` and `action.add`, or one script line for each element. |

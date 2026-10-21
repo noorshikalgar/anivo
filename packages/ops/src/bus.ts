@@ -1,6 +1,7 @@
+import { syncAlongOps } from "./along.js";
 import { type Element, type Scene, checkReferences } from "@anivo/schema";
 import { Draft, type OpError, OpFailure, type Snapshot } from "./apply.js";
-import { type Author, Transaction, type TransactionInput } from "./operations.js";
+import { type Author, Operation, Transaction, type TransactionInput } from "./operations.js";
 
 export interface HistoryEntry {
   /** Sequence number of the entry. */
@@ -131,6 +132,11 @@ export class OperationBus {
     const draft = new Draft(this.current);
     try {
       tx.ops.forEach((op, i) => draft.apply(op, `ops.${i}`));
+      // Motions along a connector follow the connector when it moves (docs/17 P2), in the same history entry.
+      const mid = draft.finish();
+      if (mid.steps.some((st) => st.actions.some((a) => a.type === "motion" && a.motion.along))) {
+        syncAlongOps(mid).forEach((op, i) => draft.apply(Operation.parse(op), `sync.${i}`));
+      }
     } catch (err) {
       if (err instanceof OpFailure) return { ok: false, error: err.error };
       throw err;

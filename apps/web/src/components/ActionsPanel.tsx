@@ -28,7 +28,7 @@ import {
   Target16Regular,
 } from "@fluentui/react-icons";
 import { type ReactElement, useEffect, useMemo, useState } from "react";
-import { addAction, addStep, canSplitAction, moveAction, removeAction, splitAction, updateAction } from "../commands.js";
+import { addAction, addMotionAlongArrow, addStep, canSplitAction, moveAction, removeAction, splitAction, updateAction } from "../commands.js";
 import { useEditor } from "../store.js";
 import { Select } from "./fields.js";
 import { formatTime } from "./PlaybackBar.js";
@@ -96,6 +96,7 @@ const QUICK: Quick[] = [
   { label: "Pulse", hint: "Pulse to point at it (emphasis · pulse)", icon: actionIcon("emphasis"), action: { type: "emphasis", effect: "pulse" } },
   { label: "Glow", hint: "Glow (emphasis · glow)", icon: actionIcon("emphasis"), action: { type: "emphasis", effect: "glow" } },
   { label: "Focus", hint: "Dim the rest (emphasis · focus)", icon: actionIcon("emphasis"), action: { type: "emphasis", effect: "focus" } },
+  { label: "Send", hint: "Move elements along an arrow, for example a message (1.6 s). Select the elements and the arrow.", icon: actionIcon("motion"), action: { type: "motion" } },
   { label: "Flow", hint: "Particles move along the arrows (flow)", icon: actionIcon("flow"), action: { type: "flow", flow: {} }, only: ["connector"] },
   { label: "Zoom", hint: "The camera zooms to the elements (camera · zoom-to)", icon: actionIcon("camera"), action: { type: "camera", camera: { op: "zoom-to" } } },
   { label: "Count", hint: "Count a number up (count)", icon: actionIcon("counter"), action: { type: "counter", counter: { from: 0, to: 100 } }, only: ["text"] },
@@ -296,6 +297,18 @@ function StepActions({ step }: { step: Step }) {
   };
 
   const quickAdd = (q: Quick) => {
+    if (q.label === "Send") {
+      // Send: the elements and one arrow. Ask for what is not selected.
+      const arrow = selection.find((id) => elements[id]?.type === "connector");
+      const movers = selection.filter((id) => elements[id] && elements[id]!.type !== "connector");
+      const withArrow = (ids: string[]) => {
+        if (arrow) return void addMotionAlongArrow(ids, arrow);
+        setPicker({ title: "Send: choose the arrow", only: ["connector"], initial: [], done: (cs) => cs[0] && void addMotionAlongArrow(ids, cs[0]) });
+      };
+      if (movers.length > 0) withArrow(movers);
+      else setPicker({ title: "Send: choose the elements that move", initial: [], done: (ids) => ids.length > 0 && withArrow(ids.filter((id) => elements[id]?.type !== "connector")) });
+      return;
+    }
     const fit = (ids: string[]) => ids.filter((id) => !q.only || q.only.includes(elements[id]?.type as Element["type"]));
     const add = (ids: string[]) => {
       const action = q.action["type"] === "camera" || ids.length > 0 ? { ...q.action, targets: ids, ...(q.action["type"] === "flow" && ids.length > 1 ? { flow: { distribute: "round-robin" } } : {}) } : null;
@@ -443,6 +456,7 @@ function StepActions({ step }: { step: Step }) {
         </>
       )}
       <TargetPicker
+        key={picker?.title ?? "none"}
         open={picker !== null}
         title={picker?.title ?? ""}
         initial={picker?.initial ?? []}

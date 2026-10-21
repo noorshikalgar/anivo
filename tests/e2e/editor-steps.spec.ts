@@ -165,3 +165,25 @@ test("Insert, Bullet list build makes the title and point steps", async ({ page 
   const titles = ((await state(page)) as unknown as { scene: { steps: { title: string }[] } }).scene.steps.map((s) => s.title);
   expect(titles.slice(-6)).toEqual(["Start", "Title", "Point 1", "Point 1 up", "Point 2", "Point 2 up"]);
 });
+
+test("Send moves an element along an arrow, and it follows the arrow when the arrow moves", async ({ page }) => {
+  await page.getByRole("button", { name: "Add step" }).click();
+  await page.getByRole("group", { name: "Quick actions" }).getByRole("button", { name: "Send" }).click();
+  let dialog = page.getByRole("dialog", { name: "Send: choose the elements that move" });
+  await dialog.getByText("user", { exact: true }).click();
+  await dialog.getByRole("button", { name: "Use 1 element" }).click();
+  dialog = page.getByRole("dialog", { name: "Send: choose the arrow" });
+  await dialog.getByText("c-lb-2", { exact: true }).click();
+  await dialog.getByRole("button", { name: "Use 1 element" }).click();
+  type M = { type: string; durationMs: number; motion: { along: string; points: { x: number; y: number }[] } };
+  const last = async () => {
+    const s = await state(page);
+    return s.scene.steps.find((x) => x.id === s.selectedStep)!.actions.at(-1) as unknown as M;
+  };
+  const send = await last();
+  expect(send).toMatchObject({ type: "motion", durationMs: 1600, motion: { along: "c-lb-2" } });
+  // Move pod-2 in the base: the path follows the arrow.
+  await page.evaluate(() => (window as unknown as { __anivo: { getState(): { apply(t: unknown): unknown } } }).__anivo.getState().apply({ label: "Move", ops: [{ op: "element.update", id: "pod-2", set: { y: 900 } }] }));
+  const after = await last();
+  expect(after.motion.points.at(-1)!.y).toBeGreaterThan(send.motion.points.at(-1)!.y + 100);
+});

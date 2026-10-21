@@ -763,7 +763,7 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
       else if (verb === "enter" && /^slide-(up|down|left|right)$/.test(t.v)) {
         effect = "slide";
         kv.set("direction", { v: t.v.slice(6), pos: t.pos });
-      } else if (verb === "move" && (t.v === "curve" || t.v === "orient")) kv.set(t.v, { v: "true", pos: t.pos });
+      } else if (verb === "move" && (t.v === "curve" || t.v === "orient" || t.v === "back")) kv.set(t.v, { v: "true", pos: t.pos });
       else if (verb === "flow" && (t.v === "orient" || t.v === "once")) kv.set(t.v === "once" ? "count" : "orient", { v: t.v === "once" ? "1" : "true", pos: t.pos });
       else if (verb === "flow" && (t.v === "back-once" || t.v === "back-orient")) kv.set(t.v === "back-once" ? "back-count" : "back-orient", { v: t.v === "back-once" ? "1" : "true", pos: t.pos });
       else if (verb === "flow" && ["all", "round-robin", "random", "forward", "reverse", "both"].includes(t.v)) kv.set(["forward", "reverse", "both"].includes(t.v) ? "direction" : "distribute", { v: t.v === "random" ? "random-seeded" : t.v, pos: t.pos });
@@ -906,10 +906,19 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
         const pts = v.split(/[\s;]+/).filter(Boolean).map((p) => parsePoint(p));
         if (pts.length < 2 || pts.some((p) => !p)) errors.push(err(pos, "The path needs 2 or more points.", 'Write: move a path="100,200 400,200 400,600"'));
         else motion["points"] = pts.map((p) => ({ x: p![0], y: p![1] }));
-      } else if (k === "curve" || k === "orient") motion[k] = true;
-      else errors.push(err(pos, `The property '${k}' is not known for move.`, "Use: path, curve, orient, dur, easing, stagger."));
+      } else if (k === "along") {
+        // The operation bus sets the points to the connector route (docs/17 P2).
+        motion["along"] = v;
+        motion["points"] = [
+          { x: 0, y: 0 },
+          { x: 0, y: 0 },
+        ];
+      } else if (k === "back") motion["reverse"] = true;
+      else if (k === "curve" || k === "orient") motion[k] = true;
+      else errors.push(err(pos, `The property '${k}' is not known for move.`, "Use: path, along, back, curve, orient, dur, easing, stagger."));
     }
-    if (!motion["points"]) errors.push(err(line.pos, "The move has no path.", 'Write: move a path="100,200 400,200 400,600"'));
+    if (!motion["points"]) errors.push(err(line.pos, "The move has no path.", 'Write: move a path="100,200 400,200 400,600" or move bubble along=c-alice-server'));
+    if (motion["along"] && !a["durationMs"]) a["durationMs"] = 1600;
     a["motion"] = motion;
   } else if (verb === "flow") {
     a["type"] = "flow";
