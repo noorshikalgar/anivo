@@ -33,6 +33,7 @@ import { useEditor } from "../store.js";
 import { Select, SelectField, TextField } from "./fields.js";
 import { formatTime } from "./PlaybackBar.js";
 import { ActionEditor, AddActionMenu, describe } from "./StepInspector.js";
+import { PresetsPanel } from "./PresetsPanel.js";
 import { actionIcon, elementIcon } from "./typeIcons.js";
 import { Btn, IconButton, ListSideGap, ListView, MenuButtonSmall, Note, Panel, Prop } from "./ui.js";
 
@@ -395,6 +396,8 @@ function StepActions({ step }: { step: Step }) {
         </div>
         <Note>{selection.length > 0 ? `For the selection: ${selection.length === 1 ? selection[0] : `${selection.length} elements`}.` : "No selection: choose the elements after the click."}</Note>
       </Panel>
+
+      <PresetsPanel />
 
       <Panel id="act-sequence" title={`Sequence (${step.actions.length})`}>
         <ListView

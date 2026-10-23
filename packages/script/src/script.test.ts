@@ -265,3 +265,14 @@ describe("background color", () => {
     expect(printScene(scene)).toContain('background="#181818"');
   });
 });
+
+describe("preset", () => {
+  it("expands a built-in preset for each target", () => {
+    const scene = ok(`box a "A" at=100,100\nbox b "B" at=400,100\nstep "S"\n  preset rise-in a, b +200ms stagger=100ms\n`);
+    expect(scene.steps[0]!.actions.map((x) => [x.type, x.targets, x.delayMs])).toEqual([
+      ["enter", ["a"], 200],
+      ["enter", ["b"], 300],
+    ]);
+    expect(applyScript(`box a "A"\nstep "S"\n  preset nope a\n`).ok).toBe(false);
+  });
+});

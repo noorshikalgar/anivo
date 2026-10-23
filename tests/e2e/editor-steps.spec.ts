@@ -257,3 +257,23 @@ test("Mark words: choose words by clicking them, and the mark keeps the phrase",
   await words.getByRole("button", { name: "balancer" }).click();
   expect((await last()).mark.phrase).toBe("balancer");
 });
+
+test("Presets: one click gives each selected element the animation; save your own", async ({ page }) => {
+  await page.getByRole("button", { name: "Add step" }).click();
+  await page.evaluate(() => (window as unknown as { __anivo: { getState(): { setSelection(ids: string[]): void } } }).__anivo.getState().setSelection(["pod-1", "pod-2"]));
+  await page.evaluate(() => (window as unknown as { __anivo: { setState(p: unknown): void } }).__anivo.setState({ propTab: "actions" }));
+  await page.getByRole("button", { name: "Preset: Rise in" }).click();
+  type A = { type: string; effect?: string; targets: string[]; delayMs: number };
+  const acts = async () => {
+    const s = await state(page);
+    return s.scene.steps.find((x) => x.id === s.selectedStep)!.actions as unknown as A[];
+  };
+  expect((await acts()).map((a) => [a.effect, a.targets, a.delayMs])).toEqual([
+    ["rise", ["pod-1"], 0],
+    ["rise", ["pod-2"], 120],
+  ]);
+  await page.getByRole("button", { name: /Save the actions of the selection as a preset/ }).click();
+  await page.getByRole("textbox", { name: "Preset name" }).fill("My rise");
+  await page.getByRole("dialog", { name: "Save as preset" }).getByRole("button", { name: "Save" }).click();
+  await expect(page.getByRole("button", { name: "Preset: My rise" })).toBeVisible();
+});
