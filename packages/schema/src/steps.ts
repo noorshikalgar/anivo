@@ -147,6 +147,10 @@ export const CounterAction = z.object({
     to: z.number(),
     format: z.string().default("{n}").describe("Text with {n} for the number, for example '{n} req/s'."),
     decimals: z.number().int().min(0).max(6).default(0),
+    style: z
+      .enum(["plain", "thousands", "compact", "duration"])
+      .optional()
+      .describe("How to write the number (docs/21 C9). thousands: 12,400. compact: 12.4K, 3.1M. duration: the number is seconds, written as 1:05 or 1:02:05. For currency or percent, put the sign in the format: '${n}', '{n}%'."),
   }),
 });
 

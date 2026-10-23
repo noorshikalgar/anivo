@@ -409,9 +409,33 @@ function applyTimedAction(state: StateMap, ta: TimedAction, t: number): void {
   else if (action.type === "counter") {
     const c = action.counter;
     const n = lerp(c.from, c.to, eased);
-    f.label = c.format.replace("{n}", n.toFixed(c.decimals));
+    f.label = c.format.replace("{n}", formatCount(n, c.decimals, c.style));
   }
   state[ta.target] = f;
+}
+
+/** Write a count number in a style (docs/21 C9). The same text on every machine (no locale). */
+export function formatCount(n: number, decimals: number, style: "plain" | "thousands" | "compact" | "duration" | undefined): string {
+  const sign = n < 0 ? "-" : "";
+  const a = Math.abs(n);
+  const group = (s: string) => {
+    const [i, d] = s.split(".");
+    return i!.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + (d ? "." + d : "");
+  };
+  if (style === "thousands") return sign + group(a.toFixed(decimals));
+  if (style === "compact") {
+    const units: [number, string][] = [[1e12, "T"], [1e9, "B"], [1e6, "M"], [1e3, "K"]];
+    for (const [v, u] of units) if (a >= v) return sign + (a / v).toFixed(Math.max(decimals, 1)).replace(/\.0+$/, "") + u;
+    return sign + a.toFixed(decimals);
+  }
+  if (style === "duration") {
+    const t = Math.floor(a);
+    const h = Math.floor(t / 3600);
+    const m = Math.floor((t % 3600) / 60);
+    const s = String(t % 60).padStart(2, "0");
+    return sign + (h > 0 ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`);
+  }
+  return n.toFixed(decimals);
 }
 
 /** The camera rectangle that fits the targets with padding, at the aspect ratio of the video. */

@@ -905,6 +905,8 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
     if (format !== undefined) counter["format"] = format;
     const decimals = kv.get("decimals")?.v;
     if (decimals !== undefined) counter["decimals"] = Number(decimals);
+    const style = kv.get("style")?.v;
+    if (style !== undefined) counter["style"] = style;
     const a: Record<string, unknown> = { type: "counter", targets, counter };
     if (delay !== undefined) a["delayMs"] = delay;
     for (const [k, { v }] of kv) {

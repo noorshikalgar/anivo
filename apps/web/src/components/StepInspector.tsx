@@ -457,6 +457,20 @@ export function ActionEditor({ step, action, part = "all" }: { step: Step; actio
             <TextField label="Format" value={action.counter.format} placeholder="{n} req/s" onCommit={(v) => void set({ counter: { ...action.counter, format: v.includes("{n}") ? v : `{n} ${v}`.trim() } }, "Change count format")} />
             <NumberField label="Decimals" value={action.counter.decimals} min={0} max={6} onCommit={(v) => set({ counter: { ...action.counter, decimals: Math.round(v) } }, "Change count decimals")} />
           </Row>
+          <Row>
+            <SelectField
+              label="Number style"
+              value={action.counter.style ?? "plain"}
+              options={[
+                { value: "plain", text: "Plain (12400)" },
+                { value: "thousands", text: "Thousands (12,400)" },
+                { value: "compact", text: "Short (12.4K)" },
+                { value: "duration", text: "Time (2:05)" },
+              ]}
+              onCommit={(v) => set({ counter: { ...action.counter, style: v === "plain" ? undefined : v } }, "Change number style")}
+            />
+            <div />
+          </Row>
         </>
       )}
       {action.type === "code" && action.code.op !== "diff" && (

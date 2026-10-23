@@ -60,11 +60,16 @@ export const BUILTIN_PRESETS: MotionPreset[] = [
     staggerMs: 150,
     make: (scene, id) => {
       const text = labelOf(scene, id);
-      const m = /-?\d+(?:[.,]\d+)?/.exec(text);
+      // 12,400 counts with thousands; 12.4K counts in the short style.
+      const g = /-?\d{1,3}(?:,\d{3})+(?:\.\d+)?/.exec(text);
+      const m = g ?? /-?\d+(?:[.,]\d+)?[KMB]?/.exec(text);
       if (!m) return undefined;
-      const to = Number(m[0].replace(",", "."));
-      const decimals = (m[0].split(/[.,]/)[1] ?? "").length;
-      return [{ type: "counter", durationMs: 1400, counter: { from: 0, to, decimals, format: text.slice(0, m.index) + "{n}" + text.slice(m.index + m[0].length) } }];
+      const unit = { K: 1e3, M: 1e6, B: 1e9 }[m[0].slice(-1)] ?? 1;
+      const digits = unit > 1 ? m[0].slice(0, -1) : m[0];
+      const to = Number(g ? digits.replace(/,/g, "") : digits.replace(",", ".")) * unit;
+      const decimals = (digits.split(g ? "." : /[.,]/)[1] ?? "").length;
+      const style = g ? "thousands" : unit > 1 ? "compact" : undefined;
+      return [{ type: "counter", durationMs: 1400, counter: { from: 0, to, decimals, ...(style ? { style } : {}), format: text.slice(0, m.index) + "{n}" + text.slice(m.index + m[0].length) } }];
     },
   },
 ];

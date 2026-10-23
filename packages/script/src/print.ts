@@ -199,6 +199,7 @@ function printAction(a: Action, index: number): string {
     parts.push("count", targets, `from=${a.counter.from}`, `to=${a.counter.to}`);
     if (a.counter.format !== "{n}") parts.push(`format=${q(a.counter.format)}`);
     if (a.counter.decimals) parts.push(`decimals=${a.counter.decimals}`);
+    if (a.counter.style && a.counter.style !== "plain") parts.push(`style=${a.counter.style}`);
     common();
     return parts.join(" ");
   }
