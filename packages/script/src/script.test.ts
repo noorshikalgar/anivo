@@ -276,3 +276,12 @@ describe("preset", () => {
     expect(applyScript(`box a "A"\nstep "S"\n  preset nope a\n`).ok).toBe(false);
   });
 });
+
+describe("letter effects and strike", () => {
+  it("compiles cascade, scramble, and strike", () => {
+    const scene = ok(`text t "Hello world" at=100,100\nstep "S"\n  enter t cascade\n  mark t "world" strike\n`);
+    expect(scene.steps[0]!.actions[0]).toMatchObject({ effect: "cascade" });
+    expect(scene.steps[0]!.actions[1]).toMatchObject({ mark: { strike: "danger" } });
+    expect(printScene(scene)).toContain("strike=danger");
+  });
+});

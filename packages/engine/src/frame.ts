@@ -14,6 +14,7 @@ export interface TextMark {
   color?: Color;
   highlight?: Color;
   underline?: Color;
+  strike?: Color;
   p: number;
 }
 
@@ -58,6 +59,10 @@ export interface ElementFrame {
   wipe?: { direction: "up" | "down" | "left" | "right"; p: number };
   /** Part of the text to show, 0..1 (typewriter). */
   textReveal: number;
+  /** Letters cascade in (0 to 1): each letter rises and fades in after the one before. */
+  cascade?: number;
+  /** Scramble (0 to 1): random letters settle into the text, from the left. */
+  scramble?: number;
   /** Blur radius in scene pixels (blur enter effect). */
   blur?: number;
   /** Marked words (docs/20 B1): character ranges of the text, with their look, and the share that shows (0 to 1). */

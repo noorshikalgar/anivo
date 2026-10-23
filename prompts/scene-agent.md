@@ -89,7 +89,7 @@ widget <id> <name> [at=x,y] [size=WxH] [<text>="…"]   (a ready-made group; par
 
 step "<title>" [hold=<time>] [cue=<time>] [caption="<one sentence>" [near=<id>] [side=auto|above|below|left|right|top|bottom]]
   (caption: types in next to the element that changes; the step holds until a viewer can read it. Use one idea and one caption for each step.)
-  enter <targets> rise|blur|fade|pop|draw-on|slide-up|slide-left|wipe|typewriter [+<delay>] [stagger=<time>]   (typewriter unit=word: one word at a time)
+  enter <targets> rise|blur|fade|pop|draw-on|slide-up|slide-left|wipe|typewriter|cascade|scramble [+<delay>] [stagger=<time>]   (typewriter unit=word: one word at a time)
   exit <targets> <effect>
   morph <targets> key=value…
   pulse|shake|glow|flash|highlight|focus <targets>
@@ -102,8 +102,8 @@ step "<title>" [hold=<time>] [cue=<time>] [caption="<one sentence>" [near=<id>] 
   count <target> from=<n> to=<n> format="{n} <unit>"
   code <target> highlight=<a>-<b> | type=<a>-<b>
   move <targets> path="x,y x,y …" [curve] [orient]   (the element center follows the points and stays at the end)
-  preset <name> <targets> [+<delay>] [stagger=<time>]   (motion presets: rise-in, blur-in, pop-in, card-up, words-in, type-in, draw-in, fill-up, fill-right, emphasize, no, sink-out, fade-out)
-  mark <text> "<words>" [color=<c>] [highlight=<c>] [underline[=<c>]] [dim=<c>] [clear]   (style words inside one text: link color, highlight box, underline that draws in, dim the other words; marks stay until clear)
+  preset <name> <targets> [+<delay>] [stagger=<time>]   (motion presets: rise-in, blur-in, pop-in, card-up, words-in, letters-in, decode, type-in, draw-in, fill-up, fill-right, emphasize, no, sink-out, fade-out)
+  mark <text> "<words>" [color=<c>] [highlight=<c>] [underline[=<c>]] [strike[=<c>]] [dim=<c>] [clear]   (style words inside one text: link color, highlight box, underline that draws in, dim the other words; marks stay until clear)
   move <targets> along=<arrow> [back]               (send along an arrow route, for example a message bubble; 2.4 s by default)
   wait <time>
   (any action) sound=pop|click|whoosh|ding|thud|tick|blip|chime|rise|bubble|success|error|keys|ticks [sound-gain=<dB>]

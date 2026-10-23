@@ -145,12 +145,75 @@ function drawText(dc: DrawContext, f: ElementFrame, el: Element, text: string, b
   let shown = reveal >= 1 ? total : Math.round(total * reveal);
   const x = align === "left" ? box.x + pad : align === "right" ? box.x + box.width - pad : box.x + box.width / 2;
   const y0 = box.y + box.height / 2 - ((lines.length - 1) * lineHeight) / 2;
+  if ((f.cascade !== undefined && f.cascade < 1) || (f.scramble !== undefined && f.scramble < 1)) return drawLetters(dc, f, el, lines, x, y0, lineHeight, size, color, alpha);
   if (f.marks?.length || f.dimRest) return drawMarkedText(dc, f, el, text, lines, x, y0, lineHeight, size, color, alpha, shown);
   lines.forEach((line, i) => {
     if (shown <= 0) return;
     const part = line.slice(0, shown);
     shown -= line.length + 1;
     ctx.fillText(part, x, y0 + i * lineHeight);
+  });
+}
+
+const SCRAMBLE = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789#$%&*+=?";
+
+/** A number from 0 to 1 from two integers: the same input gives the same output (no clock, no random). */
+function hash2(a: number, b: number): number {
+  let h = (a * 374761393 + b * 668265263) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+
+/**
+ * Letter effects (docs/21 C1): cascade (each letter rises and fades in after
+ * the one before) and scramble (random letters settle into the text from the
+ * left). The letters are drawn one by one at the places of the full line.
+ */
+function drawLetters(dc: DrawContext, f: ElementFrame, el: Element, lines: string[], x: number, y0: number, lineHeight: number, size: number, base: Rgba, alpha: number): void {
+  const { ctx } = dc;
+  const align = el.style.textAlign ?? "center";
+  ctx.textAlign = "left";
+  const total = lines.reduce((n, l) => n + l.length + 1, 0);
+  const WINDOW = 6;
+  let idx = 0;
+  lines.forEach((line, i) => {
+    const width = ctx.measureText(line).width;
+    const left = align === "left" ? x : align === "right" ? x - width : x - width / 2;
+    const y = y0 + i * lineHeight;
+    for (let j = 0; j < line.length; j++, idx++) {
+      let ch = line[j]!;
+      if (ch === " ") continue;
+      const cx = left + ctx.measureText(line.slice(0, j)).width;
+      let a = alpha;
+      let dy = 0;
+      if (f.cascade !== undefined && f.cascade < 1) {
+        const lp = Math.min(1, Math.max(0, (f.cascade * (total + WINDOW) - idx) / WINDOW));
+        const e = 1 - (1 - lp) ** 3;
+        a *= lp;
+        dy = (1 - e) * size * 0.5;
+      }
+      let center = false;
+      if (f.scramble !== undefined && f.scramble < 1) {
+        // Decode: the letters up to the front are right, the next few are random, the rest do not show yet.
+        const front = f.scramble * (total + WINDOW);
+        if (idx >= front) continue;
+        if (idx >= front - WINDOW) {
+          ch = SCRAMBLE[Math.floor(hash2(idx, Math.floor(f.scramble * 40)) * SCRAMBLE.length)]!;
+          a *= 0.6;
+          center = true;
+        }
+      }
+      if (a <= 0) continue;
+      ctx.fillStyle = toCss(withAlpha(base, a));
+      if (center) {
+        // A random letter sits in the middle of the place of the right letter, so the line does not jump.
+        const w = ctx.measureText(line[j]!).width;
+        ctx.textAlign = "center";
+        ctx.fillText(ch, cx + w / 2, y + dy);
+        ctx.textAlign = "left";
+      } else ctx.fillText(ch, cx, y + dy);
+    }
+    idx++;
   });
 }
 
@@ -193,14 +256,19 @@ function drawMarkedText(dc: DrawContext, f: ElementFrame, el: Element, text: str
       if (mark?.color) c = mixOklch(base, tok(mark.color, "textColor"), mark.p);
       else if (!mark && dim) c = mixOklch(base, tok(dim.color, "textColor"), dim.p);
       if (mark?.highlight) {
+        // A marker sweep: the box grows from the left (docs/21 C1).
         const pad = size * 0.18;
-        ctx.fillStyle = toCss(withAlpha(tok(mark.highlight, "fill"), alpha * mark.p));
+        ctx.fillStyle = toCss(withAlpha(tok(mark.highlight, "fill"), alpha));
         ctx.beginPath();
-        ctx.rect(px - pad, y - size * 0.62, pw + pad * 2, size * 1.24);
+        ctx.rect(px - pad, y - size * 0.62, (pw + pad * 2) * Math.min(1, mark.p), size * 1.24);
         ctx.fill();
       }
       ctx.fillStyle = toCss(withAlpha(c, alpha));
       ctx.fillText(part, px, y);
+      if (mark?.strike && mark.p > 0) {
+        ctx.fillStyle = toCss(withAlpha(tok(mark.strike, "stroke"), alpha));
+        ctx.fillRect(px, y - Math.max(1, size * 0.03), pw * Math.min(1, mark.p), Math.max(2, size * 0.06));
+      }
       if (mark?.underline && mark.p > 0) {
         ctx.fillStyle = toCss(withAlpha(tok(mark.underline, "stroke"), alpha));
         ctx.fillRect(px, y + size * 0.56, pw * Math.min(1, mark.p), Math.max(2, size * 0.06));

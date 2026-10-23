@@ -43,3 +43,20 @@ describe("mark words", () => {
     expect(at(s3 + 400).dimRest).toBeUndefined();
   });
 });
+
+describe("letter effects", () => {
+  it("cascade and scramble run with the action, then settle", () => {
+    const r = loadScene({
+      schemaVersion: 1,
+      meta: { title: "L" },
+      elements: { t: { type: "text", z: "a0", x: 0, y: 0, width: 600, height: 80, content: { text: "hello" } } },
+      steps: [
+        { id: "s1", holdMs: 0, actions: [{ id: "c", type: "enter", effect: "cascade", targets: ["t"], durationMs: 1000, easing: "linear" }] },
+        { id: "s2", holdMs: 0, actions: [{ id: "x", type: "emphasis", effect: "pulse", targets: ["t"], durationMs: 100 }] },
+      ],
+    });
+    if (!r.ok) throw new Error("scene");
+    expect(evaluate(r.scene, 500).elements[0]!.cascade).toBeCloseTo(0.5, 5);
+    expect(evaluate(r.scene, 1050).elements[0]!.cascade).toBeUndefined();
+  });
+});

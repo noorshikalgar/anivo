@@ -70,6 +70,9 @@ function baseFrame(el: Element): ElementFrame {
 function settle(frame: ElementFrame): ElementFrame {
   const f: ElementFrame = { ...frame, scale: 1, offsetX: 0, offsetY: 0, strokeProgress: 1, fillProgress: 1, textReveal: 1, glow: 0, flash: 0, highlight: 0 };
   delete f.wipe;
+  delete f.blur;
+  delete f.cascade;
+  delete f.scramble;
   delete f.labelFrom;
   delete f.labelMix;
   delete f.codeFrom;
@@ -149,6 +152,13 @@ function applyEnterExit(f: ElementFrame, action: Extract<Action, { type: "enter"
       f.blur = (params.amount ?? 18) * (1 - p);
       f.opacity *= clamp01(p * 1.3);
       break;
+    case "cascade":
+      f.cascade = clamp01(p);
+      break;
+    case "scramble":
+      f.scramble = clamp01(p);
+      f.opacity *= clamp01(p * 6);
+      break;
     case "typewriter":
       f.textReveal = params.unit === "word" && f.label ? wordReveal(f.label, clamp01(p)) : clamp01(p);
       break;
@@ -196,7 +206,7 @@ function applyMark(f: ElementFrame, m: MarkParams, p: number): void {
   const r = phraseRange(f.label ?? "", m.phrase, m.occurrence);
   if (r) {
     marks = marks.filter((x) => x.start !== r.start || x.end !== r.end);
-    marks.push({ ...r, ...(m.color ? { color: m.color } : {}), ...(m.highlight ? { highlight: m.highlight } : {}), ...(m.underline ? { underline: m.underline } : {}), p });
+    marks.push({ ...r, ...(m.color ? { color: m.color } : {}), ...(m.highlight ? { highlight: m.highlight } : {}), ...(m.underline ? { underline: m.underline } : {}), ...(m.strike ? { strike: m.strike } : {}), p });
   }
   if (marks.length) f.marks = marks;
   else delete f.marks;

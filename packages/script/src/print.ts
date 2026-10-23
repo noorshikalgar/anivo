@@ -210,6 +210,7 @@ function printAction(a: Action, index: number): string {
     if (m.color) parts.push(`color=${m.color}`);
     if (m.highlight) parts.push(`highlight=${m.highlight}`);
     if (m.underline) parts.push(`underline=${m.underline}`);
+    if (m.strike) parts.push(`strike=${m.strike}`);
     if (m.dim) parts.push(`dim=${m.dim}`);
     if (m.clear) parts.push("clear");
     if (m.occurrence !== 1) parts.push(`occurrence=${m.occurrence}`);
