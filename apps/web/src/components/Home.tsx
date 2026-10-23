@@ -25,6 +25,7 @@ import {
   useToastController,
 } from "@fluentui/react-components";
 import { installApp } from "../pwa.js";
+import { Showcase } from "./Showcase.js";
 import { Add20Regular, ChevronLeft20Regular, ChevronRight20Regular, ArrowDownload20Regular, Copy20Regular, Delete20Regular, DocumentArrowUp20Regular, FolderOpen20Regular, MoreHorizontal20Regular, Rename20Regular, Search20Regular } from "@fluentui/react-icons";
 import { TEMPLATES } from "@anivo/schema";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -319,6 +320,7 @@ export function Home() {
       </header>
 
       <main className={styles.main}>
+        <Showcase />
         <section className={styles.section} aria-labelledby="home-start">
           <Text id="home-start" as="h2" size={500} weight="semibold">
             Start a new scene
