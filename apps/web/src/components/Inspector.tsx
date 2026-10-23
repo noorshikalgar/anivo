@@ -3,6 +3,7 @@
  * collapsible panels with property rows.
  */
 import { KeyLabel } from "./KeyButton.js";
+import { addFontFile } from "../fonts.js";
 
 import { evaluate } from "@anivo/engine";
 import type { Element } from "@anivo/schema";
@@ -381,6 +382,22 @@ function ElementProperties({ el }: { el: Element }) {
 
       {(el.label || el.type === "text") && (
         <Panel id="el-text-style" title="Text style" group={MAIN}>
+          <SelectField
+            label="Font"
+            value={el.style.fontFamily ?? ""}
+            options={[
+              { value: "", text: "Theme font" },
+              { value: "Inter", text: "Inter (clean)" },
+              { value: "Kalam", text: "Kalam (hand)" },
+              { value: "JetBrains Mono", text: "JetBrains Mono (code)" },
+              ...(scene.settings.fonts ?? []).map((ft) => ({ value: ft.family, text: `${ft.family} (yours)` })),
+              { value: "__add", text: "Add a font file…" },
+            ]}
+            onCommit={(v) => {
+              if (v === "__add") return void addFontFile().then((fam) => fam && set({ fontFamily: fam }, "Change font"));
+              set({ fontFamily: v || null }, "Change font");
+            }}
+          />
           <NumberField label="Font size" propLabel={key("fontSize", { fontSize: f.fontSize ?? 32 }, "Font size")} value={f.fontSize ?? 32} min={8} max={400} onCommit={(v, k) => set({ fontSize: v }, "Change font size", k)} />
           <SelectField
             label="Align"

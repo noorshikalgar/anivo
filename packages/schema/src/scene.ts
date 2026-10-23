@@ -57,6 +57,10 @@ export const SceneSettings = z.object({
       defaultIconPack: z.string().default("lucide"),
     })
     .default({ enterEffect: "fade", easing: "ease-out", defaultIconPack: "lucide" }),
+  fonts: z
+    .array(z.object({ family: z.string().min(1).describe("The name that styles use (style.fontFamily)."), assetId: z.string().describe("The font file asset (woff2, woff, ttf, otf).") }))
+    .optional()
+    .describe("Custom fonts of the scene (docs/20 B10)."),
   motionBlur: z.boolean().optional().describe("Video export: fast moves get a soft trail (docs/19 R13). The editor does not show it."),
 });
 export type SceneSettings = z.infer<typeof SceneSettings>;

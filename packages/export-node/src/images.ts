@@ -1,13 +1,24 @@
 import { hasImage, registerImage } from "@anivo/render";
 import type { Scene } from "@anivo/schema";
-import { Image } from "@napi-rs/canvas";
+import { GlobalFonts, Image } from "@napi-rs/canvas";
+
+const fontsDone = new Set<string>();
 
 /**
- * Decode the image assets of a scene and register them for the renderer.
+ * Decode the image assets of a scene and register them for the renderer, and
+ * register the custom fonts of the scene.
  * An asset with no bytes, or with bytes that do not decode, draws as a placeholder.
  */
 export function registerSceneImages(scene: Scene, assets: Map<string, Uint8Array> | undefined): void {
   if (!assets) return;
+  // Custom fonts of the scene (docs/20 B10).
+  for (const f of scene.settings.fonts ?? []) {
+    const bytes = assets.get(f.assetId);
+    if (bytes && !fontsDone.has(`${f.family}/${f.assetId}`)) {
+      GlobalFonts.register(Buffer.from(bytes), f.family);
+      fontsDone.add(`${f.family}/${f.assetId}`);
+    }
+  }
   for (const el of Object.values(scene.elements)) {
     if (el.type !== "image" || hasImage(el.assetId)) continue;
     const bytes = assets.get(el.assetId);

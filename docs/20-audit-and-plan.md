@@ -52,4 +52,4 @@ Order: what makes videos look better and saves the most work first.
 | B7 | Done. **UI parts**: definition card, meter, slider, toggle, bar chart, progress ring, cursor with click ripple, notification. Each with a matching motion preset. | E8 |
 | B8 | Done. **Timeline feel**: follow the playhead while playing; time tag on the playhead; hover line and time on the ruler; full block labels with icons; double-click a block to edit it; smooth zoom. | U4 |
 | B9 | Done. **Home that shows what Anivo can do**: live animated examples, start cards for common videos, and short tips. | U1 |
-| B10 | Calmer target marks on the canvas (only on hover in the Actions list). Lint knows that a dimmed word is on purpose. Custom fonts. | U3, X4, X5 |
+| B10 | Done. Calmer target marks on the canvas (only on hover in the Actions list). Lint knows that a dimmed word is on purpose. Custom fonts. | U3, X4, X5 |
