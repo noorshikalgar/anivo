@@ -26,7 +26,7 @@ import { useEffect, useMemo, useState } from "react";
 import { searchIcons } from "@anivo/render";
 import { pickImageAsset } from "../images.js";
 import { withErrors } from "../notify.js";
-import { addAction, addMotionAlongArrow, updateAction, updateStep } from "../commands.js";
+import { addAction, addMatchingExit, addMotionAlongArrow, updateAction, updateStep } from "../commands.js";
 import { previewSound, setCue, setStepLine } from "../audio.js";
 import { Comments } from "./Comments.js";
 import { MarkEditor } from "./MarkEditor.js";
@@ -320,6 +320,16 @@ export function ActionEditor({ step, action, part = "all" }: { step: Step; actio
         <>
       {(action.type === "enter" || action.type === "exit") && (
         <SelectField label="Effect" value={action.effect} options={ENTER_EFFECTS.map((e) => ({ value: e, text: label(e) }))} onCommit={(v) => set({ effect: v }, "Change effect")} />
+      )}
+      {action.type === "enter" && (
+        <Row>
+          <Btn title="Add an exit with the same effect, after the step content" onClick={() => addMatchingExit(step.id, action.id, "after")}>
+            Add matching exit
+          </Btn>
+          <Btn title="Add an exit with the same effect, when the next step starts" onClick={() => addMatchingExit(step.id, action.id, "next-step")}>
+            Exit at next step
+          </Btn>
+        </Row>
       )}
       {action.type === "emphasis" && <SelectField label="Effect" value={action.effect} options={EMPHASIS_EFFECTS.map((e) => ({ value: e, text: label(e) }))} onCommit={(v) => set({ effect: v }, "Change effect")} />}
       {(action.type === "enter" || action.type === "exit") && (action.effect === "slide" || action.effect === "wipe") && (
