@@ -2,7 +2,7 @@ import { evaluate, resolveTimeline } from "@anivo/engine";
 import { loadScene } from "@anivo/schema";
 import { describe, expect, it } from "vitest";
 import { OperationBus } from "./bus.js";
-import { compositionOf, insertCompositionOps } from "./compositions.js";
+import { compositionOf, compositionSlots, insertCompositionOps } from "./compositions.js";
 
 const make = () => {
   const r = loadScene({
@@ -48,5 +48,18 @@ describe("compositions", () => {
     const tl = resolveTimeline(bus.scene);
     const f = evaluate(bus.scene, tl.steps[2]!.holdEndMs - 1).elements.find((e) => e.id === "title-2")!;
     expect(f.marks?.[0]).toMatchObject({ color: "accent" });
+  });
+});
+
+describe("composition slots (docs/21 C10)", () => {
+  it("lists the texts and sets them when inserting", () => {
+    const bus = make();
+    const c = compositionOf(bus.scene, ["card"], "Card", "c1");
+    if ("error" in c) throw new Error(c.error);
+    expect(compositionSlots(c)).toEqual([{ id: "title", text: "Hi" }]);
+    const ins = insertCompositionOps(bus.scene, c, { x: 0, y: 0 }, undefined, { title: "Hello" });
+    expect(bus.apply({ ops: ins.ops }).ok).toBe(true);
+    const t = bus.scene.elements["title-2"];
+    expect(t?.type === "text" && t.content.text).toBe("Hello");
   });
 });

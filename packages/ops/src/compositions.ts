@@ -58,11 +58,31 @@ export function compositionOf(scene: Scene, ids: string[], name: string, id: str
   return { id, name, width: box.width, height: box.height, elements: moved, steps, savedAt };
 }
 
+/** A text of a composition that a user can set when inserting it (docs/21 C10). */
+export interface CompositionSlot {
+  /** The element ID in the composition. */
+  id: string;
+  text: string;
+}
+
+/** The texts of a composition: text elements and labels, from top to bottom. */
+export function compositionSlots(c: Composition): CompositionSlot[] {
+  const out: (CompositionSlot & { y: number; x: number })[] = [];
+  for (const e of c.elements) {
+    const text = e.type === "text" ? e.content.text : "label" in e && e.label ? e.label.text : "";
+    if (!text) continue;
+    const b = e as Partial<Boxed>;
+    out.push({ id: e.id, text, x: b.x ?? 0, y: b.y ?? 0 });
+  }
+  return out.sort((a, b) => a.y - b.y || a.x - b.x).map(({ id, text }) => ({ id, text }));
+}
+
 /**
  * The operations that insert a composition: the elements with new IDs at a
  * place, and its steps after a step (or at the end). Returns the new IDs.
+ * `texts`: new texts for slots, by composition element ID.
  */
-export function insertCompositionOps(scene: Scene, c: Composition, at: { x: number; y: number }, afterStep?: string): { ops: OperationInput[]; ids: string[]; steps: number } {
+export function insertCompositionOps(scene: Scene, c: Composition, at: { x: number; y: number }, afterStep?: string, texts: Record<string, string> = {}): { ops: OperationInput[]; ids: string[]; steps: number } {
   const taken = new Set(Object.keys(scene.elements));
   const rename = new Map<string, string>();
   for (const e of c.elements) {
@@ -82,6 +102,11 @@ export function insertCompositionOps(scene: Scene, c: Composition, at: { x: numb
       props["y"] = Math.round(at.y + (props["y"] as number));
     }
     if (props["parentId"]) props["parentId"] = r(props["parentId"] as string);
+    const text = texts[e.id];
+    if (text !== undefined) {
+      if (type === "text") props["content"] = { ...(props["content"] as object), text };
+      else if (props["label"]) props["label"] = { ...(props["label"] as object), text };
+    }
     if (props["follow"]) props["follow"] = r(props["follow"] as string);
     for (const end of ["start", "end"] as const) {
       const x = props[end] as { kind: string; elementId?: string } | undefined;

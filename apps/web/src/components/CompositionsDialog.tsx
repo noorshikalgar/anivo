@@ -4,7 +4,7 @@
  * move them between computers as files.
  */
 import { resolveTimeline } from "@anivo/engine";
-import { type Composition, OperationBus, insertCompositionOps } from "@anivo/ops";
+import { type Composition, OperationBus, compositionSlots, insertCompositionOps } from "@anivo/ops";
 import { type Ctx2D, renderScene } from "@anivo/render";
 import { loadScene } from "@anivo/schema";
 import { Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Input, makeStyles } from "@fluentui/react-components";
@@ -20,6 +20,7 @@ const useStyles = makeStyles({
   row: { display: "flex", gap: "4px", flexWrap: "wrap" },
   name: { fontWeight: 600, fontSize: "13px" },
   meta: { fontSize: "11px", color: "var(--ui-muted)" },
+  slots: { display: "flex", flexDirection: "column", gap: "4px" },
 });
 
 /** A scene with only the composition, for the preview. */
@@ -67,6 +68,8 @@ export function CompositionsDialog() {
   const selection = useEditor((st) => st.selection);
   const [list, setList] = useState<Composition[]>([]);
   const [name, setName] = useState("");
+  // The composition whose texts the user sets before inserting it (docs/21 C10).
+  const [filling, setFilling] = useState<{ id: string; texts: Record<string, string> } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const reload = () => void listCompositions().then(setList);
   useEffect(() => {
@@ -109,10 +112,31 @@ export function CompositionsDialog() {
                     <span className={s.meta}>
                       {c.elements.length} elements · {c.steps.length} step{c.steps.length === 1 ? "" : "s"}
                     </span>
+                    {filling?.id === c.id && (
+                      <div className={s.slots} role="group" aria-label={`Texts of ${c.name}`}>
+                        {compositionSlots(c).map((slot) => (
+                          <Input
+                            key={slot.id}
+                            aria-label={`Text: ${slot.text}`}
+                            value={filling.texts[slot.id] ?? slot.text}
+                            onChange={(_, d) => setFilling({ id: c.id, texts: { ...filling.texts, [slot.id]: d.value } })}
+                            onKeyDown={(e) => e.stopPropagation()}
+                          />
+                        ))}
+                      </div>
+                    )}
                     <div className={s.row}>
-                      <Btn primary onClick={() => (insertComposition(c), close())}>
+                      <Btn
+                        primary
+                        onClick={() => {
+                          insertComposition(c, filling?.id === c.id ? filling.texts : {});
+                          setFilling(null);
+                          close();
+                        }}
+                      >
                         Insert
                       </Btn>
+                      {compositionSlots(c).length > 0 && filling?.id !== c.id && <Btn onClick={() => setFilling({ id: c.id, texts: {} })}>Set texts…</Btn>}
                       <Btn onClick={() => exportComposition(c)}>Export</Btn>
                       <Btn onClick={() => void deleteComposition(c.id).then(reload)}>Delete</Btn>
                     </div>
