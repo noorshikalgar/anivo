@@ -57,6 +57,8 @@ interface EditorState {
   propTab: "scene" | "step" | "actions" | "element";
   /** True while the bullet list build dialog is open. */
   buildOpen: boolean;
+  /** True while the compositions dialog is open (docs/20 B6). */
+  compositionsOpen: boolean;
   /** True while the message build dialog is open. */
   messageOpen: boolean;
   /** True while the "save as widget" dialog is open. */
@@ -298,6 +300,7 @@ export const useEditor = create<EditorState>((set, get) => {
     saveWidgetOpen: false,
     buildOpen: false,
     messageOpen: false,
+    compositionsOpen: false,
     targetHighlight: [],
     layout: readPref("anivo.layout", { showGrid: false, snapGrid: true, snapObjects: true, gridSize: 8, onion: true }),
     areas: readPref("anivo.areas", { left: 230, right: 300, outliner: 34, timeline: 200 }),

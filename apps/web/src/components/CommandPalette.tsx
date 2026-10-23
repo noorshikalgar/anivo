@@ -79,6 +79,7 @@ function commands(): Command[] {
     ...WIDGETS.map((w) => ({ title: `Insert widget: ${w.title}`, run: () => insertWidget(w) })),
     { title: "Save the selection as a widget", run: () => useEditor.setState({ saveWidgetOpen: true }) },
     { title: "Bullet list build", run: () => useEditor.setState({ buildOpen: true }) },
+    { title: "Compositions: save or insert elements with their animations", run: () => useEditor.setState({ compositionsOpen: true }) },
     { title: "Message build: type a message, then send it along the arrows", run: () => useEditor.setState({ messageOpen: true }) },
     { title: "Go to the home screen", run: () => void goHome() },
     { title: "Templates gallery", run: () => useEditor.setState({ galleryOpen: true }) },
