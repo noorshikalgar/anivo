@@ -164,6 +164,7 @@ function printAction(a: Action, index: number): string {
     if (a.delayMs) parts.push(`+${a.delayMs}ms`);
     if (a.durationMs !== undefined) parts.push(`dur=${a.durationMs}ms`);
     if (a.staggerMs) parts.push(`stagger=${a.staggerMs}ms`);
+    if (a.staggerOrder && a.staggerOrder !== "in-order") parts.push(`order=${a.staggerOrder}`);
     if (typeof a.easing === "string") parts.push(`easing=${a.easing}`);
     if (a.sound) parts.push(`sound=${a.sound}`);
     if (a.soundGainDb !== undefined) parts.push(`sound-gain=${a.soundGainDb}`);

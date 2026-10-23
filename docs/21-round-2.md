@@ -16,7 +16,7 @@ Status: plan, 2026-10-24. After docs/20 (B1–B10 built). Same method: each item
 
 | # | Item |
 |---|---|
-| C6 | **Stagger order** for one action with many targets: in order, reverse, from the center, random (seeded). |
+| C6 | Done. **Stagger order** (script `order=`, also from the edges) for one action with many targets: in order, reverse, from the center, random (seeded). |
 | C7 | **Chain actions** in the timeline: snap a block to the end of the block before it ("after previous") with one drag, and keep the chain when the first block moves. |
 | C8 | **Exit for every enter**: the same effect, reversed, in one click; and "remove at the end of the step". |
 | C9 | **Number formats** for count: thousands, currency, percent, duration. |

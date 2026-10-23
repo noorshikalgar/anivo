@@ -112,6 +112,7 @@ const actionBase = {
   durationMs: Ms.optional().describe("Omit to use the default duration for the action type."),
   easing: Easing.optional(),
   staggerMs: Ms.default(0),
+  staggerOrder: z.enum(["in-order", "reverse", "center", "edges", "random"]).optional().describe("The order of the targets for the stagger (docs/21 C6). center: from the middle out. edges: from both ends in. random: a fixed shuffle."),
   sound: z
     .enum(["pop", "click", "whoosh", "ding", "thud", "tick", "blip", "chime", "rise", "bubble", "success", "error", "keys", "ticks"])
     .optional()

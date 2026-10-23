@@ -929,6 +929,7 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
   const common = (k: string, v: string, pos: Pos): boolean => {
     if (k === "dur" || k === "duration") a["durationMs"] = parseTime(v) ?? errors.push(err(pos, `The time '${v}' is not valid.`, "Write: 300ms or 1.5s"));
     else if (k === "stagger") a["staggerMs"] = parseTime(v);
+    else if (k === "order" && ["in-order", "reverse", "center", "edges", "random"].includes(v)) a["staggerOrder"] = v;
     else if (k === "easing" || k === "ease") a["easing"] = v;
     else if (k === "delay") a["delayMs"] = parseTime(v);
     else if (k === "id") a["id"] = v;

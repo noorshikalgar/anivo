@@ -375,6 +375,24 @@ export function ActionEditor({ step, action, part = "all" }: { step: Step; actio
         />
         {action.targets.length > 1 ? <NumberField label="Stagger (ms)" value={action.staggerMs} min={0} step={20} onCommit={(v) => set({ staggerMs: Math.round(v) }, "Change stagger")} /> : <div />}
       </Row>
+      <Row>
+        {action.targets.length > 1 && action.staggerMs > 0 ? (
+          <SelectField
+            label="Stagger order"
+            value={action.staggerOrder ?? "in-order"}
+            options={[
+              { value: "in-order", text: "In order" },
+              { value: "reverse", text: "Reverse" },
+              { value: "center", text: "From the center" },
+              { value: "edges", text: "From the edges" },
+              { value: "random", text: "Shuffle" },
+            ]}
+            onCommit={(v) => set({ staggerOrder: v === "in-order" ? null : v }, "Change stagger order")}
+          />
+        ) : (
+          <div />
+        )}
+      </Row>
       <SelectField
         label="Sound"
         value={action.sound ?? "none"}

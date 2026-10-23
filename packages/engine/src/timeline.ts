@@ -59,6 +59,36 @@ function actionEase(action: Action): EaseFn {
   return easingFn(DEFAULT_EASING[action.type]);
 }
 
+/**
+ * The place of each target in the stagger (docs/21 C6): in order, reverse,
+ * from the center out, from both ends in, or a shuffle that is the same each
+ * time (from the action ID).
+ */
+export function staggerRanks(n: number, order: string | undefined, seed: string): number[] {
+  const idx = Array.from({ length: n }, (_, i) => i);
+  if (!order || order === "in-order") return idx;
+  if (order === "reverse") return idx.map((i) => n - 1 - i);
+  const mid = (n - 1) / 2;
+  if (order === "center" || order === "edges") {
+    // Rank by the distance from the middle; targets at the same distance start together.
+    const dist = idx.map((i) => Math.abs(i - mid));
+    const levels = [...new Set(dist)].sort((a, b) => (order === "center" ? a - b : b - a));
+    return dist.map((d) => levels.indexOf(d));
+  }
+  // random: a seeded shuffle.
+  let h = 2166136261;
+  for (const c of seed) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+  const order2 = [...idx];
+  for (let i = n - 1; i > 0; i--) {
+    h = Math.imul(h ^ (h >>> 15), 2246822507) ^ i;
+    const j = (h >>> 0) % (i + 1);
+    [order2[i], order2[j]] = [order2[j]!, order2[i]!];
+  }
+  const rank = new Array<number>(n);
+  order2.forEach((t, r) => (rank[t] = r));
+  return rank;
+}
+
 function labelLength(scene: Scene, id: string): number {
   const el = scene.elements[id];
   if (!el) return 0;
@@ -120,9 +150,10 @@ export function resolveTimeline(scene: Scene): Timeline {
       const targets = action.type === "camera" || (action.type === "wait" && action.targets.length === 0) ? [""] : expand(action.targets);
       const cameraTargets = action.type === "camera" ? expand(action.targets) : undefined;
       const focusTargets = action.type === "emphasis" && action.effect === "focus" ? targets : undefined;
+      const rank = staggerRanks(targets.length, action.staggerOrder, action.id);
       targets.forEach((target, targetIndex) => {
         const duration = defaultDurationMs(action, labelLength(scene, target));
-        const s = startMs + action.delayMs + targetIndex * action.staggerMs;
+        const s = startMs + action.delayMs + rank[targetIndex]! * action.staggerMs;
         const e = s + duration;
         if (target !== "" || action.type === "camera") actions.push({ action, target, targetIndex, startMs: s, endMs: e, ease, ...(focusTargets ? { focusTargets } : {}), ...(cameraTargets ? { cameraTargets } : {}) });
         contentEnd = Math.max(contentEnd, e);
