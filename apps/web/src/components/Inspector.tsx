@@ -580,12 +580,28 @@ function SceneProperties() {
             { value: "solid", text: "Solid" },
             { value: "grid", text: "Grid" },
             { value: "dots", text: "Dots" },
+            { value: "gradient", text: "Gradient" },
             { value: "transparent", text: "Transparent" },
           ]}
           onCommit={(v) => commitSettings({ background: { ...settings.background, kind: v } }, "Change background")}
         />
         {settings.background.kind !== "transparent" && (
-          <ColorField label="Background color" theme={settings.theme} value={settings.background.color} onCommit={(v) => commitSettings({ background: { kind: settings.background.kind, ...(v ? { color: v } : {}) } }, "Change background color")} />
+          <>
+            <ColorField label="Background color" theme={settings.theme} value={settings.background.color} onCommit={(v) => commitSettings({ background: { ...settings.background, color: v ?? undefined } }, "Change background color")} />
+            {settings.background.kind === "gradient" && (
+              <>
+                <ColorField label="Second color" theme={settings.theme} value={settings.background.color2} onCommit={(v) => commitSettings({ background: { ...settings.background, color2: v ?? undefined } }, "Change background color")} />
+                <NumberField label="Angle (°)" value={settings.background.angle ?? 135} min={0} max={360} step={15} onCommit={(v) => commitSettings({ background: { ...settings.background, angle: v } }, "Change gradient angle")} />
+              </>
+            )}
+            <NumberField label="Vignette (%)" value={Math.round((settings.background.vignette ?? 0) * 100)} min={0} max={100} step={5} onCommit={(v) => commitSettings({ background: { ...settings.background, vignette: v / 100 } }, "Change vignette")} />
+            <NumberField label="Grain (%)" value={Math.round((settings.background.grain ?? 0) * 100)} min={0} max={100} step={5} onCommit={(v) => commitSettings({ background: { ...settings.background, grain: v / 100 } }, "Change grain")} />
+            {(settings.background.kind === "grid" || settings.background.kind === "dots") && (
+              <Prop label="">
+                <Check label="The pattern drifts slowly" checked={settings.background.drift ?? false} onChange={(v) => commitSettings({ background: { ...settings.background, drift: v } }, "Change drift")} />
+              </Prop>
+            )}
+          </>
         )}
       </Panel>
       <Panel id="scene-video" title="Video">

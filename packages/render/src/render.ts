@@ -846,10 +846,25 @@ function drawBackground(dc: DrawContext, frame: FrameState, opts: RenderOptions)
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, opts.width, opts.height);
   if (bg.kind === "transparent") return;
-  ctx.fillStyle = toCss(resolveToken(theme, bg.color ?? "background", "fill", "rectangle"));
+  const base = resolveToken(theme, bg.color ?? "background", "fill", "rectangle");
+  if (bg.kind === "gradient") {
+    // Two colors along an angle (docs/21 C3). The second color defaults to a step toward the text color.
+    const c2 = bg.color2 ? resolveToken(theme, bg.color2, "fill", "rectangle") : mixOklch(base, resolveToken(theme, "accent-soft", "fill", "rectangle"), 0.6);
+    const a = ((bg.angle ?? 135) * Math.PI) / 180;
+    const cx = opts.width / 2;
+    const cy = opts.height / 2;
+    const r = (Math.abs(Math.cos(a)) * opts.width + Math.abs(Math.sin(a)) * opts.height) / 2;
+    const g = ctx.createLinearGradient(cx - Math.cos(a) * r, cy - Math.sin(a) * r, cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+    g.addColorStop(0, toCss(base));
+    g.addColorStop(1, toCss(c2));
+    ctx.fillStyle = g as unknown as string;
+  } else ctx.fillStyle = toCss(base);
   ctx.fillRect(0, 0, opts.width, opts.height);
   if (bg.kind === "grid" || bg.kind === "dots") {
-    const cam = frame.camera;
+    const cam0 = frame.camera;
+    // Drift: the pattern moves 12 px each second, down and to the right.
+    const d = bg.drift ? ((frame.timeMs / 1000) * 12) % 40 : 0;
+    const cam = { ...cam0, x: cam0.x - d, y: cam0.y - d };
     const sx = opts.width / cam.width;
     const step = 40;
     const grid = toCss(resolveToken(theme, "grid", "stroke", "rectangle"));
@@ -864,6 +879,37 @@ function drawBackground(dc: DrawContext, frame: FrameState, opts: RenderOptions)
       else for (let y = y0; y <= cam.y + cam.height; y += step) ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
     }
     if (bg.kind === "grid") for (let y = y0; y <= cam.y + cam.height; y += step) strokePolyline(ctx, [{ x: cam.x, y }, { x: cam.x + cam.width, y }]);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+  if (bg.vignette) {
+    // Darker edges: four soft bands (linear gradients, so the SVG export draws the same).
+    const v = bg.vignette;
+    const band = Math.min(opts.width, opts.height) * 0.35;
+    const edges: [number, number, number, number, number, number, number, number][] = [
+      [0, 0, opts.width, band, 0, 0, 0, band],
+      [0, opts.height - band, opts.width, band, 0, opts.height, 0, opts.height - band],
+      [0, 0, band, opts.height, 0, 0, band, 0],
+      [opts.width - band, 0, band, opts.height, opts.width, 0, opts.width - band, 0],
+    ];
+    for (const [x, y, w, h, gx0, gy0, gx1, gy1] of edges) {
+      const g = ctx.createLinearGradient(gx0, gy0, gx1, gy1);
+      g.addColorStop(0, `rgba(0,0,0,${(0.55 * v).toFixed(3)})`);
+      g.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = g as unknown as string;
+      ctx.fillRect(x, y, w, h);
+    }
+  }
+  if (bg.grain) {
+    // Film grain: small dots at fixed places (hash), the same in each frame.
+    const n = Math.round((opts.width * opts.height) / 900);
+    const light = theme.dark;
+    for (let i = 0; i < n; i++) {
+      const x = hash2(i, 1) * opts.width;
+      const y = hash2(i, 2) * opts.height;
+      const a = bg.grain * 0.08 * (0.5 + hash2(i, 3));
+      ctx.fillStyle = light ? `rgba(255,255,255,${a.toFixed(3)})` : `rgba(0,0,0,${a.toFixed(3)})`;
+      ctx.fillRect(x, y, 1.5, 1.5);
+    }
   }
 }
 

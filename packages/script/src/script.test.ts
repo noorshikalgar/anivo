@@ -292,3 +292,11 @@ describe("march", () => {
     expect(scene.steps[0]!.actions[0]).toMatchObject({ type: "emphasis", effect: "march", targets: ["c-a-b"], durationMs: 2000 });
   });
 });
+
+describe("background options", () => {
+  it("compiles a gradient background with vignette and grain, and prints it back", () => {
+    const scene = ok(`scene "B" background=gradient background-color="#141018" background2="#2A1D47" angle=120 vignette=0.6 grain=0.5\nbox a "A" at=100,100\nstep "S"\n  enter a fade\n`);
+    expect(scene.settings.background).toMatchObject({ kind: "gradient", color: "#141018", color2: "#2A1D47", angle: 120, vignette: 0.6, grain: 0.5 });
+    expect(printScene(scene)).toContain("background=gradient");
+  });
+});

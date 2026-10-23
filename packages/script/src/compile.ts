@@ -239,7 +239,16 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
       if (Object.keys(video).length) set["video"] = video;
       const bg = p.kv.get("background")?.v;
       // background=grid|dots|solid|transparent, or a color (a token or #hex) for a solid background.
-      if (bg) set["background"] = ["solid", "grid", "dots", "transparent"].includes(bg) ? { kind: bg } : { kind: "solid", color: bg };
+      const background: Record<string, unknown> | undefined = bg ? (["solid", "grid", "dots", "transparent", "gradient"].includes(bg) ? { kind: bg } : { kind: "solid", color: bg }) : undefined;
+      // background-color=, background2=, angle=, vignette=, grain=, drift (docs/21 C3).
+      const more: Record<string, unknown> = {};
+      if (p.kv.get("background-color")) more["color"] = p.kv.get("background-color")!.v;
+      if (p.kv.get("background2")) more["color2"] = p.kv.get("background2")!.v;
+      if (p.kv.get("angle")) more["angle"] = Number(p.kv.get("angle")!.v);
+      if (p.kv.get("vignette")) more["vignette"] = Number(p.kv.get("vignette")!.v);
+      if (p.kv.get("grain")) more["grain"] = Number(p.kv.get("grain")!.v);
+      if (p.flags.has("drift")) more["drift"] = true;
+      if (background || Object.keys(more).length) set["background"] = { kind: "solid", ...background, ...more };
       if (Object.keys(set).length) ops.push({ op: "scene.settings", set });
       if (p.strings[0]) ops.push({ op: "scene.meta", set: { title: p.strings[0].v } });
       if (video["width"] && video["height"]) camera = { x: 0, y: 0, width: video["width"], height: video["height"] };

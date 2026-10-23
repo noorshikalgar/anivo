@@ -105,7 +105,7 @@ const useStyles = makeStyles({
   loopBand: { position: "absolute", top: "18px", bottom: 0, backgroundColor: "rgba(59, 130, 246, 0.10)", borderLeft: "2px solid #3b82f6", borderRight: "2px solid #3b82f6", pointerEvents: "none", zIndex: 1 },
   hoverLine: { position: "absolute", top: 0, bottom: 0, width: "1px", backgroundColor: "var(--ui-text)", opacity: 0.25, pointerEvents: "none", zIndex: 2 },
   hoverTag: { position: "absolute", top: "20px", transform: "translateX(-50%)", padding: "0 4px", fontSize: "10px", lineHeight: "16px", borderRadius: "3px", backgroundColor: "var(--ui-widget)", color: "var(--ui-text)", pointerEvents: "none", zIndex: 3, whiteSpace: "nowrap" },
-  playTag: { position: "absolute", top: "20px", transform: "translateX(-50%)", padding: "0 4px", fontSize: "10px", lineHeight: "16px", borderRadius: "3px", backgroundColor: "#e5484d", color: "#fff", pointerEvents: "none", zIndex: 4, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" },
+  playTag: { position: "absolute", top: "20px", transform: "translateX(-50%)", padding: "0 4px", fontSize: "10px", lineHeight: "16px", borderRadius: "3px", backgroundColor: "#C4282F", color: "#fff", pointerEvents: "none", zIndex: 4, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" },
   playhead: { position: "absolute", top: 0, bottom: 0, width: "2px", marginLeft: "-1px", backgroundColor: "#e5484d", pointerEvents: "none", zIndex: 2 },
   empty: { padding: "12px", color: "var(--ui-muted)" },
 });

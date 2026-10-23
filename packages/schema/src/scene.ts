@@ -46,7 +46,15 @@ export const SceneSettings = z.object({
   theme: z.string().default("slate-dark"),
   customTheme: CustomTheme.optional(),
   background: z
-    .object({ kind: z.enum(["solid", "grid", "dots", "transparent"]).default("solid"), color: Color.optional() })
+    .object({
+      kind: z.enum(["solid", "grid", "dots", "transparent", "gradient"]).default("solid"),
+      color: Color.optional(),
+      color2: Color.optional().describe("gradient: the second color (default: a darker or lighter step of the first)."),
+      angle: z.number().optional().describe("gradient: the direction in degrees (0: left to right, 90: top to bottom). Default 135."),
+      vignette: z.number().min(0).max(1).optional().describe("Darker edges, 0 to 1 (docs/21 C3)."),
+      grain: z.number().min(0).max(1).optional().describe("A soft film grain, 0 to 1. It is the same in each frame (no random)."),
+      drift: z.boolean().optional().describe("grid and dots: the pattern moves slowly."),
+    })
     .default({ kind: "solid" }),
   video: VideoSettings.default(VideoSettings.parse({})),
   camera: Rect.optional().describe("Base camera. Omit to use 0,0 and the video size."),
