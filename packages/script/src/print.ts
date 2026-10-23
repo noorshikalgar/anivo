@@ -10,6 +10,7 @@ export function printScene(scene: Scene): string {
   const s = scene.settings;
   const head = [`scene ${q(scene.meta.title)}`, `style=${s.style}`, `theme=${s.theme}`, `size=${s.video.width}x${s.video.height}`, `fps=${s.video.fps}`];
   if (s.background.kind !== "solid") head.push(`background=${s.background.kind}`);
+  else if (s.background.color) head.push(`background=${q(s.background.color)}`);
   out.push(head.join(" "), "");
 
   const sorted = Object.values(scene.elements).sort((a, b) => (a.z < b.z ? -1 : a.z > b.z ? 1 : a.id < b.id ? -1 : 1));

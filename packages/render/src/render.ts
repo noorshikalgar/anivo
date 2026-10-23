@@ -133,7 +133,9 @@ function drawText(dc: DrawContext, f: ElementFrame, el: Element, text: string, b
   ctx.font = fontFor(dc, f, el);
   const size = f.fontSize ?? el.style.fontSize ?? dc.theme.defaults.fontSize;
   const lineHeight = size * 1.25;
-  const lines = wrapText(ctx, text, Math.max(10, box.width - 24));
+  // A text element has no box, so no inner padding: its text starts at its edge (docs/20 B2).
+  const pad = el.type === "text" ? 0 : 12;
+  const lines = wrapText(ctx, text, Math.max(10, box.width - pad * 2));
   const align = el.style.textAlign ?? "center";
   ctx.textAlign = align;
   ctx.textBaseline = "middle";
@@ -141,7 +143,7 @@ function drawText(dc: DrawContext, f: ElementFrame, el: Element, text: string, b
   const total = text.length;
   // Round, so the last character shows before the end of the action (a contact sheet samples just before the end).
   let shown = reveal >= 1 ? total : Math.round(total * reveal);
-  const x = align === "left" ? box.x + 12 : align === "right" ? box.x + box.width - 12 : box.x + box.width / 2;
+  const x = align === "left" ? box.x + pad : align === "right" ? box.x + box.width - pad : box.x + box.width / 2;
   const y0 = box.y + box.height / 2 - ((lines.length - 1) * lineHeight) / 2;
   if (f.marks?.length || f.dimRest) return drawMarkedText(dc, f, el, text, lines, x, y0, lineHeight, size, color, alpha, shown);
   lines.forEach((line, i) => {

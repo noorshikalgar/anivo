@@ -238,7 +238,8 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
       if (fps) video["fps"] = Number(fps.v);
       if (Object.keys(video).length) set["video"] = video;
       const bg = p.kv.get("background")?.v;
-      if (bg) set["background"] = { kind: bg };
+      // background=grid|dots|solid|transparent, or a color (a token or #hex) for a solid background.
+      if (bg) set["background"] = ["solid", "grid", "dots", "transparent"].includes(bg) ? { kind: bg } : { kind: "solid", color: bg };
       if (Object.keys(set).length) ops.push({ op: "scene.settings", set });
       if (p.strings[0]) ops.push({ op: "scene.meta", set: { title: p.strings[0].v } });
       if (video["width"] && video["height"]) camera = { x: 0, y: 0, width: video["width"], height: video["height"] };

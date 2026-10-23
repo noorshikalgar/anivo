@@ -257,3 +257,11 @@ describe("mark", () => {
     expect(printScene(scene)).toContain('mark t "Taptic Engine" color=accent underline=accent dim=muted');
   });
 });
+
+describe("background color", () => {
+  it("compiles background=<color> and prints it back", () => {
+    const scene = ok(`scene "B" background="#181818"\nbox a "A" at=100,100\nstep "S"\n  enter a fade\n`);
+    expect(scene.settings.background).toEqual({ kind: "solid", color: "#181818" });
+    expect(printScene(scene)).toContain('background="#181818"');
+  });
+});
