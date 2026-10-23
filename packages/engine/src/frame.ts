@@ -8,6 +8,15 @@ import type { Color, Element, ElementId, Rect } from "@anivo/schema";
 export type FrameColor = Color | { from: Color; to: Color; p: number };
 
 /** The state of one element in one frame. */
+export interface TextMark {
+  start: number;
+  end: number;
+  color?: Color;
+  highlight?: Color;
+  underline?: Color;
+  p: number;
+}
+
 export interface ElementFrame {
   id: ElementId;
   type: Element["type"];
@@ -49,6 +58,10 @@ export interface ElementFrame {
   wipe?: { direction: "up" | "down" | "left" | "right"; p: number };
   /** Part of the text to show, 0..1 (typewriter). */
   textReveal: number;
+  /** Marked words (docs/20 B1): character ranges of the text, with their look, and the share that shows (0 to 1). */
+  marks?: TextMark[];
+  /** The other words fade to this color (focus on the marks). */
+  dimRest?: { color: Color; p: number };
   /** Glow ring intensity, 0..1. */
   glow: number;
   glowColor?: Color;

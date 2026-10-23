@@ -1,7 +1,7 @@
 import { type Caption, type ElementFrame, type FrameState, type Particle, captionAt } from "@anivo/engine";
 import { type Polyline, evaluateWithLayout, frameBox, pointAt, polyline, slice } from "@anivo/layout";
 import type { ConnectorElement, Element, Point, Scene, SceneStyle } from "@anivo/schema";
-import { type Rgba, parseHex, toCss, withAlpha } from "./color.js";
+import { type Rgba, mixOklch, parseHex, toCss, withAlpha } from "./color.js";
 import type { Ctx2D } from "./ctx.js";
 import { TOKEN_COLORS, diffLines, highlightLine } from "./highlight.js";
 import { getIcon } from "./icons.js";
@@ -143,11 +143,67 @@ function drawText(dc: DrawContext, f: ElementFrame, el: Element, text: string, b
   let shown = reveal >= 1 ? total : Math.round(total * reveal);
   const x = align === "left" ? box.x + 12 : align === "right" ? box.x + box.width - 12 : box.x + box.width / 2;
   const y0 = box.y + box.height / 2 - ((lines.length - 1) * lineHeight) / 2;
+  if (f.marks?.length || f.dimRest) return drawMarkedText(dc, f, el, text, lines, x, y0, lineHeight, size, color, alpha, shown);
   lines.forEach((line, i) => {
     if (shown <= 0) return;
     const part = line.slice(0, shown);
     shown -= line.length + 1;
     ctx.fillText(part, x, y0 + i * lineHeight);
+  });
+}
+
+/**
+ * Text with marked words (docs/20 B1): each line is drawn in parts, so a
+ * phrase can have its own color, a highlight box behind it, and an underline
+ * that draws in. The other words can fade to the dim color.
+ */
+function drawMarkedText(dc: DrawContext, f: ElementFrame, el: Element, text: string, lines: string[], x: number, y0: number, lineHeight: number, size: number, base: Rgba, alpha: number, shown: number): void {
+  const { ctx, theme } = dc;
+  const marks = f.marks ?? [];
+  const dim = f.dimRest;
+  const tok = (c: string, role: "fill" | "textColor" | "stroke") => resolveToken(theme, c, role, el.type);
+  const align = el.style.textAlign ?? "center";
+  ctx.textAlign = "left";
+  // The index of each line in the text (wrapping drops one space or new line between lines).
+  let cursor = 0;
+  lines.forEach((line, i) => {
+    const start = text.indexOf(line, cursor);
+    const lineStart = start < 0 ? cursor : start;
+    cursor = lineStart + line.length;
+    const visible = Math.max(0, Math.min(line.length, shown - lineStart));
+    if (visible <= 0) return;
+    const width = ctx.measureText(line).width;
+    const left = align === "left" ? x : align === "right" ? x - width : x - width / 2;
+    const y = y0 + i * lineHeight;
+    // Parts: cut the line at the start and the end of each mark.
+    const cuts = new Set([0, line.length]);
+    for (const m of marks) for (const c of [m.start - lineStart, m.end - lineStart]) if (c > 0 && c < line.length) cuts.add(c);
+    const edges = [...cuts].sort((a, b) => a - b);
+    for (let k = 0; k < edges.length - 1; k++) {
+      const a = edges[k]!;
+      const b = Math.min(edges[k + 1]!, visible);
+      if (b <= a) continue;
+      const part = line.slice(a, b);
+      const px = left + ctx.measureText(line.slice(0, a)).width;
+      const pw = ctx.measureText(part).width;
+      const mark = marks.find((m) => m.start - lineStart <= a && m.end - lineStart >= b);
+      let c = base;
+      if (mark?.color) c = mixOklch(base, tok(mark.color, "textColor"), mark.p);
+      else if (!mark && dim) c = mixOklch(base, tok(dim.color, "textColor"), dim.p);
+      if (mark?.highlight) {
+        const pad = size * 0.18;
+        ctx.fillStyle = toCss(withAlpha(tok(mark.highlight, "fill"), alpha * mark.p));
+        ctx.beginPath();
+        ctx.rect(px - pad, y - size * 0.62, pw + pad * 2, size * 1.24);
+        ctx.fill();
+      }
+      ctx.fillStyle = toCss(withAlpha(c, alpha));
+      ctx.fillText(part, px, y);
+      if (mark?.underline && mark.p > 0) {
+        ctx.fillStyle = toCss(withAlpha(tok(mark.underline, "stroke"), alpha));
+        ctx.fillRect(px, y + size * 0.56, pw * Math.min(1, mark.p), Math.max(2, size * 0.06));
+      }
+    }
   });
 }
 

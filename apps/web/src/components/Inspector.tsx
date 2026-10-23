@@ -607,9 +607,11 @@ export function Inspector() {
   const tab = useEditor((st) => st.propTab);
   const setTab = (t: Tab) => useEditor.setState({ propTab: t });
   // A new selection shows the element; a new step shows its actions.
+  // Only a change of the selected elements switches the tab, not a new array with the same elements.
+  const selKey = selection.join(",");
   useEffect(() => {
     if (selection.length > 0) setTab("element");
-  }, [selection]);
+  }, [selKey]);
   useEffect(() => {
     if (step && useEditor.getState().selection.length === 0) setTab("actions");
     else if (!step && (tab === "step" || tab === "actions") && useEditor.getState().selection.length === 0) setTab("scene");

@@ -249,3 +249,11 @@ describe("typewriter by word", () => {
     expect(printScene(scene)).toContain("typewriter unit=word");
   });
 });
+
+describe("mark", () => {
+  it("compiles mark and prints it back", () => {
+    const scene = ok(`text t "The Taptic Engine gives haptic feedback" at=100,100\nstep "S"\n  enter t fade\n  mark t "Taptic Engine" color=accent underline dim=muted\n`);
+    expect(scene.steps[0]!.actions[1]).toMatchObject({ type: "mark", mark: { phrase: "Taptic Engine", color: "accent", underline: "accent", dim: "muted" } });
+    expect(printScene(scene)).toContain('mark t "Taptic Engine" color=accent underline=accent dim=muted');
+  });
+});

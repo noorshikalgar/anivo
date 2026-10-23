@@ -18,6 +18,7 @@ import {
   Square16Regular,
   Stack16Regular,
   Table16Regular,
+  Highlight16Regular,
   TextT16Regular,
   Timer16Regular,
   Video16Regular,
@@ -73,6 +74,8 @@ export function actionIcon(type: Action["type"]): ReactElement {
       return <Code16Regular />;
     case "motion":
       return <Directions16Regular />;
+    case "mark":
+      return <Highlight16Regular />;
     default:
       return <Timer16Regular />;
   }

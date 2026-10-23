@@ -172,7 +172,26 @@ export const MotionAction = z.object({
   }),
 });
 
-export const Action = z.discriminatedUnion("type", [EnterAction, ExitAction, MorphAction, EmphasisAction, FlowAction, WaitAction, CameraAction, CounterAction, CodeAction, MotionAction]);
+/**
+ * Mark words in a text (docs/20 B1): a phrase gets its own color, a highlight
+ * box, or an underline that draws in, and the other words can dim. The marks
+ * stay until a mark with clear.
+ */
+export const MarkAction = z.object({
+  ...actionBase,
+  type: z.literal("mark"),
+  mark: z.object({
+    phrase: z.string().default("").describe("The words to mark, as in the text. Empty: no phrase (use with dim or clear)."),
+    occurrence: z.number().int().positive().default(1).describe("Which match of the phrase, if the text has it more than one time."),
+    color: Color.optional().describe("The text color of the phrase."),
+    highlight: Color.optional().describe("A box of this color behind the phrase."),
+    underline: Color.optional().describe("An underline of this color that draws in from the left."),
+    dim: Color.optional().describe("The color of the other words, for focus on the phrase."),
+    clear: z.boolean().default(false).describe("Remove the marks of the text first."),
+  }),
+});
+
+export const Action = z.discriminatedUnion("type", [EnterAction, ExitAction, MorphAction, EmphasisAction, FlowAction, WaitAction, CameraAction, CounterAction, CodeAction, MotionAction, MarkAction]);
 export type Action = z.infer<typeof Action>;
 export type ActionInput = z.input<typeof Action>;
 export type ActionType = Action["type"];
