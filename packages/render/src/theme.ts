@@ -125,6 +125,29 @@ const popLightTokens = {
   "teal-soft": "#CCF3EF",
 };
 
+/** Studio: near-black and one violet accent, soft cards (docs/20 B4). Like the calm explainer channels. */
+const studioDarkTokens = {
+  background: "#181818",
+  grid: "#232323",
+  surface: "#242424",
+  "surface-strong": "#2E2E2E",
+  text: "#F2F2F2",
+  muted: "#9A9A9A",
+  line: "#4A4A4A",
+  accent: "#8B6CF6",
+  "accent-soft": "#2E2147",
+  danger: "#F26D6D",
+  "danger-soft": "#3E1F22",
+  success: "#4CC38A",
+  "success-soft": "#173326",
+  warning: "#F5B84A",
+  "warning-soft": "#3D3017",
+  purple: "#B39CFF",
+  "purple-soft": "#2E2147",
+  teal: "#3DD6C6",
+  "teal-soft": "#14332F",
+};
+
 /** Neon: deep night and bright neon colors. No glow by default: a glow on all shapes is too much (docs/17 F4). */
 const neonDarkTokens = {
   background: "#0A0A1A",
@@ -157,6 +180,7 @@ export const THEMES: Record<string, Theme> = {
   "paper-light": { name: "paper-light", dark: false, tokens: paperLightTokens, fonts, defaults },
   "night-dark": { name: "night-dark", dark: true, tokens: nightDarkTokens, fonts, defaults: { ...defaults, strokeWidth: 2.5 } },
   "pop-light": { name: "pop-light", dark: false, tokens: popLightTokens, fonts, defaults: { ...defaults, strokeWidth: 3, cornerRadius: 14, shadow: "hard", shadowColor: "line" } },
+  "studio-dark": { name: "studio-dark", dark: true, tokens: studioDarkTokens, fonts, defaults: { ...defaults, stroke: "line", strokeWidth: 1.5, cornerRadius: 12, textColor: "text" } },
   "neon-dark": { name: "neon-dark", dark: true, tokens: neonDarkTokens, fonts, defaults: { ...defaults, stroke: "accent", strokeWidth: 2 } },
 };
 

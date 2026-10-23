@@ -266,7 +266,14 @@ export function widgetOps(def: WidgetDef, o: WidgetOptions): OperationInput[] {
     // A smaller widget keeps its text readable: not under 28 px (or the base size, if smaller).
     if (style && typeof style["fontSize"] === "number" && k !== 1) {
       const base = style["fontSize"] as number;
-      props["style"] = { ...style, fontSize: Math.max(Math.min(base, 28), Math.round(base * k)) };
+      const fontSize = Math.max(Math.min(base, 28), Math.round(base * k));
+      props["style"] = { ...style, fontSize };
+      // A part with text grows to hold its font, around its center.
+      const need = Math.ceil(fontSize * 1.35);
+      if (p.text !== undefined && (props["height"] as number) < need) {
+        props["y"] = (props["y"] as number) - Math.round((need - (props["height"] as number)) / 2);
+        props["height"] = need;
+      }
     }
     if (p.text !== undefined) {
       const t = texts[p.text] ?? "";
