@@ -54,3 +54,39 @@ export async function saveSelectionAsPreset(name: string): Promise<MotionPreset 
 export async function deleteUserPreset(id: string): Promise<void> {
   await idbSet(KEY, (await listUserPresets()).filter((p) => p.id !== id));
 }
+
+/** Download your presets as one file (docs/21 C11). */
+export async function exportUserPresets(): Promise<void> {
+  const list = await listUserPresets();
+  if (list.length === 0) return notify("You have no saved presets yet.", "info");
+  const blob = new Blob([JSON.stringify({ anivoPresets: 1, presets: list }, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "my-presets.anivo-presets.json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+const isPreset = (p: unknown): p is MotionPreset => {
+  const x = p as MotionPreset;
+  return typeof x?.name === "string" && (x.mode === "each" || x.mode === "roles") && Array.isArray(x.actions) && x.actions.every((a) => typeof a?.action?.type === "string");
+};
+
+/** Add the presets of a file. A preset with the same name as one of yours replaces it. */
+export async function importUserPresets(file: File): Promise<number> {
+  try {
+    const data = JSON.parse(await file.text()) as { anivoPresets?: number; presets?: unknown[] };
+    if (data.anivoPresets !== 1 || !Array.isArray(data.presets)) throw new Error("not a preset file");
+    const found = data.presets.filter(isPreset);
+    if (found.length === 0) throw new Error("no presets");
+    const stamp = Date.now().toString(36);
+    const added = found.map((p, i) => ({ id: `user-${stamp}-${i}`, name: p.name, description: p.description ?? "", mode: p.mode, actions: p.actions, ...(p.staggerMs !== undefined ? { staggerMs: p.staggerMs } : {}) }));
+    const names = new Set(added.map((p) => p.name));
+    await idbSet(KEY, [...(await listUserPresets()).filter((p) => !names.has(p.name)), ...added]);
+    notify(`Added ${added.length} preset${added.length === 1 ? "" : "s"}.`, "success");
+    return added.length;
+  } catch {
+    notify(`'${file.name}' is not an Anivo preset file.`, "error");
+    return 0;
+  }
+}

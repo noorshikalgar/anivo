@@ -10,7 +10,7 @@ import { Delete16Regular } from "@fluentui/react-icons";
 import { resolveTimeline } from "@anivo/engine";
 import { OperationBus } from "@anivo/ops";
 import { useEffect, useRef, useState } from "react";
-import { allBuiltins, applyPreset, deleteUserPreset, listUserPresets, saveSelectionAsPreset } from "../presets.js";
+import { allBuiltins, applyPreset, deleteUserPreset, exportUserPresets, importUserPresets, listUserPresets, saveSelectionAsPreset } from "../presets.js";
 import { useEditor } from "../store.js";
 import { Btn, Note, Panel } from "./ui.js";
 
@@ -123,6 +123,7 @@ export function PresetsPanel() {
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
   const selection = useEditor((st) => st.selection);
+  const fileRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     void listUserPresets().then(setMine);
   }, []);
@@ -140,6 +141,24 @@ export function PresetsPanel() {
       <Btn onClick={() => setSaving(true)} disabled={selection.length === 0}>
         Save the actions of the selection as a preset…
       </Btn>
+      <div style={{ display: "flex", gap: 6 }}>
+        <Btn onClick={() => void exportUserPresets()} disabled={mine.length === 0} title="Download your presets as a file, to use them on another computer or to share them">
+          Export my presets
+        </Btn>
+        <Btn onClick={() => fileRef.current?.click()}>Import presets…</Btn>
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".json"
+          hidden
+          aria-label="Preset file"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void importUserPresets(f).then(() => listUserPresets().then(setMine));
+            e.target.value = "";
+          }}
+        />
+      </div>
       <Dialog open={saving} onOpenChange={(_, d) => !d.open && setSaving(false)}>
         <DialogSurface aria-label="Save as preset" style={{ maxWidth: "420px" }}>
           <DialogBody>

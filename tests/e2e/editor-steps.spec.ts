@@ -276,6 +276,12 @@ test("Presets: one click gives each selected element the animation; save your ow
   await page.getByRole("textbox", { name: "Preset name" }).fill("My rise");
   await page.getByRole("dialog", { name: "Save as preset" }).getByRole("button", { name: "Save" }).click();
   await expect(page.getByRole("button", { name: "Preset: My rise" })).toBeVisible();
+  // Export the presets as a file, then import the file again: the preset with the same name is replaced, not doubled.
+  const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Export my presets" }).click()]);
+  const file = await download.path();
+  await page.getByLabel("Preset file").setInputFiles(file);
+  await expect(page.getByText("Added 1 preset.").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Preset: My rise" })).toHaveCount(1);
 });
 
 test("Compositions: save elements with their animations, and insert them again as new steps", async ({ page }) => {
@@ -287,9 +293,13 @@ test("Compositions: save elements with their animations, and insert them again a
   const card = dialog.getByRole("listitem", { name: "LB intro" });
   await expect(card).toBeVisible();
   const before = (await state(page)).scene.steps.length;
+  // Set its text before inserting it (a slot).
+  await card.getByRole("button", { name: "Set texts…" }).click();
+  await card.getByRole("group").getByRole("textbox").first().fill("Gateway");
   await card.getByRole("button", { name: "Insert" }).click();
   const s = await state(page);
   expect(s.scene.elements["lb-2"]).toBeTruthy();
+  expect((s.scene.elements["lb-2"] as unknown as { label: { text: string } }).label.text).toBe("Gateway");
   expect(s.scene.steps.length).toBeGreaterThan(before);
   expect(s.selection).toEqual(["lb-2"]);
 });
