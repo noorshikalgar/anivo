@@ -236,6 +236,121 @@ export const WIDGETS: WidgetDef[] = [
       { id: "label", type: "text", x: 0, y: 156, w: 220, h: 56, text: "label", props: s({ fontSize: 30, textColor: "success", fontWeight: 700 }) },
     ],
   },
+  // UI parts for explainers (docs/20 B7). Animate them with presets: fill up (meter), fill to the right (slider, bars), card slides up.
+  {
+    name: "definition",
+    title: "Definition card",
+    description: "A word, its kind, and its meaning, on a card.",
+    width: 720,
+    height: 240,
+    texts: { word: "haptic", kind: "adjective", meaning: "relating to the sense of touch" },
+    parts: [
+      { id: "card", type: "rectangle", x: 0, y: 0, w: 720, h: 240, props: s({ fill: "surface", stroke: "line", strokeWidth: 1, cornerRadius: 10 }) },
+      { id: "word", type: "text", x: 40, y: 26, w: 640, h: 64, text: "word", props: s({ fontSize: 52, textAlign: "left" }) },
+      { id: "kind", type: "text", x: 40, y: 90, w: 640, h: 40, text: "kind", props: s({ fontSize: 28, textColor: "muted", textAlign: "left" }) },
+      { id: "meaning", type: "text", x: 40, y: 150, w: 640, h: 56, text: "meaning", props: s({ fontSize: 34, textAlign: "left" }) },
+    ],
+  },
+  {
+    name: "skeleton-card",
+    title: "Card with lines",
+    description: "A title and three grey lines: a short summary.",
+    width: 720,
+    height: 230,
+    texts: { title: "Taptic Engine" },
+    parts: [
+      { id: "card", type: "rectangle", x: 0, y: 0, w: 720, h: 230, props: s({ fill: "surface", stroke: "line", strokeWidth: 1, cornerRadius: 10 }) },
+      { id: "title", type: "text", x: 40, y: 26, w: 640, h: 64, text: "title", props: s({ fontSize: 48, textAlign: "left" }) },
+      { id: "line-1", type: "rectangle", x: 40, y: 116, w: 640, h: 16, props: s({ fill: "line", stroke: none, cornerRadius: 4 }) },
+      { id: "line-2", type: "rectangle", x: 40, y: 148, w: 560, h: 16, props: s({ fill: "line", stroke: none, cornerRadius: 4 }) },
+      { id: "line-3", type: "rectangle", x: 40, y: 180, w: 360, h: 16, props: s({ fill: "line", stroke: none, cornerRadius: 4 }) },
+    ],
+  },
+  {
+    name: "meter",
+    title: "Meter",
+    description: "A tall gauge with a label. Use Fill up on the fill.",
+    width: 160,
+    height: 520,
+    texts: { label: "PRESSURE" },
+    parts: [
+      { id: "label", type: "text", x: -40, y: 0, w: 240, h: 44, text: "label", props: s({ fontSize: 28, textColor: "muted" }) },
+      { id: "frame", type: "rectangle", x: 20, y: 60, w: 120, h: 460, props: s({ fill: "surface", stroke: "line", strokeWidth: 1.5, cornerRadius: 8 }) },
+      { id: "fill", type: "rectangle", x: 22, y: 380, w: 116, h: 138, props: s({ fill: "accent-soft", stroke: none, cornerRadius: 6 }) },
+      { id: "level", type: "rectangle", x: 22, y: 378, w: 116, h: 4, props: s({ fill: "accent", stroke: none, cornerRadius: 2 }) },
+    ],
+  },
+  {
+    name: "slider",
+    title: "Slider",
+    description: "A label, a value, and a track with a knob. Use Fill to the right on the fill.",
+    width: 640,
+    height: 230,
+    texts: { label: "QUICKTIME", value: "1X" },
+    parts: [
+      { id: "label", type: "text", x: 0, y: 0, w: 640, h: 44, text: "label", props: s({ fontSize: 28, textColor: "muted" }) },
+      { id: "value", type: "text", x: 0, y: 50, w: 640, h: 100, text: "value", props: s({ fontSize: 88, fontWeight: 700 }) },
+      { id: "track", type: "rectangle", x: 0, y: 190, w: 640, h: 10, props: s({ fill: "surface-strong", stroke: none, cornerRadius: 5 }) },
+      { id: "fill", type: "rectangle", x: 0, y: 190, w: 140, h: 10, props: s({ fill: "accent", stroke: none, cornerRadius: 5 }) },
+      { id: "knob", type: "rectangle", x: 136, y: 174, w: 6, h: 42, props: s({ fill: "text", stroke: none, cornerRadius: 3 }) },
+    ],
+  },
+  {
+    name: "toggle",
+    title: "Toggle",
+    description: "An on and off switch with a label.",
+    width: 360,
+    height: 80,
+    texts: { label: "Dark mode" },
+    parts: [
+      { id: "label", type: "text", x: 0, y: 10, w: 220, h: 60, text: "label", props: s({ fontSize: 30, textAlign: "left" }) },
+      { id: "track", type: "rectangle", x: 240, y: 10, w: 120, h: 60, props: s({ fill: "accent", stroke: none, cornerRadius: 30 }) },
+      { id: "knob", type: "ellipse", x: 306, y: 16, w: 48, h: 48, props: s({ fill: "text", stroke: none }) },
+    ],
+  },
+  {
+    name: "bar-chart",
+    title: "Bar chart",
+    description: "Four bars with labels. Use Fill up on the bars.",
+    width: 640,
+    height: 420,
+    texts: { a: "Mon", b: "Tue", c: "Wed", d: "Thu" },
+    parts: [
+      ...[0, 1, 2, 3].flatMap((i): Part[] => {
+        const h = [180, 300, 240, 340][i]!;
+        return [
+          { id: `bar-${i + 1}`, type: "rectangle", x: 30 + i * 155, y: 360 - h, w: 110, h, props: s({ fill: i === 3 ? "accent" : "accent-soft", stroke: none, cornerRadius: 8 }) },
+          { id: `label-${i + 1}`, type: "text", x: 10 + i * 155, y: 370, w: 150, h: 44, text: ["a", "b", "c", "d"][i]!, props: s({ fontSize: 26, textColor: "muted" }) },
+        ];
+      }),
+    ],
+  },
+  {
+    name: "cursor",
+    title: "Cursor click",
+    description: "A pointer and a ring for a click. Pop the ring to show the click.",
+    width: 120,
+    height: 120,
+    texts: {},
+    parts: [
+      { id: "ring", type: "ellipse", x: 0, y: 0, w: 72, h: 72, props: s({ fill: none, stroke: "accent", strokeWidth: 3 }) },
+      { id: "pointer", type: "icon", x: 30, y: 30, w: 80, h: 80, props: { pack: "lucide", name: "mouse-pointer-2", style: { stroke: "text" } } },
+    ],
+  },
+  {
+    name: "notification",
+    title: "Notification",
+    description: "A message card with an icon, a title, and a line.",
+    width: 620,
+    height: 140,
+    texts: { title: "New message", body: "Alice: Meet at 7?" },
+    parts: [
+      { id: "card", type: "rectangle", x: 0, y: 0, w: 620, h: 140, props: s({ fill: "surface", stroke: "line", strokeWidth: 1, cornerRadius: 22 }) },
+      { id: "icon", type: "icon", x: 28, y: 30, w: 80, h: 80, props: { pack: "lucide", name: "message-circle", style: { fill: "accent" } } },
+      { id: "title", type: "text", x: 128, y: 24, w: 460, h: 48, text: "title", props: s({ fontSize: 32, fontWeight: 700, textAlign: "left" }) },
+      { id: "body", type: "text", x: 128, y: 76, w: 460, h: 44, text: "body", props: s({ fontSize: 28, textColor: "muted", textAlign: "left" }) },
+    ],
+  },
 ];
 
 export function getWidget(name: string): WidgetDef | undefined {
