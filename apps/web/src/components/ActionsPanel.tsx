@@ -33,6 +33,7 @@ import { useEditor } from "../store.js";
 import { Select, SelectField, TextField } from "./fields.js";
 import { formatTime } from "./PlaybackBar.js";
 import { ActionEditor, AddActionMenu, describe } from "./StepInspector.js";
+import { PresetsPanel } from "./PresetsPanel.js";
 import { actionIcon, elementIcon } from "./typeIcons.js";
 import { Btn, IconButton, ListSideGap, ListView, MenuButtonSmall, Note, Panel, Prop } from "./ui.js";
 
@@ -89,6 +90,8 @@ interface Quick {
 
 const QUICK: Quick[] = [
   { label: "Appear", hint: "Pop in (enter · pop)", icon: actionIcon("enter"), action: { type: "enter", effect: "pop" } },
+  { label: "Rise", hint: "Rise into place with a fade, with a soft landing (enter · rise)", icon: actionIcon("enter"), action: { type: "enter", effect: "rise" } },
+  { label: "Blur in", hint: "Come into focus with a fade (enter · blur)", icon: actionIcon("enter"), action: { type: "enter", effect: "blur" } },
   { label: "Fade in", hint: "Fade in (enter · fade)", icon: actionIcon("enter"), action: { type: "enter", effect: "fade" } },
   { label: "Draw", hint: "Draw the line (enter · draw-on), for arrows and shapes", icon: actionIcon("enter"), action: { type: "enter", effect: "draw-on" } },
   { label: "Type", hint: "Type the text (enter · typewriter)", icon: actionIcon("enter"), action: { type: "enter", effect: "typewriter" }, only: ["text", "rectangle", "ellipse", "diamond", "code"] },
@@ -393,6 +396,8 @@ function StepActions({ step }: { step: Step }) {
         </div>
         <Note>{selection.length > 0 ? `For the selection: ${selection.length === 1 ? selection[0] : `${selection.length} elements`}.` : "No selection: choose the elements after the click."}</Note>
       </Panel>
+
+      <PresetsPanel />
 
       <Panel id="act-sequence" title={`Sequence (${step.actions.length})`}>
         <ListView

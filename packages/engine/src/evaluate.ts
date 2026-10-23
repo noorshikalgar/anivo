@@ -138,6 +138,17 @@ function applyEnterExit(f: ElementFrame, action: Extract<Action, { type: "enter"
     case "wipe":
       f.wipe = { direction: params.direction ?? "right", p: clamp01(p) };
       break;
+    case "rise": {
+      // Up into place from a short distance, with a fade: the most common entrance in motion design.
+      f.offsetY += (params.distance ?? 36) * (1 - p);
+      f.opacity *= clamp01(p * 1.4);
+      break;
+    }
+    case "blur":
+      // Out of focus into focus, with a fade.
+      f.blur = (params.amount ?? 18) * (1 - p);
+      f.opacity *= clamp01(p * 1.3);
+      break;
     case "typewriter":
       f.textReveal = params.unit === "word" && f.label ? wordReveal(f.label, clamp01(p)) : clamp01(p);
       break;

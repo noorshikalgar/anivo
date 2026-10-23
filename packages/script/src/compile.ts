@@ -1,5 +1,5 @@
 import { type LayoutKind, autoLayout } from "@anivo/layout";
-import { type OperationInput, SEND_MS, WIDGETS, getWidget, widgetOps } from "@anivo/ops";
+import { BUILTIN_PRESETS, type OperationInput, SEND_MS, WIDGETS, getPreset, getWidget, widgetOps } from "@anivo/ops";
 import type { Scene } from "@anivo/schema";
 import { type Line, type Pos, type ScriptError, type Token, parseLines } from "./syntax.js";
 
@@ -17,7 +17,7 @@ export interface CompileOptions {
 
 const ELEMENT_KINDS = new Set(["box", "ellipse", "diamond", "text", "icon", "caption", "row", "column", "grid", "group", "line", "code", "image", "table"]);
 const CONTAINERS = new Set(["row", "column", "grid", "group"]);
-const ENTER_EFFECTS = new Set(["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter"]);
+const ENTER_EFFECTS = new Set(["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter", "rise", "blur"]);
 const EMPHASIS = new Set(["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus"]);
 const ACTIONS = new Set(["enter", "exit", "morph", "flow", "wait", "camera", "count", "code", "move", "mark", ...EMPHASIS]);
 
@@ -238,7 +238,8 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
       if (fps) video["fps"] = Number(fps.v);
       if (Object.keys(video).length) set["video"] = video;
       const bg = p.kv.get("background")?.v;
-      if (bg) set["background"] = { kind: bg };
+      // background=grid|dots|solid|transparent, or a color (a token or #hex) for a solid background.
+      if (bg) set["background"] = ["solid", "grid", "dots", "transparent"].includes(bg) ? { kind: bg } : { kind: "solid", color: bg };
       if (Object.keys(set).length) ops.push({ op: "scene.settings", set });
       if (p.strings[0]) ops.push({ op: "scene.meta", set: { title: p.strings[0].v } });
       if (video["width"] && video["height"]) camera = { x: 0, y: 0, width: video["width"], height: video["height"] };
@@ -657,7 +658,12 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
       props["caption"] = { text: cap.v, side, ...(near ? { anchor: near } : {}) };
     }
     if (p.flags.has("click")) props["trigger"] = { kind: "click" };
-    const actions = line.children.map((c) => compileAction(c, resolveTargets, errors)).filter((a): a is Record<string, unknown> => a !== undefined);
+    const actions = line.children.flatMap((c) => {
+      const head = c.tokens[0];
+      // preset <name> <targets> [+delay] [stagger=]: a built-in motion preset (docs/20 B5).
+      if (head?.t === "word" && head.v === "preset") return compilePreset(c, resolveTargets, errors);
+      return compileAction(c, resolveTargets, errors) ?? [];
+    });
     props["actions"] = actions;
     const id = p.kv.get("id")?.v;
     ops.push({ op: "step.add", ...(id ? { id } : {}), props });
@@ -749,6 +755,27 @@ function readArrow(line: Line, errors: ScriptError[]): ArrowDecl | undefined {
   const decl: ArrowDecl = { order: line.pos.line, pos: line.pos, from, to, flags, kv };
   if (label !== undefined) decl.label = label;
   return decl;
+}
+
+function compilePreset(line: Line, resolveTargets: (t: Token[], pos: Pos) => string[], errors: ScriptError[]): Record<string, unknown>[] {
+  const nameTok = line.tokens[1];
+  const name = nameTok && nameTok.t === "word" ? nameTok.v : "";
+  const preset = getPreset(name);
+  if (!preset || preset.make) {
+    errors.push(err(line.pos, `The preset '${name}' is not known.`, `Use: ${BUILTIN_PRESETS.filter((p) => !p.make).map((p) => p.id).join(", ")}.`));
+    return [];
+  }
+  const words: Token[] = [];
+  let delay = 0;
+  let stagger: number | undefined;
+  for (const t of line.tokens.slice(2)) {
+    if (t.t === "delay") delay = parseTime(t.v) ?? 0;
+    else if (t.t === "kv" && t.k === "stagger") stagger = parseTime(t.v);
+    else if (t.t === "word") words.push(t);
+  }
+  const targets = resolveTargets(words, line.pos);
+  const st = stagger ?? preset.staggerMs ?? 120;
+  return targets.flatMap((id, i) => preset.actions.map((x) => ({ ...x.action, targets: [id], delayMs: delay + i * st + ((x.action.delayMs as number | undefined) ?? 0) })));
 }
 
 function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => string[], errors: ScriptError[]): Record<string, unknown> | undefined {

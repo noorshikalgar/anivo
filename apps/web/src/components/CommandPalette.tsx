@@ -107,7 +107,7 @@ function commands(): Command[] {
     ...(["row", "column", "grid", "layered", "tree"] as const).map((k) => ({ title: `Auto layout: ${k}`, run: () => autoLayoutSelection(k) })),
     { title: "Style: clean", run: () => commitSettings({ style: "clean" }, "Change style") },
     { title: "Style: sketch", run: () => commitSettings({ style: "sketch" }, "Change style") },
-    ...["slate-dark", "slate-light", "paper-light", "night-dark", "pop-light", "neon-dark"].map((t) => ({ title: `Theme: ${t}`, run: () => commitSettings({ theme: t }, "Change theme") })),
+    ...["slate-dark", "slate-light", "paper-light", "night-dark", "pop-light", "neon-dark", "studio-dark"].map((t) => ({ title: `Theme: ${t}`, run: () => commitSettings({ theme: t }, "Change theme") })),
     ...(shareServer() ? [{ title: "Share link", run: () => useEditor.setState({ shareOpen: true }) }] : []),
     { title: "Keyboard shortcuts", keys: "?", run: () => useEditor.setState({ helpOpen: true }) },
     { title: "History of changes", run: () => useEditor.setState({ historyOpen: true }) },

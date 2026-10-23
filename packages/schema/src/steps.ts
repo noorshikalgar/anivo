@@ -10,6 +10,7 @@ export const EasingName = z.enum([
   "spring-soft",
   "spring-bouncy",
   "hold",
+  "smooth",
 ]);
 export type EasingName = z.infer<typeof EasingName>;
 
@@ -20,7 +21,7 @@ export const Easing = z.union([
 ]);
 export type Easing = z.infer<typeof Easing>;
 
-export const EnterEffect = z.enum(["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter"]);
+export const EnterEffect = z.enum(["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter", "rise", "blur"]);
 export type EnterEffect = z.infer<typeof EnterEffect>;
 
 export const EmphasisEffect = z.enum(["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus"]);
@@ -42,6 +43,7 @@ export const EffectParams = z
     color: Color,
     width: z.number(),
     dimTo: z.number().min(0).max(1),
+    amount: z.number().nonnegative().describe("blur: the blur radius at the start, in pixels."),
     unit: z.enum(["char", "word"]).describe("typewriter: show the text one character (default) or one word at a time (docs/19 R12)."),
   })
   .partial();
@@ -72,7 +74,7 @@ export const FlowParams = z.object({
   shape: z.enum(["dot", "square", "pill", "icon", "image"]).default("dot").describe("The particle. icon: set `icon`. image: set `assetId`."),
   icon: z.string().regex(/^[a-z0-9-]+:[a-z0-9-]+$/).optional().describe("Icon of an icon particle, pack:name (for example lucide:mail)."),
   assetId: z.string().optional().describe("Image asset of an image particle."),
-  size: z.number().positive().default(8).describe("Particle size in pixels (the width of an icon or an image)."),
+  size: z.number().positive().default(14).describe("Particle size in pixels (the width of an icon or an image)."),
   color: Color.default("accent"),
   speed: z.number().positive().default(400).describe("Pixels per second."),
   rate: z.number().positive().default(2).describe("Particles per second."),

@@ -133,7 +133,9 @@ function drawText(dc: DrawContext, f: ElementFrame, el: Element, text: string, b
   ctx.font = fontFor(dc, f, el);
   const size = f.fontSize ?? el.style.fontSize ?? dc.theme.defaults.fontSize;
   const lineHeight = size * 1.25;
-  const lines = wrapText(ctx, text, Math.max(10, box.width - 24));
+  // A text element has no box, so no inner padding: its text starts at its edge (docs/20 B2).
+  const pad = el.type === "text" ? 0 : 12;
+  const lines = wrapText(ctx, text, Math.max(10, box.width - pad * 2));
   const align = el.style.textAlign ?? "center";
   ctx.textAlign = align;
   ctx.textBaseline = "middle";
@@ -141,7 +143,7 @@ function drawText(dc: DrawContext, f: ElementFrame, el: Element, text: string, b
   const total = text.length;
   // Round, so the last character shows before the end of the action (a contact sheet samples just before the end).
   let shown = reveal >= 1 ? total : Math.round(total * reveal);
-  const x = align === "left" ? box.x + 12 : align === "right" ? box.x + box.width - 12 : box.x + box.width / 2;
+  const x = align === "left" ? box.x + pad : align === "right" ? box.x + box.width - pad : box.x + box.width / 2;
   const y0 = box.y + box.height / 2 - ((lines.length - 1) * lineHeight) / 2;
   if (f.marks?.length || f.dimRest) return drawMarkedText(dc, f, el, text, lines, x, y0, lineHeight, size, color, alpha, shown);
   lines.forEach((line, i) => {
@@ -298,7 +300,7 @@ function drawShape(dc: DrawContext, f: ElementFrame, el: Element): void {
   }
   if (f.flash > 0 && kind !== "line") {
     const fc = resolveToken(theme, f.flashColor ?? "warning", "fill", el.type);
-    ctx.fillStyle = toCss(withAlpha(fc, f.flash * 0.6));
+    ctx.fillStyle = toCss(withAlpha(fc, f.flash * 0.35));
     fillPolyline(ctx, clean.points);
   }
 
@@ -505,7 +507,7 @@ function drawCode(dc: DrawContext, f: ElementFrame, el: Extract<Element, { type:
     ctx.setLineDash([]);
     strokeProgressive(ctx, [outline], outline.length, f.strokeProgress);
   }
-  const size = f.fontSize ?? el.style.fontSize ?? 24;
+  const size = f.fontSize ?? el.style.fontSize ?? 28;
   const lh = size * 1.5;
   const pad = size;
   const font = `400 ${size}px "${el.style.fontFamily ?? theme.fonts.code}", "${SYMBOLS}"`;
@@ -631,7 +633,8 @@ function drawConnector(dc: DrawContext, f: ElementFrame, el: ConnectorElement): 
   const route = dc.routes.get(el.id);
   if (!route || route.length === 0 || f.strokeProgress <= 0) return;
   const stroke = resolveColor(theme, f.stroke, "stroke", el.type);
-  const strokeWidth = f.strokeWidth ?? el.style.strokeWidth ?? theme.defaults.strokeWidth;
+  // Arrows read better a little thicker than shape outlines (docs/20 E2).
+  const strokeWidth = f.strokeWidth ?? el.style.strokeWidth ?? Math.max(2.5, theme.defaults.strokeWidth);
   const css = toCss(stroke);
   ctx.strokeStyle = css;
   ctx.lineWidth = strokeWidth;
@@ -647,7 +650,7 @@ function drawConnector(dc: DrawContext, f: ElementFrame, el: ConnectorElement): 
   }
   ctx.setLineDash([]);
   // The arrowhead moves with the tip of the line during draw-on.
-  const headSize = 10 + strokeWidth * 3;
+  const headSize = 12 + strokeWidth * 4;
   const tip = pointAt(route, route.length * f.strokeProgress);
   drawArrowHead(ctx, tip.point, tip.dir, headSize, el.endHead, css);
   if (el.startHead !== "none") {
@@ -657,9 +660,9 @@ function drawConnector(dc: DrawContext, f: ElementFrame, el: ConnectorElement): 
   if (f.label && f.strokeProgress >= 1) {
     // The label sits on the line with a background pill, so the line does not cross the text.
     const mid = pointAt(route, route.length / 2).point;
-    ctx.font = fontFor(dc, { ...f, fontSize: f.fontSize ?? el.style.fontSize ?? 24 }, el);
+    ctx.font = fontFor(dc, { ...f, fontSize: f.fontSize ?? el.style.fontSize ?? 28 }, el);
     const lines = wrapText(ctx, f.label, 320);
-    const size = f.fontSize ?? el.style.fontSize ?? 24;
+    const size = f.fontSize ?? el.style.fontSize ?? 28;
     const w = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 20;
     const h = lines.length * size * 1.25 + 10;
     const bg = resolveToken(theme, dc.scene.settings.background.color ?? "background", "fill", "rectangle");
@@ -820,6 +823,7 @@ export function renderFrame(ctx: Ctx2D, scene: Scene, frame: FrameState, routes:
     ctx.save();
     ctx.setTransform(sx, 0, 0, sy, -cam.x * sx, -cam.y * sy);
     ctx.globalAlpha = f.opacity;
+    if (f.blur && f.blur > 0.3 && "filter" in ctx) ctx.filter = `blur(${(f.blur * sx).toFixed(1)}px)`;
     if (el.type === "connector") {
       drawConnector(dc, f, el);
     } else {

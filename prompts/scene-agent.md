@@ -89,7 +89,7 @@ widget <id> <name> [at=x,y] [size=WxH] [<text>="…"]   (a ready-made group; par
 
 step "<title>" [hold=<time>] [cue=<time>] [caption="<one sentence>" [near=<id>] [side=auto|above|below|left|right|top|bottom]]
   (caption: types in next to the element that changes; the step holds until a viewer can read it. Use one idea and one caption for each step.)
-  enter <targets> fade|pop|draw-on|slide-up|slide-left|wipe|typewriter [+<delay>] [stagger=<time>]   (typewriter unit=word: one word at a time)
+  enter <targets> rise|blur|fade|pop|draw-on|slide-up|slide-left|wipe|typewriter [+<delay>] [stagger=<time>]   (typewriter unit=word: one word at a time)
   exit <targets> <effect>
   morph <targets> key=value…
   pulse|shake|glow|flash|highlight|focus <targets>
@@ -102,6 +102,7 @@ step "<title>" [hold=<time>] [cue=<time>] [caption="<one sentence>" [near=<id>] 
   count <target> from=<n> to=<n> format="{n} <unit>"
   code <target> highlight=<a>-<b> | type=<a>-<b>
   move <targets> path="x,y x,y …" [curve] [orient]   (the element center follows the points and stays at the end)
+  preset <name> <targets> [+<delay>] [stagger=<time>]   (motion presets: rise-in, blur-in, pop-in, card-up, words-in, type-in, draw-in, fill-up, fill-right, emphasize, no, sink-out, fade-out)
   mark <text> "<words>" [color=<c>] [highlight=<c>] [underline[=<c>]] [dim=<c>] [clear]   (style words inside one text: link color, highlight box, underline that draws in, dim the other words; marks stay until clear)
   move <targets> along=<arrow> [back]               (send along an arrow route, for example a message bubble; 2.4 s by default)
   wait <time>
@@ -115,7 +116,7 @@ step "<title>" [hold=<time>] [cue=<time>] [caption="<one sentence>" [near=<id>] 
 - Declare all elements at the top level. A step contains actions only.
 - Style keys: `fill`, `stroke`, `stroke-width`, `style=dashed`, `radius`, `font-size`, `color` (text), `text-align`, `weight`, `opacity`, `rotate`, `shadow=soft|hard|glow|none`, `shadow-color=<token>`, `gradient=<token>` (the fill fades to this color), `follow=<id>` (the element moves with that element, for example a label on a packet that you send).
 - An icon with `fill=<token>` is a badge: a colored circle with the icon inside.
-- Themes: `slate-dark`, `slate-light`, `paper-light`, `night-dark`, `pop-light` (bold lines, bright fills, hard shadows), `neon-dark` (neon colors and glow).
+- Themes: `slate-dark`, `slate-light`, `paper-light`, `night-dark`, `pop-light` (bold lines, bright fills, hard shadows), `neon-dark` (neon colors), `studio-dark` (near-black, one violet accent, soft cards: calm explainers).
 - Run `anivo print` (or call `anivo_scene_get` with format `script`) to see a scene in this language.
 
 Call `anivo_schema` for the full schema. Call `anivo_icons_search` to find an icon name. Do not invent icon names.

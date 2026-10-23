@@ -51,7 +51,7 @@ export const WIDGETS: WidgetDef[] = [
       { id: "dot-1", type: "ellipse", x: 18, y: 18, w: 16, h: 16, props: s({ fill: "danger", stroke: none }) },
       { id: "dot-2", type: "ellipse", x: 42, y: 18, w: 16, h: 16, props: s({ fill: "warning", stroke: none }) },
       { id: "dot-3", type: "ellipse", x: 66, y: 18, w: 16, h: 16, props: s({ fill: "success", stroke: none }) },
-      { id: "url", type: "rectangle", x: 100, y: 10, w: 520, h: 32, text: "url", props: s({ fill: "background", stroke: none, cornerRadius: 16, fontSize: 18, textColor: "muted" }) },
+      { id: "url", type: "rectangle", x: 100, y: 10, w: 520, h: 32, text: "url", props: s({ fill: "background", stroke: none, cornerRadius: 16, fontSize: 24, textColor: "muted" }) },
       { id: "page", type: "rectangle", x: 20, y: 70, w: 600, h: 330, text: "page", props: s({ fill: "surface-strong", stroke: none, cornerRadius: 8, fontSize: 28 }) },
     ],
   },
@@ -266,7 +266,14 @@ export function widgetOps(def: WidgetDef, o: WidgetOptions): OperationInput[] {
     // A smaller widget keeps its text readable: not under 28 px (or the base size, if smaller).
     if (style && typeof style["fontSize"] === "number" && k !== 1) {
       const base = style["fontSize"] as number;
-      props["style"] = { ...style, fontSize: Math.max(Math.min(base, 28), Math.round(base * k)) };
+      const fontSize = Math.max(Math.min(base, 28), Math.round(base * k));
+      props["style"] = { ...style, fontSize };
+      // A part with text grows to hold its font, around its center.
+      const need = Math.ceil(fontSize * 1.35);
+      if (p.text !== undefined && (props["height"] as number) < need) {
+        props["y"] = (props["y"] as number) - Math.round((need - (props["height"] as number)) / 2);
+        props["height"] = need;
+      }
     }
     if (p.text !== undefined) {
       const t = texts[p.text] ?? "";

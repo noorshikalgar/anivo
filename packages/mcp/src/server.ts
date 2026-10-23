@@ -115,7 +115,7 @@ export function createAnivoServer(opts: ServerOptions): McpServer {
         title: z.string().optional().describe("Scene title."),
         template: z.enum(TEMPLATES.map((t) => t.name) as [string, ...string[]]).optional(),
         style: z.enum(["clean", "sketch"]).optional(),
-        theme: z.enum(["slate-dark", "slate-light", "paper-light", "night-dark", "pop-light", "neon-dark"]).optional(),
+        theme: z.enum(["slate-dark", "slate-light", "paper-light", "night-dark", "pop-light", "neon-dark", "studio-dark"]).optional(),
       },
     },
     async (a) =>

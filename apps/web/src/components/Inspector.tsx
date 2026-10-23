@@ -547,7 +547,8 @@ function SceneProperties() {
             { value: "paper-light", text: "Paper light" },
             { value: "night-dark", text: "Night dark" },
             { value: "pop-light", text: "Pop (bold, hard shadows)" },
-            { value: "neon-dark", text: "Neon (glow)" },
+            { value: "neon-dark", text: "Neon" },
+            { value: "studio-dark", text: "Studio (near-black, violet)" },
             ...(settings.customTheme ? [{ value: settings.customTheme.name, text: `${settings.customTheme.name} (custom)` }] : []),
           ]}
           onCommit={(v) => commitSettings({ theme: v }, "Change theme")}
@@ -564,8 +565,11 @@ function SceneProperties() {
             { value: "dots", text: "Dots" },
             { value: "transparent", text: "Transparent" },
           ]}
-          onCommit={(v) => commitSettings({ background: { kind: v } }, "Change background")}
+          onCommit={(v) => commitSettings({ background: { ...settings.background, kind: v } }, "Change background")}
         />
+        {settings.background.kind !== "transparent" && (
+          <ColorField label="Background color" theme={settings.theme} value={settings.background.color} onCommit={(v) => commitSettings({ background: { kind: settings.background.kind, ...(v ? { color: v } : {}) } }, "Change background color")} />
+        )}
       </Panel>
       <Panel id="scene-video" title="Video">
         <Prop label="">
