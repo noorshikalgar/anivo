@@ -100,6 +100,8 @@ const NAMED: Record<string, EaseFn> = {
   "spring-bouncy": spring(180, 12, 1),
   // Hold: no tween, the value jumps at the end (a hold key in a video editor).
   hold: (p) => (p >= 1 ? 1 : 0),
+  // Smooth: a fast start and a long, soft landing (as in motion design).
+  smooth: cubicBezier(0.16, 1, 0.3, 1),
 };
 
 const cache = new Map<string, EaseFn>();

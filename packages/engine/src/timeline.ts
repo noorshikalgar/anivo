@@ -55,6 +55,7 @@ export interface Timeline {
 function actionEase(action: Action): EaseFn {
   if (action.easing !== undefined) return easingFn(action.easing);
   if (action.type === "enter" && action.effect === "pop") return easingFn("back-out");
+  if ((action.type === "enter" || action.type === "exit") && (action.effect === "rise" || action.effect === "blur")) return easingFn("smooth");
   return easingFn(DEFAULT_EASING[action.type]);
 }
 

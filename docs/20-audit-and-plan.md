@@ -45,7 +45,7 @@ Order: what makes videos look better and saves the most work first.
 |---|---|---|
 | B1 | Done. **Word ranges in text**: an action can change a range of words in one text element: color, highlight box, underline, dim the rest (focus). Script `text t … ` + `mark t words=2-3 color=… highlight=… underline`. | X1 |
 | B2 | Done. Background color in the script and the Scene panel; text without inner padding when it has no box. | X2, X3 |
-| B3 | **Beautiful defaults**: new enter effects rise and blur, spring easings for pop; thicker arrows and larger heads; larger flow particles; code text sized to the box; widget text floors; softer flash. | E1–E7 |
+| B3 | Done. **Beautiful defaults**: new enter effects rise and blur, spring easings for pop; thicker arrows and larger heads; larger flow particles; code text sized to the box; widget text floors; softer flash. | E1–E7 |
 | B4 | **Studio theme** (near-black, one purple accent, soft cards), like the reference channels. | E1 |
 | B5 | **Motion presets**: built-in presets (rise, blur in, bounce, underline draw, word focus, count up, meter fill, card slide) with a live preview, applied to the selection in one click. **Save your own** preset from the actions of an element; it goes to your library. | U2, U5 |
 | B6 | **Compositions**: save selected elements with their animations (all steps) as a composition; insert it in any scene (new IDs, at the click); export and import as a file. | U5 |

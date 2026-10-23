@@ -208,6 +208,7 @@ A `wait` action has a duration and does nothing. It extends the step.
 | `spring-soft` | Spring, stiffness 120, damping 20, mass 1 |
 | `spring-bouncy` | Spring, stiffness 180, damping 12, mass 1 |
 | `hold` | No tween: the value stays, then jumps at the end (a hold key) |
+| `smooth` | Cubic bezier 0.16, 1, 0.3, 1: a fast start and a long, soft landing. Default for rise and blur |
 
 **Springs:** use the closed-form solution of the damped harmonic oscillator. Do not use a step-by-step simulation, because a simulation depends on the frame rate. Normalize the spring so that it settles at `durationMs`. If the action has no `durationMs`, use the time when the spring reaches 0.1% of its distance.
 

@@ -33,6 +33,8 @@ export interface Ctx2D {
   lineCap: string;
   lineJoin: string;
   globalAlpha: number;
+  /** A CSS filter, for example "blur(4px)". Canvas only: the SVG export ignores it. */
+  filter?: string;
   font: string;
   textAlign: string;
   textBaseline: string;

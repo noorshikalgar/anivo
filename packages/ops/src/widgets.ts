@@ -51,7 +51,7 @@ export const WIDGETS: WidgetDef[] = [
       { id: "dot-1", type: "ellipse", x: 18, y: 18, w: 16, h: 16, props: s({ fill: "danger", stroke: none }) },
       { id: "dot-2", type: "ellipse", x: 42, y: 18, w: 16, h: 16, props: s({ fill: "warning", stroke: none }) },
       { id: "dot-3", type: "ellipse", x: 66, y: 18, w: 16, h: 16, props: s({ fill: "success", stroke: none }) },
-      { id: "url", type: "rectangle", x: 100, y: 10, w: 520, h: 32, text: "url", props: s({ fill: "background", stroke: none, cornerRadius: 16, fontSize: 18, textColor: "muted" }) },
+      { id: "url", type: "rectangle", x: 100, y: 10, w: 520, h: 32, text: "url", props: s({ fill: "background", stroke: none, cornerRadius: 16, fontSize: 24, textColor: "muted" }) },
       { id: "page", type: "rectangle", x: 20, y: 70, w: 600, h: 330, text: "page", props: s({ fill: "surface-strong", stroke: none, cornerRadius: 8, fontSize: 28 }) },
     ],
   },

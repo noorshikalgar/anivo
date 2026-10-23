@@ -42,9 +42,9 @@ const useStyles = makeStyles({
 /** Sound names in the list. */
 const SOUND_TEXT: Partial<Record<string, string>> = { keys: "Keys (typing, whole action)", ticks: "Ticks (counting, whole action)", rise: "Rise (whoosh up)", error: "Error (buzz)", success: "Success (three notes)" };
 
-export const ENTER_EFFECTS = ["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter"] as const;
+export const ENTER_EFFECTS = ["rise", "fade", "pop", "blur", "scale", "slide", "draw-on", "wipe", "typewriter"] as const;
 export const EMPHASIS_EFFECTS = ["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus"] as const;
-const EASINGS = ["linear", "ease-in", "ease-out", "ease-in-out", "back-out", "spring-soft", "spring-bouncy", "hold"] as const;
+const EASINGS = ["linear", "ease-in", "ease-out", "ease-in-out", "back-out", "spring-soft", "spring-bouncy", "smooth", "hold"] as const;
 const label = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g, " ");
 
 export function describe(a: Action): string {

@@ -300,7 +300,7 @@ function drawShape(dc: DrawContext, f: ElementFrame, el: Element): void {
   }
   if (f.flash > 0 && kind !== "line") {
     const fc = resolveToken(theme, f.flashColor ?? "warning", "fill", el.type);
-    ctx.fillStyle = toCss(withAlpha(fc, f.flash * 0.6));
+    ctx.fillStyle = toCss(withAlpha(fc, f.flash * 0.35));
     fillPolyline(ctx, clean.points);
   }
 
@@ -507,7 +507,7 @@ function drawCode(dc: DrawContext, f: ElementFrame, el: Extract<Element, { type:
     ctx.setLineDash([]);
     strokeProgressive(ctx, [outline], outline.length, f.strokeProgress);
   }
-  const size = f.fontSize ?? el.style.fontSize ?? 24;
+  const size = f.fontSize ?? el.style.fontSize ?? 28;
   const lh = size * 1.5;
   const pad = size;
   const font = `400 ${size}px "${el.style.fontFamily ?? theme.fonts.code}", "${SYMBOLS}"`;
@@ -633,7 +633,8 @@ function drawConnector(dc: DrawContext, f: ElementFrame, el: ConnectorElement): 
   const route = dc.routes.get(el.id);
   if (!route || route.length === 0 || f.strokeProgress <= 0) return;
   const stroke = resolveColor(theme, f.stroke, "stroke", el.type);
-  const strokeWidth = f.strokeWidth ?? el.style.strokeWidth ?? theme.defaults.strokeWidth;
+  // Arrows read better a little thicker than shape outlines (docs/20 E2).
+  const strokeWidth = f.strokeWidth ?? el.style.strokeWidth ?? Math.max(2.5, theme.defaults.strokeWidth);
   const css = toCss(stroke);
   ctx.strokeStyle = css;
   ctx.lineWidth = strokeWidth;
@@ -649,7 +650,7 @@ function drawConnector(dc: DrawContext, f: ElementFrame, el: ConnectorElement): 
   }
   ctx.setLineDash([]);
   // The arrowhead moves with the tip of the line during draw-on.
-  const headSize = 10 + strokeWidth * 3;
+  const headSize = 12 + strokeWidth * 4;
   const tip = pointAt(route, route.length * f.strokeProgress);
   drawArrowHead(ctx, tip.point, tip.dir, headSize, el.endHead, css);
   if (el.startHead !== "none") {
@@ -659,9 +660,9 @@ function drawConnector(dc: DrawContext, f: ElementFrame, el: ConnectorElement): 
   if (f.label && f.strokeProgress >= 1) {
     // The label sits on the line with a background pill, so the line does not cross the text.
     const mid = pointAt(route, route.length / 2).point;
-    ctx.font = fontFor(dc, { ...f, fontSize: f.fontSize ?? el.style.fontSize ?? 24 }, el);
+    ctx.font = fontFor(dc, { ...f, fontSize: f.fontSize ?? el.style.fontSize ?? 28 }, el);
     const lines = wrapText(ctx, f.label, 320);
-    const size = f.fontSize ?? el.style.fontSize ?? 24;
+    const size = f.fontSize ?? el.style.fontSize ?? 28;
     const w = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 20;
     const h = lines.length * size * 1.25 + 10;
     const bg = resolveToken(theme, dc.scene.settings.background.color ?? "background", "fill", "rectangle");
@@ -822,6 +823,7 @@ export function renderFrame(ctx: Ctx2D, scene: Scene, frame: FrameState, routes:
     ctx.save();
     ctx.setTransform(sx, 0, 0, sy, -cam.x * sx, -cam.y * sy);
     ctx.globalAlpha = f.opacity;
+    if (f.blur && f.blur > 0.3 && "filter" in ctx) ctx.filter = `blur(${(f.blur * sx).toFixed(1)}px)`;
     if (el.type === "connector") {
       drawConnector(dc, f, el);
     } else {

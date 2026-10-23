@@ -89,6 +89,8 @@ interface Quick {
 
 const QUICK: Quick[] = [
   { label: "Appear", hint: "Pop in (enter · pop)", icon: actionIcon("enter"), action: { type: "enter", effect: "pop" } },
+  { label: "Rise", hint: "Rise into place with a fade, with a soft landing (enter · rise)", icon: actionIcon("enter"), action: { type: "enter", effect: "rise" } },
+  { label: "Blur in", hint: "Come into focus with a fade (enter · blur)", icon: actionIcon("enter"), action: { type: "enter", effect: "blur" } },
   { label: "Fade in", hint: "Fade in (enter · fade)", icon: actionIcon("enter"), action: { type: "enter", effect: "fade" } },
   { label: "Draw", hint: "Draw the line (enter · draw-on), for arrows and shapes", icon: actionIcon("enter"), action: { type: "enter", effect: "draw-on" } },
   { label: "Type", hint: "Type the text (enter · typewriter)", icon: actionIcon("enter"), action: { type: "enter", effect: "typewriter" }, only: ["text", "rectangle", "ellipse", "diamond", "code"] },
