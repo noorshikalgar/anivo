@@ -24,7 +24,7 @@ export type Easing = z.infer<typeof Easing>;
 export const EnterEffect = z.enum(["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter", "rise", "blur", "cascade", "scramble"]);
 export type EnterEffect = z.infer<typeof EnterEffect>;
 
-export const EmphasisEffect = z.enum(["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus"]);
+export const EmphasisEffect = z.enum(["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus", "march"]);
 export type EmphasisEffect = z.infer<typeof EmphasisEffect>;
 
 export const Direction = z.enum(["up", "down", "left", "right"]);

@@ -285,3 +285,10 @@ describe("letter effects and strike", () => {
     expect(printScene(scene)).toContain("strike=danger");
   });
 });
+
+describe("march", () => {
+  it("compiles march for arrows", () => {
+    const scene = ok(`box a "A" at=0,0\nbox b "B" at=600,0\narrow a -> b\nstep "S"\n  march c-a-b dur=2s\n`);
+    expect(scene.steps[0]!.actions[0]).toMatchObject({ type: "emphasis", effect: "march", targets: ["c-a-b"], durationMs: 2000 });
+  });
+});

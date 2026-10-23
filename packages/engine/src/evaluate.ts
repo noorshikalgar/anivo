@@ -71,6 +71,7 @@ function settle(frame: ElementFrame): ElementFrame {
   const f: ElementFrame = { ...frame, scale: 1, offsetX: 0, offsetY: 0, strokeProgress: 1, fillProgress: 1, textReveal: 1, glow: 0, flash: 0, highlight: 0 };
   delete f.wipe;
   delete f.blur;
+  delete f.march;
   delete f.cascade;
   delete f.scramble;
   delete f.labelFrom;
@@ -256,6 +257,10 @@ function applyEmphasis(f: ElementFrame, action: Extract<Action, { type: "emphasi
   const params = action.params;
   const count = params.count;
   switch (action.effect) {
+    case "march":
+      // Dashes move along an arrow (docs/21 C2): 60 px each second, toward the arrow end.
+      f.march = (raw * (action.durationMs ?? 3000)) / 1000;
+      break;
     case "pulse": {
       const n = count ?? 2;
       f.scale *= 1 + ((params.scale ?? 1.08) - 1) * Math.abs(Math.sin(Math.PI * n * raw));

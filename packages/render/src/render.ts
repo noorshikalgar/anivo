@@ -708,7 +708,8 @@ function drawConnector(dc: DrawContext, f: ElementFrame, el: ConnectorElement): 
   ctx.lineWidth = strokeWidth;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
-  ctx.setLineDash(dashFor(el, strokeWidth));
+  ctx.setLineDash(f.march !== undefined && el.style.strokeStyle !== "dotted" ? [strokeWidth * 4, strokeWidth * 3] : dashFor(el, strokeWidth));
+  if (f.march !== undefined && "lineDashOffset" in ctx) ctx.lineDashOffset = -f.march * 60;
   if (dc.style === "sketch") {
     const key = `${el.id}|${route.points.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(";")}`;
     const sk = sketchOutline(key, { points: route.points }, el.seed, el.style.roughness ?? 1, strokeWidth);
@@ -717,6 +718,7 @@ function drawConnector(dc: DrawContext, f: ElementFrame, el: ConnectorElement): 
     strokeProgressive(ctx, [route], route.length, f.strokeProgress);
   }
   ctx.setLineDash([]);
+  if ("lineDashOffset" in ctx) ctx.lineDashOffset = 0;
   // The arrowhead moves with the tip of the line during draw-on.
   const headSize = 12 + strokeWidth * 4;
   const tip = pointAt(route, route.length * f.strokeProgress);
@@ -725,7 +727,9 @@ function drawConnector(dc: DrawContext, f: ElementFrame, el: ConnectorElement): 
     const start = pointAt(route, 0);
     drawArrowHead(ctx, start.point, { x: -start.dir.x, y: -start.dir.y }, headSize, el.startHead, css);
   }
-  if (f.label && f.strokeProgress >= 1) {
+  if (f.label && f.strokeProgress >= 0.85) {
+    // The label fades in at the end of the draw.
+    ctx.globalAlpha *= Math.min(1, (f.strokeProgress - 0.85) / 0.15);
     // The label sits on the line with a background pill, so the line does not cross the text.
     const mid = pointAt(route, route.length / 2).point;
     ctx.font = fontFor(dc, { ...f, fontSize: f.fontSize ?? el.style.fontSize ?? 28 }, el);

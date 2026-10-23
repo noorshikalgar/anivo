@@ -41,5 +41,7 @@ export function defaultDurationMs(action: Action, textLength = 0): number {
     if (action.effect === "typewriter") return Math.min(TYPEWRITER_MAX_MS, Math.max(1, textLength) * TYPEWRITER_MS_PER_CHAR);
     if (action.effect === "draw-on" && action.type === "enter") return DEFAULT_DURATION_MS["enter:draw-on"];
   }
+  // Dashes march for 3 s by default (docs/21 C2).
+  if (action.type === "emphasis" && action.effect === "march") return 3000;
   return DEFAULT_DURATION_MS[action.type];
 }

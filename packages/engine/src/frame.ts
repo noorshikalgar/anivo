@@ -59,6 +59,8 @@ export interface ElementFrame {
   wipe?: { direction: "up" | "down" | "left" | "right"; p: number };
   /** Part of the text to show, 0..1 (typewriter). */
   textReveal: number;
+  /** March (seconds since the march started): the dashes of an arrow move. */
+  march?: number;
   /** Letters cascade in (0 to 1): each letter rises and fades in after the one before. */
   cascade?: number;
   /** Scramble (0 to 1): random letters settle into the text, from the left. */
