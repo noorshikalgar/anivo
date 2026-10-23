@@ -29,6 +29,7 @@ import { withErrors } from "../notify.js";
 import { addAction, addMotionAlongArrow, updateAction, updateStep } from "../commands.js";
 import { previewSound, setCue, setStepLine } from "../audio.js";
 import { Comments } from "./Comments.js";
+import { MarkEditor } from "./MarkEditor.js";
 import { useEditor } from "../store.js";
 import { ColorField, NumberField, Row, SelectField, TextField } from "./fields.js";
 import { actionIcon } from "./typeIcons.js";
@@ -52,6 +53,7 @@ export function describe(a: Action): string {
   if (a.type === "camera") return `Camera · ${a.camera.op}`;
   if (a.type === "counter") return `Count · ${a.counter.from} to ${a.counter.to}`;
   if (a.type === "motion") return a.motion.along ? `Send along ${a.motion.along}${a.motion.reverse ? " (back)" : ""}` : `Move along a path · ${a.motion.points.length} points`;
+  if (a.type === "mark") return a.mark.clear ? `Mark · clear${a.mark.phrase ? ` · "${a.mark.phrase}"` : ""}` : `Mark · "${a.mark.phrase}"`;
   if (a.type === "code") return `Code · ${a.code.op}${a.code.lines ? ` ${a.code.lines[0]}-${a.code.lines[1]}` : ""}`;
   return label(a.type);
 }
@@ -388,6 +390,7 @@ export function ActionEditor({ step, action, part = "all" }: { step: Step; actio
       {what && (
         <>
 
+      {what && action.type === "mark" && <MarkEditor action={action} set={set} />}
       {action.type === "motion" && action.motion.along && (
         <Row>
           <SelectField

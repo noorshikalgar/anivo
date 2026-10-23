@@ -188,6 +188,10 @@ The target is a text element. The text shows `format` with `{n}` replaced by the
 | `type` | The lines appear one character at a time |
 | `diff` | Removed lines turn red and collapse. Added lines turn green and expand |
 
+### `mark`
+
+Words inside one text element (docs/20 B1). Params: `phrase` (whole words, case-insensitive; `occurrence` picks the n-th match), `color`, `highlight` (a box behind the phrase), `underline` (draws in from the left), `dim` (the color of the other words), `clear` (fade out the old marks first). The marks stay in the state after the action, so later steps keep them, until a mark with `clear`. Default: 500 ms, ease-out.
+
 ### `wait`
 
 A `wait` action has a duration and does nothing. It extends the step.

@@ -150,8 +150,46 @@ function wordReveal(text: string, p: number): number {
   const re = /\S+/g;
   for (let m = re.exec(text); m; m = re.exec(text)) ends.push(m.index + m[0].length);
   if (ends.length === 0 || p >= 1) return 1;
-  const k = Math.floor(p * ends.length);
+  // Round, as the letter typewriter does: the last word shows just before the end.
+  const k = Math.round(p * ends.length);
   return k === 0 ? 0 : ends[k - 1]! / text.length;
+}
+
+type MarkParams = Extract<Action, { type: "mark" }>["mark"];
+
+/** The character range of the n-th match of a phrase, by whole words, case-insensitive. */
+function phraseRange(text: string, phrase: string, occurrence: number): { start: number; end: number } | undefined {
+  const p = phrase.trim().toLowerCase();
+  if (!p) return undefined;
+  const t = text.toLowerCase();
+  let from = 0;
+  let n = 0;
+  for (;;) {
+    const i = t.indexOf(p, from);
+    if (i < 0) return undefined;
+    const before = i === 0 || /\W/.test(t[i - 1]!);
+    const after = i + p.length >= t.length || /\W/.test(t[i + p.length]!);
+    if (before && after && ++n === occurrence) return { start: i, end: i + p.length };
+    from = i + 1;
+  }
+}
+
+/** Mark words (docs/20 B1). The marks stay in the state, so later steps keep them. */
+function applyMark(f: ElementFrame, m: MarkParams, p: number): void {
+  // Clear fades the old marks out while the action runs.
+  let marks = m.clear ? (f.marks ?? []).map((x) => ({ ...x, p: x.p * (1 - p) })).filter((x) => p < 1 && x.p > 0) : [...(f.marks ?? [])];
+  if (m.clear && f.dimRest) {
+    if (p < 1) f.dimRest = { ...f.dimRest, p: f.dimRest.p * (1 - p) };
+    else delete f.dimRest;
+  }
+  const r = phraseRange(f.label ?? "", m.phrase, m.occurrence);
+  if (r) {
+    marks = marks.filter((x) => x.start !== r.start || x.end !== r.end);
+    marks.push({ ...r, ...(m.color ? { color: m.color } : {}), ...(m.highlight ? { highlight: m.highlight } : {}), ...(m.underline ? { underline: m.underline } : {}), p });
+  }
+  if (marks.length) f.marks = marks;
+  else delete f.marks;
+  if (m.dim) f.dimRest = { color: m.dim, p };
 }
 
 function applyMorph(f: ElementFrame, to: MorphableProps, p: number): void {
@@ -338,6 +376,7 @@ function applyTimedAction(state: StateMap, ta: TimedAction, t: number): void {
   const f: ElementFrame = { ...current };
   if (action.type === "enter" || action.type === "exit") applyEnterExit(f, action, eased, raw);
   else if (action.type === "morph") applyMorph(f, action.to, eased);
+  else if (action.type === "mark") applyMark(f, action.mark, eased);
   else if (action.type === "emphasis" && raw < 1) applyEmphasis(f, action, raw);
   else if (action.type === "code") applyCode(f, action.code, eased);
   else if (action.type === "motion") applyMotion(f, action.motion, eased);

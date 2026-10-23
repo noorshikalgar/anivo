@@ -97,6 +97,7 @@ const QUICK: Quick[] = [
   { label: "Glow", hint: "Glow (emphasis · glow)", icon: actionIcon("emphasis"), action: { type: "emphasis", effect: "glow" } },
   { label: "Focus", hint: "Dim the rest (emphasis · focus)", icon: actionIcon("emphasis"), action: { type: "emphasis", effect: "focus" } },
   { label: "One by one", hint: "The elements come in one after the other, in reading order: top to bottom, then left to right (enter · pop, 0.35 s apart)", icon: actionIcon("enter"), action: { type: "enter", effect: "pop", staggerMs: 350 } },
+  { label: "Mark words", hint: "Give words in a text their own color, highlight, or underline, and dim the rest. Choose the words after the click.", icon: actionIcon("mark"), action: { type: "mark", mark: { phrase: "", color: "accent", underline: "accent" } }, only: ["text", "rectangle", "ellipse", "diamond"] },
   { label: "Send", hint: "Move elements along an arrow, for example a message (2.4 s). Select the elements and the arrow.", icon: actionIcon("motion"), action: { type: "motion" } },
   { label: "Flow", hint: "Particles move along the arrows (flow)", icon: actionIcon("flow"), action: { type: "flow", flow: {} }, only: ["connector"] },
   { label: "Zoom", hint: "The camera zooms to the elements (camera · zoom-to)", icon: actionIcon("camera"), action: { type: "camera", camera: { op: "zoom-to" } } },
@@ -312,6 +313,12 @@ function StepActions({ step }: { step: Step }) {
     }
     const fit = (ids: string[]) => ids.filter((id) => !q.only || q.only.includes(elements[id]?.type as Element["type"]));
     const add = (ids: string[]) => {
+      if (q.label === "Mark words" && ids[0]) {
+        const el = elements[ids[0]];
+        const text = el?.type === "text" ? el.content.text : el && "label" in el ? (el.label?.text ?? "") : "";
+        const first = /\S+/.exec(text)?.[0] ?? "";
+        return void addAction({ type: "mark", targets: [ids[0]], mark: { phrase: first, color: "accent", underline: "accent" } }, "Add mark");
+      }
       const action = q.action["type"] === "camera" || ids.length > 0 ? { ...q.action, targets: ids, ...(q.action["type"] === "flow" && ids.length > 1 ? { flow: { distribute: "round-robin" } } : {}) } : null;
       if (action) addAction(action, `Add ${q.label.toLowerCase()}`);
     };

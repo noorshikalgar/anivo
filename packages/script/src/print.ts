@@ -202,6 +202,17 @@ function printAction(a: Action, index: number): string {
     parts.push("morph", targets);
     for (const [k, v] of Object.entries(a.to)) if (v !== undefined) parts.push(`${MORPH_OUT[k] ?? k}=${typeof v === "string" ? q(v) : n(v)}`);
     common();
+  } else if (a.type === "mark") {
+    const m = a.mark;
+    parts.push("mark", targets);
+    if (m.phrase) parts.push(q(m.phrase));
+    if (m.color) parts.push(`color=${m.color}`);
+    if (m.highlight) parts.push(`highlight=${m.highlight}`);
+    if (m.underline) parts.push(`underline=${m.underline}`);
+    if (m.dim) parts.push(`dim=${m.dim}`);
+    if (m.clear) parts.push("clear");
+    if (m.occurrence !== 1) parts.push(`occurrence=${m.occurrence}`);
+    common();
   } else if (a.type === "motion") {
     if (a.motion.along) parts.push("move", targets, `along=${a.motion.along}`, ...(a.motion.reverse ? ["back"] : []));
     else parts.push("move", targets, `path=${q(a.motion.points.map((p) => `${n(p.x)},${n(p.y)}`).join(" "))}`);

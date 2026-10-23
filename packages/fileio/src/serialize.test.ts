@@ -107,6 +107,7 @@ describe("scene JSON", () => {
               { type: "wait", durationMs: 500 },
               { type: "emphasis", effect: "glow", targets: ["lb"], params: { color: "success" } },
               { type: "motion", targets: ["lb"], motion: { points: [{ x: 0, y: 0 }, { x: 50, y: 50 }] } },
+              { type: "mark", targets: ["rps"], mark: { phrase: "0", color: "accent", underline: "accent", dim: "muted" } },
               { type: "exit", effect: "fade", targets: ["pod-3"] },
               { type: "enter", effect: "pop", targets: ["pod-3"], params: { scale: 0.5 } },
               { type: "morph", targets: ["lb"], to: { fill: "#ff0000" } },

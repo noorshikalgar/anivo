@@ -19,7 +19,7 @@ const ELEMENT_KINDS = new Set(["box", "ellipse", "diamond", "text", "icon", "cap
 const CONTAINERS = new Set(["row", "column", "grid", "group"]);
 const ENTER_EFFECTS = new Set(["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter"]);
 const EMPHASIS = new Set(["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus"]);
-const ACTIONS = new Set(["enter", "exit", "morph", "flow", "wait", "camera", "count", "code", "move", ...EMPHASIS]);
+const ACTIONS = new Set(["enter", "exit", "morph", "flow", "wait", "camera", "count", "code", "move", "mark", ...EMPHASIS]);
 
 const DEFAULT_SIZE: Record<string, [number, number]> = {
   box: [220, 90],
@@ -762,8 +762,11 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
   const kv = new Map<string, { v: string; pos: Pos }>();
   let delay: number | undefined;
   let effect: string | undefined;
+  let phrase: string | undefined;
   for (const t of line.tokens.slice(1)) {
     if (t.t === "kv") kv.set(t.k, { v: t.v, pos: t.pos });
+    else if (t.t === "string" && verb === "mark") phrase = t.v;
+    else if (t.t === "word" && verb === "mark" && (t.v === "clear" || t.v === "underline")) kv.set(t.v, { v: t.v === "underline" ? "accent" : "true", pos: t.pos });
     else if (t.t === "delay") {
       delay = parseTime(t.v);
       if (delay === undefined) errors.push(err(t.pos, `The delay '+${t.v}' is not valid.`, "Write: +300ms or +1s"));
@@ -808,6 +811,24 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
       }
       cam["rect"] = { x: at[0], y: at[1], width: size[0], height: size[1] };
     }
+    return a;
+  }
+  if (verb === "mark") {
+    // mark <text> "<phrase>" [color=] [highlight=] [underline[=color]] [dim=] [clear] [occurrence=n] (docs/20 B1)
+    const a: Record<string, unknown> = { type: "mark", targets: resolveTargets(words, line.pos) };
+    if (delay !== undefined) a["delayMs"] = delay;
+    const mark: Record<string, unknown> = { phrase: phrase ?? "" };
+    for (const [k, { v, pos }] of kv) {
+      if (k === "color" || k === "highlight" || k === "underline" || k === "dim") mark[k] = v;
+      else if (k === "clear") mark["clear"] = true;
+      else if (k === "occurrence") mark["occurrence"] = Number(v);
+      else if (k === "dur" || k === "duration") a["durationMs"] = parseTime(v);
+      else if (k === "easing") a["easing"] = v;
+      else if (k === "id") a["id"] = v;
+      else errors.push(err(pos, `The property '${k}' is not known for mark.`, 'Use: color, highlight, underline, dim, clear, occurrence, dur, easing. Write: mark t "Taptic Engine" color=accent underline'));
+    }
+    if (!phrase && !mark["clear"] && !mark["dim"]) errors.push(err(line.pos, "The mark needs a phrase in quotes.", 'Write: mark t "Taptic Engine" color=accent'));
+    a["mark"] = mark;
     return a;
   }
   if (verb === "code") {

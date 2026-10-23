@@ -102,6 +102,7 @@ step "<title>" [hold=<time>] [cue=<time>] [caption="<one sentence>" [near=<id>] 
   count <target> from=<n> to=<n> format="{n} <unit>"
   code <target> highlight=<a>-<b> | type=<a>-<b>
   move <targets> path="x,y x,y …" [curve] [orient]   (the element center follows the points and stays at the end)
+  mark <text> "<words>" [color=<c>] [highlight=<c>] [underline[=<c>]] [dim=<c>] [clear]   (style words inside one text: link color, highlight box, underline that draws in, dim the other words; marks stay until clear)
   move <targets> along=<arrow> [back]               (send along an arrow route, for example a message bubble; 2.4 s by default)
   wait <time>
   (any action) sound=pop|click|whoosh|ding|thud|tick|blip|chime|rise|bubble|success|error|keys|ticks [sound-gain=<dB>]

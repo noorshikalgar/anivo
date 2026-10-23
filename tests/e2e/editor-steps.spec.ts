@@ -239,3 +239,21 @@ test("Design and Animate modes", async ({ page }) => {
   expect(s.timelineOpen).toBe(true);
   expect(s.selectedStep).not.toBeNull();
 });
+
+test("Mark words: choose words by clicking them, and the mark keeps the phrase", async ({ page }) => {
+  await page.getByRole("button", { name: "Add step" }).click();
+  await page.evaluate(() => (window as unknown as { __anivo: { getState(): { setSelection(ids: string[]): void } } }).__anivo.getState().setSelection(["lb"]));
+  await page.evaluate(() => (window as unknown as { __anivo: { setState(p: unknown): void } }).__anivo.setState({ propTab: "actions" }));
+  await page.getByRole("group", { name: "Quick actions" }).getByRole("button", { name: "Mark words" }).click();
+  type M = { type: string; mark: { phrase: string; color?: string } };
+  const last = async () => {
+    const s = await state(page);
+    return s.scene.steps.find((x) => x.id === s.selectedStep)!.actions.at(-1) as unknown as M;
+  };
+  expect(await last()).toMatchObject({ type: "mark", mark: { phrase: "Load", color: "accent" } });
+  const words = page.getByRole("group", { name: "Words of the text" });
+  await words.getByRole("button", { name: "balancer" }).click({ modifiers: ["Shift"] });
+  expect((await last()).mark.phrase).toBe("Load balancer");
+  await words.getByRole("button", { name: "balancer" }).click();
+  expect((await last()).mark.phrase).toBe("balancer");
+});

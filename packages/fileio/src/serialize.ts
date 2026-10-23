@@ -80,8 +80,9 @@ function compactAction(a: Action): Record<string, unknown> {
   if (a.type === "counter") minimal["counter"] = { from: a.counter.from, to: a.counter.to };
   if (a.type === "code") minimal["code"] = a.code;
   if (a.type === "motion") minimal["motion"] = a.motion;
+  if (a.type === "mark") minimal["mark"] = a.mark;
   const defaults = Action.parse(minimal) as Record<string, unknown>;
-  const out = withoutDefaults(a as Record<string, unknown>, defaults, ["id", "type", "targets", "effect", "to", "code", "motion"]);
+  const out = withoutDefaults(a as Record<string, unknown>, defaults, ["id", "type", "targets", "effect", "to", "code", "motion", "mark"]);
   if (a.type === "camera") out["camera"] = { op: a.camera.op, ...withoutDefaults(a.camera as Record<string, unknown>, defaults["camera"] as Record<string, unknown>) };
   if (a.type === "counter") out["counter"] = { from: a.counter.from, to: a.counter.to, ...withoutDefaults(a.counter as Record<string, unknown>, defaults["counter"] as Record<string, unknown>) };
   if (a.type === "flow" && out["flow"]) out["flow"] = withoutDefaults(a.flow as Record<string, unknown>, defaults["flow"] as Record<string, unknown>);
