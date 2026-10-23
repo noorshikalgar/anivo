@@ -85,11 +85,11 @@ image <id> asset=<asset-id> [fit=contain|cover|fill] [at=x,y] [size=WxH]   (add 
 layout <id>, <id>, … row|column|grid|layered|tree [gap=<px>] [cols=<n>]   (automatic placement; arrows give the order)
 widget <id> <name> [at=x,y] [size=WxH] [<text>="…"]   (a ready-made group; parts are <id>-<part>)
   names and texts: browser (url, page), phone (screen), server (label), database (label), chat (text), terminal (code),
-  stat (value, caption), step-badge (number, label), progress (label), callout (text), user-card (name, role), packet (header, body), stamp (text), envelope (label), lock (label)
+  stat (value, caption), step-badge (number, label), progress (label), callout (text), user-card (name, role), packet (header, body), stamp (text), envelope (label), lock (label), definition (word, kind, meaning), skeleton-card (title), meter (label; animate <id>-fill with preset fill-up), slider (label, value; preset fill-right on <id>-fill), toggle (label), bar-chart (a, b, c, d; preset fill-up on <id>-bar-1…4), cursor, notification (title, body)
 
 step "<title>" [hold=<time>] [cue=<time>] [caption="<one sentence>" [near=<id>] [side=auto|above|below|left|right|top|bottom]]
   (caption: types in next to the element that changes; the step holds until a viewer can read it. Use one idea and one caption for each step.)
-  enter <targets> rise|blur|fade|pop|draw-on|slide-up|slide-left|wipe|typewriter [+<delay>] [stagger=<time>]   (typewriter unit=word: one word at a time)
+  enter <targets> rise|blur|fade|pop|draw-on|slide-up|slide-left|wipe|typewriter|cascade|scramble [+<delay>] [stagger=<time>]   (typewriter unit=word: one word at a time)
   exit <targets> <effect>
   morph <targets> key=value…
   pulse|shake|glow|flash|highlight|focus <targets>
@@ -102,8 +102,9 @@ step "<title>" [hold=<time>] [cue=<time>] [caption="<one sentence>" [near=<id>] 
   count <target> from=<n> to=<n> format="{n} <unit>"
   code <target> highlight=<a>-<b> | type=<a>-<b>
   move <targets> path="x,y x,y …" [curve] [orient]   (the element center follows the points and stays at the end)
-  preset <name> <targets> [+<delay>] [stagger=<time>]   (motion presets: rise-in, blur-in, pop-in, card-up, words-in, type-in, draw-in, fill-up, fill-right, emphasize, no, sink-out, fade-out)
-  mark <text> "<words>" [color=<c>] [highlight=<c>] [underline[=<c>]] [dim=<c>] [clear]   (style words inside one text: link color, highlight box, underline that draws in, dim the other words; marks stay until clear)
+  preset <name> <targets> [+<delay>] [stagger=<time>]   (motion presets: rise-in, blur-in, pop-in, card-up, words-in, letters-in, decode, type-in, draw-in, fill-up, fill-right, emphasize, no, sink-out, fade-out)
+  march <arrows> [dur=<time>]   (dashes move along the arrows: data on the way)
+  mark <text> "<words>" [color=<c>] [highlight=<c>] [underline[=<c>]] [strike[=<c>]] [dim=<c>] [clear]   (style words inside one text: link color, highlight box, underline that draws in, dim the other words; marks stay until clear)
   move <targets> along=<arrow> [back]               (send along an arrow route, for example a message bubble; 2.4 s by default)
   wait <time>
   (any action) sound=pop|click|whoosh|ding|thud|tick|blip|chime|rise|bubble|success|error|keys|ticks [sound-gain=<dB>]

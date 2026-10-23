@@ -108,6 +108,7 @@ export function MarkEditor({ action, set }: { action: MarkAction; set: (s: Recor
       <ColorField label="Color" theme={theme} value={m.color} onCommit={(v) => mark({ color: v ?? undefined })} />
       <ColorField label="Highlight" theme={theme} value={m.highlight} onCommit={(v) => mark({ highlight: v ?? undefined })} />
       <ColorField label="Underline" theme={theme} value={m.underline} onCommit={(v) => mark({ underline: v ?? undefined })} />
+      <ColorField label="Strike through" theme={theme} value={m.strike} onCommit={(v) => mark({ strike: v ?? undefined })} />
       <ColorField label="Dim the rest" theme={theme} value={m.dim} onCommit={(v) => mark({ dim: v ?? undefined })} />
       <Prop label="">
         <Check label="Clear the marks first" checked={m.clear} onChange={(v) => mark({ clear: v })} />

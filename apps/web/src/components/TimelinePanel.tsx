@@ -19,7 +19,7 @@ import { CurveEditor } from "./CurveEditor.js";
 import { Splitter } from "./ui.js";
 
 const LABEL_W = 200;
-const ROW_H = 24;
+const ROW_H = 28;
 const MIN_MS = 50;
 /** Time after the end that the ruler shows, so a key can make the last step longer. */
 const TAIL_MS = 3000;
@@ -72,7 +72,8 @@ const useStyles = makeStyles({
     padding: "0 5px",
     color: "#fff",
     fontSize: "10px",
-    lineHeight: "17px",
+    lineHeight: "21px",
+    textOverflow: "ellipsis",
     overflow: "hidden",
     whiteSpace: "nowrap",
     cursor: "grab",
@@ -102,6 +103,9 @@ const useStyles = makeStyles({
   boundary: { position: "absolute", top: 0, bottom: 0, width: "1px", backgroundColor: "var(--ui-outline)", opacity: 0.5, pointerEvents: "none" },
   boxSel: { position: "absolute", border: "1px dashed #f5b84a", backgroundColor: "rgba(245, 184, 74, 0.1)", pointerEvents: "none", zIndex: 5 },
   loopBand: { position: "absolute", top: "18px", bottom: 0, backgroundColor: "rgba(59, 130, 246, 0.10)", borderLeft: "2px solid #3b82f6", borderRight: "2px solid #3b82f6", pointerEvents: "none", zIndex: 1 },
+  hoverLine: { position: "absolute", top: 0, bottom: 0, width: "1px", backgroundColor: "var(--ui-text)", opacity: 0.25, pointerEvents: "none", zIndex: 2 },
+  hoverTag: { position: "absolute", top: "20px", transform: "translateX(-50%)", padding: "0 4px", fontSize: "10px", lineHeight: "16px", borderRadius: "3px", backgroundColor: "var(--ui-widget)", color: "var(--ui-text)", pointerEvents: "none", zIndex: 3, whiteSpace: "nowrap" },
+  playTag: { position: "absolute", top: "20px", transform: "translateX(-50%)", padding: "0 4px", fontSize: "10px", lineHeight: "16px", borderRadius: "3px", backgroundColor: "#C4282F", color: "#fff", pointerEvents: "none", zIndex: 4, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" },
   playhead: { position: "absolute", top: 0, bottom: 0, width: "2px", marginLeft: "-1px", backgroundColor: "#e5484d", pointerEvents: "none", zIndex: 2 },
   empty: { padding: "12px", color: "var(--ui-muted)" },
 });
@@ -159,6 +163,9 @@ export function TimelinePanel() {
   const autoKey = useEditor((s) => s.autoKey);
   const loop = useEditor((s) => s.loop);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const playing = useEditor((s) => s.playing);
+  /** The time under the pointer (a guide line and a time tag). */
+  const [hoverMs, setHoverMs] = useState<number | null>(null);
   const [viewW, setViewW] = useState(800);
   const [zoom, setZoom] = useState(1);
   const [open, setOpen] = useState<Set<string>>(new Set());
@@ -180,6 +187,14 @@ export function TimelinePanel() {
   }, []);
 
   const span = Math.max(1000, timeline.totalMs + TAIL_MS);
+
+  // While it plays, the timeline follows the playhead (it scrolls when the playhead leaves the view).
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !playing) return;
+    const x = (playhead / span) * viewW * zoom;
+    if (x < el.scrollLeft || x > el.scrollLeft + viewW - 40) el.scrollLeft = Math.max(0, x - viewW * 0.2);
+  }, [playhead, playing]);
   const pxPerMs = (viewW / span) * zoom;
   const trackW = Math.ceil(span * pxPerMs);
   const px = (ms: number) => ms * pxPerMs;
@@ -393,7 +408,12 @@ export function TimelinePanel() {
             else updateAction(b.stepId, b.action.id, { delayMs: Math.max(0, b.action.delayMs + sign * stepMs) }, "Move action", `move/${b.action.id}`);
           }}
         >
-          {px(dur) > 44 ? label : ""}
+          {px(dur) > 30 && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 3, verticalAlign: "top" }}>
+              <span style={{ display: "inline-flex", transform: "scale(0.8)" }}>{actionIcon(b.action.type)}</span>
+              {px(dur) > 60 ? label : ""}
+            </span>
+          )}
           {b.action.type !== "wait" && (
             <span
               className={styles.edge}
@@ -762,11 +782,28 @@ export function TimelinePanel() {
           </button>
         </span>
       </div>
-      <div className={styles.scroll} ref={scrollRef} onWheel={onWheel} tabIndex={0} aria-label="Timeline tracks" onKeyDown={onTimeKeys}>
+      <div
+        className={styles.scroll}
+        ref={scrollRef}
+        onWheel={onWheel}
+        onPointerMove={(e) => {
+          const el = scrollRef.current!;
+          const x = e.clientX - el.getBoundingClientRect().left - LABEL_W + el.scrollLeft;
+          setHoverMs(e.clientX - el.getBoundingClientRect().left < LABEL_W ? null : Math.max(0, Math.min(span, x / pxPerMs)));
+        }}
+        onPointerLeave={() => setHoverMs(null)} tabIndex={0} aria-label="Timeline tracks" onKeyDown={onTimeKeys}>
         <div style={{ width: LABEL_W + trackW, position: "relative" }} onPointerDown={startBoxSelect}>
           <div className={styles.ruler}>
             <div className={styles.corner}>Elements</div>
             <div className={styles.rulerTrack} style={{ width: trackW }} onPointerDown={startRulerDrag} aria-label="Time ruler">
+              {hoverMs !== null && (
+                <span className={styles.hoverTag} style={{ left: px(hoverMs) }} aria-hidden>
+                  {formatTime(hoverMs)}
+                </span>
+              )}
+              <span className={styles.playTag} style={{ left: px(playhead) }} aria-hidden>
+                {formatTime(playhead)}
+              </span>
               {timeline.steps.map((ts) => (
                 <div
                   key={ts.id}
@@ -857,6 +894,7 @@ export function TimelinePanel() {
           ))}
           {box && <span className={styles.boxSel} style={{ left: Math.min(box.x0, box.x1), top: Math.min(box.y0, box.y1), width: Math.abs(box.x1 - box.x0), height: Math.abs(box.y1 - box.y0) }} aria-hidden />}
           {loop && <span className={styles.loopBand} style={{ left: LABEL_W + px(loop.fromMs), width: px(loop.toMs - loop.fromMs) }} aria-hidden />}
+          {hoverMs !== null && <span className={styles.hoverLine} style={{ left: LABEL_W + px(hoverMs) }} aria-hidden />}
           <span className={styles.playhead} style={{ left: LABEL_W + px(playhead) }} />
         </div>
       </div>

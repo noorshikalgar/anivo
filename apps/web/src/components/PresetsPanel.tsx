@@ -41,7 +41,7 @@ const useStyles = makeStyles({
 
 /** A small scene that shows a preset: two boxes, a text, or a number, as the preset needs. */
 function previewScene(p: MotionPreset) {
-  const text = p.id === "count-up" ? "99%" : p.id === "words-in" || p.id === "type-in" ? "Hello world" : "";
+  const text = p.id === "count-up" ? "99%" : p.id === "words-in" || p.id === "type-in" || p.id === "letters-in" || p.id === "decode" ? "Hello world" : "";
   const roles = p.mode === "roles" ? Math.max(0, ...p.actions.flatMap((x) => x.roles ?? [0])) + 1 : 2;
   const els: Record<string, unknown> = {};
   const ids: string[] = [];

@@ -60,3 +60,11 @@ test("the template row scrolls with its arrows", async ({ page }) => {
   await expect.poll(() => row.evaluate((el) => el.scrollLeft)).toBeGreaterThan(100);
   await expect(page.getByRole("button", { name: "Scroll the templates left" })).toBeVisible();
 });
+
+test("Home shows live examples of what Anivo can make; a click opens one as a scene", async ({ page }) => {
+  await openHome(page);
+  const cards = page.getByRole("button", { name: /^Example: / });
+  await expect(cards).toHaveCount(4);
+  await page.getByRole("button", { name: /^Example: Words in focus/ }).click();
+  await expect(page.getByRole("button", { name: /Link/ }).first()).toBeVisible();
+});

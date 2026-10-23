@@ -137,3 +137,10 @@ describe("lintScene", () => {
     expect(formatLint([])).toBe("No problems.");
   });
 });
+
+describe("dimmed on purpose", () => {
+  it("does not warn about text that a step dims (focus on other words)", () => {
+    const s = script(`box a "Word" at=100,100 size=300x100 fill=surface\nstep "S"\n  enter a fade\nstep "Dim"\n  morph a color=surface-strong\n`);
+    expect(codes(s)).not.toContain("low-contrast");
+  });
+});

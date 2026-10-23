@@ -21,10 +21,10 @@ export const Easing = z.union([
 ]);
 export type Easing = z.infer<typeof Easing>;
 
-export const EnterEffect = z.enum(["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter", "rise", "blur"]);
+export const EnterEffect = z.enum(["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter", "rise", "blur", "cascade", "scramble"]);
 export type EnterEffect = z.infer<typeof EnterEffect>;
 
-export const EmphasisEffect = z.enum(["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus"]);
+export const EmphasisEffect = z.enum(["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus", "march"]);
 export type EmphasisEffect = z.infer<typeof EmphasisEffect>;
 
 export const Direction = z.enum(["up", "down", "left", "right"]);
@@ -188,6 +188,7 @@ export const MarkAction = z.object({
     color: Color.optional().describe("The text color of the phrase."),
     highlight: Color.optional().describe("A box of this color behind the phrase."),
     underline: Color.optional().describe("An underline of this color that draws in from the left."),
+    strike: Color.optional().describe("A line through the phrase, of this color, that draws in from the left."),
     dim: Color.optional().describe("The color of the other words, for focus on the phrase."),
     clear: z.boolean().default(false).describe("Remove the marks of the text first."),
   }),

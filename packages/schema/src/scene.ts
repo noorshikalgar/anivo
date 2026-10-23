@@ -46,7 +46,15 @@ export const SceneSettings = z.object({
   theme: z.string().default("slate-dark"),
   customTheme: CustomTheme.optional(),
   background: z
-    .object({ kind: z.enum(["solid", "grid", "dots", "transparent"]).default("solid"), color: Color.optional() })
+    .object({
+      kind: z.enum(["solid", "grid", "dots", "transparent", "gradient"]).default("solid"),
+      color: Color.optional(),
+      color2: Color.optional().describe("gradient: the second color (default: a darker or lighter step of the first)."),
+      angle: z.number().optional().describe("gradient: the direction in degrees (0: left to right, 90: top to bottom). Default 135."),
+      vignette: z.number().min(0).max(1).optional().describe("Darker edges, 0 to 1 (docs/21 C3)."),
+      grain: z.number().min(0).max(1).optional().describe("A soft film grain, 0 to 1. It is the same in each frame (no random)."),
+      drift: z.boolean().optional().describe("grid and dots: the pattern moves slowly."),
+    })
     .default({ kind: "solid" }),
   video: VideoSettings.default(VideoSettings.parse({})),
   camera: Rect.optional().describe("Base camera. Omit to use 0,0 and the video size."),
@@ -57,6 +65,10 @@ export const SceneSettings = z.object({
       defaultIconPack: z.string().default("lucide"),
     })
     .default({ enterEffect: "fade", easing: "ease-out", defaultIconPack: "lucide" }),
+  fonts: z
+    .array(z.object({ family: z.string().min(1).describe("The name that styles use (style.fontFamily)."), assetId: z.string().describe("The font file asset (woff2, woff, ttf, otf).") }))
+    .optional()
+    .describe("Custom fonts of the scene (docs/20 B10)."),
   motionBlur: z.boolean().optional().describe("Video export: fast moves get a soft trail (docs/19 R13). The editor does not show it."),
 });
 export type SceneSettings = z.infer<typeof SceneSettings>;

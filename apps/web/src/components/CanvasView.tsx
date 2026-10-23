@@ -224,21 +224,28 @@ export function CanvasView() {
       ctx.globalAlpha = 1;
       return b;
     };
-    // The targets of the active action (Actions tab): orange dashed boxes.
+    // The targets of the active action (Actions tab): quiet corner marks, so they do not cover the picture (docs/20 B10).
     const highlight = useEditor.getState().targetHighlight;
     if (highlight.length) {
       ctx.save();
-      ctx.strokeStyle = "#ffaf29";
-      ctx.fillStyle = "#ffaf29";
-      ctx.lineWidth = 1.5 * dpr;
-      ctx.setLineDash([5 * dpr, 3 * dpr]);
-      ctx.font = `${11 * dpr}px Inter, sans-serif`;
+      ctx.strokeStyle = "rgba(255, 175, 41, 0.75)";
+      ctx.lineWidth = 2 * dpr;
       for (const id of highlight) {
         const bounds = boundsOf(scene, result.frame, result.routes, id);
         if (!bounds) continue;
         const b = screenBox(bounds);
-        ctx.strokeRect(b.x - 6 * dpr, b.y - 6 * dpr, b.width + 12 * dpr, b.height + 12 * dpr);
-        ctx.fillText(id, b.x - 6 * dpr, b.y - 10 * dpr);
+        const x0 = b.x - 6 * dpr;
+        const y0 = b.y - 6 * dpr;
+        const x1 = b.x + b.width + 6 * dpr;
+        const y1 = b.y + b.height + 6 * dpr;
+        const k = Math.min(12 * dpr, (x1 - x0) / 3, (y1 - y0) / 3);
+        ctx.beginPath();
+        for (const [cx, cy, dx, dy] of [[x0, y0, 1, 1], [x1, y0, -1, 1], [x0, y1, 1, -1], [x1, y1, -1, -1]] as const) {
+          ctx.moveTo(cx + dx * k, cy);
+          ctx.lineTo(cx, cy);
+          ctx.lineTo(cx, cy + dy * k);
+        }
+        ctx.stroke();
       }
       ctx.restore();
     }

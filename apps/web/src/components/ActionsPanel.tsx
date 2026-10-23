@@ -102,6 +102,7 @@ const QUICK: Quick[] = [
   { label: "One by one", hint: "The elements come in one after the other, in reading order: top to bottom, then left to right (enter · pop, 0.35 s apart)", icon: actionIcon("enter"), action: { type: "enter", effect: "pop", staggerMs: 350 } },
   { label: "Mark words", hint: "Give words in a text their own color, highlight, or underline, and dim the rest. Choose the words after the click.", icon: actionIcon("mark"), action: { type: "mark", mark: { phrase: "", color: "accent", underline: "accent" } }, only: ["text", "rectangle", "ellipse", "diamond"] },
   { label: "Send", hint: "Move elements along an arrow, for example a message (2.4 s). Select the elements and the arrow.", icon: actionIcon("motion"), action: { type: "motion" } },
+  { label: "March", hint: "Dashes move along the arrows: data on the way, work in progress (emphasis · march, 3 s)", icon: actionIcon("flow"), action: { type: "emphasis", effect: "march" }, only: ["connector"] },
   { label: "Flow", hint: "Particles move along the arrows (flow)", icon: actionIcon("flow"), action: { type: "flow", flow: {} }, only: ["connector"] },
   { label: "Zoom", hint: "The camera zooms to the elements (camera · zoom-to)", icon: actionIcon("camera"), action: { type: "camera", camera: { op: "zoom-to" } } },
   { label: "Count", hint: "Count a number up (count)", icon: actionIcon("counter"), action: { type: "counter", counter: { from: 0, to: 100 } }, only: ["text"] },

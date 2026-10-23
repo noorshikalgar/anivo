@@ -228,7 +228,8 @@ export function lintScene(scene: Scene): LintResult[] {
             add({ code: "text-overflow", level: "error", ids: [f.id], ...(stepId ? { step: stepId } : {}), message: `The label of '${f.id}' does not fit inside it${where}.`, hint: `Make '${f.id}' larger (about ${Math.ceil(Math.max(wordWidth + 24, f.width))} x ${Math.ceil(estLines * fontSize * 1.25 + 16)}), or use a shorter label.` });
           }
         }
-        // low-contrast: text on its shape fill, or on the background.
+        // low-contrast: text on its shape fill, or on the background. Not for text that a step dims on purpose (a focus on other words).
+        const dimmedOnPurpose = scene.steps.some((st) => st.actions.some((a) => a.targets.includes(f.id) && ((a.type === "morph" && a.to.textColor !== undefined) || (a.type === "mark" && a.mark.dim !== undefined))));
         const textColor = resolveColor(theme, f.textColor, "textColor", el.type);
         let bg = resolveColor(theme, f.fill, "fill", el.type);
         if (bg.a < 0.5 || el.type === "text" || el.type === "icon" || el.type === "connector") bg = resolveColor(theme, scene.settings.background.color ?? "background", "fill", "rectangle");
@@ -236,7 +237,7 @@ export function lintScene(scene: Scene): LintResult[] {
         const px = fontSize * scale1080;
         const bold = Number(el.style.fontWeight ?? 400) >= 700;
         const need = px >= 40 || (bold && px >= 32) ? 3 : 4.5;
-        if (contrast(textColor, bg) < need) {
+        if (!dimmedOnPurpose && contrast(textColor, bg) < need) {
           add({ code: "low-contrast", level: "warning", ids: [f.id], ...(stepId ? { step: stepId } : {}), message: `The text of '${f.id}' has low contrast${where} (${contrast(textColor, bg).toFixed(1)}:1).`, hint: `Use a text color with a contrast of at least ${need}:1, for example 'text' on 'surface'.` });
         }
       }

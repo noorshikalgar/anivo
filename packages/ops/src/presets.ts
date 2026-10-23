@@ -41,6 +41,8 @@ export const BUILTIN_PRESETS: MotionPreset[] = [
   each("pop-in", "Pop in", "Grows in with a small bounce.", [{ type: "enter", effect: "pop", durationMs: 450 }]),
   each("card-up", "Card slides up", "A card rises a short way, as a popover.", [{ type: "enter", effect: "rise", durationMs: 550, params: { distance: 24 } }]),
   each("words-in", "Words in", "The text appears one word at a time.", [{ type: "enter", effect: "typewriter", params: { unit: "word" } }]),
+  each("letters-in", "Letters cascade", "Each letter rises in after the one before.", [{ type: "enter", effect: "cascade", durationMs: 900, easing: "linear" }]),
+  each("decode", "Decode", "Random letters settle into the text.", [{ type: "enter", effect: "scramble", durationMs: 1000, easing: "linear" }]),
   each("type-in", "Type in", "The text types letter by letter.", [{ type: "enter", effect: "typewriter", sound: "keys" }]),
   each("draw-in", "Draw in", "The outline draws, then the fill comes in.", [{ type: "enter", effect: "draw-on" }]),
   each("fill-up", "Fill up", "Fills from the bottom up, as a meter.", [{ type: "enter", effect: "wipe", durationMs: 900, easing: "smooth", params: { direction: "up" } }]),

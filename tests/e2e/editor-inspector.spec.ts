@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 import { openEditor, screen, state } from "./helpers.js";
 
@@ -132,4 +133,15 @@ test("Origin: scale and turn around a corner or an edge", async ({ page }) => {
   await page.getByRole("combobox", { name: "Origin" }).click();
   await page.getByRole("option", { name: "bottom", exact: true }).click();
   expect((await state(page)).scene.elements["lb"]!.style?.["origin"]).toBe("bottom");
+});
+
+test("Add a font file: the scene keeps it, and the element uses it", async ({ page }) => {
+  await selectLb(page);
+  await page.getByRole("combobox", { name: "Font", exact: true }).click();
+  const chooser = page.waitForEvent("filechooser");
+  await page.getByRole("option", { name: "Add a font file…" }).click();
+  await (await chooser).setFiles({ name: "My-Hand.woff2", mimeType: "font/woff2", buffer: readFileSync(new URL("../../assets/fonts/kalam-latin-400-normal.woff2", import.meta.url)) });
+  await expect.poll(async () => (await state(page)).scene.elements["lb"]!.style?.["fontFamily"]).toBe("My Hand");
+  const s = (await state(page)) as unknown as { scene: { settings: { fonts?: { family: string }[] } } };
+  expect(s.scene.settings.fonts?.map((f) => f.family)).toEqual(["My Hand"]);
 });

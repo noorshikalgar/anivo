@@ -276,3 +276,27 @@ describe("preset", () => {
     expect(applyScript(`box a "A"\nstep "S"\n  preset nope a\n`).ok).toBe(false);
   });
 });
+
+describe("letter effects and strike", () => {
+  it("compiles cascade, scramble, and strike", () => {
+    const scene = ok(`text t "Hello world" at=100,100\nstep "S"\n  enter t cascade\n  mark t "world" strike\n`);
+    expect(scene.steps[0]!.actions[0]).toMatchObject({ effect: "cascade" });
+    expect(scene.steps[0]!.actions[1]).toMatchObject({ mark: { strike: "danger" } });
+    expect(printScene(scene)).toContain("strike=danger");
+  });
+});
+
+describe("march", () => {
+  it("compiles march for arrows", () => {
+    const scene = ok(`box a "A" at=0,0\nbox b "B" at=600,0\narrow a -> b\nstep "S"\n  march c-a-b dur=2s\n`);
+    expect(scene.steps[0]!.actions[0]).toMatchObject({ type: "emphasis", effect: "march", targets: ["c-a-b"], durationMs: 2000 });
+  });
+});
+
+describe("background options", () => {
+  it("compiles a gradient background with vignette and grain, and prints it back", () => {
+    const scene = ok(`scene "B" background=gradient background-color="#141018" background2="#2A1D47" angle=120 vignette=0.6 grain=0.5\nbox a "A" at=100,100\nstep "S"\n  enter a fade\n`);
+    expect(scene.settings.background).toMatchObject({ kind: "gradient", color: "#141018", color2: "#2A1D47", angle: 120, vignette: 0.6, grain: 0.5 });
+    expect(printScene(scene)).toContain("background=gradient");
+  });
+});

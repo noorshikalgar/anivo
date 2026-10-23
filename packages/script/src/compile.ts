@@ -17,8 +17,8 @@ export interface CompileOptions {
 
 const ELEMENT_KINDS = new Set(["box", "ellipse", "diamond", "text", "icon", "caption", "row", "column", "grid", "group", "line", "code", "image", "table"]);
 const CONTAINERS = new Set(["row", "column", "grid", "group"]);
-const ENTER_EFFECTS = new Set(["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter", "rise", "blur"]);
-const EMPHASIS = new Set(["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus"]);
+const ENTER_EFFECTS = new Set(["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter", "rise", "blur", "cascade", "scramble"]);
+const EMPHASIS = new Set(["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus", "march"]);
 const ACTIONS = new Set(["enter", "exit", "morph", "flow", "wait", "camera", "count", "code", "move", "mark", ...EMPHASIS]);
 
 const DEFAULT_SIZE: Record<string, [number, number]> = {
@@ -239,7 +239,16 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
       if (Object.keys(video).length) set["video"] = video;
       const bg = p.kv.get("background")?.v;
       // background=grid|dots|solid|transparent, or a color (a token or #hex) for a solid background.
-      if (bg) set["background"] = ["solid", "grid", "dots", "transparent"].includes(bg) ? { kind: bg } : { kind: "solid", color: bg };
+      const background: Record<string, unknown> | undefined = bg ? (["solid", "grid", "dots", "transparent", "gradient"].includes(bg) ? { kind: bg } : { kind: "solid", color: bg }) : undefined;
+      // background-color=, background2=, angle=, vignette=, grain=, drift (docs/21 C3).
+      const more: Record<string, unknown> = {};
+      if (p.kv.get("background-color")) more["color"] = p.kv.get("background-color")!.v;
+      if (p.kv.get("background2")) more["color2"] = p.kv.get("background2")!.v;
+      if (p.kv.get("angle")) more["angle"] = Number(p.kv.get("angle")!.v);
+      if (p.kv.get("vignette")) more["vignette"] = Number(p.kv.get("vignette")!.v);
+      if (p.kv.get("grain")) more["grain"] = Number(p.kv.get("grain")!.v);
+      if (p.flags.has("drift")) more["drift"] = true;
+      if (background || Object.keys(more).length) set["background"] = { kind: "solid", ...background, ...more };
       if (Object.keys(set).length) ops.push({ op: "scene.settings", set });
       if (p.strings[0]) ops.push({ op: "scene.meta", set: { title: p.strings[0].v } });
       if (video["width"] && video["height"]) camera = { x: 0, y: 0, width: video["width"], height: video["height"] };
@@ -793,7 +802,7 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
   for (const t of line.tokens.slice(1)) {
     if (t.t === "kv") kv.set(t.k, { v: t.v, pos: t.pos });
     else if (t.t === "string" && verb === "mark") phrase = t.v;
-    else if (t.t === "word" && verb === "mark" && (t.v === "clear" || t.v === "underline")) kv.set(t.v, { v: t.v === "underline" ? "accent" : "true", pos: t.pos });
+    else if (t.t === "word" && verb === "mark" && (t.v === "clear" || t.v === "underline" || t.v === "strike")) kv.set(t.v, { v: t.v === "underline" ? "accent" : t.v === "strike" ? "danger" : "true", pos: t.pos });
     else if (t.t === "delay") {
       delay = parseTime(t.v);
       if (delay === undefined) errors.push(err(t.pos, `The delay '+${t.v}' is not valid.`, "Write: +300ms or +1s"));
@@ -846,7 +855,7 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
     if (delay !== undefined) a["delayMs"] = delay;
     const mark: Record<string, unknown> = { phrase: phrase ?? "" };
     for (const [k, { v, pos }] of kv) {
-      if (k === "color" || k === "highlight" || k === "underline" || k === "dim") mark[k] = v;
+      if (k === "color" || k === "highlight" || k === "underline" || k === "dim" || k === "strike") mark[k] = v;
       else if (k === "clear") mark["clear"] = true;
       else if (k === "occurrence") mark["occurrence"] = Number(v);
       else if (k === "dur" || k === "duration") a["durationMs"] = parseTime(v);

@@ -215,6 +215,9 @@ export function TopBar() {
           <MenuItem disabled={!hasSelection} onClick={() => useEditor.setState({ saveWidgetOpen: true })}>
             Save as widget…
           </MenuItem>
+          <MenuItem disabled={!hasSelection} onClick={() => useEditor.setState({ compositionsOpen: true })}>
+            Save as composition (with animations)…
+          </MenuItem>
           <MenuDivider />
           <MenuItem icon={<Search16Regular />} secondaryContent="F3" onClick={() => useEditor.setState({ paletteOpen: true })}>
             Search commands…
@@ -239,6 +242,7 @@ export function TopBar() {
         <BarMenu label="Insert">
           <MenuItem onClick={() => useEditor.setState({ buildOpen: true })}>Bullet list build…</MenuItem>
           <MenuItem onClick={() => useEditor.setState({ messageOpen: true })}>Message (type, then send)…</MenuItem>
+          <MenuItem onClick={() => useEditor.setState({ compositionsOpen: true })}>Compositions…</MenuItem>
           <MenuDivider />
           <MenuItem onClick={() => insertTable()}>Table</MenuItem>
           <MenuItem onClick={() => void withErrors(pickImage)}>Image…</MenuItem>

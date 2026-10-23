@@ -145,12 +145,75 @@ function drawText(dc: DrawContext, f: ElementFrame, el: Element, text: string, b
   let shown = reveal >= 1 ? total : Math.round(total * reveal);
   const x = align === "left" ? box.x + pad : align === "right" ? box.x + box.width - pad : box.x + box.width / 2;
   const y0 = box.y + box.height / 2 - ((lines.length - 1) * lineHeight) / 2;
+  if ((f.cascade !== undefined && f.cascade < 1) || (f.scramble !== undefined && f.scramble < 1)) return drawLetters(dc, f, el, lines, x, y0, lineHeight, size, color, alpha);
   if (f.marks?.length || f.dimRest) return drawMarkedText(dc, f, el, text, lines, x, y0, lineHeight, size, color, alpha, shown);
   lines.forEach((line, i) => {
     if (shown <= 0) return;
     const part = line.slice(0, shown);
     shown -= line.length + 1;
     ctx.fillText(part, x, y0 + i * lineHeight);
+  });
+}
+
+const SCRAMBLE = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789#$%&*+=?";
+
+/** A number from 0 to 1 from two integers: the same input gives the same output (no clock, no random). */
+function hash2(a: number, b: number): number {
+  let h = (a * 374761393 + b * 668265263) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+
+/**
+ * Letter effects (docs/21 C1): cascade (each letter rises and fades in after
+ * the one before) and scramble (random letters settle into the text from the
+ * left). The letters are drawn one by one at the places of the full line.
+ */
+function drawLetters(dc: DrawContext, f: ElementFrame, el: Element, lines: string[], x: number, y0: number, lineHeight: number, size: number, base: Rgba, alpha: number): void {
+  const { ctx } = dc;
+  const align = el.style.textAlign ?? "center";
+  ctx.textAlign = "left";
+  const total = lines.reduce((n, l) => n + l.length + 1, 0);
+  const WINDOW = 6;
+  let idx = 0;
+  lines.forEach((line, i) => {
+    const width = ctx.measureText(line).width;
+    const left = align === "left" ? x : align === "right" ? x - width : x - width / 2;
+    const y = y0 + i * lineHeight;
+    for (let j = 0; j < line.length; j++, idx++) {
+      let ch = line[j]!;
+      if (ch === " ") continue;
+      const cx = left + ctx.measureText(line.slice(0, j)).width;
+      let a = alpha;
+      let dy = 0;
+      if (f.cascade !== undefined && f.cascade < 1) {
+        const lp = Math.min(1, Math.max(0, (f.cascade * (total + WINDOW) - idx) / WINDOW));
+        const e = 1 - (1 - lp) ** 3;
+        a *= lp;
+        dy = (1 - e) * size * 0.5;
+      }
+      let center = false;
+      if (f.scramble !== undefined && f.scramble < 1) {
+        // Decode: the letters up to the front are right, the next few are random, the rest do not show yet.
+        const front = f.scramble * (total + WINDOW);
+        if (idx >= front) continue;
+        if (idx >= front - WINDOW) {
+          ch = SCRAMBLE[Math.floor(hash2(idx, Math.floor(f.scramble * 40)) * SCRAMBLE.length)]!;
+          a *= 0.6;
+          center = true;
+        }
+      }
+      if (a <= 0) continue;
+      ctx.fillStyle = toCss(withAlpha(base, a));
+      if (center) {
+        // A random letter sits in the middle of the place of the right letter, so the line does not jump.
+        const w = ctx.measureText(line[j]!).width;
+        ctx.textAlign = "center";
+        ctx.fillText(ch, cx + w / 2, y + dy);
+        ctx.textAlign = "left";
+      } else ctx.fillText(ch, cx, y + dy);
+    }
+    idx++;
   });
 }
 
@@ -193,14 +256,19 @@ function drawMarkedText(dc: DrawContext, f: ElementFrame, el: Element, text: str
       if (mark?.color) c = mixOklch(base, tok(mark.color, "textColor"), mark.p);
       else if (!mark && dim) c = mixOklch(base, tok(dim.color, "textColor"), dim.p);
       if (mark?.highlight) {
+        // A marker sweep: the box grows from the left (docs/21 C1).
         const pad = size * 0.18;
-        ctx.fillStyle = toCss(withAlpha(tok(mark.highlight, "fill"), alpha * mark.p));
+        ctx.fillStyle = toCss(withAlpha(tok(mark.highlight, "fill"), alpha));
         ctx.beginPath();
-        ctx.rect(px - pad, y - size * 0.62, pw + pad * 2, size * 1.24);
+        ctx.rect(px - pad, y - size * 0.62, (pw + pad * 2) * Math.min(1, mark.p), size * 1.24);
         ctx.fill();
       }
       ctx.fillStyle = toCss(withAlpha(c, alpha));
       ctx.fillText(part, px, y);
+      if (mark?.strike && mark.p > 0) {
+        ctx.fillStyle = toCss(withAlpha(tok(mark.strike, "stroke"), alpha));
+        ctx.fillRect(px, y - Math.max(1, size * 0.03), pw * Math.min(1, mark.p), Math.max(2, size * 0.06));
+      }
       if (mark?.underline && mark.p > 0) {
         ctx.fillStyle = toCss(withAlpha(tok(mark.underline, "stroke"), alpha));
         ctx.fillRect(px, y + size * 0.56, pw * Math.min(1, mark.p), Math.max(2, size * 0.06));
@@ -640,7 +708,8 @@ function drawConnector(dc: DrawContext, f: ElementFrame, el: ConnectorElement): 
   ctx.lineWidth = strokeWidth;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
-  ctx.setLineDash(dashFor(el, strokeWidth));
+  ctx.setLineDash(f.march !== undefined && el.style.strokeStyle !== "dotted" ? [strokeWidth * 4, strokeWidth * 3] : dashFor(el, strokeWidth));
+  if (f.march !== undefined && "lineDashOffset" in ctx) ctx.lineDashOffset = -f.march * 60;
   if (dc.style === "sketch") {
     const key = `${el.id}|${route.points.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(";")}`;
     const sk = sketchOutline(key, { points: route.points }, el.seed, el.style.roughness ?? 1, strokeWidth);
@@ -649,6 +718,7 @@ function drawConnector(dc: DrawContext, f: ElementFrame, el: ConnectorElement): 
     strokeProgressive(ctx, [route], route.length, f.strokeProgress);
   }
   ctx.setLineDash([]);
+  if ("lineDashOffset" in ctx) ctx.lineDashOffset = 0;
   // The arrowhead moves with the tip of the line during draw-on.
   const headSize = 12 + strokeWidth * 4;
   const tip = pointAt(route, route.length * f.strokeProgress);
@@ -657,7 +727,9 @@ function drawConnector(dc: DrawContext, f: ElementFrame, el: ConnectorElement): 
     const start = pointAt(route, 0);
     drawArrowHead(ctx, start.point, { x: -start.dir.x, y: -start.dir.y }, headSize, el.startHead, css);
   }
-  if (f.label && f.strokeProgress >= 1) {
+  if (f.label && f.strokeProgress >= 0.85) {
+    // The label fades in at the end of the draw.
+    ctx.globalAlpha *= Math.min(1, (f.strokeProgress - 0.85) / 0.15);
     // The label sits on the line with a background pill, so the line does not cross the text.
     const mid = pointAt(route, route.length / 2).point;
     ctx.font = fontFor(dc, { ...f, fontSize: f.fontSize ?? el.style.fontSize ?? 28 }, el);
@@ -774,10 +846,25 @@ function drawBackground(dc: DrawContext, frame: FrameState, opts: RenderOptions)
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, opts.width, opts.height);
   if (bg.kind === "transparent") return;
-  ctx.fillStyle = toCss(resolveToken(theme, bg.color ?? "background", "fill", "rectangle"));
+  const base = resolveToken(theme, bg.color ?? "background", "fill", "rectangle");
+  if (bg.kind === "gradient") {
+    // Two colors along an angle (docs/21 C3). The second color defaults to a step toward the text color.
+    const c2 = bg.color2 ? resolveToken(theme, bg.color2, "fill", "rectangle") : mixOklch(base, resolveToken(theme, "accent-soft", "fill", "rectangle"), 0.6);
+    const a = ((bg.angle ?? 135) * Math.PI) / 180;
+    const cx = opts.width / 2;
+    const cy = opts.height / 2;
+    const r = (Math.abs(Math.cos(a)) * opts.width + Math.abs(Math.sin(a)) * opts.height) / 2;
+    const g = ctx.createLinearGradient(cx - Math.cos(a) * r, cy - Math.sin(a) * r, cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+    g.addColorStop(0, toCss(base));
+    g.addColorStop(1, toCss(c2));
+    ctx.fillStyle = g as unknown as string;
+  } else ctx.fillStyle = toCss(base);
   ctx.fillRect(0, 0, opts.width, opts.height);
   if (bg.kind === "grid" || bg.kind === "dots") {
-    const cam = frame.camera;
+    const cam0 = frame.camera;
+    // Drift: the pattern moves 12 px each second, down and to the right.
+    const d = bg.drift ? ((frame.timeMs / 1000) * 12) % 40 : 0;
+    const cam = { ...cam0, x: cam0.x - d, y: cam0.y - d };
     const sx = opts.width / cam.width;
     const step = 40;
     const grid = toCss(resolveToken(theme, "grid", "stroke", "rectangle"));
@@ -792,6 +879,37 @@ function drawBackground(dc: DrawContext, frame: FrameState, opts: RenderOptions)
       else for (let y = y0; y <= cam.y + cam.height; y += step) ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
     }
     if (bg.kind === "grid") for (let y = y0; y <= cam.y + cam.height; y += step) strokePolyline(ctx, [{ x: cam.x, y }, { x: cam.x + cam.width, y }]);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+  if (bg.vignette) {
+    // Darker edges: four soft bands (linear gradients, so the SVG export draws the same).
+    const v = bg.vignette;
+    const band = Math.min(opts.width, opts.height) * 0.35;
+    const edges: [number, number, number, number, number, number, number, number][] = [
+      [0, 0, opts.width, band, 0, 0, 0, band],
+      [0, opts.height - band, opts.width, band, 0, opts.height, 0, opts.height - band],
+      [0, 0, band, opts.height, 0, 0, band, 0],
+      [opts.width - band, 0, band, opts.height, opts.width, 0, opts.width - band, 0],
+    ];
+    for (const [x, y, w, h, gx0, gy0, gx1, gy1] of edges) {
+      const g = ctx.createLinearGradient(gx0, gy0, gx1, gy1);
+      g.addColorStop(0, `rgba(0,0,0,${(0.55 * v).toFixed(3)})`);
+      g.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = g as unknown as string;
+      ctx.fillRect(x, y, w, h);
+    }
+  }
+  if (bg.grain) {
+    // Film grain: small dots at fixed places (hash), the same in each frame.
+    const n = Math.round((opts.width * opts.height) / 900);
+    const light = theme.dark;
+    for (let i = 0; i < n; i++) {
+      const x = hash2(i, 1) * opts.width;
+      const y = hash2(i, 2) * opts.height;
+      const a = bg.grain * 0.08 * (0.5 + hash2(i, 3));
+      ctx.fillStyle = light ? `rgba(255,255,255,${a.toFixed(3)})` : `rgba(0,0,0,${a.toFixed(3)})`;
+      ctx.fillRect(x, y, 1.5, 1.5);
+    }
   }
 }
 

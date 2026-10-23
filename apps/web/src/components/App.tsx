@@ -7,6 +7,8 @@ import { Home } from "./Home.js";
 import { SaveWidgetDialog } from "./SaveWidgetDialog.js";
 import { BuildDialog } from "./BuildDialog.js";
 import { MessageDialog } from "./MessageDialog.js";
+import { loadSceneFonts } from "../fonts.js";
+import { CompositionsDialog } from "./CompositionsDialog.js";
 import { Outliner } from "./Outliner.js";
 import { ViewportHeader } from "./ViewportHeader.js";
 import { StatusBar } from "./StatusBar.js";
@@ -128,6 +130,12 @@ export function App() {
   const recording = useEditor((s) => s.recording !== null);
   const takes = useEditor((s) => s.takes !== null);
   const timelineOpen = useEditor((s) => s.timelineOpen);
+  // Custom fonts of the scene load into the browser (docs/20 B10).
+  const sceneFonts = useEditor((s) => s.scene.settings.fonts);
+  const sceneAssets = useEditor((s) => s.assets);
+  useEffect(() => {
+    void loadSceneFonts();
+  }, [sceneFonts, sceneAssets]);
   const screen = useEditor((s) => s.screen);
   const drawer = useEditor((s) => s.drawer);
   const maximized = useEditor((s) => s.maximized);
@@ -268,6 +276,7 @@ export function App() {
           <SaveWidgetDialog />
           <BuildDialog />
           <MessageDialog />
+          <CompositionsDialog />
           <HistoryDialog />
           <CommandPalette />
           {presenting && <PresentMode />}

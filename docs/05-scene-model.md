@@ -243,6 +243,6 @@ Content addressing removes duplicate assets. The same image used twice is stored
 
 A widget is a ready-made group of plain elements, for example a browser window or a stat card. There is no widget element type: the insert makes a group and its parts, so the user can change each part. The part IDs are `<widget ID>-<part>` (for example `web-url`).
 
-- Built-in widgets: browser, phone, server, database, chat, terminal, stat, step-badge, progress, callout, user-card, packet, stamp, envelope, lock (`packages/ops/src/widgets.ts`). Each has texts with defaults, and it scales to a size.
+- Built-in widgets: browser, phone, server, database, chat, terminal, stat, step-badge, progress, callout, user-card, packet, stamp, envelope, lock, definition, skeleton-card, meter, slider, toggle, bar-chart, cursor, notification (`packages/ops/src/widgets.ts`). Each has texts with defaults, and it scales to a size.
 - Anivo Script: `widget web browser at=100,100 size=800x520 url="https://example.com"`.
 - Editor: the Widgets button of the toolbar shows the gallery. **Save as widget** keeps a selection as a user widget in this browser; insert it in any scene.

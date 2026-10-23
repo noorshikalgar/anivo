@@ -277,3 +277,19 @@ test("Presets: one click gives each selected element the animation; save your ow
   await page.getByRole("dialog", { name: "Save as preset" }).getByRole("button", { name: "Save" }).click();
   await expect(page.getByRole("button", { name: "Preset: My rise" })).toBeVisible();
 });
+
+test("Compositions: save elements with their animations, and insert them again as new steps", async ({ page }) => {
+  await page.evaluate(() => (window as unknown as { __anivo: { getState(): { setSelection(ids: string[]): void } } }).__anivo.getState().setSelection(["lb"]));
+  await page.evaluate(() => (window as unknown as { __anivo: { setState(p: unknown): void } }).__anivo.setState({ compositionsOpen: true }));
+  const dialog = page.getByRole("dialog", { name: "Compositions" });
+  await dialog.getByRole("textbox", { name: "Composition name" }).fill("LB intro");
+  await dialog.getByRole("button", { name: "Save the selection" }).click();
+  const card = dialog.getByRole("listitem", { name: "LB intro" });
+  await expect(card).toBeVisible();
+  const before = (await state(page)).scene.steps.length;
+  await card.getByRole("button", { name: "Insert" }).click();
+  const s = await state(page);
+  expect(s.scene.elements["lb-2"]).toBeTruthy();
+  expect(s.scene.steps.length).toBeGreaterThan(before);
+  expect(s.selection).toEqual(["lb-2"]);
+});

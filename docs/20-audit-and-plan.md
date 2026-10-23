@@ -48,8 +48,8 @@ Order: what makes videos look better and saves the most work first.
 | B3 | Done. **Beautiful defaults**: new enter effects rise and blur, spring easings for pop; thicker arrows and larger heads; larger flow particles; code text sized to the box; widget text floors; softer flash. | E1–E7 |
 | B4 | Done. **Studio theme** (near-black, one purple accent, soft cards), like the reference channels. | E1 |
 | B5 | Done. **Motion presets**: built-in presets (rise, blur in, bounce, underline draw, word focus, count up, meter fill, card slide) with a live preview, applied to the selection in one click. **Save your own** preset from the actions of an element; it goes to your library. | U2, U5 |
-| B6 | **Compositions**: save selected elements with their animations (all steps) as a composition; insert it in any scene (new IDs, at the click); export and import as a file. | U5 |
-| B7 | **UI parts**: definition card, meter, slider, toggle, bar chart, progress ring, cursor with click ripple, notification. Each with a matching motion preset. | E8 |
-| B8 | **Timeline feel**: follow the playhead while playing; time tag on the playhead; hover line and time on the ruler; full block labels with icons; double-click a block to edit it; smooth zoom. | U4 |
-| B9 | **Home that shows what Anivo can do**: live animated examples, start cards for common videos, and short tips. | U1 |
-| B10 | Calmer target marks on the canvas (only on hover in the Actions list). Lint knows that a dimmed word is on purpose. Custom fonts. | U3, X4, X5 |
+| B6 | Done. **Compositions**: save selected elements with their animations (all steps) as a composition; insert it in any scene (new IDs, at the click); export and import as a file. | U5 |
+| B7 | Done. **UI parts**: definition card, meter, slider, toggle, bar chart, progress ring, cursor with click ripple, notification. Each with a matching motion preset. | E8 |
+| B8 | Done. **Timeline feel**: follow the playhead while playing; time tag on the playhead; hover line and time on the ruler; full block labels with icons; double-click a block to edit it; smooth zoom. | U4 |
+| B9 | Done. **Home that shows what Anivo can do**: live animated examples, start cards for common videos, and short tips. | U1 |
+| B10 | Done. Calmer target marks on the canvas (only on hover in the Actions list). Lint knows that a dimmed word is on purpose. Custom fonts. | U3, X4, X5 |
