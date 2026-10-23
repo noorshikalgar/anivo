@@ -26,7 +26,7 @@ import { useEffect, useMemo, useState } from "react";
 import { searchIcons } from "@anivo/render";
 import { pickImageAsset } from "../images.js";
 import { withErrors } from "../notify.js";
-import { addAction, addMotionAlongArrow, updateAction, updateStep } from "../commands.js";
+import { addAction, addMatchingExit, addMotionAlongArrow, updateAction, updateStep } from "../commands.js";
 import { previewSound, setCue, setStepLine } from "../audio.js";
 import { Comments } from "./Comments.js";
 import { MarkEditor } from "./MarkEditor.js";
@@ -115,6 +115,12 @@ export function AddActionMenu({ iconOnly }: { iconOnly?: boolean }) {
             <MenuGroupHeader>Camera</MenuGroupHeader>
             <MenuItem icon={actionIcon("camera")} disabled={none} onClick={() => addAction({ type: "camera", targets: selection, camera: { op: "zoom-to" } }, "Add camera zoom")}>
               Camera: zoom to selection
+            </MenuItem>
+            <MenuItem icon={actionIcon("camera")} onClick={() => addAction({ type: "camera", targets: selection, camera: { op: "drift" } }, "Add camera drift")}>
+              Camera: slow drift in {selection.length ? "(to the selection)" : ""}
+            </MenuItem>
+            <MenuItem icon={actionIcon("camera")} disabled={none} onClick={() => addAction({ type: "camera", targets: selection.slice(0, 1), camera: { op: "follow" } }, "Add camera follow")}>
+              Camera: follow the selection
             </MenuItem>
             <MenuItem icon={actionIcon("camera")} onClick={() => addAction({ type: "camera", camera: { op: "reset" } }, "Add camera reset")}>
               Camera: reset to the full view
@@ -315,6 +321,16 @@ export function ActionEditor({ step, action, part = "all" }: { step: Step; actio
       {(action.type === "enter" || action.type === "exit") && (
         <SelectField label="Effect" value={action.effect} options={ENTER_EFFECTS.map((e) => ({ value: e, text: label(e) }))} onCommit={(v) => set({ effect: v }, "Change effect")} />
       )}
+      {action.type === "enter" && (
+        <Row>
+          <Btn title="Add an exit with the same effect, after the step content" onClick={() => addMatchingExit(step.id, action.id, "after")}>
+            Add matching exit
+          </Btn>
+          <Btn title="Add an exit with the same effect, when the next step starts" onClick={() => addMatchingExit(step.id, action.id, "next-step")}>
+            Exit at next step
+          </Btn>
+        </Row>
+      )}
       {action.type === "emphasis" && <SelectField label="Effect" value={action.effect} options={EMPHASIS_EFFECTS.map((e) => ({ value: e, text: label(e) }))} onCommit={(v) => set({ effect: v }, "Change effect")} />}
       {(action.type === "enter" || action.type === "exit") && (action.effect === "slide" || action.effect === "wipe") && (
         <Row>
@@ -369,6 +385,24 @@ export function ActionEditor({ step, action, part = "all" }: { step: Step; actio
         />
         {action.targets.length > 1 ? <NumberField label="Stagger (ms)" value={action.staggerMs} min={0} step={20} onCommit={(v) => set({ staggerMs: Math.round(v) }, "Change stagger")} /> : <div />}
       </Row>
+      <Row>
+        {action.targets.length > 1 && action.staggerMs > 0 ? (
+          <SelectField
+            label="Stagger order"
+            value={action.staggerOrder ?? "in-order"}
+            options={[
+              { value: "in-order", text: "In order" },
+              { value: "reverse", text: "Reverse" },
+              { value: "center", text: "From the center" },
+              { value: "edges", text: "From the edges" },
+              { value: "random", text: "Shuffle" },
+            ]}
+            onCommit={(v) => set({ staggerOrder: v === "in-order" ? null : v }, "Change stagger order")}
+          />
+        ) : (
+          <div />
+        )}
+      </Row>
       <SelectField
         label="Sound"
         value={action.sound ?? "none"}
@@ -422,6 +456,20 @@ export function ActionEditor({ step, action, part = "all" }: { step: Step; actio
           <Row>
             <TextField label="Format" value={action.counter.format} placeholder="{n} req/s" onCommit={(v) => void set({ counter: { ...action.counter, format: v.includes("{n}") ? v : `{n} ${v}`.trim() } }, "Change count format")} />
             <NumberField label="Decimals" value={action.counter.decimals} min={0} max={6} onCommit={(v) => set({ counter: { ...action.counter, decimals: Math.round(v) } }, "Change count decimals")} />
+          </Row>
+          <Row>
+            <SelectField
+              label="Number style"
+              value={action.counter.style ?? "plain"}
+              options={[
+                { value: "plain", text: "Plain (12400)" },
+                { value: "thousands", text: "Thousands (12,400)" },
+                { value: "compact", text: "Short (12.4K)" },
+                { value: "duration", text: "Time (2:05)" },
+              ]}
+              onCommit={(v) => set({ counter: { ...action.counter, style: v === "plain" ? undefined : v } }, "Change number style")}
+            />
+            <div />
           </Row>
         </>
       )}
@@ -534,6 +582,9 @@ export function StepInspector({ step }: { step: Step }) {
             { value: "dip", text: "Dip to black" },
             { value: "flash", text: "Flash white" },
             { value: "wipe", text: "Wipe" },
+            { value: "zoom", text: "Zoom through" },
+            { value: "blur", text: "Blur through" },
+            { value: "slide", text: "Slide (accent panel)" },
           ]}
           onCommit={(v) => updateStep(step.id, { transition: v === "none" ? null : { kind: v, durationMs: step.transition?.durationMs ?? 600 } }, "Change transition")}
         />

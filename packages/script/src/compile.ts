@@ -656,7 +656,7 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
     if (notes) props["notes"] = notes.v;
     const tr = p.kv.get("transition");
     if (tr) {
-      if (!["fade", "dip", "flash", "wipe"].includes(tr.v)) errors.push(err(tr.pos, `The transition '${tr.v}' is not known.`, "Use: fade, dip, flash, wipe."));
+      if (!["fade", "dip", "flash", "wipe", "zoom", "blur", "slide"].includes(tr.v)) errors.push(err(tr.pos, `The transition '${tr.v}' is not known.`, "Use: fade, dip, flash, wipe, zoom, blur, slide."));
       else props["transition"] = { kind: tr.v, ...(p.kv.get("transition-dur") ? { durationMs: parseTime(p.kv.get("transition-dur")!.v) ?? 600 } : {}) };
     }
     const cap = p.kv.get("caption");
@@ -820,14 +820,14 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
   }
   if (verb === "camera") {
     const op = words[0] && "v" in words[0] ? words[0].v : "";
-    if (!["zoom-to", "pan", "reset"].includes(op)) {
+    if (!["zoom-to", "pan", "reset", "drift", "follow"].includes(op)) {
       errors.push(err(line.pos, "The camera action needs zoom-to, pan, or reset.", "Write: camera zoom-to lb, pods  or  camera reset"));
       return undefined;
     }
     const a: Record<string, unknown> = { type: "camera", camera: { op } };
     if (delay !== undefined) a["delayMs"] = delay;
     const cam = a["camera"] as Record<string, unknown>;
-    if (op === "zoom-to") {
+    if (op === "zoom-to" || op === "follow" || (op === "drift" && words.length > 1)) {
       a["targets"] = resolveTargets(words.slice(1), line.pos);
     }
     for (const [k, { v, pos }] of kv) {
@@ -835,6 +835,7 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
       else if (k === "easing" || k === "ease") a["easing"] = v;
       else if (k === "id") a["id"] = v;
       else if (k === "padding") cam["padding"] = Number(v);
+      else if (k === "zoom") cam["zoom"] = Number(v);
       else if (k === "at" || k === "size") continue;
       else errors.push(err(pos, `The property '${k}' is not known for camera.`, "Use: dur, easing, padding, at, size."));
     }
@@ -904,6 +905,8 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
     if (format !== undefined) counter["format"] = format;
     const decimals = kv.get("decimals")?.v;
     if (decimals !== undefined) counter["decimals"] = Number(decimals);
+    const style = kv.get("style")?.v;
+    if (style !== undefined) counter["style"] = style;
     const a: Record<string, unknown> = { type: "counter", targets, counter };
     if (delay !== undefined) a["delayMs"] = delay;
     for (const [k, { v }] of kv) {
@@ -928,6 +931,7 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
   const common = (k: string, v: string, pos: Pos): boolean => {
     if (k === "dur" || k === "duration") a["durationMs"] = parseTime(v) ?? errors.push(err(pos, `The time '${v}' is not valid.`, "Write: 300ms or 1.5s"));
     else if (k === "stagger") a["staggerMs"] = parseTime(v);
+    else if (k === "order" && ["in-order", "reverse", "center", "edges", "random"].includes(v)) a["staggerOrder"] = v;
     else if (k === "easing" || k === "ease") a["easing"] = v;
     else if (k === "delay") a["delayMs"] = parseTime(v);
     else if (k === "id") a["id"] = v;

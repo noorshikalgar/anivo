@@ -924,7 +924,15 @@ export function renderFrame(ctx: Ctx2D, scene: Scene, frame: FrameState, routes:
   };
   const view: FrameState = opts.camera ? { ...frame, camera: opts.camera } : frame;
   if (!opts.noBackground) drawBackground(dc, view, opts);
-  const cam = view.camera;
+  // Zoom and blur transitions (docs/21 C4) change how the elements draw, around the step start.
+  const tr = frame.transition;
+  const bump = tr ? (() => {
+    const a = 1 - Math.abs(Math.min(1, Math.max(0, tr.progress)) - 0.5) * 2;
+    return a * a * (3 - 2 * a);
+  })() : 0;
+  const zoomK = tr?.kind === "zoom" ? 1 + 0.14 * bump : 1;
+  const cam0 = view.camera;
+  const cam = zoomK === 1 ? cam0 : { x: cam0.x + (cam0.width * (1 - 1 / zoomK)) / 2, y: cam0.y + (cam0.height * (1 - 1 / zoomK)) / 2, width: cam0.width / zoomK, height: cam0.height / zoomK };
   const ghost = opts.ghostHidden ?? 0;
   const sx = opts.width / cam.width;
   const sy = opts.height / cam.height;
@@ -941,7 +949,8 @@ export function renderFrame(ctx: Ctx2D, scene: Scene, frame: FrameState, routes:
     ctx.save();
     ctx.setTransform(sx, 0, 0, sy, -cam.x * sx, -cam.y * sy);
     ctx.globalAlpha = f.opacity;
-    if (f.blur && f.blur > 0.3 && "filter" in ctx) ctx.filter = `blur(${(f.blur * sx).toFixed(1)}px)`;
+    const blurPx = Math.max(f.blur ?? 0, tr?.kind === "blur" ? bump * 16 : 0);
+    if (blurPx > 0.3 && "filter" in ctx) ctx.filter = `blur(${(blurPx * sx).toFixed(1)}px)`;
     if (el.type === "connector") {
       drawConnector(dc, f, el);
     } else {
@@ -1098,7 +1107,7 @@ function drawStepCaption(dc: DrawContext, frame: FrameState, cap: NonNullable<Fr
 }
 
 /** A step transition over the whole output (docs/16 section 3). */
-function drawTransition(dc: DrawContext, tr: { kind: "fade" | "dip" | "flash" | "wipe"; progress: number }, opts: RenderOptions): void {
+function drawTransition(dc: DrawContext, tr: { kind: "fade" | "dip" | "flash" | "wipe" | "zoom" | "blur" | "slide"; progress: number }, opts: RenderOptions): void {
   const { ctx, theme } = dc;
   const p = Math.min(1, Math.max(0, tr.progress));
   const bg = dc.scene.settings.background.kind === "transparent" ? "background" : (dc.scene.settings.background.color ?? "background");
@@ -1106,7 +1115,19 @@ function drawTransition(dc: DrawContext, tr: { kind: "fade" | "dip" | "flash" | 
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = color;
-  if (tr.kind === "wipe") {
+  if (tr.kind === "slide") {
+    // An accent panel slides in from the right to cover, then out to the left (docs/21 C4).
+    const e = p < 0.5 ? p * 2 : (p - 0.5) * 2;
+    const eased = e < 0.5 ? 4 * e * e * e : 1 - (-2 * e + 2) ** 3 / 2;
+    ctx.fillStyle = toCss(resolveToken(theme, "accent", "fill", "rectangle"));
+    if (p < 0.5) ctx.fillRect(opts.width * (1 - eased), 0, opts.width * eased, opts.height);
+    else ctx.fillRect(0, 0, opts.width * (1 - eased), opts.height);
+  } else if (tr.kind === "zoom" || tr.kind === "blur") {
+    // The elements zoom or blur (in renderFrame); a soft veil of the background color hides the cut.
+    const a = 1 - Math.abs(p - 0.5) * 2;
+    ctx.globalAlpha = 0.55 * a * a * (3 - 2 * a);
+    ctx.fillRect(0, 0, opts.width, opts.height);
+  } else if (tr.kind === "wipe") {
     // The band covers from the left up to the step start, then it uncovers from the left.
     const e = p < 0.5 ? p * 2 : (p - 0.5) * 2;
     const eased = e * e * (3 - 2 * e);

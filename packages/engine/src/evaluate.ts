@@ -409,9 +409,33 @@ function applyTimedAction(state: StateMap, ta: TimedAction, t: number): void {
   else if (action.type === "counter") {
     const c = action.counter;
     const n = lerp(c.from, c.to, eased);
-    f.label = c.format.replace("{n}", n.toFixed(c.decimals));
+    f.label = c.format.replace("{n}", formatCount(n, c.decimals, c.style));
   }
   state[ta.target] = f;
+}
+
+/** Write a count number in a style (docs/21 C9). The same text on every machine (no locale). */
+export function formatCount(n: number, decimals: number, style: "plain" | "thousands" | "compact" | "duration" | undefined): string {
+  const sign = n < 0 ? "-" : "";
+  const a = Math.abs(n);
+  const group = (s: string) => {
+    const [i, d] = s.split(".");
+    return i!.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + (d ? "." + d : "");
+  };
+  if (style === "thousands") return sign + group(a.toFixed(decimals));
+  if (style === "compact") {
+    const units: [number, string][] = [[1e12, "T"], [1e9, "B"], [1e6, "M"], [1e3, "K"]];
+    for (const [v, u] of units) if (a >= v) return sign + (a / v).toFixed(Math.max(decimals, 1)).replace(/\.0+$/, "") + u;
+    return sign + a.toFixed(decimals);
+  }
+  if (style === "duration") {
+    const t = Math.floor(a);
+    const h = Math.floor(t / 3600);
+    const m = Math.floor((t % 3600) / 60);
+    const s = String(t % 60).padStart(2, "0");
+    return sign + (h > 0 ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`);
+  }
+  return n.toFixed(decimals);
 }
 
 /** The camera rectangle that fits the targets with padding, at the aspect ratio of the video. */
@@ -454,11 +478,30 @@ function cameraAt(step: TimedStep, start: Rect, base: Rect, state: StateMap, asp
   for (const ta of step.actions) {
     if (ta.action.type !== "camera" || t < ta.startMs) continue;
     const c = ta.action.camera;
-    const target = c.op === "reset" ? base : c.op === "pan" && c.rect ? c.rect : c.op === "zoom-to" ? fitCamera(state, ta.cameraTargets ?? [], c.padding, aspect) : undefined;
-    if (!target) continue;
     const span = ta.endMs - ta.startMs;
-    const p = span <= 0 ? 1 : ta.ease(clamp01((t - ta.startMs) / span));
-    cam = mixCamera(cam, target, p);
+    const raw = span <= 0 ? 1 : clamp01((t - ta.startMs) / span);
+    if (c.op === "follow") {
+      // Keep the target in the center; ease in over the first fifth of the action, so the camera does not jump.
+      const f = state[(ta.cameraTargets ?? [])[0] ?? ""];
+      if (!f) continue;
+      const cx = f.x + f.width / 2;
+      const cy = f.y + f.height / 2;
+      const centered = { x: cx - cam.width / 2, y: cy - cam.height / 2, width: cam.width, height: cam.height };
+      cam = mixCamera(cam, centered, ta.ease(clamp01(raw * 5)));
+      continue;
+    }
+    let target: Rect | undefined;
+    if (c.op === "drift") {
+      // A slow push-in to the center of the targets (or of the view).
+      const fit = ((ta.cameraTargets ?? []).length ? fitCamera(state, ta.cameraTargets ?? [], c.padding, aspect) : undefined) ?? cam;
+      const cx = fit.x + fit.width / 2;
+      const cy = fit.y + fit.height / 2;
+      const w = cam.width / c.zoom;
+      const h = cam.height / c.zoom;
+      target = { x: cx - w / 2, y: cy - h / 2, width: w, height: h };
+    } else target = c.op === "reset" ? base : c.op === "pan" && c.rect ? c.rect : c.op === "zoom-to" ? fitCamera(state, ta.cameraTargets ?? [], c.padding, aspect) : undefined;
+    if (!target) continue;
+    cam = mixCamera(cam, target, ta.ease(raw));
   }
   return cam;
 }

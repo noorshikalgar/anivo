@@ -1,6 +1,6 @@
 import { prepare, stepIndexAt } from "@anivo/engine";
 import { type LayoutKind, autoLayout, evaluateWithLayout } from "@anivo/layout";
-import { type OperationInput, deleteKeyframeOps, hasKeys, keyframesIn, sendAlongOps, setKeyframeOps } from "@anivo/ops";
+import { type ExitPlace, type OperationInput, deleteKeyframeOps, exitForOps, hasKeys, keyframesIn, sendAlongOps, setKeyframeOps } from "@anivo/ops";
 import type { Element } from "@anivo/schema";
 import { type Box, boundsOf, editorSkip, geometryOps, leafDescendants } from "./editing.js";
 import { notify } from "./notify.js";
@@ -280,6 +280,19 @@ export function addAction(action: Record<string, unknown>, label = "Add action")
   const r = st.apply({ label, ops: [{ op: "action.add", step: st.selectedStep, action }] });
   if (!r.ok) notify(r.error.message, "error");
   return r.ok ? r.created[0] : undefined;
+}
+
+/** Add the matching exit of an enter action (docs/21 C8). */
+export function addMatchingExit(stepId: string, actionId: string, place: ExitPlace): void {
+  const st = useEditor.getState();
+  const ops = exitForOps(st.scene, stepId, actionId, place);
+  if ("error" in ops) return notify(ops.error, "info");
+  const r = st.apply({ label: "Add matching exit", ops });
+  if (!r.ok) notify(r.error.message, "error");
+  else {
+    const last = st.scene.steps[st.scene.steps.length - 1]?.id === stepId;
+    notify(place === "next-step" && !last ? "Added the exit at the start of the next step." : "Added the exit after the step content.", "success");
+  }
 }
 
 export function updateAction(step: string, id: string, set: Record<string, unknown>, label = "Change action", mergeKey?: string): void {

@@ -89,7 +89,8 @@ widget <id> <name> [at=x,y] [size=WxH] [<text>="…"]   (a ready-made group; par
 
 step "<title>" [hold=<time>] [cue=<time>] [caption="<one sentence>" [near=<id>] [side=auto|above|below|left|right|top|bottom]]
   (caption: types in next to the element that changes; the step holds until a viewer can read it. Use one idea and one caption for each step.)
-  enter <targets> rise|blur|fade|pop|draw-on|slide-up|slide-left|wipe|typewriter|cascade|scramble [+<delay>] [stagger=<time>]   (typewriter unit=word: one word at a time)
+  [transition=fade|dip|flash|wipe|zoom|blur|slide] [transition-dur=<time>]   (a change of scene: use it between parts of the story, not on every step)
+  enter <targets> rise|blur|fade|pop|draw-on|slide-up|slide-left|wipe|typewriter|cascade|scramble [+<delay>] [stagger=<time>] [order=reverse|center|edges|random]   (typewriter unit=word: one word at a time)
   exit <targets> <effect>
   morph <targets> key=value…
   pulse|shake|glow|flash|highlight|focus <targets>
@@ -98,8 +99,8 @@ step "<title>" [hold=<time>] [cue=<time>] [caption="<one sentence>" [near=<id>] 
        [once | count=<n>] [orient] [trail=<0..1>]   (once: one particle travels the arrow; icon: an icon moves, for example icon=lucide:mail size=32)
        [back-icon=<pack:name>] [back-color=<token>] [back-size|back-speed|back-rate|back-count=<n>] [back-once] [back-delay=<time>]
                                                  (a back-* setting makes the flow two-way: requests go, answers come back with their own look)
-  camera zoom-to <targets> [padding=80] | camera pan at=x,y size=WxH | camera reset
-  count <target> from=<n> to=<n> format="{n} <unit>"
+  camera zoom-to <targets> [padding=80] | camera pan at=x,y size=WxH | camera reset | camera drift [<targets>] [zoom=1.08] (slow push-in) | camera follow <target> (keep a moving element in the center)
+  count <target> from=<n> to=<n> format="{n} <unit>" [decimals=<n>] [style=thousands|compact|duration]   (currency or percent: format="${n}" or "{n}%")
   code <target> highlight=<a>-<b> | type=<a>-<b>
   move <targets> path="x,y x,y …" [curve] [orient]   (the element center follows the points and stays at the end)
   preset <name> <targets> [+<delay>] [stagger=<time>]   (motion presets: rise-in, blur-in, pop-in, card-up, words-in, letters-in, decode, type-in, draw-in, fill-up, fill-right, emphasize, no, sink-out, fade-out)

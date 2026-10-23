@@ -112,6 +112,7 @@ const actionBase = {
   durationMs: Ms.optional().describe("Omit to use the default duration for the action type."),
   easing: Easing.optional(),
   staggerMs: Ms.default(0),
+  staggerOrder: z.enum(["in-order", "reverse", "center", "edges", "random"]).optional().describe("The order of the targets for the stagger (docs/21 C6). center: from the middle out. edges: from both ends in. random: a fixed shuffle."),
   sound: z
     .enum(["pop", "click", "whoosh", "ding", "thud", "tick", "blip", "chime", "rise", "bubble", "success", "error", "keys", "ticks"])
     .optional()
@@ -127,7 +128,8 @@ export const FlowAction = z.object({ ...actionBase, type: z.literal("flow"), flo
 export const WaitAction = z.object({ ...actionBase, targets: z.array(ElementId).default([]), type: z.literal("wait") });
 
 export const CameraParams = z.object({
-  op: z.enum(["zoom-to", "pan", "reset"]).describe("zoom-to: fit the targets. pan: move to a rectangle. reset: go back to the scene camera."),
+  op: z.enum(["zoom-to", "pan", "reset", "drift", "follow"]).describe("zoom-to: fit the targets. pan: move to a rectangle. reset: go back to the scene camera. drift: a slow push-in (Ken Burns), to the targets if there are some. follow: keep the first target in the center while it moves (docs/21 C5)."),
+  zoom: z.number().positive().default(1.08).describe("drift: how much closer the camera gets."),
   padding: z.number().nonnegative().default(80).describe("Space around the targets for zoom-to, in scene pixels."),
   rect: z.object({ x: z.number(), y: z.number(), width: z.number().positive(), height: z.number().positive() }).optional().describe("Camera rectangle for pan."),
 });
@@ -145,6 +147,10 @@ export const CounterAction = z.object({
     to: z.number(),
     format: z.string().default("{n}").describe("Text with {n} for the number, for example '{n} req/s'."),
     decimals: z.number().int().min(0).max(6).default(0),
+    style: z
+      .enum(["plain", "thousands", "compact", "duration"])
+      .optional()
+      .describe("How to write the number (docs/21 C9). thousands: 12,400. compact: 12.4K, 3.1M. duration: the number is seconds, written as 1:05 or 1:02:05. For currency or percent, put the sign in the format: '${n}', '{n}%'."),
   }),
 });
 
@@ -225,7 +231,7 @@ export const Step = z.object({
     .describe("A step caption (docs/17 P4): it types in at the step start, and the step holds until a viewer can read it."),
   transition: z
     .object({
-      kind: z.enum(["fade", "dip", "flash", "wipe"]).describe("fade: through the background color. dip: through black. flash: through white. wipe: a band of the background color moves across."),
+      kind: z.enum(["fade", "dip", "flash", "wipe", "zoom", "blur", "slide"]).describe("fade: through the background color. dip: through black. flash: through white. wipe: a band of the background color moves across."),
       durationMs: Ms.default(600),
     })
     .optional()

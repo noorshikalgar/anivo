@@ -35,10 +35,10 @@ export async function deleteComposition(id: string): Promise<void> {
 }
 
 /** Insert at the center of the view, with its steps after the selected step. */
-export function insertComposition(c: Composition): void {
+export function insertComposition(c: Composition, texts: Record<string, string> = {}): void {
   const st = useEditor.getState();
   const center = { x: st.view.x + st.viewport.width / st.view.zoom / 2, y: st.view.y + st.viewport.height / st.view.zoom / 2 };
-  const ins = insertCompositionOps(st.scene, c, { x: center.x - c.width / 2, y: center.y - c.height / 2 }, st.selectedStep ?? undefined);
+  const ins = insertCompositionOps(st.scene, c, { x: center.x - c.width / 2, y: center.y - c.height / 2 }, st.selectedStep ?? undefined, texts);
   const r = st.apply({ label: `Insert ${c.name}`, ops: ins.ops });
   if (!r.ok) return notify(r.error.message, "error");
   st.setSelection(ins.ids);

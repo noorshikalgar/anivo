@@ -112,7 +112,7 @@ export interface Particle {
 
 /** A step transition over the whole frame: progress 0 to 1 over its duration (0.5 at the step start). */
 export interface TransitionFrame {
-  kind: "fade" | "dip" | "flash" | "wipe";
+  kind: "fade" | "dip" | "flash" | "wipe" | "zoom" | "blur" | "slide";
   progress: number;
 }
 
