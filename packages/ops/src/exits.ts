@@ -15,10 +15,9 @@ export function exitForOps(scene: Scene, stepId: string, actionId: string, place
   const enter = step?.actions.find((a) => a.id === actionId);
   if (!step || !enter) return { error: "Select an enter action first." };
   if (enter.type !== "enter") return { error: "Only an enter action has a matching exit." };
-  const { id: _id, type: _type, delayMs: _d, sound: _s, ...rest } = enter as Action & Record<string, unknown>;
-  void _id, _type, _d, _s;
-  const exit: Record<string, unknown> = { ...rest, type: "exit" };
   // An exit has no sound.
+  const exit: Record<string, unknown> = { ...(enter as Action & Record<string, unknown>), type: "exit" };
+  for (const k of ["id", "delayMs", "sound"]) delete exit[k];
   const next = scene.steps[index + 1];
   if (place === "next-step" && next) return [{ op: "action.add", step: next.id, index: 0, action: { ...exit, delayMs: 0 } }];
   // The end of the step content, without the timeline (stagger and default durations).
