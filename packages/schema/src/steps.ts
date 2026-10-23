@@ -127,7 +127,8 @@ export const FlowAction = z.object({ ...actionBase, type: z.literal("flow"), flo
 export const WaitAction = z.object({ ...actionBase, targets: z.array(ElementId).default([]), type: z.literal("wait") });
 
 export const CameraParams = z.object({
-  op: z.enum(["zoom-to", "pan", "reset"]).describe("zoom-to: fit the targets. pan: move to a rectangle. reset: go back to the scene camera."),
+  op: z.enum(["zoom-to", "pan", "reset", "drift", "follow"]).describe("zoom-to: fit the targets. pan: move to a rectangle. reset: go back to the scene camera. drift: a slow push-in (Ken Burns), to the targets if there are some. follow: keep the first target in the center while it moves (docs/21 C5)."),
+  zoom: z.number().positive().default(1.08).describe("drift: how much closer the camera gets."),
   padding: z.number().nonnegative().default(80).describe("Space around the targets for zoom-to, in scene pixels."),
   rect: z.object({ x: z.number(), y: z.number(), width: z.number().positive(), height: z.number().positive() }).optional().describe("Camera rectangle for pan."),
 });

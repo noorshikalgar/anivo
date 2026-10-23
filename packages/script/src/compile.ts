@@ -820,14 +820,14 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
   }
   if (verb === "camera") {
     const op = words[0] && "v" in words[0] ? words[0].v : "";
-    if (!["zoom-to", "pan", "reset"].includes(op)) {
+    if (!["zoom-to", "pan", "reset", "drift", "follow"].includes(op)) {
       errors.push(err(line.pos, "The camera action needs zoom-to, pan, or reset.", "Write: camera zoom-to lb, pods  or  camera reset"));
       return undefined;
     }
     const a: Record<string, unknown> = { type: "camera", camera: { op } };
     if (delay !== undefined) a["delayMs"] = delay;
     const cam = a["camera"] as Record<string, unknown>;
-    if (op === "zoom-to") {
+    if (op === "zoom-to" || op === "follow" || (op === "drift" && words.length > 1)) {
       a["targets"] = resolveTargets(words.slice(1), line.pos);
     }
     for (const [k, { v, pos }] of kv) {
@@ -835,6 +835,7 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
       else if (k === "easing" || k === "ease") a["easing"] = v;
       else if (k === "id") a["id"] = v;
       else if (k === "padding") cam["padding"] = Number(v);
+      else if (k === "zoom") cam["zoom"] = Number(v);
       else if (k === "at" || k === "size") continue;
       else errors.push(err(pos, `The property '${k}' is not known for camera.`, "Use: dur, easing, padding, at, size."));
     }

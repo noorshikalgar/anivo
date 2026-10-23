@@ -74,3 +74,31 @@ describe("typewriter by word", () => {
     expect(reveal(1000)).toBe(1);
   });
 });
+
+describe("camera drift and follow", () => {
+  it("drift pushes in slowly; follow keeps a moving target in the center", () => {
+    const r = loadScene({
+      schemaVersion: 1,
+      meta: { title: "Cam" },
+      elements: { a: { type: "rectangle", z: "a0", x: 900, y: 500, width: 120, height: 80 } },
+      steps: [
+        { id: "s1", holdMs: 0, actions: [{ id: "d", type: "camera", camera: { op: "drift", zoom: 1.25 }, durationMs: 1000, easing: "linear" }] },
+        {
+          id: "s2",
+          holdMs: 0,
+          actions: [
+            { id: "m", type: "morph", targets: ["a"], to: { x: 1500 }, durationMs: 1000, easing: "linear" },
+            { id: "f", type: "camera", targets: ["a"], camera: { op: "follow" }, durationMs: 1000 },
+          ],
+        },
+      ],
+    });
+    if (!r.ok) throw new Error(JSON.stringify(r));
+    const end = evaluate(r.scene, 1000).camera;
+    expect(end.width).toBeCloseTo(1920 / 1.25, 3);
+    const tl = resolveTimeline(r.scene);
+    const cam = evaluate(r.scene, tl.steps[1]!.startMs + 900).camera;
+    const a = evaluate(r.scene, tl.steps[1]!.startMs + 900).elements.find((e) => e.id === "a")!;
+    expect(cam.x + cam.width / 2).toBeCloseTo(a.x + a.width / 2, 0);
+  });
+});

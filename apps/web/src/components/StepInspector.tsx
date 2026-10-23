@@ -116,6 +116,12 @@ export function AddActionMenu({ iconOnly }: { iconOnly?: boolean }) {
             <MenuItem icon={actionIcon("camera")} disabled={none} onClick={() => addAction({ type: "camera", targets: selection, camera: { op: "zoom-to" } }, "Add camera zoom")}>
               Camera: zoom to selection
             </MenuItem>
+            <MenuItem icon={actionIcon("camera")} onClick={() => addAction({ type: "camera", targets: selection, camera: { op: "drift" } }, "Add camera drift")}>
+              Camera: slow drift in {selection.length ? "(to the selection)" : ""}
+            </MenuItem>
+            <MenuItem icon={actionIcon("camera")} disabled={none} onClick={() => addAction({ type: "camera", targets: selection.slice(0, 1), camera: { op: "follow" } }, "Add camera follow")}>
+              Camera: follow the selection
+            </MenuItem>
             <MenuItem icon={actionIcon("camera")} onClick={() => addAction({ type: "camera", camera: { op: "reset" } }, "Add camera reset")}>
               Camera: reset to the full view
             </MenuItem>

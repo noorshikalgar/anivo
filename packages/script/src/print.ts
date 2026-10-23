@@ -178,7 +178,8 @@ function printAction(a: Action, index: number): string {
   const targets = a.targets.join(", ");
   if (a.type === "camera") {
     parts.push("camera", a.camera.op);
-    if (a.camera.op === "zoom-to") parts.push(targets);
+    if ((a.camera.op === "zoom-to" || a.camera.op === "follow" || a.camera.op === "drift") && a.targets.length) parts.push(targets);
+    if (a.camera.op === "drift" && a.camera.zoom !== 1.08) parts.push(`zoom=${a.camera.zoom}`);
     if (a.camera.op === "pan" && a.camera.rect) parts.push(`at=${n(a.camera.rect.x)},${n(a.camera.rect.y)}`, `size=${n(a.camera.rect.width)}x${n(a.camera.rect.height)}`);
     if (a.camera.padding !== 80) parts.push(`padding=${a.camera.padding}`);
     common();

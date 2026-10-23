@@ -10,7 +10,7 @@ Status: plan, 2026-10-24. After docs/20 (B1–B10 built). Same method: each item
 | C2 | Done. **Line effects**: marching ants (a dashed arrow whose dashes move), a pulse that travels along an arrow, an arrowhead that leads while the line draws. |
 | C3 | Done. **Backgrounds**: gradient and vignette backgrounds, a soft grain, a slowly moving grid. |
 | C4 | Done. **Step transitions**: slide, push, zoom through, and blur (with the existing fade, dip, flash, wipe). |
-| C5 | **Camera**: ease presets for camera moves, a slow drift (Ken Burns) for a step, and follow an element. |
+| C5 | Done. **Camera**: ease presets for camera moves, a slow drift (Ken Burns) for a step, and follow an element. |
 
 ## 2. More control
 
