@@ -89,6 +89,7 @@ widget <id> <name> [at=x,y] [size=WxH] [<text>="…"]   (a ready-made group; par
 
 step "<title>" [hold=<time>] [cue=<time>] [caption="<one sentence>" [near=<id>] [side=auto|above|below|left|right|top|bottom]]
   (caption: types in next to the element that changes; the step holds until a viewer can read it. Use one idea and one caption for each step.)
+  [transition=fade|dip|flash|wipe|zoom|blur|slide] [transition-dur=<time>]   (a change of scene: use it between parts of the story, not on every step)
   enter <targets> rise|blur|fade|pop|draw-on|slide-up|slide-left|wipe|typewriter|cascade|scramble [+<delay>] [stagger=<time>]   (typewriter unit=word: one word at a time)
   exit <targets> <effect>
   morph <targets> key=value…

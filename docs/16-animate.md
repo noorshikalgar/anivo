@@ -31,7 +31,7 @@ Users want more control over time: change a property at an exact time, as in a m
 
 ## 3. Step transitions
 
-A step can have a transition at its start: `fade` (through the background color), `dip` (through black), `flash` (through white), or `wipe` (a band of the background color moves across). The renderer draws it over the frame, around the step start. Settings: kind and duration. The transition does not change the elements.
+A step can have a transition at its start: `fade` (through the background color), `dip` (through black), `flash` (through white), `wipe` (a band of the background color moves across), `zoom` (the picture pushes in, with a soft veil), `blur` (out of focus and back), or `slide` (an accent panel slides across). The renderer draws it over the frame, around the step start. Settings: kind and duration. The transition does not change the elements.
 
 ## 4. Builds
 

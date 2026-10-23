@@ -9,7 +9,7 @@ Status: plan, 2026-10-24. After docs/20 (B1–B10 built). Same method: each item
 | C1 | Done. **Text effects**: letters cascade (each letter rises with a stagger), scramble (random letters settle into the text, seeded), marker sweep (a highlight that draws across words), strike-through that draws. |
 | C2 | Done. **Line effects**: marching ants (a dashed arrow whose dashes move), a pulse that travels along an arrow, an arrowhead that leads while the line draws. |
 | C3 | Done. **Backgrounds**: gradient and vignette backgrounds, a soft grain, a slowly moving grid. |
-| C4 | **Step transitions**: slide, push, zoom through, and blur (with the existing fade, dip, flash, wipe). |
+| C4 | Done. **Step transitions**: slide, push, zoom through, and blur (with the existing fade, dip, flash, wipe). |
 | C5 | **Camera**: ease presets for camera moves, a slow drift (Ken Burns) for a step, and follow an element. |
 
 ## 2. More control

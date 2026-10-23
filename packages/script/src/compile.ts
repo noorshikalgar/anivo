@@ -656,7 +656,7 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
     if (notes) props["notes"] = notes.v;
     const tr = p.kv.get("transition");
     if (tr) {
-      if (!["fade", "dip", "flash", "wipe"].includes(tr.v)) errors.push(err(tr.pos, `The transition '${tr.v}' is not known.`, "Use: fade, dip, flash, wipe."));
+      if (!["fade", "dip", "flash", "wipe", "zoom", "blur", "slide"].includes(tr.v)) errors.push(err(tr.pos, `The transition '${tr.v}' is not known.`, "Use: fade, dip, flash, wipe, zoom, blur, slide."));
       else props["transition"] = { kind: tr.v, ...(p.kv.get("transition-dur") ? { durationMs: parseTime(p.kv.get("transition-dur")!.v) ?? 600 } : {}) };
     }
     const cap = p.kv.get("caption");

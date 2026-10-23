@@ -225,7 +225,7 @@ export const Step = z.object({
     .describe("A step caption (docs/17 P4): it types in at the step start, and the step holds until a viewer can read it."),
   transition: z
     .object({
-      kind: z.enum(["fade", "dip", "flash", "wipe"]).describe("fade: through the background color. dip: through black. flash: through white. wipe: a band of the background color moves across."),
+      kind: z.enum(["fade", "dip", "flash", "wipe", "zoom", "blur", "slide"]).describe("fade: through the background color. dip: through black. flash: through white. wipe: a band of the background color moves across."),
       durationMs: Ms.default(600),
     })
     .optional()

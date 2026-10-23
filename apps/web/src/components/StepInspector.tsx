@@ -534,6 +534,9 @@ export function StepInspector({ step }: { step: Step }) {
             { value: "dip", text: "Dip to black" },
             { value: "flash", text: "Flash white" },
             { value: "wipe", text: "Wipe" },
+            { value: "zoom", text: "Zoom through" },
+            { value: "blur", text: "Blur through" },
+            { value: "slide", text: "Slide (accent panel)" },
           ]}
           onCommit={(v) => updateStep(step.id, { transition: v === "none" ? null : { kind: v, durationMs: step.transition?.durationMs ?? 600 } }, "Change transition")}
         />
