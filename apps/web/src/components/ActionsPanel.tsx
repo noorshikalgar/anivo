@@ -9,6 +9,8 @@
  * 4. The active action has three panels: What (the effect), Who (the
  *    targets), and When (the timing and the sound).
  */
+import { notify } from "../notify.js";
+import { buildOps } from "@anivo/ops";
 import { captionTiming, easingFn } from "@anivo/engine";
 import { type Action, DEFAULT_EASING, type Element, type Step } from "@anivo/schema";
 import { Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, makeStyles } from "@fluentui/react-components";
@@ -101,6 +103,7 @@ const QUICK: Quick[] = [
   { label: "Focus", hint: "Dim the rest (emphasis · focus)", icon: actionIcon("emphasis"), action: { type: "emphasis", effect: "focus" } },
   { label: "Spotlight", hint: "The frame goes dark around it (emphasis · spotlight)", icon: actionIcon("emphasis"), action: { type: "emphasis", effect: "spotlight" } },
   { label: "Circle", hint: "A hand-drawn circle around it (emphasis · circle)", icon: actionIcon("emphasis"), action: { type: "emphasis", effect: "circle", params: { color: "warning" } } },
+  { label: "Build", hint: "Animate a diagram in one click: the shapes rise in reading order, then their arrows draw (enter · rise, then draw-on, chained)", icon: actionIcon("enter"), action: { type: "enter", effect: "rise" } },
   { label: "One by one", hint: "The elements come in one after the other, in reading order: top to bottom, then left to right (enter · pop, 0.35 s apart)", icon: actionIcon("enter"), action: { type: "enter", effect: "pop", staggerMs: 350 } },
   { label: "Mark words", hint: "Give words in a text their own color, highlight, or underline, and dim the rest. Choose the words after the click.", icon: actionIcon("mark"), action: { type: "mark", mark: { phrase: "", color: "accent", underline: "accent" } }, only: ["text", "rectangle", "ellipse", "diamond"] },
   { label: "Send", hint: "Move elements along an arrow, for example a message (2.4 s). Select the elements and the arrow.", icon: actionIcon("motion"), action: { type: "motion" } },
@@ -315,6 +318,18 @@ function StepActions({ step }: { step: Step }) {
       };
       if (movers.length > 0) withArrow(movers);
       else setPicker({ title: "Send: choose the elements that move", initial: [], done: (ids) => ids.length > 0 && withArrow(ids.filter((id) => elements[id]?.type !== "connector")) });
+      return;
+    }
+    if (q.label === "Build") {
+      const run = (ids: string[]) => {
+        const st = useEditor.getState();
+        const ops = buildOps(st.scene, step.id, ids);
+        if ("error" in ops) return void notify(ops.error, "info");
+        const r = st.apply({ label: "Build", ops });
+        if (!r.ok) notify(r.error.message, "error");
+      };
+      if (selection.length > 0) run(selection);
+      else setPicker({ title: "Build: choose the elements", initial: [], done: (ids) => ids.length > 0 && run(ids) });
       return;
     }
     const fit = (ids: string[]) => ids.filter((id) => !q.only || q.only.includes(elements[id]?.type as Element["type"]));
