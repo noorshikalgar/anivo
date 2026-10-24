@@ -304,7 +304,7 @@ function applyEmphasis(f: ElementFrame, action: Extract<Action, { type: "emphasi
       break;
     case "circle":
       // Draws around in the first 30 %, stays, and fades in the last 15 %.
-      f.circle = { p: Math.min(1, raw / 0.3), alpha: raw > 0.85 ? (1 - raw) / 0.15 : 1, color: params.color ?? "danger" };
+      f.circle = { p: Math.min(1, raw / 0.3), alpha: raw > 0.85 ? (1 - raw) / 0.15 : 1, color: params.color ?? "danger", ...(params.shape && params.shape !== "circle" ? { shape: params.shape } : {}) };
       break;
     case "float":
     case "breathe": {

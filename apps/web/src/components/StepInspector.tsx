@@ -343,6 +343,18 @@ export function ActionEditor({ step, action, part = "all" }: { step: Step; actio
         </Row>
       )}
       {action.type === "emphasis" && <SelectField label="Effect" value={action.effect} options={EMPHASIS_EFFECTS.map((e) => ({ value: e, text: label(e) }))} onCommit={(v) => set({ effect: v }, "Change effect")} />}
+      {action.type === "emphasis" && action.effect === "circle" && (
+        <SelectField
+          label="Mark"
+          value={action.params.shape ?? "circle"}
+          options={[
+            { value: "circle", text: "Circle" },
+            { value: "box", text: "Box" },
+            { value: "underline", text: "Underline" },
+          ]}
+          onCommit={(v) => set({ params: { ...action.params, shape: v === "circle" ? undefined : v } }, "Change mark")}
+        />
+      )}
       {(action.type === "enter" || action.type === "exit") && (action.effect === "slide" || action.effect === "wipe") && (
         <Row>
           <SelectField

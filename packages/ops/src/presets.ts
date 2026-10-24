@@ -51,6 +51,8 @@ export const BUILTIN_PRESETS: MotionPreset[] = [
   each("emphasize", "Emphasize", "A short pulse to point at it.", [{ type: "emphasis", effect: "pulse", params: { count: 1 } }], 200),
   each("spotlight", "Spotlight", "The frame goes dark around it, then comes back.", [{ type: "emphasis", effect: "spotlight" }], 400),
   each("circle-it", "Circle it", "A hand-drawn circle around it, as a teacher marks a board.", [{ type: "emphasis", effect: "circle", params: { color: "warning" } }], 300),
+  each("box-it", "Box it", "A hand-drawn box around it.", [{ type: "emphasis", effect: "circle", params: { color: "warning", shape: "box" } }], 300),
+  each("underline-it", "Underline it", "A quick hand-drawn line under it.", [{ type: "emphasis", effect: "circle", params: { color: "accent", shape: "underline" } }], 300),
   each("float", "Float", "Moves up and down slowly while it holds: for a hero icon.", [{ type: "emphasis", effect: "float" }], 400),
   each("breathe", "Breathe", "Grows and shrinks a little, slowly, while it holds.", [{ type: "emphasis", effect: "breathe" }], 400),
   each("no", "Shake (no)", "A short shake: wrong, or not allowed.", [{ type: "emphasis", effect: "shake" }], 200),

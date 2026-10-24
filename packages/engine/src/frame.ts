@@ -68,7 +68,7 @@ export interface ElementFrame {
   /** Spotlight (0 to 1): the frame goes dark around this element (docs/25 K1). */
   spotlight?: number;
   /** A hand-drawn circle around the element: how much of it shows (0 to 1) and its opacity (docs/25 K2). */
-  circle?: { p: number; alpha: number; color: string };
+  circle?: { p: number; alpha: number; color: string; shape?: "circle" | "box" | "underline" };
   /** For a circle or spotlight on a group: the box of the whole group (this part carries the mark). */
   markBox?: { x: number; y: number; width: number; height: number };
   /** The element moves along a path or an arrow now: it draws above the other elements (docs/23 G1). */
