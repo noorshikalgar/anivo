@@ -24,6 +24,8 @@ export interface RenderOptions {
    * uses it so the user can see and edit elements before they enter.
    */
   ghostHidden?: number;
+  /** Hidden elements that do not get a ghost (they left the video before this time). */
+  noGhost?: Set<string>;
   /** Elements that the editor does not draw ("hidden in editor"). Exports do not set it. */
   skipIds?: ReadonlySet<string>;
   /** Do not draw the background (for passes over a frame). */
@@ -1132,7 +1134,7 @@ export function renderFrame(ctx: Ctx2D, scene: Scene, frame: FrameState, routes:
   for (const frameEl of ordered) {
     let f = frameEl;
     if (!f.visible) {
-      if (ghost <= 0) continue;
+      if (ghost <= 0 || opts.noGhost?.has(f.id)) continue;
       f = { ...f, visible: true, opacity: ghost, strokeProgress: 1, fillProgress: 1, textReveal: 1 };
     }
     if (f.opacity <= 0) continue;
