@@ -40,3 +40,21 @@ describe("a group that moves (audit e1)", () => {
     expect(a.anchor).toEqual(b.anchor);
   });
 });
+
+describe("particles on an arrow that is not drawn yet", () => {
+  it("do not show until the arrow shows", () => {
+    const r = loadScene({
+      schemaVersion: 1,
+      meta: { title: "P" },
+      elements: {
+        a: { type: "rectangle", z: "a1", x: 0, y: 0, width: 100, height: 100 },
+        b: { type: "rectangle", z: "a2", x: 600, y: 0, width: 100, height: 100 },
+        ab: { type: "connector", z: "a3", visible: false, start: { kind: "bound", elementId: "a" }, end: { kind: "bound", elementId: "b" } },
+      },
+      steps: [{ id: "s", title: "S", actions: [{ id: "e", type: "enter", effect: "draw-on", targets: ["ab"], delayMs: 1000, durationMs: 500 }, { id: "f", type: "flow", targets: ["ab"], durationMs: 3000, flow: {} }] }],
+    });
+    if (!r.ok) throw new Error(JSON.stringify(r));
+    expect(evaluate(r.scene, 500).particles).toHaveLength(0);
+    expect(evaluate(r.scene, 2500).particles.length).toBeGreaterThan(0);
+  });
+});
