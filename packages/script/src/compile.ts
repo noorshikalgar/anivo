@@ -18,7 +18,7 @@ export interface CompileOptions {
 const ELEMENT_KINDS = new Set(["box", "ellipse", "diamond", "text", "icon", "caption", "row", "column", "grid", "group", "line", "code", "image", "table"]);
 const CONTAINERS = new Set(["row", "column", "grid", "group"]);
 const ENTER_EFFECTS = new Set(["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter", "rise", "blur", "cascade", "scramble"]);
-const EMPHASIS = new Set(["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus", "march", "float", "breathe"]);
+const EMPHASIS = new Set(["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus", "march", "float", "breathe", "spotlight", "circle"]);
 const ACTIONS = new Set(["enter", "exit", "morph", "flow", "wait", "camera", "count", "code", "move", "mark", ...EMPHASIS]);
 
 const DEFAULT_SIZE: Record<string, [number, number]> = {

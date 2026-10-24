@@ -94,7 +94,7 @@ step "<title>" [hold=<time>] [cue=<time>] [caption="<one sentence>" [near=<id>] 
   any action: after=prev (or after=<action id>): start when that action ends; +<delay> is then the gap. It moves with that action.
   exit <targets> <effect>
   morph <targets> key=value…
-  pulse|shake|glow|flash|highlight|focus|float|breathe <targets>   (float, breathe: slow idle motion while it holds, 6 s default)
+  pulse|shake|glow|flash|highlight|focus|float|breathe|spotlight|circle <targets> [color=<token>]   (float, breathe: slow idle motion, 6 s; spotlight: the frame goes dark around it; circle: a hand-drawn circle around it)
   flow <connectors> [rate=<n>] [speed=<px/s>] [round-robin] [chain=<connector>] [skip=<connector>]
        [size=<px>] [color=<token>] [shape=dot|square|pill] [icon=<pack:name>] [image=<assetId>]
        [once | count=<n>] [orient] [trail=<0..1>]   (once: one particle travels the arrow; icon: an icon moves, for example icon=lucide:mail size=32)

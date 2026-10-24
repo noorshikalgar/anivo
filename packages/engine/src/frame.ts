@@ -65,6 +65,10 @@ export interface ElementFrame {
   cascade?: number;
   /** The cascade moves one word at a time (docs/22 D5: words rise). */
   cascadeWords?: boolean;
+  /** Spotlight (0 to 1): the frame goes dark around this element (docs/25 K1). */
+  spotlight?: number;
+  /** A hand-drawn circle around the element: how much of it shows (0 to 1) and its opacity (docs/25 K2). */
+  circle?: { p: number; alpha: number; color: string };
   /** The element moves along a path or an arrow now: it draws above the other elements (docs/23 G1). */
   moving?: boolean;
   /** An arrow that is on screen, but does not show because an element at its end is not on screen. */

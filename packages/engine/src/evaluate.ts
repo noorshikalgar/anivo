@@ -76,6 +76,8 @@ function settle(frame: ElementFrame): ElementFrame {
   delete f.cascade;
   delete f.cascadeWords;
   delete f.moving;
+  delete f.spotlight;
+  delete f.circle;
   delete f.scramble;
   delete f.labelFrom;
   delete f.labelMix;
@@ -294,6 +296,13 @@ function applyEmphasis(f: ElementFrame, action: Extract<Action, { type: "emphasi
       break;
     case "focus":
       // Handled once per action in applyFocus, because it changes other elements.
+      break;
+    case "spotlight":
+      f.spotlight = Math.max(f.spotlight ?? 0, envelope(raw));
+      break;
+    case "circle":
+      // Draws around in the first 30 %, stays, and fades in the last 15 %.
+      f.circle = { p: Math.min(1, raw / 0.3), alpha: raw > 0.85 ? (1 - raw) / 0.15 : 1, color: params.color ?? "danger" };
       break;
     case "float":
     case "breathe": {

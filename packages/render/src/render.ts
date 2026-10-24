@@ -773,6 +773,73 @@ function drawConnector(dc: DrawContext, f: ElementFrame, el: ConnectorElement): 
   }
 }
 
+/**
+ * Annotations (docs/25): a spotlight darkens the frame around an element with
+ * a soft edge, and a hand-drawn circle draws around an element. They draw
+ * above all elements.
+ */
+function drawAnnotations(dc: DrawContext, frames: ElementFrame[], cam: Rect4): void {
+  const { ctx, theme } = dc;
+  for (const f of frames) {
+    if (!f.visible || f.type === "connector" || f.type === "group") continue;
+    const cx = f.x + f.width / 2;
+    const cy = f.y + f.height / 2;
+    if (f.spotlight && f.spotlight > 0) {
+      const rx = (f.width / 2) * 1.2 + 36;
+      const ry = (f.height / 2) * 1.2 + 36;
+      // Layers with a growing hole make a soft edge (no radial gradient: the SVG export has none).
+      const LAYERS = 6;
+      ctx.save();
+      ctx.fillStyle = `rgba(0,0,0,${((0.68 * f.spotlight) / LAYERS).toFixed(4)})`;
+      for (let l = 0; l < LAYERS; l++) {
+        const k = 1 + l * 0.07;
+        ctx.beginPath();
+        // The frame, one way round; the hole, the other way round: the hole stays clear.
+        ctx.moveTo(cam.x - 10, cam.y - 10);
+        ctx.lineTo(cam.x + cam.width + 10, cam.y - 10);
+        ctx.lineTo(cam.x + cam.width + 10, cam.y + cam.height + 10);
+        ctx.lineTo(cam.x - 10, cam.y + cam.height + 10);
+        ctx.closePath();
+        for (let i = 0; i <= 48; i++) {
+          const t = -(i / 48) * Math.PI * 2;
+          const x = cx + Math.cos(t) * rx * k;
+          const y = cy + Math.sin(t) * ry * k;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+    if (f.circle && f.circle.p > 0 && f.circle.alpha > 0) {
+      // A loose ellipse that goes a little past its start, as a hand draws it. Fixed wobble (no random).
+      // Around the box, not inside it: an ellipse through the corners is about √2 times the half size.
+      const rx = (f.width / 2) * 1.2 + 16;
+      const ry = (f.height / 2) * 1.32 + 14;
+      const turns = 1.08;
+      const n = 72;
+      const shown = Math.max(2, Math.round(n * f.circle.p));
+      ctx.save();
+      ctx.beginPath();
+      for (let i = 0; i <= shown; i++) {
+        const t = (i / n) * turns * Math.PI * 2 - Math.PI * 0.6;
+        const wob = 1 + 0.035 * Math.sin(t * 3 + 1.3) + 0.02 * (i / n);
+        const x = cx + Math.cos(t) * rx * wob;
+        const y = cy + Math.sin(t) * ry * wob;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = toCss(withAlpha(resolveToken(theme, f.circle.color, "stroke", "rectangle"), f.circle.alpha));
+      ctx.lineWidth = Math.max(5, Math.min(f.width, f.height) * 0.04);
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+}
+
 /** Copies behind a particle with a trail, and their opacity. */
 const TRAIL_COPIES = 6;
 
@@ -1008,6 +1075,7 @@ export function renderFrame(ctx: Ctx2D, scene: Scene, frame: FrameState, routes:
 
   ctx.save();
   ctx.setTransform(sx, 0, 0, sy, -cam.x * sx, -cam.y * sy);
+  drawAnnotations(dc, ordered, cam);
   drawParticles(dc, frame.particles);
   if (frame.caption) drawStepCaption(dc, frame, frame.caption, cam);
   ctx.restore();

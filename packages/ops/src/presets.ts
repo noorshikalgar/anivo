@@ -49,6 +49,8 @@ export const BUILTIN_PRESETS: MotionPreset[] = [
   each("fill-up", "Fill up", "Fills from the bottom up, as a meter.", [{ type: "enter", effect: "wipe", durationMs: 900, easing: "smooth", params: { direction: "up" } }]),
   each("fill-right", "Fill to the right", "Fills from the left, as a progress bar or a slider.", [{ type: "enter", effect: "wipe", durationMs: 800, easing: "smooth", params: { direction: "right" } }]),
   each("emphasize", "Emphasize", "A short pulse to point at it.", [{ type: "emphasis", effect: "pulse", params: { count: 1 } }], 200),
+  each("spotlight", "Spotlight", "The frame goes dark around it, then comes back.", [{ type: "emphasis", effect: "spotlight" }], 400),
+  each("circle-it", "Circle it", "A hand-drawn circle around it, as a teacher marks a board.", [{ type: "emphasis", effect: "circle", params: { color: "warning" } }], 300),
   each("float", "Float", "Moves up and down slowly while it holds: for a hero icon.", [{ type: "emphasis", effect: "float" }], 400),
   each("breathe", "Breathe", "Grows and shrinks a little, slowly, while it holds.", [{ type: "emphasis", effect: "breathe" }], 400),
   each("no", "Shake (no)", "A short shake: wrong, or not allowed.", [{ type: "emphasis", effect: "shake" }], 200),
