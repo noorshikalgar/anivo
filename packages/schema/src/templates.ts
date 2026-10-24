@@ -10,6 +10,7 @@ export const TEMPLATES = [
   { name: "message-queue", title: "Message queue", description: "A producer publishes, workers consume, and a worker fails." },
   { name: "ci-cd-pipeline", title: "CI/CD pipeline", description: "Commit, build, test, and deploy to production." },
   { name: "oauth-login", title: "OAuth 2.0 login", description: "A sequence diagram of the authorization code flow." },
+  { name: "short-what-is-an-api", title: "Short: what is an API? (9:16)", description: "A vertical Short: a restaurant waiter explains an API in 20 seconds." },
 ] as const;
 
 export type TemplateName = (typeof TEMPLATES)[number]["name"];

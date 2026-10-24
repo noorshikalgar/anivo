@@ -1264,7 +1264,9 @@ function drawStepCaption(dc: DrawContext, frame: FrameState, cap: NonNullable<Fr
   const cam = cap.cam ?? liveCam;
   const v = dc.scene.settings.video;
   // The caption has the same size on the screen when the camera zooms (it is drawn in scene pixels).
-  const size = Math.round(Math.min(v.width, v.height) * 0.037 * (cam.width / v.width));
+  // A vertical video plays on a phone: the caption is larger there.
+  const portrait = v.height > v.width ? 1.4 : 1;
+  const size = Math.round(Math.min(v.width, v.height) * 0.037 * portrait * (cam.width / v.width));
   const padX = Math.round(size * 0.7);
   const padY = Math.round(size * 0.45);
   const lineH = Math.round(size * 1.3);

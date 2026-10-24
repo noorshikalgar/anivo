@@ -1,0 +1,323 @@
+{
+  "schemaVersion": 1,
+  "id": "",
+  "meta": {
+    "title": "Short: what is an API? (9:16)"
+  },
+  "settings": {
+    "background": {
+      "kind": "gradient"
+    },
+    "theme": "studio-dark",
+    "video": {
+      "height": 1920,
+      "width": 1080
+    }
+  },
+  "elements": {
+    "title": {
+      "content": {
+        "text": "What is an API?"
+      },
+      "height": 200,
+      "seed": 409318666,
+      "style": {
+        "fontSize": 110,
+        "textAlign": "center"
+      },
+      "type": "text",
+      "width": 900,
+      "x": 90,
+      "y": 260,
+      "z": "V"
+    },
+    "you": {
+      "height": 240,
+      "label": {
+        "text": "Your app"
+      },
+      "name": "smartphone",
+      "pack": "lucide",
+      "seed": 1354289308,
+      "style": {
+        "fill": "accent",
+        "fontSize": 44
+      },
+      "type": "icon",
+      "width": 240,
+      "x": 140,
+      "y": 760,
+      "z": "l"
+    },
+    "kitchen": {
+      "height": 240,
+      "label": {
+        "text": "The server"
+      },
+      "name": "server",
+      "pack": "lucide",
+      "seed": 870733615,
+      "style": {
+        "fill": "purple",
+        "fontSize": 44
+      },
+      "type": "icon",
+      "width": 240,
+      "x": 700,
+      "y": 760,
+      "z": "t"
+    },
+    "api": {
+      "height": 170,
+      "label": {
+        "text": "API"
+      },
+      "seed": 946514567,
+      "style": {
+        "cornerRadius": 12,
+        "fill": "accent-soft",
+        "fontSize": 64,
+        "stroke": "accent",
+        "strokeWidth": 2,
+        "textColor": "text"
+      },
+      "type": "rectangle",
+      "width": 360,
+      "x": 360,
+      "y": 1240,
+      "z": "x"
+    },
+    "order": {
+      "end": {
+        "elementId": "api",
+        "kind": "bound"
+      },
+      "label": {
+        "text": "order"
+      },
+      "seed": 1932267671,
+      "start": {
+        "elementId": "you",
+        "kind": "bound"
+      },
+      "style": {
+        "fontSize": 40
+      },
+      "type": "connector",
+      "z": "z"
+    },
+    "ticket": {
+      "end": {
+        "elementId": "kitchen",
+        "kind": "bound"
+      },
+      "label": {
+        "text": "ticket"
+      },
+      "seed": 1696052197,
+      "start": {
+        "elementId": "api",
+        "kind": "bound"
+      },
+      "style": {
+        "fontSize": 40
+      },
+      "type": "connector",
+      "z": "zV"
+    },
+    "menu": {
+      "content": {
+        "text": "GET /weather?city=Pune"
+      },
+      "height": 110,
+      "seed": 434429243,
+      "style": {
+        "fontSize": 52,
+        "textAlign": "center",
+        "textColor": "accent"
+      },
+      "type": "text",
+      "width": 900,
+      "x": 90,
+      "y": 1560,
+      "z": "zl"
+    }
+  },
+  "steps": [
+    {
+      "actions": [
+        {
+          "durationMs": 1000,
+          "easing": "linear",
+          "effect": "cascade",
+          "id": "chain-11-0",
+          "params": {
+            "unit": "word"
+          },
+          "targets": [
+            "title"
+          ],
+          "type": "enter"
+        },
+        {
+          "after": "chain-11-0",
+          "effect": "float",
+          "id": "a2",
+          "targets": [
+            "title"
+          ],
+          "type": "emphasis"
+        }
+      ],
+      "id": "s-title",
+      "title": "Title"
+    },
+    {
+      "actions": [
+        {
+          "effect": "rise",
+          "id": "a3",
+          "staggerMs": 200,
+          "targets": [
+            "you",
+            "kitchen"
+          ],
+          "type": "enter"
+        }
+      ],
+      "caption": {
+        "side": "bottom",
+        "text": "Your app wants data. The server has it."
+      },
+      "id": "s-two-sides",
+      "title": "Two sides"
+    },
+    {
+      "actions": [
+        {
+          "effect": "pop",
+          "id": "chain-16-0",
+          "targets": [
+            "api"
+          ],
+          "type": "enter"
+        },
+        {
+          "after": "chain-16-0",
+          "effect": "circle",
+          "id": "a5",
+          "params": {
+            "color": "warning"
+          },
+          "targets": [
+            "api"
+          ],
+          "type": "emphasis"
+        }
+      ],
+      "caption": {
+        "side": "bottom",
+        "text": "An API is the waiter between them."
+      },
+      "id": "s-the-waiter",
+      "title": "The waiter"
+    },
+    {
+      "actions": [
+        {
+          "effect": "draw-on",
+          "id": "chain-19-0",
+          "targets": [
+            "order"
+          ],
+          "type": "enter"
+        },
+        {
+          "after": "chain-19-0",
+          "effect": "typewriter",
+          "id": "chain-19-1",
+          "targets": [
+            "menu"
+          ],
+          "type": "enter"
+        },
+        {
+          "after": "chain-19-1",
+          "flow": {
+            "count": 1,
+            "icon": "lucide:file-text",
+            "shape": "icon",
+            "size": 56
+          },
+          "id": "a8",
+          "targets": [
+            "order"
+          ],
+          "type": "flow"
+        }
+      ],
+      "caption": {
+        "side": "bottom",
+        "text": "You ask in a fixed format: the menu."
+      },
+      "id": "s-the-order",
+      "title": "The order"
+    },
+    {
+      "actions": [
+        {
+          "effect": "draw-on",
+          "id": "chain-23-0",
+          "targets": [
+            "ticket"
+          ],
+          "type": "enter"
+        },
+        {
+          "after": "chain-23-0",
+          "flow": {
+            "count": 1,
+            "icon": "lucide:cloud-sun",
+            "shape": "icon",
+            "size": 56
+          },
+          "id": "chain-23-1",
+          "targets": [
+            "ticket"
+          ],
+          "type": "flow"
+        },
+        {
+          "after": "chain-23-1",
+          "flow": {
+            "count": 1,
+            "direction": "reverse",
+            "icon": "lucide:cloud-sun",
+            "shape": "icon",
+            "size": 56
+          },
+          "id": "chain-23-2",
+          "targets": [
+            "ticket"
+          ],
+          "type": "flow"
+        },
+        {
+          "after": "chain-23-2",
+          "effect": "spotlight",
+          "id": "a12",
+          "targets": [
+            "you"
+          ],
+          "type": "emphasis"
+        }
+      ],
+      "caption": {
+        "side": "bottom",
+        "text": "The API brings back only what you asked for."
+      },
+      "id": "s-the-answer",
+      "title": "The answer"
+    }
+  ]
+}
