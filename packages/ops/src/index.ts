@@ -13,3 +13,4 @@ export * from "./compositions.js";
 export * from "./exits.js";
 export * from "./styles.js";
 export * from "./pace.js";
+export * from "./build.js";

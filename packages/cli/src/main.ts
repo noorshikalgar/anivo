@@ -3,7 +3,7 @@ import { basename, join, resolve as resolvePath } from "node:path";
 import { resolveTimeline, sceneCaptions, toSrt, toVtt, wavBytes } from "@anivo/engine";
 import { type NodeExportFormat, exportHtml, exportVideo, renderSvg } from "@anivo/export-node";
 import { formatLint, lintScene, lintSummary } from "@anivo/lint";
-import { type Composition, type MotionPreset, OperationBus, getPreset, paceOps, presetOps, compositionOf, compositionSlots, insertCompositionOps, planFit, planTake, speechIntervals, spliceTake, trimTake, voiceParts } from "@anivo/ops";
+import { type Composition, type MotionPreset, OperationBus, buildOps, getPreset, paceOps, presetOps, compositionOf, compositionSlots, insertCompositionOps, planFit, planTake, speechIntervals, spliceTake, trimTake, voiceParts } from "@anivo/ops";
 import { assetId } from "@anivo/fileio";
 import { getIconPack, iconName, iconPackFromSvgs, iconPacks, searchIcons } from "@anivo/render";
 import { CustomTheme, type Scene, TEMPLATES, loadScene } from "@anivo/schema";
@@ -396,6 +396,22 @@ preset
     if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
     writeSceneFile(f, bus.scene);
     print(`Applied '${p.name}' (${ops.length} action${ops.length === 1 ? "" : "s"}). ${lintLine(bus.scene)}`);
+  });
+
+program
+  .command("build")
+  .description("Animate a diagram in a step: the shapes rise in reading order, then the arrows between them draw")
+  .argument("<scene>")
+  .requiredOption("--step <step>", "Step ID")
+  .requiredOption("--ids <ids>", "Element IDs, separated by commas")
+  .action((f: string, o: { step: string; ids: string }) => {
+    const bus = new OperationBus(readSceneFile(f));
+    const ops = buildOps(bus.scene, o.step, o.ids.split(",").map((x) => x.trim()).filter(Boolean));
+    if ("error" in ops) throw new ToolError(ops.error);
+    const r = bus.apply({ label: "Build", ops });
+    if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
+    writeSceneFile(f, bus.scene);
+    print(`Added the build to step '${o.step}'. ${lintLine(bus.scene)}`);
   });
 
 program

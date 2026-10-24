@@ -435,3 +435,15 @@ test("Step menu: Save as composition selects the step's elements and opens the d
   const sel = (await state(page)).selection;
   expect(sel.length).toBeGreaterThan(0);
 });
+
+test("Build: the selected diagram rises in reading order, then its arrows draw (docs/30 B1)", async ({ page }) => {
+  await page.getByRole("button", { name: "Add step" }).click();
+  await page.evaluate(() => (window as unknown as { __anivo: { getState(): { setSelection(ids: string[]): void } } }).__anivo.getState().setSelection(["pod-3", "lb", "pod-1", "pod-2"]));
+  await page.evaluate(() => (window as unknown as { __anivo: { setState(p: unknown): void } }).__anivo.setState({ propTab: "actions" }));
+  await page.getByRole("group", { name: "Quick actions" }).getByRole("button", { name: "Build" }).click();
+  const s = await state(page);
+  const acts = s.scene.steps.find((x) => x.id === s.selectedStep)!.actions as unknown as { effect: string; targets: string[]; after?: string; id: string }[];
+  expect(acts[0]).toMatchObject({ effect: "rise" });
+  expect(acts[0]!.targets[0]).toBe("pod-1");
+  expect(acts[1]).toMatchObject({ effect: "draw-on", after: acts[0]!.id });
+});
