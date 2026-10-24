@@ -1,0 +1,42 @@
+scene "OAuth 2.0 login" style=clean theme=studio-dark size=1920x1080 fps=60 background=gradient
+
+text title "How OAuth logs you in" at=160,430 size=1600x200 font-size=88 text-align=center
+box u "User" at=120,90 size=280x110 look=soft font-size=38
+box app "App" at=600,90 size=280x110 look=card font-size=38
+box auth "Auth server" at=1080,90 size=280x110 look=card font-size=38
+box api "API" at=1560,90 size=280x110 look=card font-size=38
+arrow 260,220 -> 260,1030 id=u-life head=none stroke=muted style=dashed
+arrow 740,220 -> 740,1030 id=app-life head=none stroke=muted style=dashed
+arrow 1220,220 -> 1220,1030 id=auth-life head=none stroke=muted style=dashed
+arrow 1700,220 -> 1700,1030 id=api-life head=none stroke=muted style=dashed
+arrow 272,300 -> 728,300 "Click \"Log in\"" font-size=30 id=m1
+arrow 752,390 -> 1208,390 "Redirect to log in" font-size=30 id=m2
+arrow 272,480 -> 1208,480 "Enter password" font-size=30 id=m3
+arrow 1208,570 -> 752,570 "Authorization code" font-size=30 style=dashed id=m4
+arrow 752,660 -> 1208,660 "Code + secret" font-size=30 id=m5
+arrow 1208,750 -> 752,750 "Access token" font-size=30 style=dashed stroke=success id=m6
+arrow 752,840 -> 1688,840 "Request + token" font-size=30 id=m7
+arrow 1688,930 -> 752,930 "Data" font-size=30 style=dashed id=m8
+
+step "Title" hold=600ms
+  enter title cascade unit=word dur=1300ms easing=linear
+step "Participants" caption="Four parts: you, the app, the auth server, and the API." transition=blur
+  exit title fade dur=300ms
+  enter u, app, auth, api rise stagger=150ms
+  enter u-life, app-life, auth-life, api-life draw-on after=prev
+step "Click \"Log in\"" caption="You click Log in in the app."
+  enter m1 draw-on
+step "Redirect" caption="The app sends you to the auth server. The app never sees your password."
+  enter m2 draw-on
+step "Enter password" caption="You give your password to the auth server only."
+  enter m3 draw-on
+  spotlight auth after=prev
+step "Authorization code" caption="The auth server gives the app a short-lived code."
+  enter m4 draw-on
+step "Code + secret" caption="The app trades the code and its secret for a token."
+  enter m5 draw-on
+  enter m6 draw-on after=prev
+  circle m6 color=success after=prev
+step "Use the token" caption="The app calls the API with the token, and gets your data."
+  enter m7 draw-on
+  enter m8 draw-on after=prev

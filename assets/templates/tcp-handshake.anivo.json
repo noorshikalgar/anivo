@@ -11,29 +11,61 @@
     "theme": "studio-dark"
   },
   "elements": {
+    "title": {
+      "content": {
+        "text": "TCP: the three-way handshake"
+      },
+      "height": 200,
+      "seed": 409318666,
+      "style": {
+        "fontSize": 88,
+        "textAlign": "center"
+      },
+      "type": "text",
+      "width": 1600,
+      "x": 160,
+      "y": 430,
+      "z": "V"
+    },
     "client": {
-      "height": 110,
+      "height": 130,
       "label": {
         "text": "Client"
       },
       "seed": 261266463,
+      "style": {
+        "cornerRadius": 12,
+        "fill": "accent-soft",
+        "fontSize": 40,
+        "stroke": "accent",
+        "strokeWidth": 2,
+        "textColor": "text"
+      },
       "type": "rectangle",
-      "width": 280,
-      "x": 200,
-      "y": 160,
-      "z": "V"
+      "width": 320,
+      "x": 180,
+      "y": 150,
+      "z": "l"
     },
     "server": {
-      "height": 110,
+      "height": 130,
       "label": {
         "text": "Server"
       },
       "seed": 1085029842,
+      "style": {
+        "cornerRadius": 16,
+        "fill": "surface",
+        "fontSize": 40,
+        "shadow": "soft",
+        "stroke": "line",
+        "strokeWidth": 1
+      },
       "type": "rectangle",
-      "width": 280,
-      "x": 1440,
-      "y": 160,
-      "z": "l"
+      "width": 320,
+      "x": 1420,
+      "y": 150,
+      "z": "t"
     },
     "client-time": {
       "end": {
@@ -53,7 +85,7 @@
         "strokeStyle": "dashed"
       },
       "type": "connector",
-      "z": "t"
+      "z": "x"
     },
     "server-time": {
       "end": {
@@ -73,7 +105,7 @@
         "strokeStyle": "dashed"
       },
       "type": "connector",
-      "z": "x"
+      "z": "z"
     },
     "syn": {
       "end": {
@@ -91,11 +123,12 @@
         "y": 400
       },
       "style": {
+        "fontSize": 36,
         "stroke": "accent",
         "strokeWidth": 3
       },
       "type": "connector",
-      "z": "z"
+      "z": "zV"
     },
     "syn-ack": {
       "end": {
@@ -113,11 +146,12 @@
         "y": 580
       },
       "style": {
+        "fontSize": 36,
         "stroke": "purple",
         "strokeWidth": 3
       },
       "type": "connector",
-      "z": "zV"
+      "z": "zl"
     },
     "ack": {
       "end": {
@@ -135,11 +169,12 @@
         "y": 760
       },
       "style": {
+        "fontSize": 36,
         "stroke": "accent",
         "strokeWidth": 3
       },
       "type": "connector",
-      "z": "zl"
+      "z": "zt"
     },
     "connected": {
       "content": {
@@ -156,15 +191,44 @@
       "width": 400,
       "x": 760,
       "y": 930,
-      "z": "zt"
+      "z": "zx"
     }
   },
   "steps": [
     {
       "actions": [
         {
-          "effect": "pop",
+          "durationMs": 1300,
+          "easing": "linear",
+          "effect": "cascade",
           "id": "a1",
+          "params": {
+            "unit": "word"
+          },
+          "targets": [
+            "title"
+          ],
+          "type": "enter"
+        }
+      ],
+      "holdMs": 600,
+      "id": "s0",
+      "title": "Title"
+    },
+    {
+      "actions": [
+        {
+          "durationMs": 300,
+          "effect": "fade",
+          "id": "a2",
+          "targets": [
+            "title"
+          ],
+          "type": "exit"
+        },
+        {
+          "effect": "rise",
+          "id": "a3",
           "staggerMs": 150,
           "targets": [
             "client",
@@ -176,7 +240,7 @@
           "delayMs": 400,
           "durationMs": 900,
           "effect": "draw-on",
-          "id": "a2",
+          "id": "a4",
           "targets": [
             "client-time",
             "server-time"
@@ -184,21 +248,47 @@
           "type": "enter"
         }
       ],
+      "caption": {
+        "side": "auto",
+        "text": "Before data flows, the client and the server agree to talk."
+      },
       "id": "s1",
-      "title": "Client and server"
+      "title": "Client and server",
+      "transition": {
+        "durationMs": 600,
+        "kind": "blur"
+      }
     },
     {
       "actions": [
         {
           "durationMs": 1000,
           "effect": "draw-on",
-          "id": "a3",
+          "id": "chain-21-0",
           "targets": [
             "syn"
           ],
           "type": "enter"
+        },
+        {
+          "after": "chain-21-0",
+          "flow": {
+            "count": 1,
+            "icon": "lucide:mail",
+            "shape": "icon",
+            "size": 40
+          },
+          "id": "a6",
+          "targets": [
+            "syn"
+          ],
+          "type": "flow"
         }
       ],
+      "caption": {
+        "side": "auto",
+        "text": "SYN: the client asks to open a connection."
+      },
       "id": "s2",
       "title": "SYN"
     },
@@ -207,13 +297,31 @@
         {
           "durationMs": 1000,
           "effect": "draw-on",
-          "id": "a4",
+          "id": "chain-25-0",
           "targets": [
             "syn-ack"
           ],
           "type": "enter"
+        },
+        {
+          "after": "chain-25-0",
+          "flow": {
+            "count": 1,
+            "icon": "lucide:mail",
+            "shape": "icon",
+            "size": 40
+          },
+          "id": "a8",
+          "targets": [
+            "syn-ack"
+          ],
+          "type": "flow"
         }
       ],
+      "caption": {
+        "side": "auto",
+        "text": "SYN-ACK: the server agrees and asks back."
+      },
       "id": "s3",
       "title": "SYN-ACK"
     },
@@ -222,15 +330,29 @@
         {
           "durationMs": 1000,
           "effect": "draw-on",
-          "id": "a5",
+          "id": "chain-29-0",
           "targets": [
             "ack"
           ],
           "type": "enter"
         },
         {
+          "after": "chain-29-0",
+          "flow": {
+            "count": 1,
+            "icon": "lucide:mail",
+            "shape": "icon",
+            "size": 40
+          },
+          "id": "a10",
+          "targets": [
+            "ack"
+          ],
+          "type": "flow"
+        },
+        {
           "delayMs": 900,
-          "id": "a6",
+          "id": "a11",
           "targets": [
             "client",
             "server"
@@ -244,13 +366,17 @@
         {
           "delayMs": 1100,
           "effect": "pop",
-          "id": "a7",
+          "id": "a12",
           "targets": [
             "connected"
           ],
           "type": "enter"
         }
       ],
+      "caption": {
+        "side": "auto",
+        "text": "ACK: the client agrees. The connection is open."
+      },
       "holdMs": 1500,
       "id": "s4",
       "title": "ACK: connected"

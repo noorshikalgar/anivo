@@ -1,0 +1,33 @@
+scene "TCP three-way handshake" style=clean theme=studio-dark size=1920x1080 fps=60 background=gradient
+
+text title "TCP: the three-way handshake" at=160,430 size=1600x200 font-size=88 text-align=center
+box client "Client" at=180,150 size=320x130 look=soft font-size=40
+box server "Server" at=1420,150 size=320x130 look=card font-size=40
+arrow 340,300 -> 340,980 id=client-time head=none stroke=muted style=dashed
+arrow 1580,300 -> 1580,980 id=server-time head=none stroke=muted style=dashed
+arrow 352,400 -> 1568,500 "SYN" font-size=36 id=syn stroke=accent width=3
+arrow 1568,580 -> 352,680 "SYN-ACK" font-size=36 id=syn-ack stroke=purple width=3
+arrow 352,760 -> 1568,860 "ACK" font-size=36 id=ack stroke=accent width=3
+text connected "Connected" at=760,930 size=400x80 font-size=48 weight=700 color=success
+
+step "Title" id=s0 hold=600ms
+  enter title cascade unit=word dur=1300ms easing=linear
+
+step "Client and server" id=s1 caption="Before data flows, the client and the server agree to talk." transition=blur
+  exit title fade dur=300ms
+  enter client, server rise stagger=150ms
+  enter client-time, server-time draw-on +400ms dur=900ms
+
+step "SYN" id=s2 caption="SYN: the client asks to open a connection."
+  enter syn draw-on dur=1000ms
+  flow syn once icon=lucide:mail size=40 after=prev
+
+step "SYN-ACK" id=s3 caption="SYN-ACK: the server agrees and asks back."
+  enter syn-ack draw-on dur=1000ms
+  flow syn-ack once icon=lucide:mail size=40 after=prev
+
+step "ACK: connected" id=s4 hold=1500ms caption="ACK: the client agrees. The connection is open."
+  enter ack draw-on dur=1000ms
+  flow ack once icon=lucide:mail size=40 after=prev
+  morph client, server fill="success-soft" stroke="success" +900ms
+  enter connected pop +1100ms

@@ -1,0 +1,21 @@
+scene "Docker image layers" style=clean theme=studio-dark size=1920x1080 fps=60 background=gradient
+
+text title "Docker image" at=660,110 size=600x60 font-size=52 weight=700
+box image "" at=660,180 size=600x680 fill=transparent stroke=muted style=dashed
+box base "Base OS" font-size=40 at=700,700 size=520x120 fill=surface-strong
+box deps "Dependencies" font-size=40 at=700,560 size=520x120 fill=surface-strong
+box code "App code" font-size=40 at=700,420 size=520x120 fill=surface-strong
+box code-v2 "App code v2" font-size=40 at=700,420 size=520x120 fill=accent-soft stroke=accent
+
+step "An empty image" id=s1 caption="A Docker image is a stack of read-only layers."
+  enter image draw-on
+  enter title fade +200ms
+
+step "Layers stack up" id=s2 caption="Each line of the Dockerfile adds one layer."
+  enter base, deps, code slide dur=600ms stagger=450ms direction=down distance=220
+
+step "Code changes" id=s3 hold=1500ms caption="Change the code: only the top layer builds again."
+  flash code dur=600ms color=warning
+  exit code fade +600ms dur=300ms
+  enter code-v2 pop +800ms
+  glow base, deps +1100ms dur=1200ms color=success
