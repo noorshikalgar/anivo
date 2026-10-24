@@ -137,6 +137,8 @@ interface EditorState {
   rate: number;
   /** The Steps list shows a small frame of each step (docs/22 D4). */
   stepThumbs: boolean;
+  /** The left area: the steps or the library (docs/22 D7). */
+  leftTab: "steps" | "library";
   /** The browser can install the app (PWA): show the Install button. */
   canInstall: boolean;
   /** A new version of the app is ready (service worker): show a Reload button. */
@@ -266,6 +268,7 @@ export const useEditor = create<EditorState>((set, get) => {
     playing: false,
     rate: 1,
     stepThumbs: true,
+    leftTab: "steps",
     selectedStep: null,
     selection: [],
     tool: "select",

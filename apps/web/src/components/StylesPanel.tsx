@@ -19,14 +19,14 @@ const useStyles = makeStyles({
   row: { display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" },
 });
 
-function Tile({ p, onDelete }: { p: StylePreset; onDelete?: () => void }) {
+export function StyleTile({ p, onDelete, prefix = "Style" }: { p: StylePreset; onDelete?: () => void; prefix?: string }) {
   const s = useStyles();
   const scene = useEditor((st) => st.scene);
   const theme = sceneTheme(scene);
   const css = (v: string | undefined, fallback: string) => (v ? (theme.tokens[v] ?? v) : (theme.tokens[fallback] ?? fallback));
   const st = p.style;
   return (
-    <button type="button" className={s.tile} aria-label={`Style: ${p.name}`} title={`Give the selection the style '${p.name}'`} onClick={() => applyLook(p.style, p.name)}>
+    <button type="button" className={s.tile} aria-label={`${prefix}: ${p.name}`} title={`Give the selection the style '${p.name}'`} onClick={() => applyLook(p.style, p.name)}>
       <span
         className={s.swatch}
         style={{
@@ -67,10 +67,10 @@ export function StylesPanel() {
     <Panel id="el-styles" title="Styles" defaultOpen={false}>
       <div className={s.grid} role="group" aria-label="Styles">
         {builtinStyles().map((p) => (
-          <Tile key={p.id} p={p} />
+          <StyleTile key={p.id} p={p} />
         ))}
         {mine.map((p) => (
-          <Tile key={p.id} p={p} onDelete={() => void deleteUserStyle(p.id).then(reload)} />
+          <StyleTile key={p.id} p={p} onDelete={() => void deleteUserStyle(p.id).then(reload)} />
         ))}
       </div>
       {name === null ? (

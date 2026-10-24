@@ -18,10 +18,10 @@ Status: plan, 2026-10-24. After docs/21 (C1–C12 built). Method: an audit sampl
 
 | # | Item | Fixes |
 |---|---|---|
-| D1 | **Scrub preview**: point at the ruler and a small frame of that time shows above the pointer. | F1 |
-| D2 | **Chains you can see**: a thin line from the end of a bar to the chained bar; while you drag a bar, its chained bars move with it. | F2 |
-| D3 | **Shuttle keys** anywhere in the editor: J back (press again for faster), K pause, L forward; `,` and `.` one frame. | F3 |
-| D4 | **Step thumbnails** in the Steps list: a small frame of the end of each step. | F4 |
-| D5 | **Words rise**: an enter effect where each word rises and fades in after the one before. | F5 |
-| D6 | **Idle motion**: float and breathe emphasis effects that loop for their duration, soft enough for a hold. | F6 |
-| D7 | **Library panel**: presets, compositions, and widgets in one place, with search and live previews; drag a composition or a widget onto the canvas. | F7 |
+| D1 | Done. **Scrub preview**: point at the ruler and a small frame of that time shows above the pointer. | F1 |
+| D2 | Done. **Chains you can see**: a thin line from the end of a bar to the chained bar; while you drag a bar, its chained bars move with it. | F2 |
+| D3 | Done. **Shuttle keys** anywhere in the editor: J back, L forward (press again for 2×, 4×, 8×; K stays Record, Space stops); `,` and `.` one frame. | F3 |
+| D4 | Done. **Step thumbnails** in the Steps list: a small frame of the end of each step. | F4 |
+| D5 | Done. **Words rise**: an enter effect where each word rises and fades in after the one before. | F5 |
+| D6 | Done. **Idle motion**: float and breathe emphasis effects that loop for their duration, soft enough for a hold. | F6 |
+| D7 | Done. **Library panel**: presets, compositions, and widgets in one place, with search and live previews; drag a composition or a widget onto the canvas. | F7 |
