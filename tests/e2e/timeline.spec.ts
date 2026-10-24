@@ -205,13 +205,19 @@ test("drop a bar at the end of another bar: it chains, and moves when the first 
   const f = (await first.boundingBox())!;
   await page.mouse.move(f.x + f.width / 2, f.y + f.height / 2);
   await page.mouse.down();
+  const sx = (await second.boundingBox())!.x;
   await page.mouse.move(f.x + f.width / 2 + 60, f.y + f.height / 2, { steps: 6 });
+  // While the first bar moves, the chained bar moves with it (docs/22 D2).
+  expect((await second.boundingBox())!.x).toBeGreaterThan(sx + 40);
   await page.mouse.up();
   expect((await acts())[0]!.delayMs).toBeGreaterThan(100);
   // The view can zoom out (the step is longer): check that the second bar starts at the end of the first bar.
   const f2 = (await first.boundingBox())!;
   expect(Math.abs((await second.boundingBox())!.x - (f2.x + f2.width))).toBeLessThan(3);
   expect((await acts())[1]).toMatchObject({ after: "first", delayMs: 0 });
+  // The active chained bar shows the bar it follows.
+  await page.evaluate(() => (window as unknown as { __anivo: { setState(p: unknown): void } }).__anivo.setState({ activeAction: "second" }));
+  await expect(page.locator('[data-action="first"][data-lead]')).toHaveCount(1);
 });
 
 test("shuttle keys: L plays, L again is faster, J plays backward; comma and period step one frame (docs/22 D3)", async ({ page }) => {

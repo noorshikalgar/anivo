@@ -85,6 +85,8 @@ const useStyles = makeStyles({
     ":focus-visible": { outline: "2px solid #fff" },
   },
   blockOn: { boxShadow: "0 0 0 2px #fff" },
+  /** The bar that the active bar follows (a chain). */
+  blockLead: { outline: "1px dashed rgba(255,255,255,0.9)", outlineOffset: "1px" },
   edge: { position: "absolute", top: 0, bottom: 0, right: "-3px", width: "7px", cursor: "ew-resize" },
   diamond: {
     position: "absolute",
@@ -392,17 +394,39 @@ export function TimelinePanel() {
     }
   };
 
+  // Chains (docs/22 D2): while a bar moves or changes its length, the bars chained after it move with it.
+  const dragged = drag && (drag.kind === "move" || drag.kind === "end") ? drag.key.split("/") : null;
+  const followers = useMemo(() => {
+    if (!dragged) return new Set<string>();
+    const step = scene.steps.find((x) => x.id === dragged[0]);
+    const out = new Set<string>();
+    let grew = true;
+    while (grew) {
+      grew = false;
+      for (const a of step?.actions ?? []) {
+        if (!a.after || out.has(a.id) || a.id === dragged[1] || (a.after !== dragged[1] && !out.has(a.after))) continue;
+        out.add(a.id);
+        grew = true;
+      }
+    }
+    return out;
+  }, [scene, dragged?.[0], dragged?.[1]]);
+  const activeLead = scene.steps.find((x) => x.id === selectedStep)?.actions.find((a) => a.id === activeAction)?.after;
+
   const renderBlock = (b: Block, elId: string) => {
     const d = drag && drag.key === b.key ? drag : null;
     const delay = d?.kind === "move" ? Math.max(0, b.action.delayMs + d.dms) : b.action.delayMs;
     const dur = d?.kind === "end" ? Math.max(MIN_MS, durationOf(b) + d.dms) : durationOf(b);
-    const start = b.startMs + (delay - b.action.delayMs);
+    const follow = drag && dragged && b.stepId === dragged[0] && followers.has(b.action.id) ? drag.dms : 0;
+    const start = b.startMs + (delay - b.action.delayMs) + follow;
     const label = describe(b.action);
     const on = activeAction === b.action.id && selectedStep === b.stepId;
+    const lead = activeLead === b.action.id && selectedStep === b.stepId;
     return (
       <Tooltip key={b.key} content={`${label} · step ${b.stepIndex + 1} · ${formatTime(start)} to ${formatTime(start + dur)}${b.action.after ? " · chained: starts when the action before it ends" : ""}`} relationship="description">
         <div
-          className={mergeClasses(styles.block, on && styles.blockOn)}
+          className={mergeClasses(styles.block, on && styles.blockOn, lead && styles.blockLead)}
+          data-lead={lead || undefined}
           style={{ left: px(start), width: Math.max(6, px(dur)), backgroundColor: COLORS[b.action.type] ?? "#64748b" }}
           role="slider"
           tabIndex={0}
