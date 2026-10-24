@@ -427,3 +427,11 @@ test("Pace of one step: Slower in the step settings changes only that step", asy
   expect(len(after, "s-pods")).toBeGreaterThan(len(before, "s-pods") * 1.2);
   expect(len(after, "s-user")).toBe(len(before, "s-user"));
 });
+
+test("Step menu: Save as composition selects the step's elements and opens the dialog", async ({ page }) => {
+  await page.getByRole("button", { name: "More for step 3" }).click({ force: true });
+  await page.getByRole("menuitem", { name: "Save as composition…" }).click();
+  await expect(page.getByRole("dialog", { name: "Compositions" })).toBeVisible();
+  const sel = (await state(page)).selection;
+  expect(sel.length).toBeGreaterThan(0);
+});
