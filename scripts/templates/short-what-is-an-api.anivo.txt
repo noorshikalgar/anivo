@@ -1,0 +1,27 @@
+scene "Short: what is an API? (9:16)" style=clean theme=studio-dark size=1080x1920 fps=60 background=gradient
+
+text title "What is an API?" at=90,260 size=900x200 font-size=110 text-align=center
+icon you lucide:smartphone "Your app" at=140,760 size=240x240 fill=accent font-size=44
+icon kitchen lucide:server "The server" at=700,760 size=240x240 fill=purple font-size=44
+box api "API" at=360,1240 size=360x170 look=soft font-size=64
+arrow you -> api "order" font-size=40 id=order
+arrow api -> kitchen "ticket" font-size=40 id=ticket
+text menu "GET /weather?city=Pune" at=90,1560 size=900x110 font-size=52 text-align=center color=accent
+
+step "Title" hold=500ms
+  enter title cascade unit=word dur=1000ms easing=linear
+  float title after=prev
+step "Two sides" caption="Your app wants data. The server has it." side=bottom
+  enter you, kitchen rise stagger=200ms
+step "The waiter" caption="An API is the waiter between them." side=bottom
+  enter api pop
+  circle api color=warning after=prev
+step "The order" caption="You ask in a fixed format: the menu." side=bottom
+  enter order draw-on
+  enter menu typewriter after=prev
+  flow order once icon=lucide:file-text size=56 after=prev
+step "The answer" caption="The API brings back only what you asked for." side=bottom
+  enter ticket draw-on
+  flow ticket once icon=lucide:cloud-sun size=56 after=prev
+  flow ticket once icon=lucide:cloud-sun size=56 reverse after=prev
+  spotlight you after=prev
