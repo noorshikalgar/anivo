@@ -77,8 +77,8 @@ export function boundaryPoint(f: ElementFrame, toward: Point, gap = 6): Point {
   } else if (f.type === "diamond") {
     t = 1 / (Math.abs(dx) / (hw || 1) + Math.abs(dy) / (hh || 1));
   } else {
-    // The label of an icon is below the icon (52 px, as the renderer draws it): a line down starts below the label.
-    const below = f.type === "icon" && f.label && dy > 0 ? 52 * f.scale : 0;
+    // The label of an icon is below the icon (one line of its font, at least 52 px, as the renderer draws it): a line down starts below the label.
+    const below = f.type === "icon" && f.label && dy > 0 ? Math.max(52, (f.fontSize ?? 28) * 1.25 + 12) * f.scale : 0;
     t = Math.min(hw / (Math.abs(dx) || 1e-9), (hh + below) / (Math.abs(dy) || 1e-9));
   }
   const len = Math.hypot(dx, dy);
