@@ -2,6 +2,7 @@
  * The properties editor (docs/15): vertical tabs (Scene, Step, Element) and
  * collapsible panels with property rows.
  */
+import { StylesPanel } from "./StylesPanel.js";
 import { KeyLabel } from "./KeyButton.js";
 import { addFontFile } from "../fonts.js";
 
@@ -413,6 +414,7 @@ function ElementProperties({ el }: { el: Element }) {
         </Panel>
       )}
 
+      {el.type !== "group" && <StylesPanel />}
       <Panel id="el-arrange" title="Arrange" defaultOpen={false}>
         <Prop label="Order">
           <div className={s.icons}>
@@ -481,6 +483,7 @@ function SelectionTools({ count }: { count: number }) {
           </div>
         </Prop>
       </Panel>
+      <StylesPanel />
       <Panel id="sel-edit" title="Selection">
         <Prop label="Elements">
           <div className={s.icons}>

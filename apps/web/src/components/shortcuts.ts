@@ -1,3 +1,4 @@
+import { copyLook, pasteLook } from "../styles.js";
 import { useEffect } from "react";
 import { addStep, copySelection, deleteKeysAtPlayhead, insertKeysAtPlayhead, deleteSelection, duplicateSelection, groupSelection, nudgeSelection, pasteFromClipboard, selectAll, toggleHideSelection, toggleLockSelection, ungroupSelection } from "../commands.js";
 import { cueAtPlayhead } from "../audio.js";
@@ -14,6 +15,8 @@ function isTyping(target: EventTarget | null): boolean {
 }
 
 let pasteFallback = 0;
+/** The time of the last Ctrl+Alt+V (paste style), to ignore the paste event that can follow it. */
+let pasteStyleAt = -1e9;
 
 /** Global keyboard shortcuts (FR-UX-01). */
 export function useShortcuts(): void {
@@ -71,6 +74,14 @@ export function useShortcuts(): void {
         e.preventDefault();
         if (e.shiftKey) ungroupSelection();
         else groupSelection();
+      } else if (mod && e.altKey && (e.code === "KeyC" || e.key.toLowerCase() === "c")) {
+        e.preventDefault();
+        copyLook();
+      } else if (mod && e.altKey && (e.code === "KeyV" || e.key.toLowerCase() === "v")) {
+        e.preventDefault();
+        // Some browsers send a paste event even so: ignore it.
+        pasteStyleAt = e.timeStamp;
+        pasteLook();
       } else if (mod && e.key.toLowerCase() === "c") {
         void copySelection();
       } else if (mod && e.key.toLowerCase() === "x") {
@@ -148,6 +159,7 @@ export function useShortcuts(): void {
     const onPaste = (e: ClipboardEvent) => {
       clearTimeout(pasteFallback);
       if (isTyping(e.target) || useEditor.getState().presenting) return;
+      if (e.timeStamp - pasteStyleAt < 300) return void e.preventDefault();
       e.preventDefault();
       const data = e.clipboardData;
       void withErrors(async () => {
