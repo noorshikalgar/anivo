@@ -4,8 +4,29 @@
   "meta": {
     "title": "Git branch and merge"
   },
-  "settings": {},
+  "settings": {
+    "background": {
+      "kind": "gradient"
+    },
+    "theme": "studio-dark"
+  },
   "elements": {
+    "title": {
+      "content": {
+        "text": "Git: branch, work, merge"
+      },
+      "height": 200,
+      "seed": 409318666,
+      "style": {
+        "fontSize": 88,
+        "textAlign": "center"
+      },
+      "type": "text",
+      "width": 1600,
+      "x": 160,
+      "y": 430,
+      "z": "V"
+    },
     "main-label": {
       "content": {
         "text": "main"
@@ -20,7 +41,7 @@
       "width": 160,
       "x": 120,
       "y": 575,
-      "z": "V"
+      "z": "l"
     },
     "feature-label": {
       "content": {
@@ -36,91 +57,91 @@
       "width": 200,
       "x": 120,
       "y": 305,
-      "z": "l"
+      "z": "t"
     },
     "c1": {
-      "height": 50,
+      "height": 70,
       "seed": 136962010,
       "style": {
         "fill": "accent"
       },
       "type": "ellipse",
-      "width": 50,
+      "width": 70,
       "x": 320,
       "y": 580,
-      "z": "t"
+      "z": "x"
     },
     "c2": {
-      "height": 50,
+      "height": 70,
       "seed": 86629153,
       "style": {
         "fill": "accent"
       },
       "type": "ellipse",
-      "width": 50,
+      "width": 70,
       "x": 560,
       "y": 580,
-      "z": "x"
+      "z": "z"
     },
     "c3": {
-      "height": 50,
+      "height": 70,
       "seed": 103406772,
       "style": {
         "fill": "accent"
       },
       "type": "ellipse",
-      "width": 50,
+      "width": 70,
       "x": 800,
       "y": 580,
-      "z": "z"
+      "z": "zV"
     },
     "f1": {
-      "height": 50,
+      "height": 70,
       "seed": 337800568,
       "style": {
         "fill": "success"
       },
       "type": "ellipse",
-      "width": 50,
+      "width": 70,
       "x": 800,
       "y": 310,
-      "z": "zV"
+      "z": "zl"
     },
     "f2": {
-      "height": 50,
+      "height": 70,
       "seed": 388133425,
       "style": {
         "fill": "success"
       },
       "type": "ellipse",
-      "width": 50,
+      "width": 70,
       "x": 1040,
       "y": 310,
-      "z": "zl"
+      "z": "zt"
     },
     "f3": {
-      "height": 50,
+      "height": 70,
       "seed": 371355806,
       "style": {
         "fill": "success"
       },
       "type": "ellipse",
-      "width": 50,
+      "width": 70,
       "x": 1280,
       "y": 310,
-      "z": "zt"
+      "z": "zx"
     },
     "merge": {
-      "height": 60,
+      "height": 84,
       "seed": 964052520,
       "style": {
         "fill": "warning"
       },
       "type": "ellipse",
-      "width": 60,
+      "width": 84,
       "x": 1500,
       "y": 575,
-      "z": "zx"
+      "z": "zz"
     },
     "cmd": {
       "content": {
@@ -135,7 +156,7 @@
       "width": 560,
       "x": 1180,
       "y": 760,
-      "z": "zz"
+      "z": "zzV"
     },
     "c-c1-c2": {
       "end": {
@@ -149,7 +170,7 @@
         "kind": "bound"
       },
       "type": "connector",
-      "z": "zzV"
+      "z": "zzl"
     },
     "c-c2-c3": {
       "end": {
@@ -163,7 +184,7 @@
         "kind": "bound"
       },
       "type": "connector",
-      "z": "zzl"
+      "z": "zzt"
     },
     "c-c3-merge": {
       "end": {
@@ -177,7 +198,7 @@
         "kind": "bound"
       },
       "type": "connector",
-      "z": "zzt"
+      "z": "zzx"
     },
     "c-c2-f1": {
       "end": {
@@ -192,7 +213,7 @@
         "kind": "bound"
       },
       "type": "connector",
-      "z": "zzx"
+      "z": "zzz"
     },
     "c-f1-f2": {
       "end": {
@@ -206,7 +227,7 @@
         "kind": "bound"
       },
       "type": "connector",
-      "z": "zzz"
+      "z": "zzzV"
     },
     "c-f2-f3": {
       "end": {
@@ -220,7 +241,7 @@
         "kind": "bound"
       },
       "type": "connector",
-      "z": "zzzV"
+      "z": "zzzl"
     },
     "c-f3-merge": {
       "end": {
@@ -235,15 +256,44 @@
         "kind": "bound"
       },
       "type": "connector",
-      "z": "zzzl"
+      "z": "zzzt"
     }
   },
   "steps": [
     {
       "actions": [
         {
-          "effect": "fade",
+          "durationMs": 1300,
+          "easing": "linear",
+          "effect": "cascade",
           "id": "a1",
+          "params": {
+            "unit": "word"
+          },
+          "targets": [
+            "title"
+          ],
+          "type": "enter"
+        }
+      ],
+      "holdMs": 600,
+      "id": "s-title",
+      "title": "Title"
+    },
+    {
+      "actions": [
+        {
+          "durationMs": 300,
+          "effect": "fade",
+          "id": "a2",
+          "targets": [
+            "title"
+          ],
+          "type": "exit"
+        },
+        {
+          "effect": "fade",
+          "id": "a3",
           "targets": [
             "main-label"
           ],
@@ -251,7 +301,7 @@
         },
         {
           "effect": "pop",
-          "id": "a2",
+          "id": "a4",
           "staggerMs": 250,
           "targets": [
             "c1",
@@ -263,7 +313,7 @@
         {
           "delayMs": 250,
           "effect": "draw-on",
-          "id": "a3",
+          "id": "a5",
           "staggerMs": 250,
           "targets": [
             "c-c1-c2",
@@ -272,14 +322,22 @@
           "type": "enter"
         }
       ],
+      "caption": {
+        "side": "auto",
+        "text": "Each dot is a commit on main."
+      },
       "id": "s-commits-on-main",
-      "title": "Commits on main"
+      "title": "Commits on main",
+      "transition": {
+        "durationMs": 600,
+        "kind": "blur"
+      }
     },
     {
       "actions": [
         {
           "effect": "draw-on",
-          "id": "a4",
+          "id": "a6",
           "targets": [
             "c-c2-f1"
           ],
@@ -287,7 +345,7 @@
         },
         {
           "effect": "fade",
-          "id": "a5",
+          "id": "a7",
           "targets": [
             "feature-label"
           ],
@@ -296,13 +354,17 @@
         {
           "delayMs": 500,
           "effect": "pop",
-          "id": "a6",
+          "id": "a8",
           "targets": [
             "f1"
           ],
           "type": "enter"
         }
       ],
+      "caption": {
+        "side": "auto",
+        "text": "A branch starts from a commit. Main does not change."
+      },
       "id": "s-create-a-branch",
       "title": "Create a branch"
     },
@@ -310,7 +372,7 @@
       "actions": [
         {
           "effect": "pop",
-          "id": "a7",
+          "id": "a9",
           "staggerMs": 300,
           "targets": [
             "f2",
@@ -320,7 +382,7 @@
         },
         {
           "effect": "draw-on",
-          "id": "a8",
+          "id": "a10",
           "staggerMs": 300,
           "targets": [
             "c-f1-f2",
@@ -329,6 +391,10 @@
           "type": "enter"
         }
       ],
+      "caption": {
+        "side": "auto",
+        "text": "New work goes on the branch."
+      },
       "id": "s-work-on-the-branch",
       "title": "Work on the branch"
     },
@@ -336,7 +402,7 @@
       "actions": [
         {
           "effect": "draw-on",
-          "id": "a9",
+          "id": "chain-38-0",
           "targets": [
             "c-c3-merge",
             "c-f3-merge"
@@ -344,24 +410,31 @@
           "type": "enter"
         },
         {
-          "delayMs": 600,
+          "after": "chain-38-0",
           "effect": "pop",
-          "id": "a10",
+          "id": "chain-38-1",
           "targets": [
             "merge"
           ],
           "type": "enter"
         },
         {
-          "delayMs": 1000,
-          "effect": "pulse",
-          "id": "a11",
+          "after": "chain-38-1",
+          "effect": "circle",
+          "id": "a13",
+          "params": {
+            "color": "warning"
+          },
           "targets": [
             "merge"
           ],
           "type": "emphasis"
         }
       ],
+      "caption": {
+        "side": "auto",
+        "text": "A merge commit joins the two lines of work."
+      },
       "id": "s-merge",
       "title": "Merge"
     },
@@ -372,7 +445,7 @@
             "op": "zoom-to",
             "padding": 60
           },
-          "id": "a12",
+          "id": "a14",
           "targets": [
             "c3",
             "f3",
@@ -384,7 +457,8 @@
         {
           "delayMs": 400,
           "effect": "typewriter",
-          "id": "a13",
+          "id": "a15",
+          "sound": "keys",
           "targets": [
             "cmd"
           ],

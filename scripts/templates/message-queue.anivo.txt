@@ -1,41 +1,40 @@
-scene "Message queue" style=clean theme=slate-dark size=1920x1080 fps=60
+scene "Message queue" style=clean theme=studio-dark size=1920x1080 fps=60 background=gradient
 
-icon producer lucide:package "Producer" at=140,470 size=140x140
-row queue at=560,480 spacing=16
-  box m1 "msg 1" size=150x100 fill=accent-soft
-  box m2 "msg 2" size=150x100 fill=accent-soft
-  box m3 "msg 3" size=150x100 fill=accent-soft
-  box m4 "msg 4" size=150x100 fill=accent-soft
-text queue-label "orders queue" at=560,610 size=650x60 color=muted
-box broker "Broker" at=1250,480 size=150x100
-column workers at=1480,220 spacing=120
-  box w1 "Worker 1" size=260x100
-  box w2 "Worker 2" size=260x100
-  box w3 "Worker 3" size=260x100
-caption note "The producer does not wait for the workers"
+text title "Why apps put a queue in the middle" at=160,430 size=1600x200 font-size=88 text-align=center
+icon producer lucide:package "Producer" at=110,450 size=200x200 fill=accent font-size=36
+row queue at=470,480 spacing=18
+  box m1 "msg 1" size=160x120 look=soft font-size=34
+  box m2 "msg 2" size=160x120 look=soft font-size=34
+  box m3 "msg 3" size=160x120 look=soft font-size=34
+  box m4 "msg 4" size=160x120 look=soft font-size=34
+text queue-label "orders queue" at=470,630 size=694x70 font-size=36 color=muted text-align=center
+box broker "Broker" at=1240,480 size=180x120 look=card font-size=36
+column workers at=1530,200 spacing=140
+  box w1 "Worker 1" size=300x120 look=card font-size=36
+  box w2 "Worker 2" size=300x120 look=card font-size=36
+  box w3 "Worker 3" size=300x120 look=card font-size=36
 
 arrow producer -> m1
 arrow m4 -> broker
 arrow broker -> w1, w2, w3
 
-step "Publish"
-  enter producer draw-on
-  enter queue-label fade
-  enter m1, m2, m3, m4 slide-left +300ms stagger=200ms
-  enter broker pop +900ms
-  enter m4->broker draw-on +1100ms
-  enter producer->m1 draw-on +300ms
-step "Subscribe"
-  enter w1, w2, w3 pop stagger=150ms
-  enter broker->w1, broker->w2, broker->w3 draw-on +400ms
-  enter note fade
-step "Consume"
+step "Title" hold=600ms
+  enter title cascade unit=word dur=1300ms easing=linear
+step "Publish" caption="The producer puts messages in the queue and goes on." transition=blur
+  exit title fade dur=300ms
+  enter producer rise
+  enter producer->m1 draw-on after=prev
+  enter m1, m2, m3, m4 slide-left stagger=180ms after=prev
+  enter queue-label fade after=prev
+step "Subscribe" caption="Workers connect to the broker."
+  enter broker pop
+  enter m4->broker draw-on after=prev
+  enter w1, w2, w3 rise stagger=150ms after=prev
+  enter broker->w1, broker->w2, broker->w3 draw-on after=prev
+step "Consume" caption="Each message goes to one worker."
   flow broker->w* round-robin rate=2
-  exit m4, m3 fade +600ms stagger=600ms
-  morph m4->broker opacity=0 +1800ms
-  morph note label="Each message goes to one worker"
-step "A worker fails"
+  exit m4, m3 fade stagger=600ms +600ms
+step "A worker fails" caption="A worker is down: the queue keeps the messages until a worker is free."
   morph w2 fill=danger-soft stroke=danger label="Worker 2 down"
-  shake w2
+  circle w2 color=danger after=prev
   flow broker->w* round-robin skip=broker->w2 rate=2
-  morph note label="The queue keeps the messages until a worker is free"

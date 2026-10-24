@@ -4,7 +4,12 @@
   "meta": {
     "title": "TCP three-way handshake"
   },
-  "settings": {},
+  "settings": {
+    "background": {
+      "kind": "gradient"
+    },
+    "theme": "studio-dark"
+  },
   "elements": {
     "client": {
       "height": 110,

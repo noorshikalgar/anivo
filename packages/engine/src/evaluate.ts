@@ -828,7 +828,7 @@ function stepCaptionAt(scene: Scene, steps: TimedStep[], i: number, t: number, b
   const fadeIn = Math.min(1, (t - timing.startMs) / 150);
   // The place comes from the end of the step, so the caption does not move while elements move.
   const state = boundaries[k]!;
-  const anchorId = c.side === "top" || c.side === "bottom" ? undefined : (c.anchor ?? ts.actions.find((a) => a.target !== "" && state[a.target]?.type !== "connector")?.target);
+  const anchorId = c.side === "top" || c.side === "bottom" ? undefined : (c.anchor ?? ts.actions.find((a) => a.target !== "" && a.action.type !== "exit" && state[a.target]?.type !== "connector" && state[a.target]?.visible)?.target);
   const anchor = anchorId ? anchorBox(scene, anchorId, state) : undefined;
   const avoid = Object.values(state)
     .filter((e) => e.visible && e.opacity > 0.05 && e.type !== "group" && e.type !== "connector" && e.id !== anchorId)

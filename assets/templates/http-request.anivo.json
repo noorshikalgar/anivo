@@ -4,133 +4,154 @@
   "meta": {
     "title": "What happens when you open a URL"
   },
-  "settings": {},
+  "settings": {
+    "background": {
+      "kind": "gradient"
+    },
+    "theme": "studio-dark"
+  },
   "elements": {
+    "title": {
+      "content": {
+        "text": "What happens when you open a URL"
+      },
+      "height": 200,
+      "seed": 409318666,
+      "style": {
+        "fontSize": 88,
+        "textAlign": "center"
+      },
+      "type": "text",
+      "width": 1600,
+      "x": 160,
+      "y": 430,
+      "z": "V"
+    },
     "browser": {
-      "height": 140,
+      "height": 200,
       "label": {
         "text": "Browser"
       },
       "name": "monitor",
       "pack": "lucide",
       "seed": 122887567,
+      "style": {
+        "fill": "accent",
+        "fontSize": 36
+      },
       "type": "icon",
-      "width": 140,
-      "x": 160,
-      "y": 460,
-      "z": "V"
+      "width": 200,
+      "x": 150,
+      "y": 540,
+      "z": "l"
     },
     "dns": {
-      "height": 120,
+      "height": 180,
       "label": {
         "text": "DNS"
       },
       "name": "globe",
       "pack": "lucide",
       "seed": 1516955837,
+      "style": {
+        "fill": "teal",
+        "fontSize": 36
+      },
       "type": "icon",
-      "width": 120,
-      "x": 760,
-      "y": 140,
-      "z": "l"
+      "width": 180,
+      "x": 840,
+      "y": 120,
+      "z": "t"
     },
     "server": {
-      "height": 140,
+      "height": 200,
       "label": {
         "text": "Web server"
       },
       "name": "server",
       "pack": "lucide",
       "seed": 1085029842,
+      "style": {
+        "fill": "purple",
+        "fontSize": 36
+      },
       "type": "icon",
-      "width": 140,
-      "x": 1000,
-      "y": 460,
-      "z": "t"
+      "width": 200,
+      "x": 880,
+      "y": 540,
+      "z": "x"
     },
     "db": {
-      "height": 140,
+      "height": 200,
       "label": {
         "text": "Database"
       },
       "name": "database",
       "pack": "lucide",
       "seed": 1461503683,
-      "type": "icon",
-      "width": 140,
-      "x": 1600,
-      "y": 460,
-      "z": "x"
-    },
-    "note": {
-      "content": {
-        "text": "Type example.com and press Enter"
-      },
-      "height": 64,
-      "seed": 295308350,
       "style": {
-        "fontSize": 40,
-        "textColor": "muted"
+        "fill": "warning",
+        "fontSize": 36
       },
-      "type": "text",
-      "width": 1600,
-      "x": 160,
-      "y": 956,
+      "type": "icon",
+      "width": 200,
+      "x": 1580,
+      "y": 540,
       "z": "z"
     },
-    "c-browser-dns": {
+    "ask": {
       "end": {
         "elementId": "dns",
         "kind": "bound"
       },
       "label": {
-        "text": "1. Where is example.com?"
+        "text": "Where is example.com?"
       },
-      "seed": 464933306,
+      "seed": 443730450,
       "start": {
         "elementId": "browser",
         "kind": "bound"
       },
       "style": {
-        "fontSize": 30
+        "fontSize": 32
       },
       "type": "connector",
       "z": "zV"
     },
-    "c-browser-server": {
+    "get": {
       "end": {
         "elementId": "server",
         "kind": "bound"
       },
       "label": {
-        "text": "2. GET /"
+        "text": "GET /"
       },
-      "seed": 1010684105,
+      "seed": 1410115415,
       "start": {
         "elementId": "browser",
         "kind": "bound"
       },
       "style": {
-        "fontSize": 30
+        "fontSize": 32
       },
       "type": "connector",
       "z": "zl"
     },
-    "c-server-db": {
+    "query": {
       "end": {
         "elementId": "db",
         "kind": "bound"
       },
       "label": {
-        "text": "3. Query"
+        "text": "Query"
       },
-      "seed": 1250770484,
+      "seed": 2026796516,
       "start": {
         "elementId": "server",
         "kind": "bound"
       },
       "style": {
-        "fontSize": 30
+        "fontSize": 32
       },
       "type": "connector",
       "z": "zt"
@@ -140,142 +161,174 @@
     {
       "actions": [
         {
-          "effect": "draw-on",
+          "durationMs": 1300,
+          "easing": "linear",
+          "effect": "cascade",
           "id": "a1",
+          "params": {
+            "unit": "word"
+          },
+          "targets": [
+            "title"
+          ],
+          "type": "enter"
+        }
+      ],
+      "holdMs": 600,
+      "id": "s-title",
+      "title": "Title"
+    },
+    {
+      "actions": [
+        {
+          "durationMs": 300,
+          "effect": "fade",
+          "id": "a2",
+          "targets": [
+            "title"
+          ],
+          "type": "exit"
+        },
+        {
+          "effect": "rise",
+          "id": "chain-15-1",
           "targets": [
             "browser"
           ],
           "type": "enter"
         },
         {
-          "delayMs": 300,
-          "effect": "pop",
-          "id": "a2",
+          "after": "chain-15-1",
+          "effect": "rise",
+          "id": "chain-15-2",
           "targets": [
             "dns"
           ],
           "type": "enter"
         },
         {
-          "delayMs": 500,
+          "after": "chain-15-2",
           "effect": "draw-on",
-          "id": "a3",
+          "id": "chain-15-3",
           "targets": [
-            "c-browser-dns"
+            "ask"
           ],
           "type": "enter"
         },
         {
-          "delayMs": 900,
+          "after": "chain-15-3",
           "flow": {
-            "rate": 1.5
+            "count": 1,
+            "icon": "lucide:search",
+            "shape": "icon",
+            "size": 40
           },
-          "id": "a4",
+          "id": "a6",
           "targets": [
-            "c-browser-dns"
+            "ask"
           ],
           "type": "flow"
-        },
-        {
-          "effect": "fade",
-          "id": "a5",
-          "targets": [
-            "note"
-          ],
-          "type": "enter"
         }
       ],
+      "caption": {
+        "side": "auto",
+        "text": "First, the browser asks DNS for the address of example.com."
+      },
       "id": "s-dns-lookup",
-      "title": "DNS lookup"
+      "title": "DNS lookup",
+      "transition": {
+        "durationMs": 600,
+        "kind": "blur"
+      }
     },
     {
       "actions": [
         {
-          "effect": "pop",
-          "id": "a6",
+          "effect": "rise",
+          "id": "chain-21-0",
           "targets": [
             "server"
           ],
           "type": "enter"
         },
         {
-          "delayMs": 300,
+          "after": "chain-21-0",
           "effect": "draw-on",
-          "id": "a7",
+          "id": "chain-21-1",
           "targets": [
-            "c-browser-server"
+            "get"
           ],
           "type": "enter"
         },
         {
-          "delayMs": 800,
-          "effect": "glow",
-          "id": "a8",
+          "after": "chain-21-1",
+          "effect": "circle",
+          "id": "a9",
+          "params": {
+            "color": "warning"
+          },
           "targets": [
             "server"
           ],
           "type": "emphasis"
-        },
-        {
-          "id": "a9",
-          "targets": [
-            "note"
-          ],
-          "to": {
-            "label": "TCP and TLS handshake"
-          },
-          "type": "morph"
         }
       ],
+      "caption": {
+        "side": "auto",
+        "text": "It opens a connection to the web server: TCP, then TLS."
+      },
       "id": "s-connect",
       "title": "Connect"
     },
     {
       "actions": [
         {
-          "id": "a10",
+          "flow": {
+            "count": 1,
+            "icon": "lucide:file-text",
+            "shape": "icon",
+            "size": 40
+          },
+          "id": "chain-25-0",
           "targets": [
-            "c-browser-server"
+            "get"
           ],
           "type": "flow"
         },
         {
-          "delayMs": 400,
-          "effect": "pop",
-          "id": "a11",
+          "after": "chain-25-0",
+          "effect": "rise",
+          "id": "chain-25-1",
           "targets": [
             "db"
           ],
           "type": "enter"
         },
         {
-          "delayMs": 600,
+          "after": "chain-25-1",
           "effect": "draw-on",
-          "id": "a12",
+          "id": "chain-25-2",
           "targets": [
-            "c-server-db"
+            "query"
           ],
           "type": "enter"
         },
         {
-          "delayMs": 1000,
+          "after": "chain-25-2",
+          "flow": {
+            "count": 1
+          },
           "id": "a13",
           "targets": [
-            "c-server-db"
+            "query"
           ],
           "type": "flow"
-        },
-        {
-          "id": "a14",
-          "targets": [
-            "note"
-          ],
-          "to": {
-            "label": "The server reads the data"
-          },
-          "type": "morph"
         }
       ],
+      "caption": {
+        "side": "auto",
+        "text": "The browser asks for the page; the server reads the data."
+      },
       "id": "s-request-and-data",
       "title": "Request and data"
     },
@@ -283,35 +336,32 @@
       "actions": [
         {
           "flow": {
+            "count": 1,
             "direction": "reverse",
-            "rate": 3
+            "icon": "lucide:file-check",
+            "shape": "icon",
+            "size": 40
           },
-          "id": "a15",
+          "id": "chain-30-0",
           "targets": [
-            "c-browser-server"
+            "get"
           ],
           "type": "flow"
         },
         {
-          "delayMs": 800,
-          "effect": "pulse",
-          "id": "a16",
+          "after": "chain-30-0",
+          "effect": "spotlight",
+          "id": "a15",
           "targets": [
             "browser"
           ],
           "type": "emphasis"
-        },
-        {
-          "id": "a17",
-          "targets": [
-            "note"
-          ],
-          "to": {
-            "label": "The browser renders the page"
-          },
-          "type": "morph"
         }
       ],
+      "caption": {
+        "side": "auto",
+        "text": "The page comes back, and the browser draws it."
+      },
       "id": "s-response",
       "title": "Response"
     }

@@ -4,71 +4,109 @@
   "meta": {
     "title": "How a load balancer works"
   },
-  "settings": {},
+  "settings": {
+    "background": {
+      "kind": "gradient"
+    },
+    "theme": "studio-dark"
+  },
   "elements": {
     "user": {
-      "height": 120,
+      "height": 200,
       "label": {
         "text": "User"
       },
       "name": "user",
       "pack": "lucide",
       "seed": 1618501362,
+      "style": {
+        "fill": "accent",
+        "fontSize": 36
+      },
       "type": "icon",
-      "width": 120,
-      "x": 120,
-      "y": 480,
+      "width": 200,
+      "x": 110,
+      "y": 450,
       "z": "V"
     },
     "lb": {
-      "height": 100,
+      "height": 150,
       "label": {
         "text": "Load balancer"
       },
       "seed": 1194444875,
       "style": {
-        "fill": "accent-soft"
+        "cornerRadius": 12,
+        "fill": "accent-soft",
+        "fontSize": 40,
+        "stroke": "accent",
+        "strokeWidth": 2,
+        "textColor": "text"
       },
       "type": "rectangle",
-      "width": 260,
+      "width": 380,
       "x": 600,
-      "y": 490,
+      "y": 470,
       "z": "l"
     },
     "pod-1": {
-      "height": 90,
+      "height": 130,
       "label": {
         "text": "pod-1"
       },
       "seed": 589335750,
+      "style": {
+        "cornerRadius": 16,
+        "fill": "surface",
+        "fontSize": 40,
+        "shadow": "soft",
+        "stroke": "line",
+        "strokeWidth": 1
+      },
       "type": "rectangle",
-      "width": 220,
-      "x": 1200,
-      "y": 240,
+      "width": 320,
+      "x": 1380,
+      "y": 170,
       "z": "t"
     },
     "pod-2": {
-      "height": 90,
+      "height": 130,
       "label": {
         "text": "pod-2"
       },
       "seed": 572558131,
+      "style": {
+        "cornerRadius": 16,
+        "fill": "surface",
+        "fontSize": 40,
+        "shadow": "soft",
+        "stroke": "line",
+        "strokeWidth": 1
+      },
       "type": "rectangle",
-      "width": 220,
-      "x": 1200,
-      "y": 495,
+      "width": 320,
+      "x": 1380,
+      "y": 480,
       "z": "x"
     },
     "pod-3": {
-      "height": 90,
+      "height": 130,
       "label": {
         "text": "pod-3"
       },
       "seed": 555780512,
+      "style": {
+        "cornerRadius": 16,
+        "fill": "surface",
+        "fontSize": 40,
+        "shadow": "soft",
+        "stroke": "line",
+        "strokeWidth": 1
+      },
       "type": "rectangle",
-      "width": 220,
-      "x": 1200,
-      "y": 750,
+      "width": 320,
+      "x": 1380,
+      "y": 790,
       "z": "z"
     },
     "c-user-lb": {
@@ -122,29 +160,13 @@
       },
       "type": "connector",
       "z": "zx"
-    },
-    "caption": {
-      "content": {
-        "text": "Kubernetes replaces the failed pod"
-      },
-      "height": 70,
-      "seed": 1863523430,
-      "style": {
-        "fontSize": 40,
-        "textColor": "muted"
-      },
-      "type": "text",
-      "width": 1000,
-      "x": 460,
-      "y": 930,
-      "z": "zz"
     }
   },
   "steps": [
     {
       "actions": [
         {
-          "effect": "draw-on",
+          "effect": "rise",
           "id": "a1",
           "targets": [
             "user"
@@ -152,22 +174,25 @@
           "type": "enter"
         }
       ],
-      "id": "s1",
+      "caption": {
+        "side": "auto",
+        "text": "Many users send requests to one address."
+      },
+      "id": "s-user-appears",
       "title": "User appears"
     },
     {
       "actions": [
         {
-          "effect": "pop",
-          "id": "a2",
+          "effect": "rise",
+          "id": "chain-14-0",
           "targets": [
             "lb"
           ],
           "type": "enter"
         },
         {
-          "delayMs": 300,
-          "durationMs": 600,
+          "after": "chain-14-0",
           "effect": "draw-on",
           "id": "a3",
           "targets": [
@@ -176,26 +201,18 @@
           "type": "enter"
         }
       ],
-      "id": "s2",
+      "caption": {
+        "side": "auto",
+        "text": "A load balancer takes every request first."
+      },
+      "id": "s-load-balancer",
       "title": "Load balancer"
     },
     {
       "actions": [
         {
-          "durationMs": 600,
-          "effect": "draw-on",
-          "id": "a4",
-          "targets": [
-            "c-lb-pod-1",
-            "c-lb-pod-2",
-            "c-lb-pod-3"
-          ],
-          "type": "enter"
-        },
-        {
-          "delayMs": 400,
-          "effect": "pop",
-          "id": "a5",
+          "effect": "rise",
+          "id": "chain-17-0",
           "staggerMs": 150,
           "targets": [
             "pod-1",
@@ -203,18 +220,30 @@
             "pod-3"
           ],
           "type": "enter"
+        },
+        {
+          "after": "chain-17-0",
+          "effect": "draw-on",
+          "id": "a5",
+          "staggerMs": 150,
+          "targets": [
+            "c-lb-pod-1",
+            "c-lb-pod-2",
+            "c-lb-pod-3"
+          ],
+          "type": "enter"
         }
       ],
-      "id": "s3",
+      "caption": {
+        "side": "auto",
+        "text": "Behind it, the same app runs in many pods."
+      },
+      "id": "s-pods-fan-out",
       "title": "Pods fan out"
     },
     {
       "actions": [
         {
-          "durationMs": 3000,
-          "flow": {
-            "rate": 3
-          },
           "id": "a6",
           "targets": [
             "c-user-lb"
@@ -222,11 +251,9 @@
           "type": "flow"
         },
         {
-          "durationMs": 3000,
+          "delayMs": 300,
           "flow": {
-            "chainFrom": "c-user-lb",
-            "distribute": "round-robin",
-            "rate": 3
+            "distribute": "round-robin"
           },
           "id": "a7",
           "targets": [
@@ -237,15 +264,17 @@
           "type": "flow"
         }
       ],
-      "holdMs": 0,
-      "id": "s4",
+      "caption": {
+        "side": "auto",
+        "text": "It sends each request to the next pod in turn."
+      },
+      "id": "s-traffic-flows",
       "title": "Traffic flows"
     },
     {
       "actions": [
         {
-          "durationMs": 400,
-          "id": "a8",
+          "id": "chain-23-0",
           "targets": [
             "pod-3"
           ],
@@ -257,19 +286,18 @@
           "type": "morph"
         },
         {
-          "delayMs": 200,
-          "effect": "shake",
+          "after": "chain-23-0",
+          "effect": "circle",
           "id": "a9",
+          "params": {
+            "color": "danger"
+          },
           "targets": [
             "pod-3"
           ],
           "type": "emphasis"
         },
         {
-          "durationMs": 3000,
-          "flow": {
-            "rate": 3
-          },
           "id": "a10",
           "targets": [
             "c-user-lb"
@@ -277,11 +305,8 @@
           "type": "flow"
         },
         {
-          "durationMs": 3000,
           "flow": {
-            "chainFrom": "c-user-lb",
             "distribute": "round-robin",
-            "rate": 3,
             "skip": [
               "c-lb-pod-3"
             ]
@@ -295,25 +320,17 @@
           "type": "flow"
         }
       ],
-      "holdMs": 0,
-      "id": "s5",
+      "caption": {
+        "side": "auto",
+        "text": "A pod crashes. The load balancer stops sending to it."
+      },
+      "id": "s-pod-3-crashes",
       "title": "Pod 3 crashes"
     },
     {
       "actions": [
         {
-          "durationMs": 300,
-          "effect": "fade",
-          "id": "a12",
-          "targets": [
-            "c-lb-pod-3"
-          ],
-          "type": "exit"
-        },
-        {
-          "delayMs": 300,
-          "durationMs": 600,
-          "id": "a13",
+          "id": "chain-28-0",
           "targets": [
             "pod-3"
           ],
@@ -325,36 +342,24 @@
           "type": "morph"
         },
         {
-          "delayMs": 900,
-          "durationMs": 500,
-          "effect": "draw-on",
-          "id": "a14",
+          "after": "chain-28-0",
+          "flow": {
+            "distribute": "round-robin"
+          },
+          "id": "a13",
           "targets": [
+            "c-lb-pod-1",
+            "c-lb-pod-2",
             "c-lb-pod-3"
           ],
-          "type": "enter"
-        },
-        {
-          "delayMs": 900,
-          "effect": "pulse",
-          "id": "a15",
-          "targets": [
-            "pod-3"
-          ],
-          "type": "emphasis"
-        },
-        {
-          "delayMs": 600,
-          "effect": "fade",
-          "id": "a16",
-          "targets": [
-            "caption"
-          ],
-          "type": "enter"
+          "type": "flow"
         }
       ],
-      "holdMs": 1500,
-      "id": "s6",
+      "caption": {
+        "side": "auto",
+        "text": "Kubernetes starts a new pod, and traffic goes there again."
+      },
+      "id": "s-self-healing",
       "title": "Self-healing"
     }
   ]

@@ -5,12 +5,16 @@
     "title": "OAuth 2.0 login"
   },
   "settings": {
+    "background": {
+      "kind": "gradient"
+    },
     "camera": {
       "height": 1110,
       "width": 1973,
       "x": -397,
       "y": -80
-    }
+    },
+    "theme": "studio-dark"
   },
   "elements": {
     "u": {

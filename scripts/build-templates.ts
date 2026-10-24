@@ -15,7 +15,7 @@ import { OperationBus, type OperationInput } from "@anivo/ops";
 import { type Scene, TEMPLATES, loadScene } from "@anivo/schema";
 
 function build(title: string, ops: OperationInput[], steps: { title: string; holdMs?: number; actions: Record<string, unknown>[] }[]): Scene {
-  const r = loadScene({ schemaVersion: 1, meta: { title }, settings: { style: "clean", theme: "slate-dark" } });
+  const r = loadScene({ schemaVersion: 1, meta: { title }, settings: { style: "clean", theme: "studio-dark", background: { kind: "gradient" } } });
   if (!r.ok) throw new Error("empty scene");
   const bus = new OperationBus(r.scene);
   const apply = (tx: OperationInput[]) => {
@@ -196,10 +196,14 @@ function fromSource(name: string): Scene {
   }
   const mmd = `scripts/templates/${name}.mmd`;
   const t = TEMPLATES.find((x) => x.name === name)!;
-  return importMermaid(readFileSync(mmd, "utf8"), { title: t.title }).scene;
+  const scene = importMermaid(readFileSync(mmd, "utf8"), { title: t.title }).scene;
+  // The built-in templates use the Studio look (docs/27).
+  return { ...scene, settings: { ...scene.settings, theme: "studio-dark", background: { ...scene.settings.background, kind: "gradient" } } };
 }
 
-const built: Record<string, Scene> = { "load-balancer": loadBalancer, "tcp-handshake": tcp, "docker-layers": docker };
+// load-balancer: scripts/templates/load-balancer.anivo.txt (docs/27). The editor tests use a frozen copy of the first version (packages/schema/fixtures).
+void loadBalancer;
+const built: Record<string, Scene> = { "tcp-handshake": tcp, "docker-layers": docker };
 const out: [string, Scene][] = TEMPLATES.map((t) => [t.name, built[t.name] ?? fromSource(t.name)]);
 for (const [name, scene] of out) {
   const errors = lintScene(scene).filter((l) => l.level === "error");

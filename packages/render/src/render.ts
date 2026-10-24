@@ -1191,8 +1191,24 @@ export function placeCaption(box: { width: number; height: number }, cap: { side
   });
   const a = cap.anchor;
   if (!a || cap.side === "top" || cap.side === "bottom") {
-    const x = cam.x + (cam.width - box.width) / 2;
-    return clamp({ x, y: cap.side === "bottom" ? cam.y + cam.height - margin - box.height : cam.y + margin });
+    // A band: the top (or the bottom) first; the place in the band that covers the least.
+    const ys = cap.side === "bottom" ? [cam.y + cam.height - margin - box.height] : cap.side === "top" ? [cam.y + margin] : [cam.y + margin, cam.y + cam.height - margin - box.height];
+    const xs = [cam.x + (cam.width - box.width) / 2, cam.x + margin, cam.x + cam.width - margin - box.width];
+    let best = clamp({ x: xs[0]!, y: ys[0]! });
+    let bestScore = Infinity;
+    ys.forEach((y, yi) =>
+      xs.forEach((x, xi) => {
+        const p = clamp({ x, y });
+        const c = { ...p, ...box };
+        let score = yi * 50 + xi * 10;
+        for (const o of others) score += overlap(c, o) * (o.text ? 3 : 1);
+        if (score < bestScore) {
+          bestScore = score;
+          best = p;
+        }
+      }),
+    );
+    return best;
   }
   const gap = Math.round(cam.height * 0.025);
   const sidesOf = (r: Rect4): Record<string, { x: number; y: number }> => {

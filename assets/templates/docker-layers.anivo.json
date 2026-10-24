@@ -4,7 +4,12 @@
   "meta": {
     "title": "Docker image layers"
   },
-  "settings": {},
+  "settings": {
+    "background": {
+      "kind": "gradient"
+    },
+    "theme": "studio-dark"
+  },
   "elements": {
     "title": {
       "content": {
