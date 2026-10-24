@@ -680,6 +680,7 @@ export function evaluateAt(prepared: Prepared, timeMs: number, opts: EvaluateOpt
       break;
     }
   }
+  fadeWithEnds(scene, state);
   const caption = i >= 0 ? stepCaptionAt(scene, timeline.steps, i, t, boundaries) : undefined;
   const followed = applyFollow(scene, base, state);
   return { timeMs: Math.max(0, t), elements: order.map((id) => followed[id] ?? state[id]!), particles, camera, ...(caption ? { caption } : {}), ...(transition ? { transition } : {}) };
@@ -709,6 +710,34 @@ function applyFollow(scene: Scene, base: StateMap, state: StateMap): StateMap {
     if (d.dx !== 0 || d.dy !== 0) out[el.id] = { ...f, x: f.x + d.dx, y: f.y + d.dy };
   }
   return out;
+}
+
+/**
+ * An arrow goes away with the elements at its ends (audit e3): when an end
+ * fades out or exits, the arrow fades with it. So an exit does not leave
+ * arrows that point at nothing.
+ */
+function fadeWithEnds(scene: Scene, state: StateMap): void {
+  const shown = (id: string): number => {
+    const el = scene.elements[id];
+    if (!el) return 1;
+    if (el.type === "group") {
+      let best = 0;
+      for (const c of Object.values(scene.elements)) if (c.parentId === id) best = Math.max(best, shown(c.id));
+      return best;
+    }
+    const f = state[id];
+    return !f ? 1 : f.visible ? f.opacity : 0;
+  };
+  for (const el of Object.values(scene.elements)) {
+    if (el.type !== "connector") continue;
+    const f = state[el.id];
+    if (!f || !f.visible) continue;
+    let k = 1;
+    if (el.start.kind === "bound") k = Math.min(k, shown(el.start.elementId));
+    if (el.end.kind === "bound") k = Math.min(k, shown(el.end.elementId));
+    if (k < 1) state[el.id] = { ...f, opacity: f.opacity * k, ...(f.opacity > 0.05 && k <= 0.05 ? { hiddenByEnds: true } : {}) };
+  }
 }
 
 const CAPTION_FADE_MS = 250;

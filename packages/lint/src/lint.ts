@@ -167,6 +167,19 @@ export function lintScene(scene: Scene): LintResult[] {
     const frame = evaluate(scene, t);
     const byId = new Map(frame.elements.map((f) => [f.id, f]));
     const visible = frame.elements.filter((f) => f.visible && f.opacity > 0.05 && f.type !== "group");
+    // An arrow that entered while an element at its end is not on screen: it does not show (it fades with its ends).
+    for (const f of frame.elements) {
+      const el = scene.elements[f.id];
+      if (f.type !== "connector" || !f.hiddenByEnds || el?.type !== "connector") continue;
+      for (const e of [el.start, el.end]) {
+        if (e.kind !== "bound") continue;
+        const target = byId.get(e.elementId);
+        // An element that was on screen before and went away (an exit) takes its arrows with it: that is not a mistake.
+        if (target && target.type !== "group" && !target.visible && !everVisible.has(target.id)) {
+          add({ code: "dangling-connector", level: "warning", ids: [f.id, e.elementId], ...(stepId ? { step: stepId } : {}), message: `Arrow '${f.id}' entered, but it does not show${where}: '${e.elementId}' at its end is not on screen.`, hint: `Make '${f.id}' enter in the same step as '${e.elementId}' or later.` });
+        }
+      }
+    }
     visible.forEach((f) => everVisible.add(f.id));
     const routes: Map<string, Polyline> = connectorRoutes(connectors, frame.elements);
     const shapes = visible.filter((f) => f.type !== "connector");
@@ -241,15 +254,7 @@ export function lintScene(scene: Scene): LintResult[] {
           add({ code: "low-contrast", level: "warning", ids: [f.id], ...(stepId ? { step: stepId } : {}), message: `The text of '${f.id}' has low contrast${where} (${contrast(textColor, bg).toFixed(1)}:1).`, hint: `Use a text color with a contrast of at least ${need}:1, for example 'text' on 'surface'.` });
         }
       }
-      // dangling connector
       if (el.type === "connector") {
-        for (const e of [el.start, el.end]) {
-          if (e.kind !== "bound") continue;
-          const target = byId.get(e.elementId);
-          if (target && !target.visible) {
-            add({ code: "dangling-connector", level: "warning", ids: [f.id, e.elementId], ...(stepId ? { step: stepId } : {}), message: `Arrow '${f.id}' is visible, but '${e.elementId}' is not${where}.`, hint: `Make '${f.id}' enter in the same step as '${e.elementId}' or later.` });
-          }
-        }
         // connector-crosses: the route passes through a shape that it does not connect.
         const route = routes.get(f.id);
         const ends = new Set([el.start, el.end].flatMap((e) => (e.kind === "bound" ? [e.elementId] : [])));

@@ -65,6 +65,8 @@ export interface ElementFrame {
   cascade?: number;
   /** The cascade moves one word at a time (docs/22 D5: words rise). */
   cascadeWords?: boolean;
+  /** An arrow that is on screen, but does not show because an element at its end is not on screen. */
+  hiddenByEnds?: boolean;
   /** A counting number: the digits have the same width, so the text does not shake while it counts. */
   tabular?: boolean;
   /** Scramble (0 to 1): random letters settle into the text, from the left. */
