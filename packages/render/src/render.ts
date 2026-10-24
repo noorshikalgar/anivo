@@ -1257,7 +1257,15 @@ function drawStepCaption(dc: DrawContext, frame: FrameState, cap: NonNullable<Fr
   const textW = Math.max(...lines.map((l) => ctx.measureText(l).width));
   const box = { width: Math.ceil(textW + padX * 2 + bar), height: lines.length * lineH + padY * 2 };
   const others = cap.avoid ?? frame.elements.filter((e) => e.visible && e.opacity > 0.05 && e.type !== "group" && e.type !== "connector" && e.id !== cap.anchorId).map((e) => ({ x: e.x, y: e.y, width: e.width, height: e.height, text: e.type === "text" || !!e.label }));
-  const p = placeCaption(box, cap, cam, others);
+  // Arrow labels are text too: keep them clear (the CDN sample hid "far: 220 ms" under a caption).
+  const labels = frame.elements.flatMap((e) => {
+    const route = e.type === "connector" && e.visible && e.opacity > 0.05 && e.label ? dc.routes.get(e.id) : undefined;
+    if (!route || route.length === 0) return [];
+    const mid = pointAt(route, route.length / 2).point;
+    const w = Math.min(320, e.label!.length * 16 + 24);
+    return [{ x: mid.x - w / 2, y: mid.y - 24, width: w, height: 48, text: true }];
+  });
+  const p = placeCaption(box, cap, cam, [...others, ...labels]);
   ctx.save();
   ctx.globalAlpha = cap.opacity;
   roundRectPath(ctx, p.x, p.y, box.width, box.height, Math.round(size * 0.35));
