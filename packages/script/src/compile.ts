@@ -846,6 +846,7 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
       if (k === "dur" || k === "duration") a["durationMs"] = parseTime(v);
       else if (k === "easing" || k === "ease") a["easing"] = v;
       else if (k === "id") a["id"] = v;
+      else if (k === "after") a["after"] = v;
       else if (k === "padding") cam["padding"] = Number(v);
       else if (k === "zoom") cam["zoom"] = Number(v);
       else if (k === "at" || k === "size") continue;
@@ -874,6 +875,7 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
       else if (k === "dur" || k === "duration") a["durationMs"] = parseTime(v);
       else if (k === "easing") a["easing"] = v;
       else if (k === "id") a["id"] = v;
+      else if (k === "after") a["after"] = v;
       else errors.push(err(pos, `The property '${k}' is not known for mark.`, 'Use: color, highlight, underline, dim, clear, occurrence, dur, easing. Write: mark t "Taptic Engine" color=accent underline'));
     }
     if (!phrase && !mark["clear"] && !mark["dim"]) errors.push(err(line.pos, "The mark needs a phrase in quotes.", 'Write: mark t "Taptic Engine" color=accent'));
@@ -895,6 +897,7 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
       else if (k === "dur" || k === "duration") a["durationMs"] = parseTime(v);
       else if (k === "easing") a["easing"] = v;
       else if (k === "id") a["id"] = v;
+      else if (k === "after") a["after"] = v;
       else errors.push(err(pos, `The property '${k}' is not known for code.`, 'Use: highlight=3-5, highlight=none, type=2-4, diff="new code", dur.'));
       if ((k === "highlight" && v !== "none" && !range(v)) || (k === "type" && !range(v))) errors.push(err(pos, `The line range '${v}' is not valid.`, "Write: 3-5 or 4"));
     }
@@ -925,6 +928,7 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
       if (k === "dur" || k === "duration") a["durationMs"] = parseTime(v);
       else if (k === "easing") a["easing"] = v;
       else if (k === "id") a["id"] = v;
+      else if (k === "after") a["after"] = v;
     }
     return a;
   }

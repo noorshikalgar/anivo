@@ -152,7 +152,9 @@ export function resolveTimeline(scene: Scene): Timeline {
       const targets = a.type === "camera" || (a.type === "wait" && a.targets.length === 0) ? [""] : expand(a.targets);
       let longest = 0;
       for (const t of targets) longest = Math.max(longest, defaultDurationMs(a, labelLength(scene, t)));
-      return baseOf(a) + a.delayMs + Math.max(0, targets.length - 1) * a.staggerMs + longest;
+      // The last start: the highest rank (from the center has fewer ranks than targets).
+      const lastRank = Math.max(0, ...staggerRanks(targets.length, a.staggerOrder, a.id));
+      return baseOf(a) + a.delayMs + lastRank * a.staggerMs + longest;
     };
     const baseOf = (a: Action): number => {
       const known = bases.get(a.id);

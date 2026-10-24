@@ -174,6 +174,7 @@ function printAction(a: Action, index: number, prevId?: string): string {
   if (a.type === "wait") {
     parts.push("wait", `${a.durationMs ?? 1000}ms`);
     if (a.delayMs) parts.push(`+${a.delayMs}ms`);
+    if (a.after) parts.push(`after=${a.after === prevId ? "prev" : a.after}`);
     if (a.id !== `a${index}`) parts.push(`id=${a.id}`);
     return parts.join(" ");
   }

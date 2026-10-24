@@ -6,7 +6,11 @@ function actionText(a: Action): string {
   if (a.type === "enter" || a.type === "exit" || a.type === "emphasis") return `${a.type === "emphasis" ? a.effect : `${a.type} ${a.effect}`} ${t}`;
   if (a.type === "morph") return `morph ${t} (${Object.keys(a.to).join(", ")})`;
   if (a.type === "flow") return `flow ${t}`;
-  return `wait ${a.durationMs ?? 1000} ms`;
+  if (a.type === "counter") return `count ${t} ${a.counter.from} to ${a.counter.to}`;
+  if (a.type === "camera") return `camera ${a.camera.op}${t ? ` ${t}` : ""}`;
+  if (a.type === "mark") return `mark ${t} "${a.mark.phrase}"`;
+  if (a.type === "wait") return `wait ${a.durationMs ?? 1000} ms`;
+  return `${a.type} ${t}`;
 }
 
 /**
@@ -31,7 +35,12 @@ export function sceneSummary(scene: Scene): string {
   scene.steps.forEach((st, i) => {
     const t = tl.steps[i]!;
     lines.push(`  ${i + 1}. ${st.id} "${st.title}" ${(t.startMs / 1000).toFixed(1)}-${(t.holdEndMs / 1000).toFixed(1)} s${st.trigger.kind === "click" ? " (on click)" : ""}`);
-    for (const a of st.actions) lines.push(`     - ${actionText(a)}`);
+    for (const a of st.actions) {
+      // The times of the action, from its first start to its last end (with stagger and chains).
+      const timed = t.actions.filter((x) => x.action.id === a.id);
+      const when = timed.length ? ` ${(Math.min(...timed.map((x) => x.startMs)) / 1000).toFixed(1)}-${(Math.max(...timed.map((x) => x.endMs)) / 1000).toFixed(1)} s` : "";
+      lines.push(`     - ${actionText(a)}${when}${a.after ? ` (after ${a.after})` : ""}`);
+    }
   });
   const open = scene.comments.filter((c) => !c.resolved);
   if (open.length) {

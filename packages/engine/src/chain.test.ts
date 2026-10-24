@@ -25,6 +25,15 @@ describe("chains (docs/21 C7)", () => {
     );
     expect(starts(t)).toEqual({ x: 300, y: 900, z: 1300 });
   });
+  it("follows the last start of a staggered action, in its stagger order", () => {
+    const t = resolveTimeline(
+      scene([
+        { id: "x", type: "enter", effect: "fade", targets: ["a", "b", "c"], staggerMs: 100, staggerOrder: "center", durationMs: 500 },
+        { id: "y", type: "enter", effect: "fade", targets: ["a"], after: "x", durationMs: 100 },
+      ]),
+    );
+    expect(starts(t).y).toBe(600);
+  });
   it("ignores a chain to a missing action and a chain that comes back to itself", () => {
     const t = resolveTimeline(
       scene([

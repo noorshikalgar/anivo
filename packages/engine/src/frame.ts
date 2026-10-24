@@ -63,6 +63,8 @@ export interface ElementFrame {
   march?: number;
   /** Letters cascade in (0 to 1): each letter rises and fades in after the one before. */
   cascade?: number;
+  /** A counting number: the digits have the same width, so the text does not shake while it counts. */
+  tabular?: boolean;
   /** Scramble (0 to 1): random letters settle into the text, from the left. */
   scramble?: number;
   /** Blur radius in scene pixels (blur enter effect). */
