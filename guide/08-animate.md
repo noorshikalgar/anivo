@@ -31,6 +31,8 @@ Click the timeline button (bottom right of the playback bar).
 - **Filter**: All, Animated, or Selected tracks.
 - **Zoom**: −, Fit, + or Ctrl + wheel.
 - Keys and blocks snap to the playhead, step borders, and other keys. Hold **Shift** to drag freely.
+- **Scrub preview**: point at the ruler. A small frame of that time shows. The playhead does not move.
+- **Chains**: drop a block at the end of another block in the same step. It starts when that block ends, and it moves with it. A light bar marks a chained block. **Unchain** (Actions › When) keeps its place in time.
 
 ## Keys
 
@@ -65,7 +67,21 @@ Edit keys:
 - **Type by word** (action editor of a Type action): words appear one at a time.
 - **Loop region**: Alt + drag on the ruler. Play goes round in it. Export can make a video of that part only.
 - **Motion blur** (Scene › Video): fast moves get a soft trail in the video.
+- **Draw a motion path**: select an element and a step, press **P**, and drag on the canvas. The element moves along the line. Drag the square dots to change the path.
+- **Stagger order** (action editor, more than one target): in order, reverse, from the center, from the edges, or shuffle.
+- **Matching exit** (action editor of an enter): the same effect as an exit, after the step or when the next step starts.
+- **Spotlight** and **Circle** (quick actions): the frame goes dark around an element, or a hand-drawn circle draws around it.
+- **Float** and **Breathe** (presets): slow idle motion while an element holds.
+
+## Reuse
+
+- **Library** (the tab next to Steps): widgets, your widgets, compositions, motion presets, and styles, with one search. Drag a widget or a composition onto the canvas.
+- **Motion presets** (Actions tab): click to apply; save the actions of the selection as your own preset. Export and import your presets as a file.
+- **Compositions** (Insert menu): elements with their animations. **Set texts…** before you insert one.
+- **Styles** (Properties): ready-made looks, or save your own. **Ctrl+Alt+C** / **Ctrl+Alt+V** copy and paste a style.
 
 ## Time keys
 
 With the timeline in focus (click the ruler): **←/→** one frame, **Shift+←/→** ten frames, **Home**/**End**, **↑/↓** the previous or next key.
+
+Anywhere in the editor: **L** plays forward and **J** plays backward. Press again for 2×, 4×, 8× (no sound). **Space** stops. **,** and **.** move one frame (Shift: ten frames).
