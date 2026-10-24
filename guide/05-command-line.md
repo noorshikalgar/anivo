@@ -10,6 +10,7 @@ The `anivo` command needs Node 20 or later. Video export needs FFmpeg.
 | `anivo lint my.anivo` | Check layout and timing. Exit code 1 for errors |
 | `anivo preview my.anivo --step 2 --out p.png` | One frame as PNG |
 | `anivo contact-sheet my.anivo --out sheet.png` | All steps in one picture |
+| `anivo filmstrip my.anivo --step 2 --count 6 --out strip.png` | Frames across one step: check how it moves |
 | `anivo export my.anivo --out my.mp4` | Video: mp4, webm, gif, prores (.mov), png-seq, svg-steps |
 | `anivo html my.anivo --out my.html` | One HTML file that plays the scene |
 | `anivo captions my.anivo --out my.srt` | Captions from the script |

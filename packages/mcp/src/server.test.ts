@@ -35,7 +35,7 @@ describe("Anivo MCP server", () => {
   it("lists all tools from docs/09", async () => {
     const names = (await client.listTools()).tools.map((t) => t.name).sort();
     expect(names).toEqual(
-      ["anivo_captions", "anivo_comp_insert", "anivo_comp_save", "anivo_contact_sheet", "anivo_export", "anivo_guide", "anivo_icons_search", "anivo_image_add", "anivo_import", "anivo_lint", "anivo_ops_apply", "anivo_preview", "anivo_scene_create", "anivo_scene_get", "anivo_scene_summary", "anivo_schema", "anivo_script_apply", "anivo_templates_list", "anivo_transcribe", "anivo_undo"].sort(),
+      ["anivo_captions", "anivo_comp_insert", "anivo_comp_save", "anivo_contact_sheet", "anivo_export", "anivo_filmstrip", "anivo_guide", "anivo_icons_search", "anivo_image_add", "anivo_import", "anivo_lint", "anivo_ops_apply", "anivo_preview", "anivo_scene_create", "anivo_scene_get", "anivo_scene_summary", "anivo_schema", "anivo_script_apply", "anivo_templates_list", "anivo_transcribe", "anivo_undo"].sort(),
     );
   });
 

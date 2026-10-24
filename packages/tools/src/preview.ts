@@ -113,3 +113,38 @@ export function contactSheetPng(scene: Scene, opts: { cols?: number; cellWidth?:
   });
   return canvas.toBuffer("image/png");
 }
+
+/**
+ * A filmstrip (docs/26 M1): frames from the start of one step to the end of
+ * its hold, in one PNG, to check how a step moves without a video.
+ */
+export function filmstripPng(scene: Scene, step: number, opts: { count?: number; cols?: number; cellWidth?: number; debug?: boolean } = {}): Buffer {
+  registerBundledAssets();
+  const tl = resolveTimeline(scene);
+  const ts = tl.steps[step - 1];
+  if (!ts) throw new ToolError(`The scene has no step ${step}.`, `Use a step from 1 to ${tl.steps.length}.`);
+  const n = Math.max(2, Math.min(24, opts.count ?? 6));
+  const cols = opts.cols ?? Math.min(3, n);
+  const rows = Math.ceil(n / cols);
+  const cw = opts.cellWidth ?? Math.min(640, Math.floor(1280 / cols));
+  const ch = Math.round((cw * scene.settings.video.height) / scene.settings.video.width);
+  const title = 22;
+  const gap = 8;
+  const canvas = createCanvas(cols * cw + (cols + 1) * gap, rows * (ch + title) + (rows + 1) * gap);
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#1f2328";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const end = Math.max(ts.startMs + 1, ts.holdEndMs - 1);
+  for (let i = 0; i < n; i++) {
+    const t = ts.startMs + ((end - ts.startMs) * i) / (n - 1);
+    const x = gap + (i % cols) * (cw + gap);
+    const y = gap + Math.floor(i / cols) * (ch + title + gap);
+    ctx.fillStyle = "#e6edf3";
+    ctx.font = '600 13px "Inter"';
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`step ${step} +${((t - ts.startMs) / 1000).toFixed(2)} s`, x + 2, y + title / 2);
+    ctx.drawImage(frameCanvas(scene, t, cw, ch, opts.debug ?? false), x, y + title);
+  }
+  return canvas.toBuffer("image/png");
+}
