@@ -1,34 +1,37 @@
-scene "CI/CD pipeline" style=clean theme=slate-dark size=1920x1080 fps=60
+scene "CI/CD pipeline" style=clean theme=studio-dark size=1920x1080 fps=60 background=gradient
 
-row stages at=140,460 spacing=120
-  box commit "Commit" size=260x110
-  box build "Build" size=260x110
-  box test "Test" size=260x110
-  box deploy "Deploy" size=260x110
-text tests "0 tests passed" at=780,640 size=520x70 font-size=40 color=muted
-icon prod lucide:rocket "Production" at=1660,200 size=120x120
+text title "From a commit to production" at=160,430 size=1600x200 font-size=88 text-align=center
+row stages at=110,430 spacing=110
+  box commit "Commit" size=300x150 look=card font-size=40
+  box build "Build" size=300x150 look=card font-size=40
+  box test "Test" size=300x150 look=card font-size=40
+  box deploy "Deploy" size=300x150 look=card font-size=40
+text tests "0 tests passed" at=660,680 size=600x100 font-size=64 text-align=center
+icon prod lucide:rocket "Production" at=1660,140 size=180x180 fill=accent font-size=36
 
 arrow commit -> build
 arrow build -> test
 arrow test -> deploy
 arrow deploy -> prod
 
-step "Push a commit"
-  enter commit pop
-  enter build, test, deploy fade +300ms stagger=150ms
-  enter commit->build, build->test, test->deploy draw-on +600ms stagger=150ms
-step "Build"
-  flow commit->build rate=2
-  pulse build +500ms
-  morph build fill=success-soft +1200ms
-step "Test"
-  flow build->test rate=2
-  enter tests fade +300ms
-  count tests from=0 to=128 format="{n} tests passed" +300ms dur=2000ms
-  morph test fill=success-soft +2300ms
-step "Deploy"
-  flow test->deploy rate=2
-  morph deploy fill=success-soft +600ms
-  enter prod pop +900ms
-  enter deploy->prod draw-on +700ms
-  glow prod +1500ms
+step "Title" hold=600ms
+  enter title cascade unit=word dur=1300ms easing=linear
+step "Push a commit" caption="You push a commit. The pipeline starts on its own." transition=blur
+  exit title fade dur=300ms
+  enter commit, build, test, deploy rise stagger=150ms
+  enter commit->build, build->test, test->deploy draw-on stagger=150ms after=prev
+step "Build" caption="The build server compiles the code and makes an image."
+  flow commit->build once icon=lucide:git-commit-horizontal size=40
+  pulse build after=prev
+  morph build fill=success-soft stroke=success after=prev
+step "Test" caption="Every test runs. One failure stops the pipeline."
+  flow build->test once icon=lucide:package size=40
+  enter tests fade after=prev
+  count tests from=0 to=1280 format="{n} tests passed" style=thousands roll dur=2000ms after=prev
+  morph test fill=success-soft stroke=success after=prev
+step "Deploy" caption="The image goes to production, a few servers at a time."
+  flow test->deploy once icon=lucide:package size=40
+  morph deploy fill=success-soft stroke=success after=prev
+  enter prod pop after=prev
+  enter deploy->prod draw-on after=prev
+  float prod after=prev

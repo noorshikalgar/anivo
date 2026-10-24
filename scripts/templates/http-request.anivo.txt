@@ -1,33 +1,32 @@
-scene "What happens when you open a URL" style=clean theme=slate-dark size=1920x1080 fps=60
+scene "What happens when you open a URL" style=clean theme=studio-dark size=1920x1080 fps=60 background=gradient
 
-icon browser lucide:monitor "Browser" at=160,460 size=140x140
-icon dns lucide:globe "DNS" at=760,140 size=120x120
-icon server lucide:server "Web server" at=1000,460 size=140x140
-icon db lucide:database "Database" at=1600,460 size=140x140
-caption note "Type example.com and press Enter"
+text title "What happens when you open a URL" at=160,430 size=1600x200 font-size=88 text-align=center
+icon browser lucide:monitor "Browser" at=150,540 size=200x200 fill=accent font-size=36
+icon dns lucide:globe "DNS" at=840,120 size=180x180 fill=teal font-size=36
+icon server lucide:server "Web server" at=880,540 size=200x200 fill=purple font-size=36
+icon db lucide:database "Database" at=1580,540 size=200x200 fill=warning font-size=36
 
-arrow browser -> dns "1. Where is example.com?" font-size=30
-arrow browser -> server "2. GET /" font-size=30
-arrow server -> db "3. Query" font-size=30
+arrow browser -> dns "Where is example.com?" font-size=32 id=ask
+arrow browser -> server "GET /" font-size=32 id=get
+arrow server -> db "Query" font-size=32 id=query
 
-step "DNS lookup"
-  enter browser draw-on
-  enter dns pop +300ms
-  enter browser->dns draw-on +500ms
-  flow browser->dns rate=1.5 +900ms
-  enter note fade
-step "Connect"
-  enter server pop
-  enter browser->server draw-on +300ms
-  glow server +800ms
-  morph note label="TCP and TLS handshake"
-step "Request and data"
-  flow browser->server rate=2
-  enter db pop +400ms
-  enter server->db draw-on +600ms
-  flow server->db rate=2 +1000ms
-  morph note label="The server reads the data"
-step "Response"
-  flow browser->server reverse rate=3
-  pulse browser +800ms
-  morph note label="The browser renders the page"
+step "Title" hold=600ms
+  enter title cascade unit=word dur=1300ms easing=linear
+step "DNS lookup" caption="First, the browser asks DNS for the address of example.com." transition=blur
+  exit title fade dur=300ms
+  enter browser rise
+  enter dns rise after=prev
+  enter ask draw-on after=prev
+  flow ask once icon=lucide:search size=40 after=prev
+step "Connect" caption="It opens a connection to the web server: TCP, then TLS."
+  enter server rise
+  enter get draw-on after=prev
+  circle server color=warning after=prev
+step "Request and data" caption="The browser asks for the page; the server reads the data."
+  flow get once icon=lucide:file-text size=40
+  enter db rise after=prev
+  enter query draw-on after=prev
+  flow query once after=prev
+step "Response" caption="The page comes back, and the browser draws it."
+  flow get once icon=lucide:file-check size=40 reverse
+  spotlight browser after=prev

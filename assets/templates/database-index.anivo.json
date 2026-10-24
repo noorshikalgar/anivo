@@ -4,8 +4,29 @@
   "meta": {
     "title": "How a database index works"
   },
-  "settings": {},
+  "settings": {
+    "background": {
+      "kind": "gradient"
+    },
+    "theme": "studio-dark"
+  },
   "elements": {
+    "title": {
+      "content": {
+        "text": "How a database index finds a row"
+      },
+      "height": 200,
+      "seed": 409318666,
+      "style": {
+        "fontSize": 88,
+        "textAlign": "center"
+      },
+      "type": "text",
+      "width": 1600,
+      "x": 160,
+      "y": 430,
+      "z": "V"
+    },
     "query": {
       "content": {
         "text": "SELECT * FROM users WHERE id = 96"
@@ -19,12 +40,12 @@
       "width": 1100,
       "x": 120,
       "y": 40,
-      "z": "V"
+      "z": "l"
     },
     "rows": {
       "seed": 708293528,
       "type": "group",
-      "z": "l"
+      "z": "t"
     },
     "row-42": {
       "height": 64,
@@ -34,13 +55,18 @@
       "parentId": "rows",
       "seed": 600563952,
       "style": {
-        "fontSize": 28
+        "cornerRadius": 16,
+        "fill": "surface",
+        "fontSize": 28,
+        "shadow": "soft",
+        "stroke": "line",
+        "strokeWidth": 1
       },
       "type": "rectangle",
       "width": 440,
       "x": 160,
       "y": 150,
-      "z": "t"
+      "z": "x"
     },
     "row-7": {
       "height": 64,
@@ -50,13 +76,18 @@
       "parentId": "rows",
       "seed": 359722960,
       "style": {
-        "fontSize": 28
+        "cornerRadius": 16,
+        "fill": "surface",
+        "fontSize": 28,
+        "shadow": "soft",
+        "stroke": "line",
+        "strokeWidth": 1
       },
       "type": "rectangle",
       "width": 440,
       "x": 160,
       "y": 230,
-      "z": "x"
+      "z": "z"
     },
     "row-19": {
       "height": 64,
@@ -66,13 +97,18 @@
       "parentId": "rows",
       "seed": 717514417,
       "style": {
-        "fontSize": 28
+        "cornerRadius": 16,
+        "fill": "surface",
+        "fontSize": 28,
+        "shadow": "soft",
+        "stroke": "line",
+        "strokeWidth": 1
       },
       "type": "rectangle",
       "width": 440,
       "x": 160,
       "y": 310,
-      "z": "z"
+      "z": "zV"
     },
     "row-88": {
       "height": 64,
@@ -82,13 +118,18 @@
       "parentId": "rows",
       "seed": 903201059,
       "style": {
-        "fontSize": 28
+        "cornerRadius": 16,
+        "fill": "surface",
+        "fontSize": 28,
+        "shadow": "soft",
+        "stroke": "line",
+        "strokeWidth": 1
       },
       "type": "rectangle",
       "width": 440,
       "x": 160,
       "y": 390,
-      "z": "zV"
+      "z": "zl"
     },
     "row-3": {
       "height": 64,
@@ -98,13 +139,18 @@
       "parentId": "rows",
       "seed": 292612484,
       "style": {
-        "fontSize": 28
+        "cornerRadius": 16,
+        "fill": "surface",
+        "fontSize": 28,
+        "shadow": "soft",
+        "stroke": "line",
+        "strokeWidth": 1
       },
       "type": "rectangle",
       "width": 440,
       "x": 160,
       "y": 470,
-      "z": "zl"
+      "z": "zt"
     },
     "row-64": {
       "height": 64,
@@ -114,13 +160,18 @@
       "parentId": "rows",
       "seed": 902215321,
       "style": {
-        "fontSize": 28
+        "cornerRadius": 16,
+        "fill": "surface",
+        "fontSize": 28,
+        "shadow": "soft",
+        "stroke": "line",
+        "strokeWidth": 1
       },
       "type": "rectangle",
       "width": 440,
       "x": 160,
       "y": 550,
-      "z": "zt"
+      "z": "zx"
     },
     "row-25": {
       "height": 64,
@@ -130,13 +181,18 @@
       "parentId": "rows",
       "seed": 649911071,
       "style": {
-        "fontSize": 28
+        "cornerRadius": 16,
+        "fill": "surface",
+        "fontSize": 28,
+        "shadow": "soft",
+        "stroke": "line",
+        "strokeWidth": 1
       },
       "type": "rectangle",
       "width": 440,
       "x": 160,
       "y": 630,
-      "z": "zx"
+      "z": "zz"
     },
     "row-51": {
       "height": 64,
@@ -146,13 +202,18 @@
       "parentId": "rows",
       "seed": 718154380,
       "style": {
-        "fontSize": 28
+        "cornerRadius": 16,
+        "fill": "surface",
+        "fontSize": 28,
+        "shadow": "soft",
+        "stroke": "line",
+        "strokeWidth": 1
       },
       "type": "rectangle",
       "width": 440,
       "x": 160,
       "y": 710,
-      "z": "zz"
+      "z": "zzV"
     },
     "row-12": {
       "height": 64,
@@ -162,13 +223,18 @@
       "parentId": "rows",
       "seed": 902068226,
       "style": {
-        "fontSize": 28
+        "cornerRadius": 16,
+        "fill": "surface",
+        "fontSize": 28,
+        "shadow": "soft",
+        "stroke": "line",
+        "strokeWidth": 1
       },
       "type": "rectangle",
       "width": 440,
       "x": 160,
       "y": 790,
-      "z": "zzV"
+      "z": "zzl"
     },
     "row-96": {
       "height": 64,
@@ -178,13 +244,18 @@
       "parentId": "rows",
       "seed": 702068309,
       "style": {
-        "fontSize": 28
+        "cornerRadius": 16,
+        "fill": "surface",
+        "fontSize": 28,
+        "shadow": "soft",
+        "stroke": "line",
+        "strokeWidth": 1
       },
       "type": "rectangle",
       "width": 440,
       "x": 160,
       "y": 870,
-      "z": "zzl"
+      "z": "zzt"
     },
     "counter": {
       "content": {
@@ -200,7 +271,7 @@
       "width": 480,
       "x": 1300,
       "y": 160,
-      "z": "zzt"
+      "z": "zzx"
     },
     "c-row-42-row-19": {
       "end": {
@@ -213,7 +284,7 @@
         "kind": "bound"
       },
       "type": "connector",
-      "z": "zzx"
+      "z": "zzz"
     },
     "c-row-42-row-88": {
       "end": {
@@ -226,7 +297,7 @@
         "kind": "bound"
       },
       "type": "connector",
-      "z": "zzz"
+      "z": "zzzV"
     },
     "c-row-19-row-7": {
       "end": {
@@ -239,7 +310,7 @@
         "kind": "bound"
       },
       "type": "connector",
-      "z": "zzzV"
+      "z": "zzzl"
     },
     "c-row-19-row-25": {
       "end": {
@@ -252,7 +323,7 @@
         "kind": "bound"
       },
       "type": "connector",
-      "z": "zzzl"
+      "z": "zzzt"
     },
     "c-row-88-row-64": {
       "end": {
@@ -265,7 +336,7 @@
         "kind": "bound"
       },
       "type": "connector",
-      "z": "zzzt"
+      "z": "zzzx"
     },
     "c-row-88-row-96": {
       "end": {
@@ -278,7 +349,7 @@
         "kind": "bound"
       },
       "type": "connector",
-      "z": "zzzx"
+      "z": "zzzz"
     },
     "c-row-7-row-3": {
       "end": {
@@ -291,7 +362,7 @@
         "kind": "bound"
       },
       "type": "connector",
-      "z": "zzzz"
+      "z": "zzzzV"
     },
     "c-row-7-row-12": {
       "end": {
@@ -304,7 +375,7 @@
         "kind": "bound"
       },
       "type": "connector",
-      "z": "zzzzV"
+      "z": "zzzzl"
     },
     "c-row-64-row-51": {
       "end": {
@@ -317,15 +388,44 @@
         "kind": "bound"
       },
       "type": "connector",
-      "z": "zzzzl"
+      "z": "zzzzt"
     }
   },
   "steps": [
     {
       "actions": [
         {
-          "effect": "fade",
+          "durationMs": 1300,
+          "easing": "linear",
+          "effect": "cascade",
           "id": "a1",
+          "params": {
+            "unit": "word"
+          },
+          "targets": [
+            "title"
+          ],
+          "type": "enter"
+        }
+      ],
+      "holdMs": 600,
+      "id": "s-title",
+      "title": "Title"
+    },
+    {
+      "actions": [
+        {
+          "durationMs": 300,
+          "effect": "fade",
+          "id": "a2",
+          "targets": [
+            "title"
+          ],
+          "type": "exit"
+        },
+        {
+          "effect": "typewriter",
+          "id": "a3",
           "targets": [
             "query"
           ],
@@ -333,7 +433,7 @@
         },
         {
           "effect": "fade",
-          "id": "a2",
+          "id": "a4",
           "staggerMs": 60,
           "targets": [
             "rows"
@@ -342,7 +442,7 @@
         },
         {
           "effect": "fade",
-          "id": "a3",
+          "id": "a5",
           "targets": [
             "counter"
           ],
@@ -351,7 +451,7 @@
         {
           "delayMs": 600,
           "effect": "highlight",
-          "id": "a4",
+          "id": "a6",
           "staggerMs": 250,
           "targets": [
             "row-42",
@@ -375,20 +475,28 @@
           },
           "delayMs": 600,
           "durationMs": 2500,
-          "id": "a5",
+          "id": "a7",
           "targets": [
             "counter"
           ],
           "type": "counter"
         }
       ],
+      "caption": {
+        "side": "auto",
+        "text": "Without an index, the database reads every row."
+      },
       "id": "s-full-table-scan",
-      "title": "Full table scan"
+      "title": "Full table scan",
+      "transition": {
+        "durationMs": 600,
+        "kind": "blur"
+      }
     },
     {
       "actions": [
         {
-          "id": "a6",
+          "id": "a8",
           "targets": [
             "row-42"
           ],
@@ -401,7 +509,7 @@
           "type": "morph"
         },
         {
-          "id": "a7",
+          "id": "a9",
           "targets": [
             "row-19"
           ],
@@ -414,7 +522,7 @@
           "type": "morph"
         },
         {
-          "id": "a8",
+          "id": "a10",
           "targets": [
             "row-88"
           ],
@@ -427,7 +535,7 @@
           "type": "morph"
         },
         {
-          "id": "a9",
+          "id": "a11",
           "targets": [
             "row-7"
           ],
@@ -440,7 +548,7 @@
           "type": "morph"
         },
         {
-          "id": "a10",
+          "id": "a12",
           "targets": [
             "row-25"
           ],
@@ -453,7 +561,7 @@
           "type": "morph"
         },
         {
-          "id": "a11",
+          "id": "a13",
           "targets": [
             "row-64"
           ],
@@ -466,7 +574,7 @@
           "type": "morph"
         },
         {
-          "id": "a12",
+          "id": "a14",
           "targets": [
             "row-96"
           ],
@@ -479,7 +587,7 @@
           "type": "morph"
         },
         {
-          "id": "a13",
+          "id": "a15",
           "targets": [
             "row-3"
           ],
@@ -492,7 +600,7 @@
           "type": "morph"
         },
         {
-          "id": "a14",
+          "id": "a16",
           "targets": [
             "row-12"
           ],
@@ -505,7 +613,7 @@
           "type": "morph"
         },
         {
-          "id": "a15",
+          "id": "a17",
           "targets": [
             "row-51"
           ],
@@ -518,7 +626,7 @@
           "type": "morph"
         },
         {
-          "id": "a16",
+          "id": "a18",
           "targets": [
             "counter"
           ],
@@ -531,7 +639,7 @@
         {
           "delayMs": 900,
           "effect": "draw-on",
-          "id": "a17",
+          "id": "a19",
           "staggerMs": 80,
           "targets": [
             "c-row-42-row-19",
@@ -547,6 +655,10 @@
           "type": "enter"
         }
       ],
+      "caption": {
+        "side": "auto",
+        "text": "An index keeps the keys in a sorted tree."
+      },
       "id": "s-build-an-index",
       "title": "Build an index"
     },
@@ -554,7 +666,7 @@
       "actions": [
         {
           "effect": "highlight",
-          "id": "a18",
+          "id": "a20",
           "staggerMs": 500,
           "targets": [
             "row-42",
@@ -570,13 +682,29 @@
             "to": 3
           },
           "durationMs": 1500,
-          "id": "a19",
+          "id": "chain-47-1",
           "targets": [
             "counter"
           ],
           "type": "counter"
+        },
+        {
+          "after": "chain-47-1",
+          "effect": "circle",
+          "id": "a22",
+          "params": {
+            "color": "warning"
+          },
+          "targets": [
+            "row-96"
+          ],
+          "type": "emphasis"
         }
       ],
+      "caption": {
+        "side": "auto",
+        "text": "With the index: three steps down the tree, not ten rows."
+      },
       "id": "s-index-lookup",
       "title": "Index lookup"
     }

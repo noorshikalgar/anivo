@@ -4,94 +4,151 @@
   "meta": {
     "title": "CI/CD pipeline"
   },
-  "settings": {},
+  "settings": {
+    "background": {
+      "kind": "gradient"
+    },
+    "theme": "studio-dark"
+  },
   "elements": {
+    "title": {
+      "content": {
+        "text": "From a commit to production"
+      },
+      "height": 200,
+      "seed": 409318666,
+      "style": {
+        "fontSize": 88,
+        "textAlign": "center"
+      },
+      "type": "text",
+      "width": 1600,
+      "x": 160,
+      "y": 430,
+      "z": "V"
+    },
     "stages": {
       "seed": 77660666,
       "type": "group",
-      "z": "V"
+      "z": "l"
     },
     "commit": {
-      "height": 110,
+      "height": 150,
       "label": {
         "text": "Commit"
       },
       "parentId": "stages",
       "seed": 860606716,
+      "style": {
+        "cornerRadius": 16,
+        "fill": "surface",
+        "fontSize": 40,
+        "shadow": "soft",
+        "stroke": "line",
+        "strokeWidth": 1
+      },
       "type": "rectangle",
-      "width": 260,
-      "x": 140,
-      "y": 460,
-      "z": "l"
+      "width": 300,
+      "x": 110,
+      "y": 430,
+      "z": "t"
     },
     "build": {
-      "height": 110,
+      "height": 150,
       "label": {
         "text": "Build"
       },
       "parentId": "stages",
       "seed": 1134293668,
+      "style": {
+        "cornerRadius": 16,
+        "fill": "surface",
+        "fontSize": 40,
+        "shadow": "soft",
+        "stroke": "line",
+        "strokeWidth": 1
+      },
       "type": "rectangle",
-      "width": 260,
+      "width": 300,
       "x": 520,
-      "y": 460,
-      "z": "t"
+      "y": 430,
+      "z": "x"
     },
     "test": {
-      "height": 110,
+      "height": 150,
       "label": {
         "text": "Test"
       },
       "parentId": "stages",
       "seed": 802189798,
+      "style": {
+        "cornerRadius": 16,
+        "fill": "surface",
+        "fontSize": 40,
+        "shadow": "soft",
+        "stroke": "line",
+        "strokeWidth": 1
+      },
       "type": "rectangle",
-      "width": 260,
-      "x": 900,
-      "y": 460,
-      "z": "x"
+      "width": 300,
+      "x": 930,
+      "y": 430,
+      "z": "z"
     },
     "deploy": {
-      "height": 110,
+      "height": 150,
       "label": {
         "text": "Deploy"
       },
       "parentId": "stages",
       "seed": 1557350270,
+      "style": {
+        "cornerRadius": 16,
+        "fill": "surface",
+        "fontSize": 40,
+        "shadow": "soft",
+        "stroke": "line",
+        "strokeWidth": 1
+      },
       "type": "rectangle",
-      "width": 260,
-      "x": 1280,
-      "y": 460,
-      "z": "z"
+      "width": 300,
+      "x": 1340,
+      "y": 430,
+      "z": "zV"
     },
     "tests": {
       "content": {
         "text": "0 tests passed"
       },
-      "height": 70,
+      "height": 100,
       "seed": 1529007906,
       "style": {
-        "fontSize": 40,
-        "textColor": "muted"
+        "fontSize": 64,
+        "textAlign": "center"
       },
       "type": "text",
-      "width": 520,
-      "x": 780,
-      "y": 640,
-      "z": "zV"
+      "width": 600,
+      "x": 660,
+      "y": 680,
+      "z": "zl"
     },
     "prod": {
-      "height": 120,
+      "height": 180,
       "label": {
         "text": "Production"
       },
       "name": "rocket",
       "pack": "lucide",
       "seed": 1832792437,
+      "style": {
+        "fill": "accent",
+        "fontSize": 36
+      },
       "type": "icon",
-      "width": 120,
+      "width": 180,
       "x": 1660,
-      "y": 200,
-      "z": "zl"
+      "y": 140,
+      "z": "zt"
     },
     "c-commit-build": {
       "end": {
@@ -104,7 +161,7 @@
         "kind": "bound"
       },
       "type": "connector",
-      "z": "zt"
+      "z": "zx"
     },
     "c-build-test": {
       "end": {
@@ -117,7 +174,7 @@
         "kind": "bound"
       },
       "type": "connector",
-      "z": "zx"
+      "z": "zz"
     },
     "c-test-deploy": {
       "end": {
@@ -130,7 +187,7 @@
         "kind": "bound"
       },
       "type": "connector",
-      "z": "zz"
+      "z": "zzV"
     },
     "c-deploy-prod": {
       "end": {
@@ -143,26 +200,47 @@
         "kind": "bound"
       },
       "type": "connector",
-      "z": "zzV"
+      "z": "zzl"
     }
   },
   "steps": [
     {
       "actions": [
         {
-          "effect": "pop",
+          "durationMs": 1300,
+          "easing": "linear",
+          "effect": "cascade",
           "id": "a1",
+          "params": {
+            "unit": "word"
+          },
           "targets": [
-            "commit"
+            "title"
           ],
           "type": "enter"
-        },
+        }
+      ],
+      "holdMs": 600,
+      "id": "s-title",
+      "title": "Title"
+    },
+    {
+      "actions": [
         {
-          "delayMs": 300,
+          "durationMs": 300,
           "effect": "fade",
           "id": "a2",
+          "targets": [
+            "title"
+          ],
+          "type": "exit"
+        },
+        {
+          "effect": "rise",
+          "id": "chain-19-1",
           "staggerMs": 150,
           "targets": [
+            "commit",
             "build",
             "test",
             "deploy"
@@ -170,9 +248,9 @@
           "type": "enter"
         },
         {
-          "delayMs": 600,
+          "after": "chain-19-1",
           "effect": "draw-on",
-          "id": "a3",
+          "id": "a4",
           "staggerMs": 150,
           "targets": [
             "c-commit-build",
@@ -182,137 +260,180 @@
           "type": "enter"
         }
       ],
+      "caption": {
+        "side": "auto",
+        "text": "You push a commit. The pipeline starts on its own."
+      },
       "id": "s-push-a-commit",
-      "title": "Push a commit"
+      "title": "Push a commit",
+      "transition": {
+        "durationMs": 600,
+        "kind": "blur"
+      }
     },
     {
       "actions": [
         {
-          "id": "a4",
+          "flow": {
+            "count": 1,
+            "icon": "lucide:git-commit-horizontal",
+            "shape": "icon",
+            "size": 40
+          },
+          "id": "chain-23-0",
           "targets": [
             "c-commit-build"
           ],
           "type": "flow"
         },
         {
-          "delayMs": 500,
+          "after": "chain-23-0",
           "effect": "pulse",
-          "id": "a5",
+          "id": "chain-23-1",
           "targets": [
             "build"
           ],
           "type": "emphasis"
         },
         {
-          "delayMs": 1200,
-          "id": "a6",
+          "after": "chain-23-1",
+          "id": "a7",
           "targets": [
             "build"
           ],
           "to": {
-            "fill": "success-soft"
+            "fill": "success-soft",
+            "stroke": "success"
           },
           "type": "morph"
         }
       ],
+      "caption": {
+        "side": "auto",
+        "text": "The build server compiles the code and makes an image."
+      },
       "id": "s-build",
       "title": "Build"
     },
     {
       "actions": [
         {
-          "id": "a7",
+          "flow": {
+            "count": 1,
+            "icon": "lucide:package",
+            "shape": "icon",
+            "size": 40
+          },
+          "id": "chain-27-0",
           "targets": [
             "c-build-test"
           ],
           "type": "flow"
         },
         {
-          "delayMs": 300,
+          "after": "chain-27-0",
           "effect": "fade",
-          "id": "a8",
+          "id": "chain-27-1",
           "targets": [
             "tests"
           ],
           "type": "enter"
         },
         {
+          "after": "chain-27-1",
           "counter": {
             "format": "{n} tests passed",
             "from": 0,
-            "to": 128
+            "roll": true,
+            "style": "thousands",
+            "to": 1280
           },
-          "delayMs": 300,
           "durationMs": 2000,
-          "id": "a9",
+          "id": "chain-27-2",
           "targets": [
             "tests"
           ],
           "type": "counter"
         },
         {
-          "delayMs": 2300,
-          "id": "a10",
+          "after": "chain-27-2",
+          "id": "a11",
           "targets": [
             "test"
           ],
           "to": {
-            "fill": "success-soft"
+            "fill": "success-soft",
+            "stroke": "success"
           },
           "type": "morph"
         }
       ],
+      "caption": {
+        "side": "auto",
+        "text": "Every test runs. One failure stops the pipeline."
+      },
       "id": "s-test",
       "title": "Test"
     },
     {
       "actions": [
         {
-          "id": "a11",
+          "flow": {
+            "count": 1,
+            "icon": "lucide:package",
+            "shape": "icon",
+            "size": 40
+          },
+          "id": "chain-32-0",
           "targets": [
             "c-test-deploy"
           ],
           "type": "flow"
         },
         {
-          "delayMs": 600,
-          "id": "a12",
+          "after": "chain-32-0",
+          "id": "chain-32-1",
           "targets": [
             "deploy"
           ],
           "to": {
-            "fill": "success-soft"
+            "fill": "success-soft",
+            "stroke": "success"
           },
           "type": "morph"
         },
         {
-          "delayMs": 900,
+          "after": "chain-32-1",
           "effect": "pop",
-          "id": "a13",
+          "id": "chain-32-2",
           "targets": [
             "prod"
           ],
           "type": "enter"
         },
         {
-          "delayMs": 700,
+          "after": "chain-32-2",
           "effect": "draw-on",
-          "id": "a14",
+          "id": "chain-32-3",
           "targets": [
             "c-deploy-prod"
           ],
           "type": "enter"
         },
         {
-          "delayMs": 1500,
-          "effect": "glow",
-          "id": "a15",
+          "after": "chain-32-3",
+          "effect": "float",
+          "id": "a16",
           "targets": [
             "prod"
           ],
           "type": "emphasis"
         }
       ],
+      "caption": {
+        "side": "auto",
+        "text": "The image goes to production, a few servers at a time."
+      },
       "id": "s-deploy",
       "title": "Deploy"
     }

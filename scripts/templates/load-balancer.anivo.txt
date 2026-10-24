@@ -1,0 +1,30 @@
+scene "How a load balancer works" style=clean theme=studio-dark size=1920x1080 fps=60 background=gradient
+
+icon user lucide:user "User" at=110,450 size=200x200 fill=accent font-size=36
+box lb "Load balancer" at=600,470 size=380x150 look=soft font-size=40
+box pod-1 "pod-1" at=1380,170 size=320x130 look=card font-size=40
+box pod-2 "pod-2" at=1380,480 size=320x130 look=card font-size=40
+box pod-3 "pod-3" at=1380,790 size=320x130 look=card font-size=40
+
+arrow user -> lb
+arrow lb -> pod-1, pod-2, pod-3
+
+step "User appears" caption="Many users send requests to one address."
+  enter user rise
+step "Load balancer" caption="A load balancer takes every request first."
+  enter lb rise
+  enter user->lb draw-on after=prev
+step "Pods fan out" caption="Behind it, the same app runs in many pods."
+  enter pod-1, pod-2, pod-3 rise stagger=150ms
+  enter lb->pod-1, lb->pod-2, lb->pod-3 draw-on stagger=150ms after=prev
+step "Traffic flows" caption="It sends each request to the next pod in turn."
+  flow user->lb rate=2
+  flow lb->pod-* round-robin rate=2 +300ms
+step "Pod 3 crashes" caption="A pod crashes. The load balancer stops sending to it."
+  morph pod-3 fill=danger-soft stroke=danger label="pod-3 crashed"
+  circle pod-3 color=danger after=prev
+  flow user->lb rate=2
+  flow lb->pod-* round-robin skip=lb->pod-3 rate=2
+step "Self-healing" caption="Kubernetes starts a new pod, and traffic goes there again."
+  morph pod-3 fill=success-soft stroke=success label="pod-3 (new)"
+  flow lb->pod-* round-robin rate=2 after=prev

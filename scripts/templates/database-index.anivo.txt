@@ -1,17 +1,19 @@
-scene "How a database index works" style=clean theme=slate-dark size=1920x1080 fps=60
+scene "How a database index works" style=clean theme=studio-dark size=1920x1080 fps=60 background=gradient
+
+text title "How a database index finds a row" at=160,430 size=1600x200 font-size=88 text-align=center
 
 text query "SELECT * FROM users WHERE id = 96" at=120,40 size=1100x70 font-size=40
 column rows at=160,150 spacing=16
-  box row-42 "id 42 · Ana" size=440x64 font-size=28
-  box row-7 "id 7 · Bo" size=440x64 font-size=28
-  box row-19 "id 19 · Cy" size=440x64 font-size=28
-  box row-88 "id 88 · Dee" size=440x64 font-size=28
-  box row-3 "id 3 · Eli" size=440x64 font-size=28
-  box row-64 "id 64 · Fay" size=440x64 font-size=28
-  box row-25 "id 25 · Gus" size=440x64 font-size=28
-  box row-51 "id 51 · Hal" size=440x64 font-size=28
-  box row-12 "id 12 · Ivy" size=440x64 font-size=28
-  box row-96 "id 96 · Jo" size=440x64 font-size=28
+  box row-42 "id 42 · Ana" size=440x64 font-size=28 look=card
+  box row-7 "id 7 · Bo" size=440x64 font-size=28 look=card
+  box row-19 "id 19 · Cy" size=440x64 font-size=28 look=card
+  box row-88 "id 88 · Dee" size=440x64 font-size=28 look=card
+  box row-3 "id 3 · Eli" size=440x64 font-size=28 look=card
+  box row-64 "id 64 · Fay" size=440x64 font-size=28 look=card
+  box row-25 "id 25 · Gus" size=440x64 font-size=28 look=card
+  box row-51 "id 51 · Hal" size=440x64 font-size=28 look=card
+  box row-12 "id 12 · Ivy" size=440x64 font-size=28 look=card
+  box row-96 "id 96 · Jo" size=440x64 font-size=28 look=card
 text counter "0 lookups" at=1300,160 size=480x80 font-size=56 color=warning
 
 arrow row-42 -> row-19, row-88
@@ -20,13 +22,16 @@ arrow row-88 -> row-64, row-96
 arrow row-7 -> row-3, row-12
 arrow row-64 -> row-51
 
-step "Full table scan"
-  enter query fade
+step "Title" hold=600ms
+  enter title cascade unit=word dur=1300ms easing=linear
+step "Full table scan" caption="Without an index, the database reads every row." transition=blur
+  exit title fade dur=300ms
+  enter query typewriter
   enter rows fade stagger=60ms
   enter counter fade
   highlight row-42, row-7, row-19, row-88, row-3, row-64, row-25, row-51, row-12, row-96 +600ms stagger=250ms
   count counter from=0 to=10 format="{n} lookups" +600ms dur=2500ms
-step "Build an index"
+step "Build an index" caption="An index keeps the keys in a sorted tree."
   morph row-42 x=860 y=170 width=180 label="42"
   morph row-19 x=520 y=400 width=180 label="19"
   morph row-88 x=1200 y=400 width=180 label="88"
@@ -39,6 +44,7 @@ step "Build an index"
   morph row-51 x=900 y=860 width=180 label="51"
   morph counter y=40 x=1300
   enter row-42->row-19, row-42->row-88, row-19->row-7, row-19->row-25, row-88->row-64, row-88->row-96, row-7->row-3, row-7->row-12, row-64->row-51 draw-on +900ms stagger=80ms
-step "Index lookup"
+step "Index lookup" caption="With the index: three steps down the tree, not ten rows."
   highlight row-42, row-88, row-96 stagger=500ms
   count counter from=10 to=3 format="{n} lookups" dur=1500ms
+  circle row-96 color=warning after=prev

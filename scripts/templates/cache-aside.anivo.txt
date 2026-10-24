@@ -1,32 +1,32 @@
-scene "Cache-aside pattern" style=clean theme=slate-dark size=1920x1080 fps=60
+scene "Cache-aside pattern" style=clean theme=studio-dark size=1920x1080 fps=60 background=gradient
 
-icon app lucide:server "App" at=200,470 size=140x140
-box cache "Cache (Redis)" at=820,220 size=320x110 fill=accent-soft
-icon db lucide:database "Database" at=1560,600 size=140x140
-text latency "120 ms" at=1300,140 size=360x80 font-size=56 color=warning
-caption note "1. Look in the cache first"
+text title "Cache-aside: read fast, write once" at=160,430 size=1600x200 font-size=88 text-align=center
+icon app lucide:server "App" at=180,480 size=200x200 fill=accent font-size=36
+box cache "Cache (Redis)" at=820,200 size=380x150 look=soft font-size=40
+icon db lucide:database "Database" at=1560,480 size=200x200 fill=purple font-size=36
+text latency "0 ms" at=760,820 size=500x140 font-size=104 text-align=center
 
-arrow app -> cache "get user:42" font-size=30
-arrow app -> db "SELECT" font-size=30
+arrow app -> cache "get user:42" font-size=32 id=get
+arrow app -> db "SELECT" font-size=32 id=select
 
-step "Cache miss"
-  enter app, cache pop stagger=200ms
-  enter app->cache draw-on +400ms
-  flow app->cache rate=2 +700ms
-  flash cache +1200ms
-  enter note fade
-step "Read from the database"
-  enter db pop
-  enter app->db draw-on +300ms
-  flow app->db rate=2 +700ms
-  enter latency fade +700ms
-  morph note label="2. Miss: read from the database"
-step "Fill the cache"
-  flow app->cache rate=3
-  morph cache fill=success-soft +500ms
-  morph note label="3. Write the result to the cache"
-step "Cache hit"
-  flow app->cache rate=3
-  glow cache +300ms
-  count latency from=120 to=2 format="{n} ms" dur=1200ms
-  morph note label="Next time: a cache hit in 2 ms"
+step "Title" hold=600ms
+  enter title cascade unit=word dur=1300ms easing=linear
+step "Cache miss" caption="The app looks in the cache first. The key is not there." transition=blur
+  exit title fade dur=300ms
+  enter app, cache rise stagger=200ms
+  enter get draw-on after=prev
+  flow get once icon=lucide:key size=40 after=prev
+  shake cache after=prev
+step "Read from the database" caption="On a miss, the app reads from the database: slow."
+  enter db rise
+  enter select draw-on after=prev
+  enter latency fade after=prev
+  flow select once icon=lucide:search size=40 after=prev id=q
+  count latency from=0 to=120 format="{n} ms" roll dur=1600ms after=q
+step "Fill the cache" caption="The app writes the result to the cache for next time."
+  flow get once icon=lucide:file-check size=40
+  morph cache fill=success-soft stroke=success after=prev
+step "Cache hit" caption="Next time: a cache hit, about sixty times faster."
+  flow get once icon=lucide:key size=40
+  spotlight cache after=prev
+  count latency from=120 to=2 format="{n} ms" dur=1200ms after=prev
