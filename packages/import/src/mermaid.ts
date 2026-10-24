@@ -384,7 +384,7 @@ function sequence(lines: string[], opts: { title?: string; steps?: boolean }): I
 }
 
 function finish(ops: OperationInput[], title: string, warnings: string[]): ImportResult {
-  const empty = loadScene({ schemaVersion: 1, meta: { title } });
+  const empty = loadScene({ schemaVersion: 1, meta: { title }, settings: { theme: "studio-dark" } });
   if (!empty.ok) throw new Error("The empty scene is not valid.");
   const bus = new OperationBus(empty.scene);
   // Elements with an enter action start hidden: the steps show them.

@@ -5,3 +5,4 @@ Status: build, 2026-10-24. A user who draws or imports a diagram had to add an e
 | # | Item |
 |---|---|
 | B1 | Done. **Build** (quick action, `anivo build --step --ids`): the selected shapes rise in reading order (top to bottom, then left to right), then the arrows between them draw. The arrows are chained to the shapes (`after`), so a change of timing keeps the order. Groups (widgets) rise as one. |
+| B2 | Done. A Mermaid import uses the Studio theme, as a new scene does (an Excalidraw import keeps its own colors). |
