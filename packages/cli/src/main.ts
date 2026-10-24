@@ -9,7 +9,7 @@ import { getIconPack, iconName, iconPackFromSvgs, iconPacks, searchIcons } from 
 import { CustomTheme, type Scene, TEMPLATES, loadScene } from "@anivo/schema";
 import { importText } from "@anivo/import";
 import { applyScript, printScene } from "@anivo/script";
-import { ToolError, assetCache, audioMime, audioOnsets, decodePcm, imageMime, parseTranscript, transcribe, contactSheetPng, importAsset, probeDurationMs, jsonSchema, previewPng, readSceneFile, sceneSummary, stepTime, writeSceneFile } from "@anivo/tools";
+import { ToolError, assetCache, audioMime, audioOnsets, decodePcm, imageMime, parseTranscript, transcribe, contactSheetPng, filmstripPng, importAsset, probeDurationMs, jsonSchema, previewPng, readSceneFile, sceneSummary, stepTime, writeSceneFile } from "@anivo/tools";
 import { homePath, imageSize, registerBundledAssets, userIconsDir } from "@anivo/export-node";
 import { Command, Option } from "commander";
 
@@ -134,6 +134,20 @@ program
   .option("--debug", "Draw element IDs")
   .action((f: string, o: { out: string; cols?: string; debug?: boolean }) => {
     writeFileSync(o.out, contactSheetPng(readSceneFile(f), { ...(o.cols ? { cols: Number(o.cols) } : {}), debug: o.debug ?? false }));
+    print(`Wrote ${o.out}.`, { file: o.out });
+  });
+
+program
+  .command("filmstrip")
+  .description("One PNG with frames across one step, from its start to the end of its hold: check how it moves")
+  .argument("<scene>")
+  .requiredOption("--step <n>", "Step number (1 is the first step)")
+  .option("--count <n>", "Number of frames (2 to 24)", "6")
+  .option("--cols <n>", "Columns")
+  .option("--out <file>", "PNG file", "filmstrip.png")
+  .option("--debug", "Draw element IDs")
+  .action((f: string, o: { step: string; count: string; cols?: string; out: string; debug?: boolean }) => {
+    writeFileSync(o.out, filmstripPng(readSceneFile(f), Number(o.step), { count: Number(o.count), ...(o.cols ? { cols: Number(o.cols) } : {}), debug: o.debug ?? false }));
     print(`Wrote ${o.out}.`, { file: o.out });
   });
 

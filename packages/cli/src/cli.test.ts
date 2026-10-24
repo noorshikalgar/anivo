@@ -56,6 +56,14 @@ describe("anivo CLI", () => {
     expect(p.out).toContain("Applied 'Rise in' (2 actions)");
   });
 
+  it("writes a filmstrip of one step (docs/26 M1)", () => {
+    const out = join(dir, "strip.png");
+    const r = anivo("filmstrip", scene, "--step", "1", "--count", "4", "--out", out);
+    expect(r.code, r.err).toBe(0);
+    expect(statSync(out).size).toBeGreaterThan(1000);
+    expect(anivo("filmstrip", scene, "--step", "9").code).toBe(1);
+  });
+
   it("returns exit code 1 for lint errors and for a missing file, with a hint", () => {
     writeFileSync(join(dir, "bad.txt"), `box a "A very long label that cannot fit" size=100x40\nstep "S"\n  enter a fade\n`);
     anivo("apply", join(dir, "bad.anivo"), join(dir, "bad.txt"));

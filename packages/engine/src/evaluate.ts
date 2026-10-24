@@ -826,6 +826,18 @@ function stepCaptionAt(scene: Scene, steps: TimedStep[], i: number, t: number, b
   const avoid = Object.values(state)
     .filter((e) => e.visible && e.opacity > 0.05 && e.type !== "group" && e.type !== "connector" && e.id !== anchorId)
     .map((e) => ({ ...withIconLabel(e), text: e.type === "text" || !!e.label }));
+  // Elements that move in the step: keep their way clear too (the CDN filmstrip had a packet behind a caption).
+  for (const ta of ts.actions) {
+    if (ta.action.type !== "motion") continue;
+    const f = state[ta.target];
+    const half = f ? Math.max(f.width, f.height) / 2 + 10 : 40;
+    const pts = ta.action.motion.points;
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i]!;
+      const b = pts[i + 1] ?? a;
+      for (const u of [0, 0.5]) avoid.push({ x: a.x + (b.x - a.x) * u - half, y: a.y + (b.y - a.y) * u - half, width: half * 2, height: half * 2, text: false });
+    }
+  }
   return { text: c.text, reveal, opacity: Math.max(0, Math.min(fadeIn, fadeOut)), side: c.side, avoid, ...(anchor ? { anchor, anchorId } : {}) };
 }
 

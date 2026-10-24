@@ -8,7 +8,7 @@ import { searchIcons } from "@anivo/render";
 import { type Scene, TEMPLATES, loadScene } from "@anivo/schema";
 import { importText } from "@anivo/import";
 import { applyScript, printScene } from "@anivo/script";
-import { ToolError, assetCache, audioOnsets, contactSheetPng, imageMime, importAsset, transcribe, jsonSchema, previewPng, readSceneFile, sceneSummary, writeSceneFile } from "@anivo/tools";
+import { ToolError, assetCache, audioOnsets, contactSheetPng, filmstripPng, imageMime, importAsset, transcribe, jsonSchema, previewPng, readSceneFile, sceneSummary, writeSceneFile } from "@anivo/tools";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
@@ -233,6 +233,16 @@ export function createAnivoServer(opts: ServerOptions): McpServer {
     async (a) =>
       run(() => {
         const png = contactSheetPng(readSceneFile(sceneFile(a.scene)), { debug: a.debug });
+        return { content: [{ type: "image" as const, data: png.toString("base64"), mimeType: "image/png" }] };
+      }),
+  );
+
+  server.registerTool(
+    "anivo_filmstrip",
+    { title: "Filmstrip", description: "Return one PNG image with frames across one step, from its start to the end of its hold. Use it to check how a step moves (order, timing, overlaps in the middle of a move).", inputSchema: { scene: sceneArg, step: z.number().int().min(1), count: z.number().int().min(2).max(24).default(6), debug: z.boolean().default(false) }, annotations: { readOnlyHint: true } },
+    async (a) =>
+      run(() => {
+        const png = filmstripPng(readSceneFile(sceneFile(a.scene)), a.step, { count: a.count, debug: a.debug });
         return { content: [{ type: "image" as const, data: png.toString("base64"), mimeType: "image/png" }] };
       }),
   );
