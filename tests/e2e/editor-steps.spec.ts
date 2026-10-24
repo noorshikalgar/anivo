@@ -359,3 +359,36 @@ test("an empty scene shows where to start (docs/23 U1)", async ({ page }) => {
   await card.getByRole("button", { name: "Draw a box (R)" }).click();
   await expect(card).toHaveCount(0);
 });
+
+test("draw a motion path on the canvas, then drag one of its points (docs/24 H1, H2)", async ({ page }) => {
+  await page.getByRole("button", { name: "Add step" }).click();
+  await page.evaluate(() => (window as unknown as { __anivo: { getState(): { setSelection(ids: string[]): void; setTool(t: string): void } } }).__anivo.getState().setSelection(["lb"]));
+  await page.keyboard.press("p");
+  const a = await screen(page, 900, 300);
+  const b = await screen(page, 1200, 200);
+  const c = await screen(page, 1500, 300);
+  await page.mouse.move(a.x, a.y);
+  await page.mouse.down();
+  await page.mouse.move(b.x, b.y, { steps: 10 });
+  await page.mouse.move(c.x, c.y, { steps: 10 });
+  await page.mouse.up();
+  type M = { type: string; targets: string[]; motion: { points: { x: number; y: number }[]; curve?: boolean } };
+  const motion = async () => {
+    const s = await state(page);
+    return s.scene.steps.find((x) => x.id === s.selectedStep)!.actions.at(-1) as unknown as M;
+  };
+  const m = await motion();
+  expect(m).toMatchObject({ type: "motion", targets: ["lb"] });
+  expect(m.motion.points.length).toBeGreaterThanOrEqual(3);
+  expect(m.motion.points.at(-1)!.x).toBeGreaterThan(1400);
+  expect((await state(page)).tool).toBe("select");
+  // Drag the last point down.
+  const last = m.motion.points.at(-1)!;
+  const from = await screen(page, last.x, last.y);
+  const to = await screen(page, last.x, last.y + 200);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 6 });
+  await page.mouse.up();
+  expect((await motion()).motion.points.at(-1)!.y).toBeGreaterThan(last.y + 150);
+});

@@ -23,6 +23,8 @@ export interface MotionPath {
   keys: PathKey[];
   /** The paths of motion actions (sends and moves), as centers. */
   moves: Point[][];
+  /** Drawn paths (moves, not sends): their points can be dragged (docs/24 H2). */
+  paths: { stepId: string; actionId: string; points: Point[] }[];
 }
 
 const centerAt = (scene: Scene, id: string, t: number) => {
@@ -46,8 +48,14 @@ export function motionPath(scene: Scene, timeline: Timeline, id: string): Motion
   keys.sort((a, b) => a.atMs - b.atMs);
   const start = first ? centerAt(scene, id, first.fromAtMs - 1)?.point : undefined;
   const moves: Point[][] = [];
-  for (const step of scene.steps) for (const a of step.actions) if (a.type === "motion" && a.targets.includes(id)) moves.push(a.motion.points);
-  return { ...(start ? { start } : {}), keys, moves };
+  const paths: MotionPath["paths"] = [];
+  for (const step of scene.steps)
+    for (const a of step.actions) {
+      if (a.type !== "motion" || !a.targets.includes(id)) continue;
+      moves.push(a.motion.points);
+      if (!a.motion.along) paths.push({ stepId: step.id, actionId: a.id, points: a.motion.points });
+    }
+  return { ...(start ? { start } : {}), keys, moves, paths };
 }
 
 /** The global times of all keys of an element (any property), for the onion skin. */

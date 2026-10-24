@@ -25,7 +25,7 @@ import { Add16Regular, Speaker216Regular } from "@fluentui/react-icons";
 import { useEffect, useMemo, useState } from "react";
 import { searchIcons } from "@anivo/render";
 import { pickImageAsset } from "../images.js";
-import { withErrors } from "../notify.js";
+import { notify, withErrors } from "../notify.js";
 import { addAction, addMatchingExit, addMotionAlongArrow, updateAction, updateStep } from "../commands.js";
 import { previewSound, setCue, setStepLine } from "../audio.js";
 import { Comments } from "./Comments.js";
@@ -105,6 +105,16 @@ export function AddActionMenu({ iconOnly }: { iconOnly?: boolean }) {
             </MenuItem>
             <MenuItem icon={actionIcon("motion")} disabled={connectors.length !== 1 || selection.length < 2 || step === null} onClick={() => void addMotionAlongArrow()}>
               Send along the selected arrow
+            </MenuItem>
+            <MenuItem
+              icon={actionIcon("motion")}
+              disabled={selection.length === 0 || step === null}
+              onClick={() => {
+                useEditor.getState().setTool("path");
+                notify("Drag on the canvas: the selected element moves along the line you draw.", "info");
+              }}
+            >
+              Draw a motion path…
             </MenuItem>
             <MenuItem icon={actionIcon("counter")} disabled={texts.length === 0} onClick={() => addAction({ type: "counter", targets: texts, counter: { from: 0, to: 100 } }, "Add count")}>
               Count {texts.length === 0 ? "(select a text)" : ""}
