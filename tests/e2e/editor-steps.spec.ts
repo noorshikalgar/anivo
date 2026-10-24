@@ -303,3 +303,20 @@ test("Compositions: save elements with their animations, and insert them again a
   expect(s.scene.steps.length).toBeGreaterThan(before);
   expect(s.selection).toEqual(["lb-2"]);
 });
+
+test("Styles: copy the style of an element, paste it, apply a ready-made style, save your own", async ({ page }) => {
+  const sel = (ids: string[]) => page.evaluate((x) => (window as unknown as { __anivo: { getState(): { setSelection(ids: string[]): void } } }).__anivo.getState().setSelection(x), ids);
+  const style = async (id: string) => ((await state(page)).scene.elements[id] as unknown as { style: Record<string, unknown> }).style;
+  await sel(["lb"]);
+  await page.getByRole("button", { name: "Styles", exact: true }).click();
+  await page.getByRole("button", { name: "Style: Accent" }).click();
+  expect(await style("lb")).toMatchObject({ fill: "accent", cornerRadius: 12 });
+  await page.keyboard.press("Control+Alt+KeyC");
+  await sel(["pod-1"]);
+  await page.keyboard.press("Control+Alt+KeyV");
+  expect(await style("pod-1")).toMatchObject({ fill: "accent", fontWeight: 700 });
+  await page.getByRole("button", { name: "Save this style…" }).click();
+  await page.getByRole("textbox", { name: "Style name" }).fill("Brand");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Style: Brand" })).toBeVisible();
+});

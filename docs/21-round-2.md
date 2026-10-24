@@ -27,4 +27,4 @@ Status: plan, 2026-10-24. After docs/20 (B1–B10 built). Same method: each item
 |---|---|
 | C10 | Done. **Composition slots**: when you insert a composition, you set its texts (for example the word and the meaning of a definition card). |
 | C11 | Done. **Preset packs**: export and import your presets as a file, as compositions can. |
-| C12 | **Style presets**: save the look of an element (fill, stroke, radius, font, shadow) and apply it to others. |
+| C12 | Done. **Style presets**: 8 ready-made styles, Ctrl+Alt+C / Ctrl+Alt+V. Save the look of an element (fill, stroke, radius, font, shadow) and apply it to others. |

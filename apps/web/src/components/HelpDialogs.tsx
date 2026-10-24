@@ -24,6 +24,7 @@ const SHORTCUTS: [string, string][] = [
   ["Tools: arrow, text, icon, code", "A T I C"],
   ["Select all / Delete", "Ctrl+A / Delete"],
   ["Copy / Paste / Duplicate", "Ctrl+C / Ctrl+V / Ctrl+D"],
+  ["Copy style / Paste style", "Ctrl+Alt+C / Ctrl+Alt+V"],
   ["Group / Ungroup", "Ctrl+G / Ctrl+Shift+G"],
   ["Lock / Hide in editor", "Ctrl+Shift+L / Ctrl+Shift+H"],
   ["Move selection (10 px with Shift)", "Arrow keys"],
