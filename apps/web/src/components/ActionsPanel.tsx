@@ -99,6 +99,8 @@ const QUICK: Quick[] = [
   { label: "Pulse", hint: "Pulse to point at it (emphasis · pulse)", icon: actionIcon("emphasis"), action: { type: "emphasis", effect: "pulse" } },
   { label: "Glow", hint: "Glow (emphasis · glow)", icon: actionIcon("emphasis"), action: { type: "emphasis", effect: "glow" } },
   { label: "Focus", hint: "Dim the rest (emphasis · focus)", icon: actionIcon("emphasis"), action: { type: "emphasis", effect: "focus" } },
+  { label: "Spotlight", hint: "The frame goes dark around it (emphasis · spotlight)", icon: actionIcon("emphasis"), action: { type: "emphasis", effect: "spotlight" } },
+  { label: "Circle", hint: "A hand-drawn circle around it (emphasis · circle)", icon: actionIcon("emphasis"), action: { type: "emphasis", effect: "circle", params: { color: "warning" } } },
   { label: "One by one", hint: "The elements come in one after the other, in reading order: top to bottom, then left to right (enter · pop, 0.35 s apart)", icon: actionIcon("enter"), action: { type: "enter", effect: "pop", staggerMs: 350 } },
   { label: "Mark words", hint: "Give words in a text their own color, highlight, or underline, and dim the rest. Choose the words after the click.", icon: actionIcon("mark"), action: { type: "mark", mark: { phrase: "", color: "accent", underline: "accent" } }, only: ["text", "rectangle", "ellipse", "diamond"] },
   { label: "Send", hint: "Move elements along an arrow, for example a message (2.4 s). Select the elements and the arrow.", icon: actionIcon("motion"), action: { type: "motion" } },
