@@ -713,13 +713,19 @@ function applyFollow(scene: Scene, base: StateMap, state: StateMap): StateMap {
 
 const CAPTION_FADE_MS = 250;
 
+/** The box of an element; an icon label is under the icon, outside its box, so the box grows down to hold it. */
+function withIconLabel(f: ElementFrame): Rect {
+  const extra = f.type === "icon" && f.label ? Math.round((f.fontSize ?? 24) * 1.4 + 8) : 0;
+  return { x: f.x, y: f.y, width: f.width, height: f.height + extra };
+}
+
 /** The box of a visible element, or for a group, the union box of its visible parts. */
 function anchorBox(scene: Scene, id: string, state: StateMap): Rect | undefined {
   const el = scene.elements[id];
   if (!el) return undefined;
   if (el.type !== "group") {
     const f = state[id];
-    return f && f.visible && f.opacity > 0 ? { x: f.x, y: f.y, width: f.width, height: f.height } : undefined;
+    return f && f.visible && f.opacity > 0 ? withIconLabel(f) : undefined;
   }
   let box: Rect | undefined;
   for (const child of Object.values(scene.elements)) {
@@ -759,7 +765,7 @@ function stepCaptionAt(scene: Scene, steps: TimedStep[], i: number, t: number, b
   const anchor = anchorId ? anchorBox(scene, anchorId, state) : undefined;
   const avoid = Object.values(state)
     .filter((e) => e.visible && e.opacity > 0.05 && e.type !== "group" && e.type !== "connector" && e.id !== anchorId)
-    .map((e) => ({ x: e.x, y: e.y, width: e.width, height: e.height, text: e.type === "text" || !!e.label }));
+    .map((e) => ({ ...withIconLabel(e), text: e.type === "text" || !!e.label }));
   return { text: c.text, reveal, opacity: Math.max(0, Math.min(fadeIn, fadeOut)), side: c.side, avoid, ...(anchor ? { anchor, anchorId } : {}) };
 }
 

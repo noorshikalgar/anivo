@@ -1106,7 +1106,8 @@ export function placeCaption(box: { width: number; height: number }, cap: { side
 function drawStepCaption(dc: DrawContext, frame: FrameState, cap: NonNullable<FrameState["caption"]>, cam: Rect4): void {
   const { ctx, theme } = dc;
   const v = dc.scene.settings.video;
-  const size = Math.round(Math.min(v.width, v.height) * 0.037);
+  // The caption has the same size on the screen when the camera zooms (it is drawn in scene pixels).
+  const size = Math.round(Math.min(v.width, v.height) * 0.037 * (cam.width / v.width));
   const padX = Math.round(size * 0.7);
   const padY = Math.round(size * 0.45);
   const lineH = Math.round(size * 1.3);
