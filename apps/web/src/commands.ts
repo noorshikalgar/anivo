@@ -667,11 +667,11 @@ export function addDrawnPath(points: { x: number; y: number }[]): void {
 }
 
 /** Make the whole video slower or faster (docs/28 P1). One undo step. */
-export function changePace(factor: number): void {
+export function changePace(factor: number, stepId?: string): void {
   const st = useEditor.getState();
   if (st.scene.steps.length === 0) return notify("Add steps first.", "info");
   const before = st.timeline.totalMs;
-  const r = st.apply({ label: factor > 1 ? "Slower pace" : "Faster pace", ops: paceOps(st.scene, factor) });
+  const r = st.apply({ label: factor > 1 ? "Slower pace" : "Faster pace", ops: paceOps(st.scene, factor, stepId ? [stepId] : undefined) });
   if (!r.ok) return notify(r.error.message, "error");
   notify(`The video is now ${(useEditor.getState().timeline.totalMs / 1000).toFixed(1)} s (was ${(before / 1000).toFixed(1)} s). Ctrl+Z to undo.`, "success");
 }

@@ -26,7 +26,7 @@ import { useEffect, useMemo, useState } from "react";
 import { searchIcons } from "@anivo/render";
 import { pickImageAsset } from "../images.js";
 import { notify, withErrors } from "../notify.js";
-import { addAction, addMatchingExit, addMotionAlongArrow, updateAction, updateStep } from "../commands.js";
+import { addAction, addMatchingExit, addMotionAlongArrow, changePace, updateAction, updateStep } from "../commands.js";
 import { previewSound, setCue, setStepLine } from "../audio.js";
 import { Comments } from "./Comments.js";
 import { MarkEditor } from "./MarkEditor.js";
@@ -582,6 +582,16 @@ export function StepInspector({ step }: { step: Step }) {
         />
         {step.trigger.kind === "cue" && <NumberField label="Cue time (ms)" value={step.trigger.atMs} min={0} step={100} onCommit={(v) => setCue(step.id, v, "Move cue")} />}
         <NumberField label="Hold (ms)" value={step.holdMs} min={0} step={100} onCommit={(v, k) => updateStep(step.id, { holdMs: Math.round(v) }, "Change hold", k)} />
+        <Prop label="Pace">
+          <div style={{ display: "flex", gap: 6 }}>
+            <Btn title="All times of this step 25 % longer" onClick={() => changePace(1.25, step.id)}>
+              Slower
+            </Btn>
+            <Btn title="All times of this step 20 % shorter" onClick={() => changePace(0.8, step.id)}>
+              Faster
+            </Btn>
+          </div>
+        </Prop>
       </Panel>
       <Panel id="step-transition" title="Transition">
         <SelectField
