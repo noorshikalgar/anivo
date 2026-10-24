@@ -261,7 +261,7 @@ function applyMorph(f: ElementFrame, to: MorphableProps, p: number): void {
   }
 }
 
-function applyEmphasis(f: ElementFrame, action: Extract<Action, { type: "emphasis" }>, raw: number): void {
+function applyEmphasis(f: ElementFrame, action: Extract<Action, { type: "emphasis" }>, raw: number, span = defaultDurationMs(action)): void {
   const params = action.params;
   const count = params.count;
   switch (action.effect) {
@@ -309,7 +309,7 @@ function applyEmphasis(f: ElementFrame, action: Extract<Action, { type: "emphasi
     case "float":
     case "breathe": {
       // Idle motion (docs/22 D6): one slow wave each 3 s, that starts and stops softly.
-      const total = defaultDurationMs(action);
+      const total = span;
       const ms = raw * total;
       const env = smoothstep(Math.min(1, ms / 700, (total - ms) / 700));
       const wave = Math.sin((2 * Math.PI * ms) / 3000);
@@ -442,7 +442,7 @@ function applyTimedAction(state: StateMap, ta: TimedAction, t: number): void {
         f.markBox = { x, y, width: Math.max(...boxes.map((e) => e.x + e.width)) - x, height: Math.max(...boxes.map((e) => e.y + e.height)) - y };
       }
     }
-    applyEmphasis(f, action, raw);
+    applyEmphasis(f, action, raw, ta.endMs - ta.startMs);
   }
   else if (action.type === "code") applyCode(f, action.code, eased);
   else if (action.type === "motion") {

@@ -44,3 +44,19 @@ describe("annotations (docs/25 K1, K2)", () => {
     expect(at(2500).spotlight).toBeUndefined();
   });
 });
+
+describe("idle motion in a step with other actions", () => {
+  it("fills the hold and does not make the step longer", () => {
+    const r = loadScene({
+      schemaVersion: 1,
+      meta: { title: "I" },
+      elements: { a: { type: "rectangle", z: "a1", x: 0, y: 100, width: 50, height: 50 } },
+      steps: [{ id: "s", title: "S", holdMs: 1500, actions: [{ id: "e", type: "enter", effect: "pop", targets: ["a"], durationMs: 500 }, { id: "f", type: "emphasis", effect: "float", targets: ["a"], after: "e" }] }],
+    });
+    if (!r.ok) throw new Error(JSON.stringify(r));
+    const ts = resolveTimeline(r.scene).steps[0]!;
+    expect(ts.endMs).toBe(500);
+    expect(ts.holdEndMs).toBe(2000);
+    expect(ts.actions.find((x) => x.action.id === "f")!.endMs).toBe(2000);
+  });
+});
