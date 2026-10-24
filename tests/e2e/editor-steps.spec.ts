@@ -415,3 +415,15 @@ test("Pace: Slower makes the video 25 % longer, and one undo restores it (docs/2
   await page.keyboard.press("Control+z");
   expect(await total()).toBe(before);
 });
+
+test("Pace of one step: Slower in the step settings changes only that step", async ({ page }) => {
+  type T = { timeline: { totalMs: number; steps: { id: string; startMs: number; holdEndMs: number }[] }; selectedStep: string };
+  await page.getByRole("button", { name: /Pods fan out/ }).click();
+  const before = (await state(page)) as unknown as T;
+  const len = (t: T, id: string) => { const s = t.timeline.steps.find((x) => x.id === id)!; return s.holdEndMs - s.startMs; };
+  await page.evaluate(() => (window as unknown as { __anivo: { setState(p: unknown): void } }).__anivo.setState({ propTab: "step" }));
+  await page.getByRole("button", { name: "Slower" }).first().click();
+  const after = (await state(page)) as unknown as T;
+  expect(len(after, "s-pods")).toBeGreaterThan(len(before, "s-pods") * 1.2);
+  expect(len(after, "s-user")).toBe(len(before, "s-user"));
+});
