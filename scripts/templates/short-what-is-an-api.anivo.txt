@@ -1,4 +1,4 @@
-scene "Short: what is an API? (9:16)" style=clean theme=studio-dark size=1080x1920 fps=60 background=gradient
+scene "Short: what is an API? (9:16)" style=clean theme=studio-dark size=1080x1920 fps=60 background=gradient captions=quick
 
 text title "What is an API?" at=90,260 size=900x200 font-size=110 text-align=center
 icon you lucide:smartphone "Your app" at=140,760 size=240x240 fill=accent font-size=44

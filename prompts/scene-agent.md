@@ -70,7 +70,7 @@ Do these steps in sequence.
 ## 5. Anivo Script quick reference
 
 ```
-scene "<title>" style=clean|sketch theme=<name> size=1920x1080 fps=60
+scene "<title>" style=clean|sketch theme=<name> size=1920x1080 fps=60 [captions=relaxed|normal|quick]   (how long steps hold so viewers read captions)
 
 box <id> "<label>" [fill=<token>] [right-of|left-of|above|below=<id>] [gap=<px>] [align=start|center|end] [at=x,y] [size=WxH]
 ellipse | diamond | text | icon <id> <pack>:<name> "<label>" | code <id> "<line 1>\n<line 2>" lang=<lang>   (strings are one line; \n is a new line)

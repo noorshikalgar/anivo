@@ -102,3 +102,13 @@ describe("camera drift and follow", () => {
     expect(cam.x + cam.width / 2).toBeCloseTo(a.x + a.width / 2, 0);
   });
 });
+
+describe("caption pace (docs/31)", () => {
+  it("holds shorter for a quicker reading pace", async () => {
+    const { captionTiming } = await import("./timeline.js");
+    const text = "one two three four five six seven eight nine ten";
+    expect(captionTiming(text).readMs).toBe(4500);
+    expect(captionTiming(text, "normal").readMs).toBe(3300);
+    expect(captionTiming(text, "quick").readMs).toBe(2500);
+  });
+});

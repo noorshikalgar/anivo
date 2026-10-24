@@ -69,6 +69,7 @@ export const SceneSettings = z.object({
     .array(z.object({ family: z.string().min(1).describe("The name that styles use (style.fontFamily)."), assetId: z.string().describe("The font file asset (woff2, woff, ttf, otf).") }))
     .optional()
     .describe("Custom fonts of the scene (docs/20 B10)."),
+  captionPace: z.enum(["relaxed", "normal", "quick"]).optional().describe("How long a step holds so a viewer can read its caption (docs/31): relaxed 0.45 s for each word (default), normal 0.33 s, quick 0.25 s."),
   motionBlur: z.boolean().optional().describe("Video export: fast moves get a soft trail (docs/19 R13). The editor does not show it."),
 });
 export type SceneSettings = z.infer<typeof SceneSettings>;

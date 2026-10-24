@@ -18,6 +18,7 @@ export function printScene(scene: Scene): string {
   if (bgx.angle !== undefined) head.push(`angle=${bgx.angle}`);
   if (bgx.vignette) head.push(`vignette=${bgx.vignette}`);
   if (bgx.grain) head.push(`grain=${bgx.grain}`);
+  if (s.captionPace && s.captionPace !== "relaxed") head.push(`captions=${s.captionPace}`);
   if (bgx.drift) head.push("drift");
   out.push(head.join(" "), "");
 

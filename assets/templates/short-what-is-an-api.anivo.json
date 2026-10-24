@@ -8,6 +8,7 @@
     "background": {
       "kind": "gradient"
     },
+    "captionPace": "quick",
     "theme": "studio-dark",
     "video": {
       "height": 1920,
