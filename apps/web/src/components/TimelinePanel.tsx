@@ -13,6 +13,7 @@ import { updateAction } from "../commands.js";
 import { layerSpans } from "../layers.js";
 import { setAreas, useEditor } from "../store.js";
 import { formatTime } from "./PlaybackBar.js";
+import { ScrubPreview } from "./ScrubPreview.js";
 import { describe } from "./StepInspector.js";
 import { actionIcon, elementIcon } from "./typeIcons.js";
 import { CurveEditor } from "./CurveEditor.js";
@@ -168,6 +169,8 @@ export function TimelinePanel() {
   const playing = useEditor((s) => s.playing);
   /** The time under the pointer (a guide line and a time tag). */
   const [hoverMs, setHoverMs] = useState<number | null>(null);
+  // The pointer is over the ruler: show a frame of that time (docs/22 D1).
+  const [scrub, setScrub] = useState<{ clientX: number; top: number } | null>(null);
   const [viewW, setViewW] = useState(800);
   const [zoom, setZoom] = useState(1);
   const [open, setOpen] = useState<Set<string>>(new Set());
@@ -820,7 +823,14 @@ export function TimelinePanel() {
         <div style={{ width: LABEL_W + trackW, position: "relative" }} onPointerDown={startBoxSelect}>
           <div className={styles.ruler}>
             <div className={styles.corner}>Elements</div>
-            <div className={styles.rulerTrack} style={{ width: trackW }} onPointerDown={startRulerDrag} aria-label="Time ruler">
+            <div
+              className={styles.rulerTrack}
+              style={{ width: trackW }}
+              onPointerDown={startRulerDrag}
+              onPointerMove={(e) => setScrub(e.buttons === 0 && !playing ? { clientX: e.clientX, top: e.currentTarget.getBoundingClientRect().top } : null)}
+              onPointerLeave={() => setScrub(null)}
+              aria-label="Time ruler"
+            >
               {hoverMs !== null && (
                 <span className={styles.hoverTag} style={{ left: px(hoverMs) }} aria-hidden>
                   {formatTime(hoverMs)}
@@ -919,6 +929,7 @@ export function TimelinePanel() {
           ))}
           {box && <span className={styles.boxSel} style={{ left: Math.min(box.x0, box.x1), top: Math.min(box.y0, box.y1), width: Math.abs(box.x1 - box.x0), height: Math.abs(box.y1 - box.y0) }} aria-hidden />}
           {loop && <span className={styles.loopBand} style={{ left: LABEL_W + px(loop.fromMs), width: px(loop.toMs - loop.fromMs) }} aria-hidden />}
+          {scrub && hoverMs !== null && <ScrubPreview ms={hoverMs} clientX={scrub.clientX} top={scrub.top} />}
           {hoverMs !== null && <span className={styles.hoverLine} style={{ left: LABEL_W + px(hoverMs) }} aria-hidden />}
           <span className={styles.playhead} style={{ left: LABEL_W + px(playhead) }} />
         </div>

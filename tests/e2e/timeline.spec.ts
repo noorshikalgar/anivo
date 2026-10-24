@@ -234,3 +234,15 @@ test("shuttle keys: L plays, L again is faster, J plays backward; comma and peri
   await page.keyboard.press("Space");
   await expect.poll(async () => (await p()).playing).toBe(false);
 });
+
+test("point at the ruler: a small frame of that time shows; the playhead does not move (docs/22 D1)", async ({ page }) => {
+  const ruler = page.getByLabel("Time ruler");
+  const box = (await ruler.boundingBox())!;
+  const before = ((await state(page)) as unknown as { playhead: number }).playhead;
+  await page.mouse.move(box.x + box.width * 0.4, box.y + box.height / 2);
+  await page.mouse.move(box.x + box.width * 0.45, box.y + box.height / 2);
+  await expect(page.locator("[data-scrub-preview]")).toBeVisible();
+  expect(((await state(page)) as unknown as { playhead: number }).playhead).toBe(before);
+  await page.mouse.move(box.x + box.width * 0.45, box.y + 400);
+  await expect(page.locator("[data-scrub-preview]")).toHaveCount(0);
+});
