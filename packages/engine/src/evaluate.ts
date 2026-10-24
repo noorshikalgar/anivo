@@ -75,6 +75,7 @@ function settle(frame: ElementFrame): ElementFrame {
   delete f.march;
   delete f.cascade;
   delete f.cascadeWords;
+  delete f.moving;
   delete f.scramble;
   delete f.labelFrom;
   delete f.labelMix;
@@ -421,7 +422,10 @@ function applyTimedAction(state: StateMap, ta: TimedAction, t: number): void {
   else if (action.type === "mark") applyMark(f, action.mark, eased);
   else if (action.type === "emphasis" && raw < 1) applyEmphasis(f, action, raw);
   else if (action.type === "code") applyCode(f, action.code, eased);
-  else if (action.type === "motion") applyMotion(f, action.motion, eased, ta.moveOffset);
+  else if (action.type === "motion") {
+    applyMotion(f, action.motion, eased, ta.moveOffset);
+    if (raw > 0 && raw < 1) f.moving = true;
+  }
   else if (action.type === "counter") {
     const c = action.counter;
     const n = lerp(c.from, c.to, eased);

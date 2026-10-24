@@ -7,6 +7,8 @@ export interface Polyline {
   /** `lengths[i]` is the path length from `points[0]` to `points[i]`. */
   lengths: number[];
   length: number;
+  /** One of two or more arrows between the same elements: its label goes to this side of the line (+1 left of the way, -1 right) (docs/23 G2). */
+  labelSide?: number;
 }
 
 export function polyline(points: Point[]): Polyline {
@@ -206,7 +208,11 @@ export function connectorRoutes(connectors: ConnectorElement[], frames: ElementF
     });
   }
   const out = new Map<string, Polyline>();
-  for (const c of connectors) out.set(c.id, connectorRoute(c, map, offsets.get(c.id) ?? 0));
+  for (const c of connectors) {
+    const o = offsets.get(c.id) ?? 0;
+    const r = connectorRoute(c, map, o);
+    out.set(c.id, o !== 0 ? { ...r, labelSide: Math.sign(o) } : r);
+  }
   return out;
 }
 
