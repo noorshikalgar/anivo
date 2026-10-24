@@ -104,6 +104,7 @@ step "<title>" [hold=<time>] [cue=<time>] [caption="<one sentence>" [near=<id>] 
   count <target> from=<n> to=<n> format="{n} <unit>" [decimals=<n>] [style=thousands|compact|duration] [roll]   (currency or percent: format="${n}" or "{n}%")
   code <target> highlight=<a>-<b> | type=<a>-<b>
   move <targets> path="x,y x,y …" [curve] [orient]   (the element center follows the points and stays at the end)
+  build <targets>   (animate a diagram: the shapes rise in reading order, then the arrows between them draw)
   preset <name> <targets> [+<delay>] [stagger=<time>]   (motion presets: rise-in, blur-in, pop-in, card-up, words-in, words-rise, letters-in, decode, type-in, draw-in, fill-up, fill-right, emphasize, no, sink-out, fade-out)
   march <arrows> [dur=<time>]   (dashes move along the arrows: data on the way)
   mark <text> "<words>" [color=<c>] [highlight=<c>] [underline[=<c>]] [strike[=<c>]] [dim=<c>] [clear]   (style words inside one text: link color, highlight box, underline that draws in, dim the other words; marks stay until clear)

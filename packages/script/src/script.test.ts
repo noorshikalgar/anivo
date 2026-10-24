@@ -43,6 +43,14 @@ function ok(text: string) {
 }
 
 describe("Anivo Script", () => {
+  it("build: shapes rise in reading order, then their arrows draw after them", () => {
+    const scene = ok(`box c "C" at=600,400\nbox a "A" at=0,0\nbox b "B" at=600,0\narrow a -> b\narrow b -> c\nstep "S"\n  build a, b, c`);
+    const [shapes, arrows] = scene.steps[0]!.actions;
+    expect(shapes!.targets).toEqual(["a", "b", "c"]);
+    expect(arrows).toMatchObject({ effect: "draw-on", after: shapes!.id });
+    expect(arrows!.targets).toHaveLength(2);
+  });
+
   it("gives an element a ready-made look, and other keys change it", () => {
     const scene = ok(`box a "A" look=card fill=accent-soft`);
     expect(scene.elements["a"]!.style).toMatchObject({ fill: "accent-soft", cornerRadius: 16, shadow: "soft" });

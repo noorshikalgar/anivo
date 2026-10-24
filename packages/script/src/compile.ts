@@ -680,6 +680,27 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
       const head = c.tokens[0];
       // preset <name> <targets> [+delay] [stagger=]: a built-in motion preset (docs/20 B5).
       if (head?.t === "word" && head.v === "preset") return compilePreset(c, resolveTargets, errors);
+      // build <targets>: the shapes rise in reading order, then the arrows between them draw (docs/30 B1).
+      if (head?.t === "word" && head.v === "build") {
+        const ids = resolveTargets(c.tokens.slice(1), c.pos);
+        const at = (id: string) => allDecls.get(id);
+        const row = Math.max(40, Math.min(...ids.map((id) => at(id)?.h ?? 100)) * 0.6);
+        const shapes = [...ids].sort((x, y) => {
+          const a = at(x);
+          const b = at(y);
+          if (!a || !b || a.x === undefined || b.x === undefined) return 0;
+          const ra = Math.round((a.y! + a.h / 2) / row);
+          const rb = Math.round((b.y! + b.h / 2) / row);
+          return ra !== rb ? ra - rb : a.x + a.w / 2 - (b.x + b.w / 2);
+        });
+        const set = new Set(ids);
+        const arrows = [...connectorIds.entries()].filter(([k]) => k.split("->").every((e) => set.has(e))).map(([, id]) => id);
+        const id = `build-${c.pos.line}`;
+        return [
+          { id, type: "enter", effect: "rise", targets: shapes, staggerMs: 180 },
+          ...(arrows.length ? [{ type: "enter", effect: "draw-on", targets: arrows, staggerMs: 120, after: id }] : []),
+        ];
+      }
       return compileAction(c, resolveTargets, errors) ?? [];
     });
     // after=prev: start when the action before it ends (docs/21 C7). The action before gets an ID for the chain.
