@@ -10,3 +10,4 @@ Status: build, 2026-10-24. The ten built-in templates were the first thing a new
 
 The editor tests keep a frozen copy of the first load balancer scene (`packages/schema/fixtures`), so the new templates do not change them.
 | T4 | Done. A vertical Short template (9:16, "what is an API?"), and step captions are 1.4 times larger in vertical videos (they play on a phone). |
+| T5 | Done. Template cards play the template when you point at them (twice as fast); a vertical template keeps its shape in the card. |

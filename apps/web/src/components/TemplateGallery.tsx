@@ -1,8 +1,8 @@
 import { Dialog, DialogBody, DialogContent, DialogSurface, DialogTitle, Text, makeStyles, tokens } from "@fluentui/react-components";
 import { resolveTimeline } from "@anivo/engine";
 import { type Ctx2D, renderScene } from "@anivo/render";
-import { TEMPLATES } from "@anivo/schema";
-import { useEffect, useRef } from "react";
+import { type Scene, TEMPLATES } from "@anivo/schema";
+import { useEffect, useRef, useState } from "react";
 import { loadTemplate } from "../assets.js";
 import { newFromTemplate } from "../files.js";
 import { withErrors } from "../notify.js";
@@ -31,26 +31,46 @@ const useStyles = makeStyles({
   muted: { color: tokens.colorNeutralForeground3 },
 });
 
-/** A small picture of the end of the template's last step. */
+/**
+ * A small picture of the end of the template's last step. Point at it to play
+ * the template (docs/27). A vertical template keeps its shape.
+ */
 export function TemplateThumb({ name }: { name: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const styles = useStyles();
+  const [scene, setScene] = useState<Scene | null>(null);
+  const [hover, setHover] = useState(false);
   useEffect(() => {
     let live = true;
-    void loadTemplate(name).then((scene) => {
-      const c = ref.current;
-      if (!live || !c) return;
-      c.width = 480;
-      c.height = 270;
-      const tl = resolveTimeline(scene);
-      const last = tl.steps[tl.steps.length - 1];
-      renderScene(c.getContext("2d") as unknown as Ctx2D, scene, last ? Math.max(last.startMs, last.holdEndMs - 1) : -1, { width: 480, height: 270 });
-    }).catch(() => undefined);
+    void loadTemplate(name)
+      .then((sc) => live && setScene(sc))
+      .catch(() => undefined);
     return () => {
       live = false;
     };
   }, [name]);
-  return <canvas ref={ref} className={styles.thumb} aria-hidden />;
+  useEffect(() => {
+    const c = ref.current;
+    if (!c || !scene) return;
+    const v = scene.settings.video;
+    c.height = 270;
+    c.width = Math.round((270 * v.width) / v.height);
+    const ctx = c.getContext("2d") as unknown as Ctx2D;
+    const tl = resolveTimeline(scene);
+    const last = tl.steps[tl.steps.length - 1];
+    const draw = (t: number) => renderScene(ctx, scene, t, { width: c.width, height: c.height });
+    if (!hover) return void draw(last ? Math.max(last.startMs, last.holdEndMs - 1) : -1);
+    // Twice as fast, so a point at the card shows the whole template.
+    const t0 = performance.now();
+    let raf = 0;
+    const loop = (now: number) => {
+      draw(((now - t0) * 2) % (tl.totalMs + 600));
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [scene, hover]);
+  return <canvas ref={ref} className={styles.thumb} style={{ objectFit: "contain" }} aria-hidden onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} />;
 }
 
 /** Templates gallery (FR-FILE-08). */
