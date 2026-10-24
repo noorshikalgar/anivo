@@ -109,6 +109,7 @@ const actionBase = {
   id: ActionId,
   targets: z.array(ElementId).min(1),
   delayMs: Ms.default(0),
+  after: ActionId.optional().describe("Chain (docs/21 C7): start when the action with this ID in the same step ends. delayMs is then the gap after it. If that action moves, this action moves with it."),
   durationMs: Ms.optional().describe("Omit to use the default duration for the action type."),
   easing: Easing.optional(),
   staggerMs: Ms.default(0),

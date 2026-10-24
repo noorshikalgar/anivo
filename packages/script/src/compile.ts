@@ -673,6 +673,18 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
       if (head?.t === "word" && head.v === "preset") return compilePreset(c, resolveTargets, errors);
       return compileAction(c, resolveTargets, errors) ?? [];
     });
+    // after=prev: start when the action before it ends (docs/21 C7). The action before gets an ID for the chain.
+    actions.forEach((a, i) => {
+      const x = a as Record<string, unknown>;
+      if (x["after"] !== "prev") return;
+      const prev = actions[i - 1] as Record<string, unknown> | undefined;
+      if (!prev) {
+        delete x["after"];
+        return;
+      }
+      prev["id"] ??= `chain-${line.pos.line}-${i - 1}`;
+      x["after"] = prev["id"];
+    });
     props["actions"] = actions;
     const id = p.kv.get("id")?.v;
     ops.push({ op: "step.add", ...(id ? { id } : {}), props });
@@ -934,6 +946,7 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
     else if (k === "order" && ["in-order", "reverse", "center", "edges", "random"].includes(v)) a["staggerOrder"] = v;
     else if (k === "easing" || k === "ease") a["easing"] = v;
     else if (k === "delay") a["delayMs"] = parseTime(v);
+    else if (k === "after") a["after"] = v;
     else if (k === "id") a["id"] = v;
     else if (k === "sound") a["sound"] = v;
     else if (k === "sound-gain") a["soundGainDb"] = Number(v);

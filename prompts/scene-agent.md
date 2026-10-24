@@ -91,6 +91,7 @@ step "<title>" [hold=<time>] [cue=<time>] [caption="<one sentence>" [near=<id>] 
   (caption: types in next to the element that changes; the step holds until a viewer can read it. Use one idea and one caption for each step.)
   [transition=fade|dip|flash|wipe|zoom|blur|slide] [transition-dur=<time>]   (a change of scene: use it between parts of the story, not on every step)
   enter <targets> rise|blur|fade|pop|draw-on|slide-up|slide-left|wipe|typewriter|cascade|scramble [+<delay>] [stagger=<time>] [order=reverse|center|edges|random]   (typewriter unit=word: one word at a time)
+  any action: after=prev (or after=<action id>): start when that action ends; +<delay> is then the gap. It moves with that action.
   exit <targets> <effect>
   morph <targets> key=value…
   pulse|shake|glow|flash|highlight|focus <targets>

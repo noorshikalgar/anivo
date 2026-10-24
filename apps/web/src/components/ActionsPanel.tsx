@@ -504,18 +504,29 @@ function StepActions({ step }: { step: Step }) {
             {index > 0 && (
               <Prop label="Start">
                 <div className={s.row}>
-                  <Btn title="Start at the same time as the action above" onClick={() => updateAction(step.id, active.id, { delayMs: step.actions[index - 1]!.delayMs }, "Start with previous")}>
-                    With previous
-                  </Btn>
                   <Btn
-                    title="Start when the action above ends"
+                    title="Start at the same time as the action above"
                     onClick={() => {
-                      const prev = timed?.actions.filter((x) => x.action.id === step.actions[index - 1]!.id) ?? [];
-                      if (timed && prev.length) updateAction(step.id, active.id, { delayMs: Math.max(...prev.map((p) => p.endMs)) - timed.startMs }, "Start after previous");
+                      const prev = step.actions[index - 1]!;
+                      updateAction(step.id, active.id, { delayMs: prev.delayMs, after: prev.after ?? null }, "Start with previous");
                     }}
                   >
+                    With previous
+                  </Btn>
+                  <Btn title="Start when the action above ends, and move with it (a chain)" onClick={() => updateAction(step.id, active.id, { after: step.actions[index - 1]!.id, delayMs: 0 }, "Start after previous")}>
                     After previous
                   </Btn>
+                  {active.after && (
+                    <Btn
+                      title="Stop the chain: the action keeps its place in time, and does not move with the other action"
+                      onClick={() => {
+                        const starts = timed?.actions.filter((x) => x.action.id === active.id).map((x) => x.startMs) ?? [];
+                        updateAction(step.id, active.id, { after: null, ...(timed && starts.length ? { delayMs: Math.max(0, Math.round(Math.min(...starts) - timed.startMs)) } : {}) }, "Unchain");
+                      }}
+                    >
+                      Unchain
+                    </Btn>
+                  )}
                 </div>
               </Prop>
             )}

@@ -62,6 +62,8 @@ const useStyles = makeStyles({
   icon: { display: "flex", color: "var(--ui-muted)", flexShrink: 0 },
   track: { position: "relative", flexShrink: 0, height: "100%", borderBottom: "1px solid var(--ui-list-alt)", boxSizing: "border-box" },
   life: { position: "absolute", top: "9px", height: "6px", borderRadius: "3px", backgroundColor: "var(--ui-outline)", opacity: 0.6, pointerEvents: "none" },
+  /** A chained action: a light bar at its start, joined to the end of the action before it. */
+  chain: { position: "absolute", left: "0", top: "0", bottom: "0", width: "3px", backgroundColor: "rgba(255,255,255,0.85)", borderRadius: "3px 0 0 3px", pointerEvents: "none" },
   block: {
     position: "absolute",
     top: "3px",
@@ -348,15 +350,37 @@ export function TimelinePanel() {
     const st = useEditor.getState();
     const ts = st.timeline.steps.find((x) => x.id === b.stepId);
     if (!ts) return;
-    const start = Math.max(0, ts.startMs + b.action.delayMs + dms);
+    // The action start (its first target), before and after the move.
+    const own = ts.actions.filter((x) => x.action.id === b.action.id).map((x) => x.startMs);
+    const from = own.length ? Math.min(...own) : ts.startMs + b.action.delayMs;
+    const start = Math.max(0, from + dms);
     const i = Math.max(0, stepIndexAt(st.timeline, start));
     const to = st.timeline.steps[i]!;
-    if (to.id === b.stepId) return updateAction(b.stepId, b.action.id, { delayMs: Math.max(0, b.action.delayMs + dms) }, "Move action");
+    if (to.id === b.stepId) {
+      // Dropped at the end of another action: chain to it (docs/21 C7), so it moves with that action.
+      const step = st.scene.steps.find((x) => x.id === b.stepId)!;
+      const leadsBackTo = (id: string | undefined, seen = new Set<string>()): boolean => {
+        if (!id || seen.has(id)) return false;
+        if (id === b.action.id) return true;
+        seen.add(id);
+        return leadsBackTo(step.actions.find((x) => x.id === id)?.after, seen);
+      };
+      const ends = new Map<string, number>();
+      for (const x of ts.actions) ends.set(x.action.id, Math.max(ends.get(x.action.id) ?? 0, x.endMs));
+      const lead = [...ends].find(([id, end]) => id !== b.action.id && Math.abs(end - start) < 1 && !leadsBackTo(id));
+      if (lead) return updateAction(b.stepId, b.action.id, { after: lead[0], delayMs: 0 }, "Chain action");
+      const delay = b.action.delayMs + dms;
+      // Moved to before the start of its chain: the chain stops.
+      if (b.action.after && delay < 0) return updateAction(b.stepId, b.action.id, { after: null, delayMs: Math.max(0, Math.round(start - ts.startMs)) }, "Move action");
+      return updateAction(b.stepId, b.action.id, { delayMs: Math.max(0, delay) }, "Move action");
+    }
+    const { after: _after, ...moved } = b.action;
+    void _after;
     const r = st.apply({
       label: "Move action to another step",
       ops: [
         { op: "action.remove", step: b.stepId, id: b.action.id },
-        { op: "action.add", step: to.id, action: { ...b.action, delayMs: Math.round(start - to.startMs) } },
+        { op: "action.add", step: to.id, action: { ...moved, delayMs: Math.round(start - to.startMs) } },
       ],
     });
     if (r.ok) {
@@ -373,7 +397,7 @@ export function TimelinePanel() {
     const label = describe(b.action);
     const on = activeAction === b.action.id && selectedStep === b.stepId;
     return (
-      <Tooltip key={b.key} content={`${label} · step ${b.stepIndex + 1} · ${formatTime(start)} to ${formatTime(start + dur)}`} relationship="description">
+      <Tooltip key={b.key} content={`${label} · step ${b.stepIndex + 1} · ${formatTime(start)} to ${formatTime(start + dur)}${b.action.after ? " · chained: starts when the action before it ends" : ""}`} relationship="description">
         <div
           className={mergeClasses(styles.block, on && styles.blockOn)}
           style={{ left: px(start), width: Math.max(6, px(dur)), backgroundColor: COLORS[b.action.type] ?? "#64748b" }}
@@ -408,6 +432,7 @@ export function TimelinePanel() {
             else updateAction(b.stepId, b.action.id, { delayMs: Math.max(0, b.action.delayMs + sign * stepMs) }, "Move action", `move/${b.action.id}`);
           }}
         >
+          {b.action.after && <span className={styles.chain} aria-hidden data-chain />}
           {px(dur) > 30 && (
             <span style={{ display: "inline-flex", alignItems: "center", gap: 3, verticalAlign: "top" }}>
               <span style={{ display: "inline-flex", transform: "scale(0.8)" }}>{actionIcon(b.action.type)}</span>

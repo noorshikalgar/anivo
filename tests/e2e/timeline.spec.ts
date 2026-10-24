@@ -169,3 +169,44 @@ test("Alt + drag on the ruler sets a loop region; play goes round in it", async 
   await page.getByRole("button", { name: "Clear the loop region" }).click();
   expect(((await state(page)) as unknown as { loop: unknown }).loop).toBeNull();
 });
+
+test("drop a bar at the end of another bar: it chains, and moves when the first bar moves (docs/21 C7)", async ({ page }) => {
+  await page.evaluate(() => {
+    const s = (window as unknown as { __anivo: { getState(): { apply(t: unknown): unknown; selectStep(id: string): void } } }).__anivo.getState();
+    s.apply({
+      label: "t",
+      ops: [
+        { op: "step.add", id: "chain", props: { title: "Chain", actions: [
+          { id: "first", type: "enter", effect: "fade", targets: ["lb"], durationMs: 800 },
+          { id: "second", type: "enter", effect: "fade", targets: ["user"], delayMs: 2000, durationMs: 600 },
+        ] } },
+      ],
+    });
+    s.selectStep("chain");
+  });
+  const first = page.locator('[data-action="first"]').first();
+  const second = page.locator('[data-action="second"]').first();
+  await second.scrollIntoViewIfNeeded();
+  const a = (await first.boundingBox())!;
+  const b = (await second.boundingBox())!;
+  await page.mouse.move(b.x + 10, b.y + b.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(a.x + a.width + 12, b.y + b.height / 2, { steps: 8 });
+  await page.mouse.up();
+  type A = { id: string; delayMs: number; after?: string };
+  const acts = async () => (await page.evaluate(() => (window as unknown as { __anivo: { getState(): { scene: { steps: { id: string; actions: unknown[] }[] } } } }).__anivo.getState().scene.steps.find((x) => x.id === "chain")!.actions)) as A[];
+  expect((await acts())[1]).toMatchObject({ after: "first", delayMs: 0 });
+  await expect(second).toHaveAttribute("data-action", "second");
+  await expect(page.locator('[data-action="second"] [data-chain]').first()).toBeAttached();
+  // Move the first bar: the chained bar moves with it.
+  const f = (await first.boundingBox())!;
+  await page.mouse.move(f.x + f.width / 2, f.y + f.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(f.x + f.width / 2 + 60, f.y + f.height / 2, { steps: 6 });
+  await page.mouse.up();
+  expect((await acts())[0]!.delayMs).toBeGreaterThan(100);
+  // The view can zoom out (the step is longer): check that the second bar starts at the end of the first bar.
+  const f2 = (await first.boundingBox())!;
+  expect(Math.abs((await second.boundingBox())!.x - (f2.x + f2.width))).toBeLessThan(3);
+  expect((await acts())[1]).toMatchObject({ after: "first", delayMs: 0 });
+});
