@@ -405,3 +405,13 @@ test("Page Down and Page Up go to the next and the previous step", async ({ page
   await page.keyboard.press("PageUp");
   expect((await state(page)).selectedStep).toBeNull();
 });
+
+test("Pace: Slower makes the video 25 % longer, and one undo restores it (docs/28 P1)", async ({ page }) => {
+  const total = async () => ((await state(page)) as unknown as { timeline: { totalMs: number } }).timeline.totalMs;
+  const before = await total();
+  await page.evaluate(() => (window as unknown as { __anivo: { getState(): { setSelection(ids: string[]): void; selectStep(id: string | null): void } } }).__anivo.getState().setSelection([]));
+  await page.getByRole("button", { name: "Slower" }).click();
+  expect(await total()).toBeCloseTo(before * 1.25, -2);
+  await page.keyboard.press("Control+z");
+  expect(await total()).toBe(before);
+});

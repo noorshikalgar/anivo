@@ -3,7 +3,7 @@ import { basename, join, resolve as resolvePath } from "node:path";
 import { resolveTimeline, sceneCaptions, toSrt, toVtt, wavBytes } from "@anivo/engine";
 import { type NodeExportFormat, exportHtml, exportVideo, renderSvg } from "@anivo/export-node";
 import { formatLint, lintScene, lintSummary } from "@anivo/lint";
-import { type Composition, type MotionPreset, OperationBus, getPreset, presetOps, compositionOf, compositionSlots, insertCompositionOps, planFit, planTake, speechIntervals, spliceTake, trimTake, voiceParts } from "@anivo/ops";
+import { type Composition, type MotionPreset, OperationBus, getPreset, paceOps, presetOps, compositionOf, compositionSlots, insertCompositionOps, planFit, planTake, speechIntervals, spliceTake, trimTake, voiceParts } from "@anivo/ops";
 import { assetId } from "@anivo/fileio";
 import { getIconPack, iconName, iconPackFromSvgs, iconPacks, searchIcons } from "@anivo/render";
 import { CustomTheme, type Scene, TEMPLATES, loadScene } from "@anivo/schema";
@@ -396,6 +396,23 @@ preset
     if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
     writeSceneFile(f, bus.scene);
     print(`Applied '${p.name}' (${ops.length} action${ops.length === 1 ? "" : "s"}). ${lintLine(bus.scene)}`);
+  });
+
+program
+  .command("pace")
+  .description("Make the video slower or faster: multiply every delay, duration, stagger, hold, and transition time")
+  .argument("<scene>")
+  .argument("<factor>", "For example 1.25 (25 % slower) or 0.8 (20 % faster)")
+  .option("--steps <ids>", "Only these step IDs, separated by commas")
+  .action((f: string, factor: string, o: { steps?: string }) => {
+    const k = Number(factor);
+    if (!(k > 0.1 && k < 10)) throw new ToolError(`The factor '${factor}' is not valid.`, "Use a number from 0.1 to 10, for example 1.25.");
+    const bus = new OperationBus(readSceneFile(f));
+    const before = resolveTimeline(bus.scene).totalMs;
+    const r = bus.apply({ label: "Pace", ops: paceOps(bus.scene, k, o.steps?.split(",").map((x) => x.trim())) });
+    if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
+    writeSceneFile(f, bus.scene);
+    print(`The video is ${(resolveTimeline(bus.scene).totalMs / 1000).toFixed(1)} s (was ${(before / 1000).toFixed(1)} s).`);
   });
 
 const image = program.command("image").description("Image elements");

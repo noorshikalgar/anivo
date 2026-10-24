@@ -12,3 +12,4 @@ export * from "./presets.js";
 export * from "./compositions.js";
 export * from "./exits.js";
 export * from "./styles.js";
+export * from "./pace.js";

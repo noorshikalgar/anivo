@@ -1,6 +1,6 @@
 import { prepare, stepIndexAt } from "@anivo/engine";
 import { type LayoutKind, autoLayout, evaluateWithLayout } from "@anivo/layout";
-import { type ExitPlace, type OperationInput, deleteKeyframeOps, exitForOps, hasKeys, keyframesIn, sendAlongOps, setKeyframeOps } from "@anivo/ops";
+import { type ExitPlace, type OperationInput, deleteKeyframeOps, exitForOps, paceOps, hasKeys, keyframesIn, sendAlongOps, setKeyframeOps } from "@anivo/ops";
 import type { Element } from "@anivo/schema";
 import { type Box, boundsOf, editorSkip, geometryOps, leafDescendants } from "./editing.js";
 import { notify } from "./notify.js";
@@ -664,4 +664,14 @@ export function addDrawnPath(points: { x: number; y: number }[]): void {
   const r = st.apply({ label: "Draw a motion path", ops: [{ op: "action.add", step: st.selectedStep, action: { type: "motion", targets: ids, delayMs, durationMs: 1600, easing: "smooth", motion: { points: pts, curve: pts.length > 2 } } }] });
   if (!r.ok) notify(r.error.message, "error");
   else notify("Added the motion path. Drag its dots to change it.", "success");
+}
+
+/** Make the whole video slower or faster (docs/28 P1). One undo step. */
+export function changePace(factor: number): void {
+  const st = useEditor.getState();
+  if (st.scene.steps.length === 0) return notify("Add steps first.", "info");
+  const before = st.timeline.totalMs;
+  const r = st.apply({ label: factor > 1 ? "Slower pace" : "Faster pace", ops: paceOps(st.scene, factor) });
+  if (!r.ok) return notify(r.error.message, "error");
+  notify(`The video is now ${(useEditor.getState().timeline.totalMs / 1000).toFixed(1)} s (was ${(before / 1000).toFixed(1)} s). Ctrl+Z to undo.`, "success");
 }
