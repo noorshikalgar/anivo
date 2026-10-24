@@ -35,7 +35,7 @@ describe("Anivo MCP server", () => {
   it("lists all tools from docs/09", async () => {
     const names = (await client.listTools()).tools.map((t) => t.name).sort();
     expect(names).toEqual(
-      ["anivo_captions", "anivo_contact_sheet", "anivo_export", "anivo_guide", "anivo_icons_search", "anivo_image_add", "anivo_import", "anivo_lint", "anivo_ops_apply", "anivo_preview", "anivo_scene_create", "anivo_scene_get", "anivo_scene_summary", "anivo_schema", "anivo_script_apply", "anivo_templates_list", "anivo_transcribe", "anivo_undo"].sort(),
+      ["anivo_captions", "anivo_comp_insert", "anivo_comp_save", "anivo_contact_sheet", "anivo_export", "anivo_guide", "anivo_icons_search", "anivo_image_add", "anivo_import", "anivo_lint", "anivo_ops_apply", "anivo_preview", "anivo_scene_create", "anivo_scene_get", "anivo_scene_summary", "anivo_schema", "anivo_script_apply", "anivo_templates_list", "anivo_transcribe", "anivo_undo"].sort(),
     );
   });
 
@@ -67,6 +67,16 @@ describe("Anivo MCP server", () => {
     expect(textOf(bad)).toContain("Use one of:");
     expect(textOf(await call("anivo_undo", { scene: "t.anivo" }))).toContain("Undid");
     expect(textOf(await call("anivo_scene_summary", { scene: "t.anivo" }))).not.toContain("extra");
+  });
+
+  it("saves a composition and inserts it with a new text", async () => {
+    await call("anivo_script_apply", { scene: "t.anivo", script: 'box card "Hello" at=100,100\nstep "In"\n  enter card pop\n' });
+    const saved = textOf(await call("anivo_comp_save", { scene: "t.anivo", ids: ["card"], file: "card.anivo-comp.json" }));
+    expect(saved).toContain('card="Hello"');
+    const ins = textOf(await call("anivo_comp_insert", { scene: "t.anivo", file: "card.anivo-comp.json", x: 600, y: 400, texts: { card: "Again" } }));
+    expect(ins).toContain("Inserted");
+    expect(textOf(await call("anivo_scene_summary", { scene: "t.anivo" }))).toContain('"Again"');
+    expect((await call("anivo_comp_save", { scene: "t.anivo", ids: ["card"], file: "../x.json" })).isError).toBe(true);
   });
 
   it("adds an image from the scene folder and refuses a file outside it", async () => {
