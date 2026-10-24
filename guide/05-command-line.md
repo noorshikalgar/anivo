@@ -22,6 +22,7 @@ The `anivo` command needs Node 20 or later. Video export needs FFmpeg.
 | `anivo theme import my.anivo brand.json` | Use a custom theme |
 | `anivo comp save my.anivo --ids card,title --out card.anivo-comp.json` | Save elements and their animations as a composition (the editor imports the same file) |
 | `anivo comp insert other.anivo card.anivo-comp.json --at 200,300 --text title=Latency` | Insert a composition, and set its texts |
+| `anivo preset apply my.anivo rise-in --step s-two --targets a,b [--file my.anivo-presets.json]` | Apply a built-in motion preset, or one from your preset file |
 | `anivo serve my.anivo` | Open the scene in the web app on this computer |
 | `anivo mcp` | The MCP server for agents (see [Agents](04-agents.md)) |
 

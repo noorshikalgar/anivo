@@ -3,7 +3,7 @@ import { basename, join, resolve as resolvePath } from "node:path";
 import { resolveTimeline, sceneCaptions, toSrt, toVtt, wavBytes } from "@anivo/engine";
 import { type NodeExportFormat, exportHtml, exportVideo, renderSvg } from "@anivo/export-node";
 import { formatLint, lintScene, lintSummary } from "@anivo/lint";
-import { type Composition, OperationBus, compositionOf, compositionSlots, insertCompositionOps, planFit, planTake, speechIntervals, spliceTake, trimTake, voiceParts } from "@anivo/ops";
+import { type Composition, type MotionPreset, OperationBus, getPreset, presetOps, compositionOf, compositionSlots, insertCompositionOps, planFit, planTake, speechIntervals, spliceTake, trimTake, voiceParts } from "@anivo/ops";
 import { assetId } from "@anivo/fileio";
 import { getIconPack, iconName, iconPackFromSvgs, iconPacks, searchIcons } from "@anivo/render";
 import { CustomTheme, type Scene, TEMPLATES, loadScene } from "@anivo/schema";
@@ -352,6 +352,36 @@ comp
     if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
     writeSceneFile(f, bus.scene);
     print(`Inserted '${data.name}': ${ins.ids.join(", ")} and ${ins.steps} step${ins.steps === 1 ? "" : "s"}. ${lintLine(bus.scene)}`, { ids: ins.ids, steps: ins.steps });
+  });
+
+const preset = program.command("preset").description("Motion presets: built-in, or from a preset file that the editor exports (docs/21 C11)");
+preset
+  .command("apply")
+  .description("Apply a motion preset to elements in a step")
+  .argument("<scene>")
+  .argument("<name>", "Preset name or ID")
+  .requiredOption("--step <step>", "Step ID")
+  .requiredOption("--targets <ids>", "Element IDs, separated by commas, in order")
+  .option("--file <file>", "Preset file (.anivo-presets.json). Without it: a built-in preset")
+  .option("--delay <ms>", "Delay before the preset, in ms", "0")
+  .action((f: string, name: string, o: { step: string; targets: string; file?: string; delay: string }) => {
+    let p: MotionPreset | undefined;
+    if (o.file) {
+      const data = JSON.parse(readFileSync(o.file, "utf8")) as { anivoPresets?: number; presets?: MotionPreset[] };
+      if (data.anivoPresets !== 1 || !Array.isArray(data.presets)) throw new ToolError(`'${o.file}' is not an Anivo preset file.`, "Export one in the editor: Actions › Presets › Export my presets.");
+      p = data.presets.find((x) => x.id === name || x.name.toLowerCase() === name.toLowerCase());
+      if (!p) throw new ToolError(`The file has no preset '${name}'.`, `Use: ${data.presets.map((x) => x.name).join(", ")}.`);
+    } else {
+      p = getPreset(name);
+      if (!p) throw new ToolError(`No built-in preset '${name}'.`, "See the preset list in 'anivo schema' or the agent guide.");
+    }
+    const bus = new OperationBus(readSceneFile(f));
+    const ops = presetOps(bus.scene, o.step, p, o.targets.split(",").map((x) => x.trim()).filter(Boolean), { delayMs: Number(o.delay) });
+    if ("error" in ops) throw new ToolError(ops.error);
+    const r = bus.apply({ label: `Preset: ${p.name}`, ops });
+    if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
+    writeSceneFile(f, bus.scene);
+    print(`Applied '${p.name}' (${ops.length} action${ops.length === 1 ? "" : "s"}). ${lintLine(bus.scene)}`);
   });
 
 const image = program.command("image").description("Image elements");
