@@ -713,9 +713,15 @@ export function evaluateAt(prepared: Prepared, timeMs: number, opts: EvaluateOpt
     }
   }
   fadeWithEnds(scene, state);
+  // A particle travels only on an arrow that shows and is drawn (the cache filmstrip had mail flying before its arrow).
+  const onShownArrow = (p: Particle) => {
+    const c = state[p.connectorId];
+    return !c || (c.visible && c.opacity > 0.05 && c.strokeProgress >= 0.95);
+  };
+  const shownParticles = particles.filter(onShownArrow);
   const caption = i >= 0 ? stepCaptionAt(scene, timeline.steps, i, t, boundaries, cameras) : undefined;
   const followed = applyFollow(scene, base, state);
-  return { timeMs: Math.max(0, t), elements: order.map((id) => followed[id] ?? state[id]!), particles, camera, ...(caption ? { caption } : {}), ...(transition ? { transition } : {}) };
+  return { timeMs: Math.max(0, t), elements: order.map((id) => followed[id] ?? state[id]!), particles: shownParticles, camera, ...(caption ? { caption } : {}), ...(transition ? { transition } : {}) };
 }
 
 /**
