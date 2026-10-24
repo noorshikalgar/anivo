@@ -1333,12 +1333,20 @@ function drawStepCaption(dc: DrawContext, frame: FrameState, cap: NonNullable<Fr
   ctx.textBaseline = "middle";
   // Typing: show the first characters, line by line.
   let left = Math.round(cap.text.length * cap.reveal);
+  let caret: { x: number; y: number } | undefined;
   lines.forEach((l, i) => {
     if (left <= 0) return;
     const part = l.slice(0, left);
     left -= l.length + 1;
-    ctx.fillText(part, p.x + bar + padX, p.y + padY + lineH * (i + 0.5));
+    const y = p.y + padY + lineH * (i + 0.5);
+    ctx.fillText(part, p.x + bar + padX, y);
+    caret = { x: p.x + bar + padX + ctx.measureText(part).width + size * 0.08, y };
   });
+  // The caret while the caption types (as on a typed text, docs/25 K3).
+  if (caret && cap.reveal < 1) {
+    ctx.fillStyle = toCss(resolveToken(theme, "accent", "fill", "rectangle"));
+    ctx.fillRect(caret.x, caret.y - size * 0.55, Math.max(2, size * 0.08), size * 1.1);
+  }
   ctx.restore();
 }
 
