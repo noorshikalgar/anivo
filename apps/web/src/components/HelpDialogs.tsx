@@ -22,6 +22,7 @@ const SHORTCUTS: [string, string][] = [
   ["Add step", "N"],
   ["Tools: select, hand, rectangle, ellipse, diamond", "V H R O D"],
   ["Tools: arrow, text, icon, code", "A T I C"],
+  ["Draw a motion path for the selection", "P"],
   ["Select all / Delete", "Ctrl+A / Delete"],
   ["Copy / Paste / Duplicate", "Ctrl+C / Ctrl+V / Ctrl+D"],
   ["Copy style / Paste style", "Ctrl+Alt+C / Ctrl+Alt+V"],
