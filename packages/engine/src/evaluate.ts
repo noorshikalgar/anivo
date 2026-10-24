@@ -1,4 +1,5 @@
 import type { Action, Color, Element, FlowParams, MorphableProps, Rect, Scene } from "@anivo/schema";
+import { defaultDurationMs } from "@anivo/schema";
 import type { CaptionFrame, ElementFrame, FrameColor, FrameState, Particle } from "./frame.js";
 import { type TimedAction, type TimedStep, type Timeline, resolveTimeline, stepIndexAt } from "./timeline.js";
 
@@ -73,6 +74,7 @@ function settle(frame: ElementFrame): ElementFrame {
   delete f.blur;
   delete f.march;
   delete f.cascade;
+  delete f.cascadeWords;
   delete f.scramble;
   delete f.labelFrom;
   delete f.labelMix;
@@ -155,6 +157,7 @@ function applyEnterExit(f: ElementFrame, action: Extract<Action, { type: "enter"
       break;
     case "cascade":
       f.cascade = clamp01(p);
+      if (params.unit === "word") f.cascadeWords = true;
       break;
     case "scramble":
       f.scramble = clamp01(p);
@@ -291,8 +294,21 @@ function applyEmphasis(f: ElementFrame, action: Extract<Action, { type: "emphasi
     case "focus":
       // Handled once per action in applyFocus, because it changes other elements.
       break;
+    case "float":
+    case "breathe": {
+      // Idle motion (docs/22 D6): one slow wave each 3 s, that starts and stops softly.
+      const total = defaultDurationMs(action);
+      const ms = raw * total;
+      const env = smoothstep(Math.min(1, ms / 700, (total - ms) / 700));
+      const wave = Math.sin((2 * Math.PI * ms) / 3000);
+      if (action.effect === "float") f.offsetY -= (params.amplitude ?? 10) * wave * env;
+      else f.scale *= 1 + ((params.scale ?? 1.04) - 1) * ((1 - Math.cos((2 * Math.PI * ms) / 3000)) / 2) * env;
+      break;
+    }
   }
 }
+
+const smoothstep = (x: number) => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
 
 function applyFocus(state: StateMap, focusTargets: string[], dimTo: number, raw: number): void {
   const dim = lerp(1, dimTo, envelope(raw));

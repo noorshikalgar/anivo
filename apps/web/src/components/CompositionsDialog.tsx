@@ -34,7 +34,7 @@ function previewScene(c: Composition, theme: string) {
   return bus.apply({ ops: ins.ops }).ok ? bus.scene : null;
 }
 
-function Preview({ c }: { c: Composition }) {
+export function CompositionPreview({ c }: { c: Composition }) {
   const s = useStyles();
   const ref = useRef<HTMLCanvasElement>(null);
   const theme = useEditor((st) => st.scene.settings.theme);
@@ -107,7 +107,7 @@ export function CompositionsDialog() {
               <div className={s.grid} role="list" aria-label="Saved compositions">
                 {list.map((c) => (
                   <div key={c.id} className={s.card} role="listitem" aria-label={c.name}>
-                    <Preview c={c} />
+                    <CompositionPreview c={c} />
                     <span className={s.name}>{c.name}</span>
                     <span className={s.meta}>
                       {c.elements.length} elements · {c.steps.length} step{c.steps.length === 1 ? "" : "s"}

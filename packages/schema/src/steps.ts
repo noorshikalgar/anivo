@@ -24,7 +24,7 @@ export type Easing = z.infer<typeof Easing>;
 export const EnterEffect = z.enum(["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter", "rise", "blur", "cascade", "scramble"]);
 export type EnterEffect = z.infer<typeof EnterEffect>;
 
-export const EmphasisEffect = z.enum(["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus", "march"]);
+export const EmphasisEffect = z.enum(["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus", "march", "float", "breathe"]);
 export type EmphasisEffect = z.infer<typeof EmphasisEffect>;
 
 export const Direction = z.enum(["up", "down", "left", "right"]);
@@ -44,7 +44,7 @@ export const EffectParams = z
     width: z.number(),
     dimTo: z.number().min(0).max(1),
     amount: z.number().nonnegative().describe("blur: the blur radius at the start, in pixels."),
-    unit: z.enum(["char", "word"]).describe("typewriter: show the text one character (default) or one word at a time (docs/19 R12)."),
+    unit: z.enum(["char", "word"]).describe("typewriter and cascade: one character (default) or one word at a time (docs/19 R12, docs/22 D5). cascade unit=word: words rise in one by one."),
   })
   .partial();
 export type EffectParams = z.infer<typeof EffectParams>;

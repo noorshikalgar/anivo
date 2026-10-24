@@ -42,7 +42,7 @@ const useStyles = makeStyles({
 });
 
 /** A picture of a set of elements with the scene theme. */
-function Thumb({ make }: { make: () => Scene | null }) {
+export function Thumb({ make }: { make: () => Scene | null }) {
   const s = useStyles();
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -74,7 +74,7 @@ function frameScene(elements: Record<string, unknown>, box: { x: number; y: numb
   return r.ok ? r.scene : null;
 }
 
-function builtInScene(name: string): Scene | null {
+export function builtInScene(name: string): Scene | null {
   const def = WIDGETS.find((w) => w.name === name)!;
   const base = loadScene({ schemaVersion: 1, meta: { title: "w" } });
   if (!base.ok) return null;
@@ -83,7 +83,7 @@ function builtInScene(name: string): Scene | null {
   return frameScene(bus.scene.elements, { x: 0, y: 0, width: def.width, height: def.height });
 }
 
-function userScene(w: UserWidget): Scene | null {
+export function userScene(w: UserWidget): Scene | null {
   const els: Record<string, Element> = {};
   for (const e of w.elements) els[e.id] = e;
   const boxes = w.elements.filter((e) => e.type !== "connector" && e.type !== "group") as (Element & { x: number; y: number })[];

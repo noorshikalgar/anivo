@@ -4,8 +4,9 @@
  * to change the order.
  */
 import { Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, makeStyles, mergeClasses } from "@fluentui/react-components";
-import { Add16Regular, ArrowDown16Regular, ArrowUp16Regular, ChevronDown12Filled, ChevronRight12Filled, Copy16Regular, Delete16Regular, MoreHorizontal16Regular } from "@fluentui/react-icons";
-import { useState } from "react";
+import { Add16Regular, ArrowDown16Regular, ArrowUp16Regular, ChevronDown12Filled, ChevronRight12Filled, Copy16Regular, Delete16Regular, Image16Regular, MoreHorizontal16Regular } from "@fluentui/react-icons";
+import { type Ctx2D, renderScene } from "@anivo/render";
+import { useEffect, useRef, useState } from "react";
 import { addStep, deleteStep, duplicateStep, moveStep } from "../commands.js";
 import { useEditor } from "../store.js";
 import { formatTime } from "./PlaybackBar.js";
@@ -52,8 +53,34 @@ const useStyles = makeStyles({
   child: { paddingLeft: "34px" },
   childActive: { color: "var(--ui-text)" },
   more: { opacity: 0 },
+  rowThumb: { height: "44px" },
+  metaLine: { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+  stack: { flexGrow: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "1px", lineHeight: "15px" },
+  itemThumb: { height: "44px" },
+  thumb: { width: "64px", height: "36px", borderRadius: "3px", flexShrink: 0, backgroundColor: "var(--ui-viewport)", outline: "1px solid var(--ui-line)" },
   empty: { color: "var(--ui-faint)", fontSize: "11px", padding: "6px 10px" },
 });
+
+/**
+ * A small frame of the end of a step (docs/22 D4). It draws when the editor
+ * is idle after a change, so typing and dragging stay smooth.
+ */
+function StepThumb({ atMs }: { atMs: number }) {
+  const s = useStyles();
+  const ref = useRef<HTMLCanvasElement>(null);
+  const scene = useEditor((st) => st.scene);
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      const cv = ref.current;
+      if (!cv) return;
+      cv.width = 128;
+      cv.height = Math.round((128 * scene.settings.video.height) / scene.settings.video.width);
+      renderScene(cv.getContext("2d") as unknown as Ctx2D, scene, atMs, { width: cv.width, height: cv.height });
+    }, 300);
+    return () => window.clearTimeout(id);
+  }, [scene, atMs]);
+  return <canvas ref={ref} className={s.thumb} aria-hidden data-step-thumb />;
+}
 
 export function StepsPanel() {
   const s = useStyles();
@@ -64,6 +91,7 @@ export function StepsPanel() {
   const selectStep = useEditor((st) => st.selectStep);
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState("");
+  const thumbs = useEditor((st) => st.stepThumbs);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const q = query.trim().toLowerCase();
@@ -80,6 +108,7 @@ export function StepsPanel() {
     <nav className={s.root} aria-label="Steps">
       <AreaHeader title="Steps">
         <SearchBox label="Search steps" value={query} onChange={setQuery} />
+        <IconButton label={thumbs ? "Hide step frames" : "Show step frames"} pressed={thumbs} icon={<Image16Regular />} onClick={() => useEditor.setState({ stepThumbs: !thumbs })} />
         <IconButton label="Add step (N)" icon={<Add16Regular />} onClick={addStep} />
       </AreaHeader>
       <div className={s.tree} role="tree" aria-label="Step tree">
@@ -102,7 +131,7 @@ export function StepsPanel() {
           return (
             <div key={step.id} role="treeitem" aria-selected={selected === step.id} {...(step.actions.length ? { "aria-expanded": expanded } : {})}>
               <div
-                className={mergeClasses(s.row, row % 2 === 0 && s.alt, selected === step.id && s.selected, dropIndex === i && dragId !== step.id && s.dropBefore)}
+                className={mergeClasses(s.row, thumbs && s.rowThumb, row % 2 === 0 && s.alt, selected === step.id && s.selected, dropIndex === i && dragId !== step.id && s.dropBefore)}
                 draggable
                 onDragStart={(e) => {
                   setDragId(step.id);
@@ -131,7 +160,7 @@ export function StepsPanel() {
                   {expanded ? <ChevronDown12Filled /> : <ChevronRight12Filled />}
                 </button>
                 <button
-                  className={s.item}
+                  className={mergeClasses(s.item, thumbs && s.itemThumb)}
                   onClick={() => selectStep(step.id)}
                   onDoubleClick={() => toggle(step.id)}
                   onKeyDown={(e) => {
@@ -143,8 +172,18 @@ export function StepsPanel() {
                   title={`${step.actions.length} ${step.actions.length === 1 ? "action" : "actions"}`}
                 >
                   <span className={s.index}>{i + 1}</span>
-                  <span className={s.title}>{step.title || step.id}</span>
-                  <span className={s.meta}>{t ? formatTime(t.startMs) : ""}</span>
+                  {thumbs && t && <StepThumb atMs={Math.max(t.startMs, t.holdEndMs - 1)} />}
+                  {thumbs ? (
+                    <span className={s.stack}>
+                      <span className={s.title}>{step.title || step.id}</span>
+                      <span className={mergeClasses(s.meta, s.metaLine)}>{t ? `${formatTime(t.startMs)} · ${step.actions.length} action${step.actions.length === 1 ? "" : "s"}` : ""}</span>
+                    </span>
+                  ) : (
+                    <>
+                      <span className={s.title}>{step.title || step.id}</span>
+                      <span className={s.meta}>{t ? formatTime(t.startMs) : ""}</span>
+                    </>
+                  )}
                 </button>
                 <Menu>
                   <MenuTrigger disableButtonEnhancement>

@@ -13,6 +13,7 @@ import { updateAction } from "../commands.js";
 import { layerSpans } from "../layers.js";
 import { setAreas, useEditor } from "../store.js";
 import { formatTime } from "./PlaybackBar.js";
+import { ScrubPreview } from "./ScrubPreview.js";
 import { describe } from "./StepInspector.js";
 import { actionIcon, elementIcon } from "./typeIcons.js";
 import { CurveEditor } from "./CurveEditor.js";
@@ -84,6 +85,8 @@ const useStyles = makeStyles({
     ":focus-visible": { outline: "2px solid #fff" },
   },
   blockOn: { boxShadow: "0 0 0 2px #fff" },
+  /** The bar that the active bar follows (a chain). */
+  blockLead: { outline: "1px dashed rgba(255,255,255,0.9)", outlineOffset: "1px" },
   edge: { position: "absolute", top: 0, bottom: 0, right: "-3px", width: "7px", cursor: "ew-resize" },
   diamond: {
     position: "absolute",
@@ -168,6 +171,8 @@ export function TimelinePanel() {
   const playing = useEditor((s) => s.playing);
   /** The time under the pointer (a guide line and a time tag). */
   const [hoverMs, setHoverMs] = useState<number | null>(null);
+  // The pointer is over the ruler: show a frame of that time (docs/22 D1).
+  const [scrub, setScrub] = useState<{ clientX: number; top: number } | null>(null);
   const [viewW, setViewW] = useState(800);
   const [zoom, setZoom] = useState(1);
   const [open, setOpen] = useState<Set<string>>(new Set());
@@ -389,17 +394,39 @@ export function TimelinePanel() {
     }
   };
 
+  // Chains (docs/22 D2): while a bar moves or changes its length, the bars chained after it move with it.
+  const dragged = drag && (drag.kind === "move" || drag.kind === "end") ? drag.key.split("/") : null;
+  const followers = useMemo(() => {
+    if (!dragged) return new Set<string>();
+    const step = scene.steps.find((x) => x.id === dragged[0]);
+    const out = new Set<string>();
+    let grew = true;
+    while (grew) {
+      grew = false;
+      for (const a of step?.actions ?? []) {
+        if (!a.after || out.has(a.id) || a.id === dragged[1] || (a.after !== dragged[1] && !out.has(a.after))) continue;
+        out.add(a.id);
+        grew = true;
+      }
+    }
+    return out;
+  }, [scene, dragged?.[0], dragged?.[1]]);
+  const activeLead = scene.steps.find((x) => x.id === selectedStep)?.actions.find((a) => a.id === activeAction)?.after;
+
   const renderBlock = (b: Block, elId: string) => {
     const d = drag && drag.key === b.key ? drag : null;
     const delay = d?.kind === "move" ? Math.max(0, b.action.delayMs + d.dms) : b.action.delayMs;
     const dur = d?.kind === "end" ? Math.max(MIN_MS, durationOf(b) + d.dms) : durationOf(b);
-    const start = b.startMs + (delay - b.action.delayMs);
+    const follow = drag && dragged && b.stepId === dragged[0] && followers.has(b.action.id) ? drag.dms : 0;
+    const start = b.startMs + (delay - b.action.delayMs) + follow;
     const label = describe(b.action);
     const on = activeAction === b.action.id && selectedStep === b.stepId;
+    const lead = activeLead === b.action.id && selectedStep === b.stepId;
     return (
       <Tooltip key={b.key} content={`${label} · step ${b.stepIndex + 1} · ${formatTime(start)} to ${formatTime(start + dur)}${b.action.after ? " · chained: starts when the action before it ends" : ""}`} relationship="description">
         <div
-          className={mergeClasses(styles.block, on && styles.blockOn)}
+          className={mergeClasses(styles.block, on && styles.blockOn, lead && styles.blockLead)}
+          data-lead={lead || undefined}
           style={{ left: px(start), width: Math.max(6, px(dur)), backgroundColor: COLORS[b.action.type] ?? "#64748b" }}
           role="slider"
           tabIndex={0}
@@ -820,7 +847,14 @@ export function TimelinePanel() {
         <div style={{ width: LABEL_W + trackW, position: "relative" }} onPointerDown={startBoxSelect}>
           <div className={styles.ruler}>
             <div className={styles.corner}>Elements</div>
-            <div className={styles.rulerTrack} style={{ width: trackW }} onPointerDown={startRulerDrag} aria-label="Time ruler">
+            <div
+              className={styles.rulerTrack}
+              style={{ width: trackW }}
+              onPointerDown={startRulerDrag}
+              onPointerMove={(e) => setScrub(e.buttons === 0 && !playing ? { clientX: e.clientX, top: e.currentTarget.getBoundingClientRect().top } : null)}
+              onPointerLeave={() => setScrub(null)}
+              aria-label="Time ruler"
+            >
               {hoverMs !== null && (
                 <span className={styles.hoverTag} style={{ left: px(hoverMs) }} aria-hidden>
                   {formatTime(hoverMs)}
@@ -919,6 +953,7 @@ export function TimelinePanel() {
           ))}
           {box && <span className={styles.boxSel} style={{ left: Math.min(box.x0, box.x1), top: Math.min(box.y0, box.y1), width: Math.abs(box.x1 - box.x0), height: Math.abs(box.y1 - box.y0) }} aria-hidden />}
           {loop && <span className={styles.loopBand} style={{ left: LABEL_W + px(loop.fromMs), width: px(loop.toMs - loop.fromMs) }} aria-hidden />}
+          {scrub && hoverMs !== null && <ScrubPreview ms={hoverMs} clientX={scrub.clientX} top={scrub.top} />}
           {hoverMs !== null && <span className={styles.hoverLine} style={{ left: LABEL_W + px(hoverMs) }} aria-hidden />}
           <span className={styles.playhead} style={{ left: LABEL_W + px(playhead) }} />
         </div>

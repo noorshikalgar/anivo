@@ -47,12 +47,14 @@ export async function saveSelectionAsPreset(name: string): Promise<MotionPreset 
     return null;
   }
   await idbSet(KEY, [...(await listUserPresets()), p]);
+  useEditor.setState((s) => ({ libraryVersion: s.libraryVersion + 1 }));
   notify(`Saved the preset '${p.name}'. It is in Presets, in every scene.`, "success");
   return p;
 }
 
 export async function deleteUserPreset(id: string): Promise<void> {
   await idbSet(KEY, (await listUserPresets()).filter((p) => p.id !== id));
+  useEditor.setState((s) => ({ libraryVersion: s.libraryVersion + 1 }));
 }
 
 /** Download your presets as one file (docs/21 C11). */
@@ -83,6 +85,7 @@ export async function importUserPresets(file: File): Promise<number> {
     const added = found.map((p, i) => ({ id: `user-${stamp}-${i}`, name: p.name, description: p.description ?? "", mode: p.mode, actions: p.actions, ...(p.staggerMs !== undefined ? { staggerMs: p.staggerMs } : {}) }));
     const names = new Set(added.map((p) => p.name));
     await idbSet(KEY, [...(await listUserPresets()).filter((p) => !names.has(p.name)), ...added]);
+    useEditor.setState((s) => ({ libraryVersion: s.libraryVersion + 1 }));
     notify(`Added ${added.length} preset${added.length === 1 ? "" : "s"}.`, "success");
     return added.length;
   } catch {

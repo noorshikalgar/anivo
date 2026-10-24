@@ -67,7 +67,7 @@ function previewScene(p: MotionPreset) {
   return bus.scene;
 }
 
-function Tile({ preset, onDelete }: { preset: MotionPreset; onDelete?: () => void }) {
+export function PresetTile({ preset, onDelete, prefix = "Preset" }: { preset: MotionPreset; onDelete?: () => void; prefix?: string }) {
   const s = useStyles();
   const ref = useRef<HTMLCanvasElement>(null);
   const scene = useRef(previewScene(preset));
@@ -96,7 +96,7 @@ function Tile({ preset, onDelete }: { preset: MotionPreset; onDelete?: () => voi
     return () => cancelAnimationFrame(raf);
   }, [hover, preset]);
   return (
-    <button type="button" className={s.tile} title={preset.description} aria-label={`Preset: ${preset.name}`} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onFocus={() => setHover(true)} onBlur={() => setHover(false)} onClick={() => applyPreset(preset)}>
+    <button type="button" className={s.tile} title={preset.description} aria-label={`${prefix}: ${preset.name}`} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onFocus={() => setHover(true)} onBlur={() => setHover(false)} onClick={() => applyPreset(preset)}>
       <canvas ref={ref} className={s.canvas} aria-hidden />
       {preset.name}
       {onDelete && (
@@ -132,10 +132,10 @@ export function PresetsPanel() {
       <Note>{selection.length ? "Point at a preset to see it; click to apply it to the selection." : "Select elements, then click a preset."}</Note>
       <div className={s.grid} role="group" aria-label="Motion presets">
         {allBuiltins().map((p) => (
-          <Tile key={p.id} preset={p} />
+          <PresetTile key={p.id} preset={p} />
         ))}
         {mine.map((p) => (
-          <Tile key={p.id} preset={p} onDelete={() => void deleteUserPreset(p.id).then(() => listUserPresets().then(setMine))} />
+          <PresetTile key={p.id} preset={p} onDelete={() => void deleteUserPreset(p.id).then(() => listUserPresets().then(setMine))} />
         ))}
       </div>
       <Btn onClick={() => setSaving(true)} disabled={selection.length === 0}>

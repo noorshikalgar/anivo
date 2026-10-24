@@ -1,3 +1,4 @@
+import { LIBRARY_MIME, dropLibraryItem } from "./LibraryPanel.js";
 import { keyTimesOf, motionPath } from "../motionPath.js";
 import { type FrameState, evaluate } from "@anivo/engine";
 import { formatTime } from "./PlaybackBar.js";
@@ -871,9 +872,18 @@ export function CanvasView() {
   return (
     <div ref={rootRef} className={mergeClasses(styles.root, tool !== "select" && tool !== "hand" && styles.draw)} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onDoubleClick={onDoubleClick}
       onDragOver={(e) => {
-        if ([...e.dataTransfer.items].some((i) => i.kind === "file")) e.preventDefault();
+        if ([...e.dataTransfer.items].some((i) => i.kind === "file") || e.dataTransfer.types.includes(LIBRARY_MIME)) e.preventDefault();
       }}
       onDrop={(e) => {
+        const lib = e.dataTransfer.getData(LIBRARY_MIME);
+        if (lib) {
+          // A widget or a composition from the library (docs/22 D7): insert it with its center at the drop point.
+          e.preventDefault();
+          const r = e.currentTarget.getBoundingClientRect();
+          const { view } = useEditor.getState();
+          void withErrors(() => dropLibraryItem(lib, { x: view.x + (e.clientX - r.left) / view.zoom, y: view.y + (e.clientY - r.top) / view.zoom }));
+          return;
+        }
         const files = [...e.dataTransfer.files].filter((f) => f.type.startsWith("image/") || /\.(png|jpe?g|webp|svg)$/i.test(f.name));
         if (files.length === 0) return;
         e.preventDefault();

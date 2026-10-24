@@ -41,11 +41,11 @@ function viewCenter(): { x: number; y: number } {
 }
 
 /** Insert a built-in widget at the center of the view, and select it. */
-export function insertWidget(def: WidgetDef): void {
+export function insertWidget(def: WidgetDef, at?: { x: number; y: number }): void {
   const st = useEditor.getState();
   let id = def.name;
   for (let n = 2; Object.keys(st.scene.elements).some((k) => k === id || k.startsWith(`${id}-`)); n++) id = `${def.name}-${n}`;
-  const c = viewCenter();
+  const c = at ?? viewCenter();
   const r = st.apply({ label: `Insert ${def.title.toLowerCase()}`, ops: widgetOps(def, { id, x: Math.round(c.x - def.width / 2), y: Math.round(c.y - def.height / 2) }) });
   if (!r.ok) notify(r.error.message, "error");
   else {
@@ -74,9 +74,9 @@ export async function deleteUserWidget(id: string): Promise<void> {
 }
 
 /** Insert a user widget at the center of the view. */
-export function insertUserWidget(w: UserWidget): void {
+export function insertUserWidget(w: UserWidget, at?: { x: number; y: number }): void {
   const b = bounds(w.elements);
-  const c = viewCenter();
+  const c = at ?? viewCenter();
   pasteData({ elements: w.elements }, 0, { dx: Math.round(c.x - b.width / 2 - b.x), dy: Math.round(c.y - b.height / 2 - b.y) }, `Insert widget ${w.name}`);
   useEditor.getState().setTool("select");
 }

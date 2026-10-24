@@ -49,10 +49,12 @@ export async function saveLook(name: string): Promise<StylePreset | null> {
   }
   const p: StylePreset = { id: `style-${Date.now().toString(36)}`, name: name.trim() || "My style", style: look };
   await idbSet(KEY, [...(await listUserStyles()), p]);
+  useEditor.setState((s) => ({ libraryVersion: s.libraryVersion + 1 }));
   notify(`Saved the style '${p.name}'. It is in Styles, in every scene.`, "success");
   return p;
 }
 
 export async function deleteUserStyle(id: string): Promise<void> {
   await idbSet(KEY, (await listUserStyles()).filter((p) => p.id !== id));
+  useEditor.setState((s) => ({ libraryVersion: s.libraryVersion + 1 }));
 }

@@ -324,3 +324,28 @@ test("Styles: copy the style of an element, paste it, apply a ready-made style, 
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByRole("button", { name: "Style: Brand" })).toBeVisible();
 });
+
+test("the Steps list shows a small frame of each step; the button hides them (docs/22 D4)", async ({ page }) => {
+  const steps = page.getByRole("navigation", { name: "Steps" });
+  const n = (await state(page)).scene.steps.length;
+  await expect(steps.locator("[data-step-thumb]")).toHaveCount(n);
+  await steps.getByRole("button", { name: "Hide step frames" }).click();
+  await expect(steps.locator("[data-step-thumb]")).toHaveCount(0);
+});
+
+test("Library: search, click a widget to insert it, drag a widget onto the canvas (docs/22 D7)", async ({ page }) => {
+  await page.getByRole("tab", { name: "Library" }).click();
+  const lib = page.getByRole("region", { name: "Library" });
+  await lib.getByRole("searchbox", { name: "Search the library" }).fill("phone");
+  await expect(lib.getByRole("button", { name: "Library: Phone" })).toBeVisible();
+  await expect(lib.getByRole("button", { name: "Library: Server" })).toHaveCount(0);
+  const before = Object.keys((await state(page)).scene.elements).length;
+  await lib.getByRole("button", { name: "Library: Phone" }).click();
+  await expect.poll(async () => Object.keys((await state(page)).scene.elements).length).toBeGreaterThan(before);
+  const after = Object.keys((await state(page)).scene.elements).length;
+  await lib.getByRole("button", { name: "Library: Phone" }).dragTo(page.getByTestId("canvas-root"), { targetPosition: { x: 200, y: 150 } });
+  await expect.poll(async () => Object.keys((await state(page)).scene.elements).length).toBeGreaterThan(after);
+  // The steps come back with the other tab.
+  await page.getByRole("tab", { name: "Steps" }).click();
+  await expect(page.getByRole("navigation", { name: "Steps" })).toBeVisible();
+});

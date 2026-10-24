@@ -41,7 +41,7 @@ import { ThemeEditor } from "./ThemeEditor.js";
 import { Tour } from "./Tour.js";
 import { TimelinePanel } from "./TimelinePanel.js";
 import { PresentMode } from "./PresentMode.js";
-import { StepsPanel } from "./StepsPanel.js";
+import { LeftArea } from "./LeftArea.js";
 import { TopBar } from "./TopBar.js";
 import { useShortcuts } from "./shortcuts.js";
 
@@ -207,7 +207,7 @@ export function App() {
           </div>
           {compact && drawer && <div className={styles.scrim} onClick={() => useEditor.setState({ drawer: null })} aria-hidden />}
           <div className={compact ? mergeClasses(styles.drawer, styles.drawerLeft, drawer === "steps" && styles.drawerOpen) : mergeClasses(styles.area, styles.steps, maximized && styles.gone)} inert={compact && drawer !== "steps" ? true : undefined}>
-            <StepsPanel />
+            <LeftArea />
             {!compact && (
               <Splitter axis="x" label="Resize the steps area" style={{ right: 0 }} onStart={() => (startAreas.current = useEditor.getState().areas)} onDrag={(d) => setAreas({ left: Math.min(480, Math.max(160, startAreas.current.left + d)) })} onReset={() => setAreas({ left: 230 })} />
             )}

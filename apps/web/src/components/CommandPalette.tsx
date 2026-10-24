@@ -60,6 +60,7 @@ function commands(): Command[] {
     { title: "Present step by step", keys: "F5", run: () => (st.pause(), useEditor.setState({ presenting: true })) },
     { title: "Play or pause", keys: "Space", run: () => (st.playing ? st.pause() : st.play()) },
     { title: "Add step", keys: "N", run: addStep },
+    { title: "Open the library (widgets, compositions, presets)", run: () => useEditor.setState({ leftTab: "library" }) },
     { title: "Insert image", run: () => void withErrors(pickImage) },
     { title: "Insert table", run: () => void insertTable() },
     { title: "Add voiceover", run: () => void withErrors(() => importAudio("voiceover")) },
