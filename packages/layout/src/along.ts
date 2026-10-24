@@ -24,7 +24,25 @@ export function alongPoints(scene: Scene, stepId: string, connectorId: string, r
   if (reverse) pts.reverse();
   if (target) {
     // Just before the motion starts, so this motion does not change the result.
-    const f = evaluateWithLayout(scene, ts.startMs + target.delayMs - 1).frame.elements.find((e) => e.id === target.id);
+    const frames = evaluateWithLayout(scene, ts.startMs + target.delayMs - 1).frame.elements;
+    // A group (for example a packet widget) has the box of its parts.
+    const parts = new Set<string>([target.id]);
+    for (let grew = true; grew; ) {
+      grew = false;
+      for (const e of Object.values(scene.elements)) {
+        if (!e.parentId || !parts.has(e.parentId) || parts.has(e.id)) continue;
+        parts.add(e.id);
+        grew = true;
+      }
+    }
+    const boxes = frames.filter((e) => parts.has(e.id) && e.type !== "group" && e.type !== "connector" && e.width > 0);
+    const f = boxes.length
+      ? (() => {
+          const x0 = Math.min(...boxes.map((e) => e.x));
+          const y0 = Math.min(...boxes.map((e) => e.y));
+          return { x: x0, y: y0, width: Math.max(...boxes.map((e) => e.x + e.width)) - x0, height: Math.max(...boxes.map((e) => e.y + e.height)) - y0 };
+        })()
+      : undefined;
     if (f) {
       const c = round({ x: f.x + f.width / 2, y: f.y + f.height / 2 });
       // An element that is on the arrow already goes on from its place, not back to the arrow start.

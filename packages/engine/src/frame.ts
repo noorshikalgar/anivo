@@ -65,6 +65,8 @@ export interface ElementFrame {
   cascade?: number;
   /** The cascade moves one word at a time (docs/22 D5: words rise). */
   cascadeWords?: boolean;
+  /** An arrow that is on screen, but does not show because an element at its end is not on screen. */
+  hiddenByEnds?: boolean;
   /** A counting number: the digits have the same width, so the text does not shake while it counts. */
   tabular?: boolean;
   /** Scramble (0 to 1): random letters settle into the text, from the left. */
@@ -126,9 +128,14 @@ export interface CaptionFrame {
   reveal: number;
   opacity: number;
   side: "auto" | "above" | "below" | "left" | "right" | "top" | "bottom";
-  /** The box of the anchor element now, in scene pixels. None: the caption uses a band. */
+  /** The box of the anchor element at the end of the step, in scene pixels. None: the caption uses a band. */
   anchor?: Rect;
   anchorId?: string;
+  /**
+   * The boxes to keep clear, at the end of the step (text marked). The caption
+   * stays in one place for the whole step, also when elements move.
+   */
+  avoid?: (Rect & { text: boolean })[];
 }
 
 export interface FrameState {

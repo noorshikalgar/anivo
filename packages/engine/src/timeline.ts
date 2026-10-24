@@ -14,6 +14,8 @@ export interface TimedAction {
   focusTargets?: string[];
   /** For a camera action: the elements to fit, after group expansion. */
   cameraTargets?: string[];
+  /** For a motion of a group: the place of this part from the center of the group, so the group moves as one. */
+  moveOffset?: { dx: number; dy: number };
 }
 
 export interface TimedStep {
@@ -175,11 +177,27 @@ export function resolveTimeline(scene: Scene): Timeline {
       const cameraTargets = action.type === "camera" ? expand(action.targets) : undefined;
       const focusTargets = action.type === "emphasis" && action.effect === "focus" ? targets : undefined;
       const rank = staggerRanks(targets.length, action.staggerOrder, action.id);
+      // A group that moves along a path keeps its shape: each part keeps its place from the group center.
+      const offsets = new Map<string, { dx: number; dy: number }>();
+      if (action.type === "motion") {
+        for (const t of action.targets) {
+          if (scene.elements[t]?.type !== "group") continue;
+          const parts = expand([t])
+            .map((id) => scene.elements[id])
+            .filter((e): e is Exclude<typeof e, undefined> => !!e && e.type !== "connector" && e.type !== "group");
+          if (parts.length === 0) continue;
+          const b = parts as unknown as { id: string; x: number; y: number; width: number; height: number }[];
+          const cx = (Math.min(...b.map((e) => e.x)) + Math.max(...b.map((e) => e.x + e.width))) / 2;
+          const cy = (Math.min(...b.map((e) => e.y)) + Math.max(...b.map((e) => e.y + e.height))) / 2;
+          for (const e of b) offsets.set(e.id, { dx: e.x + e.width / 2 - cx, dy: e.y + e.height / 2 - cy });
+        }
+      }
       targets.forEach((target, targetIndex) => {
         const duration = defaultDurationMs(action, labelLength(scene, target));
         const s = baseOf(action) + action.delayMs + rank[targetIndex]! * action.staggerMs;
         const e = s + duration;
-        if (target !== "" || action.type === "camera") actions.push({ action, target, targetIndex, startMs: s, endMs: e, ease, ...(focusTargets ? { focusTargets } : {}), ...(cameraTargets ? { cameraTargets } : {}) });
+        const moveOffset = offsets.get(target);
+        if (target !== "" || action.type === "camera") actions.push({ action, target, targetIndex, startMs: s, endMs: e, ease, ...(focusTargets ? { focusTargets } : {}), ...(cameraTargets ? { cameraTargets } : {}), ...(moveOffset ? { moveOffset } : {}) });
         contentEnd = Math.max(contentEnd, e);
       });
     }
