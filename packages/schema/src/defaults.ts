@@ -46,5 +46,7 @@ export function defaultDurationMs(action: Action, textLength = 0): number {
   if (action.type === "camera" && action.camera.op === "follow") return 3000;
   // Dashes march for 3 s by default (docs/21 C2).
   if (action.type === "emphasis" && action.effect === "march") return 3000;
+  // Idle motion (docs/22 D6): slow, for a hold.
+  if (action.type === "emphasis" && (action.effect === "float" || action.effect === "breathe")) return 6000;
   return DEFAULT_DURATION_MS[action.type];
 }

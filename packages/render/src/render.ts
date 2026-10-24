@@ -194,8 +194,12 @@ function drawLetters(dc: DrawContext, f: ElementFrame, el: Element, lines: strin
   const align = el.style.textAlign ?? "center";
   ctx.textAlign = "left";
   const total = lines.reduce((n, l) => n + l.length + 1, 0);
-  const WINDOW = 6;
+  // Words rise (docs/22 D5): the unit is a word; each word starts after the one before, and two words move at a time.
+  const byWord = f.cascadeWords === true && f.cascade !== undefined;
+  const words = byWord ? lines.reduce((n, l) => n + l.split(" ").filter(Boolean).length, 0) : 0;
+  const WINDOW = byWord ? 2 : 6;
   let idx = 0;
+  let word = -1;
   lines.forEach((line, i) => {
     const width = ctx.measureText(line).width;
     const left = align === "left" ? x : align === "right" ? x - width : x - width / 2;
@@ -203,14 +207,15 @@ function drawLetters(dc: DrawContext, f: ElementFrame, el: Element, lines: strin
     for (let j = 0; j < line.length; j++, idx++) {
       let ch = line[j]!;
       if (ch === " ") continue;
+      if (j === 0 || line[j - 1] === " ") word++;
       const cx = left + ctx.measureText(line.slice(0, j)).width;
       let a = alpha;
       let dy = 0;
       if (f.cascade !== undefined && f.cascade < 1) {
-        const lp = Math.min(1, Math.max(0, (f.cascade * (total + WINDOW) - idx) / WINDOW));
+        const lp = byWord ? Math.min(1, Math.max(0, (f.cascade * (words + WINDOW) - word) / WINDOW)) : Math.min(1, Math.max(0, (f.cascade * (total + WINDOW) - idx) / WINDOW));
         const e = 1 - (1 - lp) ** 3;
         a *= lp;
-        dy = (1 - e) * size * 0.5;
+        dy = (1 - e) * size * (byWord ? 0.7 : 0.5);
       }
       let center = false;
       if (f.scramble !== undefined && f.scramble < 1) {
