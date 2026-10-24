@@ -148,12 +148,29 @@ function drawText(dc: DrawContext, f: ElementFrame, el: Element, text: string, b
   if ((f.cascade !== undefined && f.cascade < 1) || (f.scramble !== undefined && f.scramble < 1)) return drawLetters(dc, f, el, lines, x, y0, lineHeight, size, color, alpha);
   if (f.tabular && !f.marks?.length) return drawTabular(ctx, lines, x, y0, lineHeight, align, shown);
   if (f.marks?.length || f.dimRest) return drawMarkedText(dc, f, el, text, lines, x, y0, lineHeight, size, color, alpha, shown);
+  const typing = reveal > 0 && reveal < 1;
+  let caret: { x: number; y: number } | undefined;
   lines.forEach((line, i) => {
     if (shown <= 0) return;
     const part = line.slice(0, shown);
     shown -= line.length + 1;
-    ctx.fillText(part, x, y0 + i * lineHeight);
+    if (!typing || part.length === line.length) {
+      ctx.fillText(part, x, y0 + i * lineHeight);
+      return;
+    }
+    // A line that types: its letters are in their final places (a centered line does not grow from its center).
+    const full = ctx.measureText(line).width;
+    const left = align === "left" ? x : align === "right" ? x - full : x - full / 2;
+    ctx.textAlign = "left";
+    ctx.fillText(part, left, y0 + i * lineHeight);
+    ctx.textAlign = align;
+    caret = { x: left + ctx.measureText(part).width + size * 0.06, y: y0 + i * lineHeight };
   });
+  if (caret) {
+    // A typing caret (docs/25 K3): an accent bar after the last letter while the text types.
+    ctx.fillStyle = toCss(withAlpha(resolveToken(dc.theme, "accent", "fill", "rectangle"), alpha));
+    ctx.fillRect(caret.x, caret.y - size * 0.55, Math.max(2, size * 0.07), size * 1.1);
+  }
 }
 
 /** Text with digits of the same width (a counting number), so it does not shake while it counts. */
