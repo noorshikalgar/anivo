@@ -392,3 +392,16 @@ test("draw a motion path on the canvas, then drag one of its points (docs/24 H1,
   await page.mouse.up();
   expect((await motion()).motion.points.at(-1)!.y).toBeGreaterThan(last.y + 150);
 });
+
+test("Page Down and Page Up go to the next and the previous step", async ({ page }) => {
+  await page.locator("body").click({ position: { x: 5, y: 5 } }).catch(() => undefined);
+  const ids = (await state(page)).scene.steps.map((s) => s.id);
+  await page.evaluate(() => (window as unknown as { __anivo: { getState(): { selectStep(id: string | null): void } } }).__anivo.getState().selectStep(null));
+  await page.keyboard.press("PageDown");
+  expect((await state(page)).selectedStep).toBe(ids[0]);
+  await page.keyboard.press("PageDown");
+  expect((await state(page)).selectedStep).toBe(ids[1]);
+  await page.keyboard.press("PageUp");
+  await page.keyboard.press("PageUp");
+  expect((await state(page)).selectedStep).toBeNull();
+});

@@ -26,6 +26,7 @@ const SHORTCUTS: [string, string][] = [
   ["Select all / Delete", "Ctrl+A / Delete"],
   ["Copy / Paste / Duplicate", "Ctrl+C / Ctrl+V / Ctrl+D"],
   ["Copy style / Paste style", "Ctrl+Alt+C / Ctrl+Alt+V"],
+  ["Previous / next step", "Page Up / Page Down"],
   ["Play backward / forward (again: faster)", "J / L"],
   ["One frame back / forward (Shift: 10)", ", / ."],
   ["Group / Ungroup", "Ctrl+G / Ctrl+Shift+G"],
