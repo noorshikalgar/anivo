@@ -261,7 +261,7 @@ function applyMorph(f: ElementFrame, to: MorphableProps, p: number): void {
   }
 }
 
-function applyEmphasis(f: ElementFrame, action: Extract<Action, { type: "emphasis" }>, raw: number): void {
+function applyEmphasis(f: ElementFrame, action: Extract<Action, { type: "emphasis" }>, raw: number, span = defaultDurationMs(action)): void {
   const params = action.params;
   const count = params.count;
   switch (action.effect) {
@@ -309,7 +309,7 @@ function applyEmphasis(f: ElementFrame, action: Extract<Action, { type: "emphasi
     case "float":
     case "breathe": {
       // Idle motion (docs/22 D6): one slow wave each 3 s, that starts and stops softly.
-      const total = defaultDurationMs(action);
+      const total = span;
       const ms = raw * total;
       const env = smoothstep(Math.min(1, ms / 700, (total - ms) / 700));
       const wave = Math.sin((2 * Math.PI * ms) / 3000);
@@ -442,12 +442,13 @@ function applyTimedAction(state: StateMap, ta: TimedAction, t: number): void {
         f.markBox = { x, y, width: Math.max(...boxes.map((e) => e.x + e.width)) - x, height: Math.max(...boxes.map((e) => e.y + e.height)) - y };
       }
     }
-    applyEmphasis(f, action, raw);
+    applyEmphasis(f, action, raw, ta.endMs - ta.startMs);
   }
   else if (action.type === "code") applyCode(f, action.code, eased);
   else if (action.type === "motion") {
     applyMotion(f, action.motion, eased, ta.moveOffset);
-    if (raw > 0 && raw < 1) f.moving = true;
+    // On top while it moves and after it arrives, until the step ends (a sent packet stops next to arrow labels).
+    if (raw > 0) f.moving = true;
   }
   else if (action.type === "counter") {
     const c = action.counter;
@@ -712,7 +713,7 @@ export function evaluateAt(prepared: Prepared, timeMs: number, opts: EvaluateOpt
     }
   }
   fadeWithEnds(scene, state);
-  const caption = i >= 0 ? stepCaptionAt(scene, timeline.steps, i, t, boundaries) : undefined;
+  const caption = i >= 0 ? stepCaptionAt(scene, timeline.steps, i, t, boundaries, cameras) : undefined;
   const followed = applyFollow(scene, base, state);
   return { timeMs: Math.max(0, t), elements: order.map((id) => followed[id] ?? state[id]!), particles, camera, ...(caption ? { caption } : {}), ...(transition ? { transition } : {}) };
 }
@@ -805,7 +806,7 @@ function anchorBox(scene: Scene, id: string, state: StateMap): Rect | undefined 
 }
 
 /** The caption of step i at time t. A step with no caption fades out the caption of the step before. */
-function stepCaptionAt(scene: Scene, steps: TimedStep[], i: number, t: number, boundaries: StateMap[]): CaptionFrame | undefined {
+function stepCaptionAt(scene: Scene, steps: TimedStep[], i: number, t: number, boundaries: StateMap[], cameras: Rect[]): CaptionFrame | undefined {
   let k = i;
   let fadeOut = 1;
   if (!steps[i]!.caption) {
@@ -838,7 +839,8 @@ function stepCaptionAt(scene: Scene, steps: TimedStep[], i: number, t: number, b
       for (const u of [0, 0.5]) avoid.push({ x: a.x + (b.x - a.x) * u - half, y: a.y + (b.y - a.y) * u - half, width: half * 2, height: half * 2, text: false });
     }
   }
-  return { text: c.text, reveal, opacity: Math.max(0, Math.min(fadeIn, fadeOut)), side: c.side, avoid, ...(anchor ? { anchor, anchorId } : {}) };
+  const cam = cameras[k];
+  return { text: c.text, reveal, opacity: Math.max(0, Math.min(fadeIn, fadeOut)), side: c.side, avoid, ...(cam ? { cam } : {}), ...(anchor ? { anchor, anchorId } : {}) };
 }
 
 const preparedCache = new WeakMap<Scene, Prepared>();

@@ -146,6 +146,8 @@ export interface CaptionFrame {
    * stays in one place for the whole step, also when elements move.
    */
   avoid?: (Rect & { text: boolean })[];
+  /** The camera at the end of the step: the caption takes its place and size from it, so a camera drift does not move it. */
+  cam?: Rect;
 }
 
 export interface FrameState {

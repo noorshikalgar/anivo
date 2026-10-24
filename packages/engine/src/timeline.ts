@@ -93,6 +93,11 @@ export function staggerRanks(n: number, order: string | undefined, seed: string)
   return rank;
 }
 
+/** Idle motion (docs/22 D6): it runs while the step holds and does not set the step length. */
+function isIdle(a: Action): boolean {
+  return a.type === "emphasis" && (a.effect === "float" || a.effect === "breathe");
+}
+
 function labelLength(scene: Scene, id: string): number {
   const el = scene.elements[id];
   if (!el) return 0;
@@ -172,6 +177,7 @@ export function resolveTimeline(scene: Scene): Timeline {
       bases.set(a.id, b);
       return b;
     };
+    const onlyIdle = step.actions.every(isIdle);
     for (const action of step.actions) {
       const ease = actionEase(action);
       // A camera action is one action for all its targets. A wait has no target.
@@ -205,7 +211,8 @@ export function resolveTimeline(scene: Scene): Timeline {
         const moveOffset = offsets.get(target);
         const parts = action.type === "emphasis" && (action.effect === "circle" || action.effect === "spotlight") && scene.elements[action.targets[origin[targetIndex] ?? 0] ?? ""]?.type === "group" ? targets.filter((_, j) => origin[j] === origin[targetIndex]) : undefined;
         if (target !== "" || action.type === "camera") actions.push({ action, target, targetIndex, startMs: s, endMs: e, ease, ...(focusTargets ? { focusTargets } : {}), ...(cameraTargets ? { cameraTargets } : {}), ...(moveOffset ? { moveOffset } : {}), ...(parts ? { groupParts: parts } : {}) });
-        contentEnd = Math.max(contentEnd, e);
+        // Idle motion (float, breathe) fills the hold; it does not make the step longer (unless the step has only idle motion).
+        if (!isIdle(action) || onlyIdle) contentEnd = Math.max(contentEnd, e);
       });
     }
 
@@ -218,6 +225,8 @@ export function resolveTimeline(scene: Scene): Timeline {
       caption = { startMs, typedMs: startMs + c.typeMs, readEndMs: startMs + c.typeMs + c.readMs };
       holdEndMs = Math.max(holdEndMs, caption.readEndMs);
     }
+    // Idle motion stops softly at the end of the hold.
+    for (const ta of actions) if (isIdle(ta.action) && ta.endMs > holdEndMs) ta.endMs = Math.max(ta.startMs + 1, holdEndMs);
     steps.push({ id: step.id, index, startMs, endMs, holdEndMs, trigger: step.trigger.kind, actions, ...(caption ? { caption } : {}) });
     cursor = holdEndMs;
   });

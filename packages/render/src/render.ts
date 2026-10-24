@@ -1242,8 +1242,10 @@ export function placeCaption(box: { width: number; height: number }, cap: { side
 }
 
 /** The step caption (docs/17 P4): a card with the text, that types in. Scene coordinates. */
-function drawStepCaption(dc: DrawContext, frame: FrameState, cap: NonNullable<FrameState["caption"]>, cam: Rect4): void {
+function drawStepCaption(dc: DrawContext, frame: FrameState, cap: NonNullable<FrameState["caption"]>, liveCam: Rect4): void {
   const { ctx, theme } = dc;
+  // The camera at the end of the step: a drift or a zoom in the step does not move or resize the caption.
+  const cam = cap.cam ?? liveCam;
   const v = dc.scene.settings.video;
   // The caption has the same size on the screen when the camera zooms (it is drawn in scene pixels).
   const size = Math.round(Math.min(v.width, v.height) * 0.037 * (cam.width / v.width));
