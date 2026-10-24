@@ -199,6 +199,9 @@ test("drop a bar at the end of another bar: it chains, and moves when the first 
   await expect(second).toHaveAttribute("data-action", "second");
   await expect(page.locator('[data-action="second"] [data-chain]').first()).toBeAttached();
   // Move the first bar: the chained bar moves with it.
+  // A tooltip of the bar that moved can cover the first bar: move away until it closes.
+  await page.mouse.move(2, 2);
+  await expect(page.getByRole("tooltip")).toHaveCount(0);
   const f = (await first.boundingBox())!;
   await page.mouse.move(f.x + f.width / 2, f.y + f.height / 2);
   await page.mouse.down();
