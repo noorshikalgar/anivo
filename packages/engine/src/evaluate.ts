@@ -79,6 +79,7 @@ function settle(frame: ElementFrame): ElementFrame {
   delete f.spotlight;
   delete f.circle;
   delete f.roll;
+  delete f.markBox;
   delete f.scramble;
   delete f.labelFrom;
   delete f.labelMix;
@@ -430,7 +431,19 @@ function applyTimedAction(state: StateMap, ta: TimedAction, t: number): void {
   if (action.type === "enter" || action.type === "exit") applyEnterExit(f, action, eased, raw);
   else if (action.type === "morph") applyMorph(f, action.to, eased);
   else if (action.type === "mark") applyMark(f, action.mark, eased);
-  else if (action.type === "emphasis" && raw < 1) applyEmphasis(f, action, raw);
+  else if (action.type === "emphasis" && raw < 1) {
+    // A circle or spotlight on a group marks the group once: the first part carries it, with the box of all parts.
+    if (ta.groupParts) {
+      if (ta.groupParts[0] !== ta.target) return;
+      const boxes = ta.groupParts.map((id) => state[id]).filter((e): e is ElementFrame => !!e && e.visible);
+      if (boxes.length) {
+        const x = Math.min(...boxes.map((e) => e.x));
+        const y = Math.min(...boxes.map((e) => e.y));
+        f.markBox = { x, y, width: Math.max(...boxes.map((e) => e.x + e.width)) - x, height: Math.max(...boxes.map((e) => e.y + e.height)) - y };
+      }
+    }
+    applyEmphasis(f, action, raw);
+  }
   else if (action.type === "code") applyCode(f, action.code, eased);
   else if (action.type === "motion") {
     applyMotion(f, action.motion, eased, ta.moveOffset);

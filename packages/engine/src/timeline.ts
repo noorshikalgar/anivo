@@ -14,6 +14,8 @@ export interface TimedAction {
   focusTargets?: string[];
   /** For a camera action: the elements to fit, after group expansion. */
   cameraTargets?: string[];
+  /** For a circle or spotlight on a group: all parts of the group. The first part carries the mark for the whole group. */
+  groupParts?: string[];
   /** For a motion of a group: the place of this part from the center of the group, so the group moves as one. */
   moveOffset?: { dx: number; dy: number };
 }
@@ -201,7 +203,8 @@ export function resolveTimeline(scene: Scene): Timeline {
         const s = baseOf(action) + action.delayMs + rank[targetIndex]! * action.staggerMs;
         const e = s + duration;
         const moveOffset = offsets.get(target);
-        if (target !== "" || action.type === "camera") actions.push({ action, target, targetIndex, startMs: s, endMs: e, ease, ...(focusTargets ? { focusTargets } : {}), ...(cameraTargets ? { cameraTargets } : {}), ...(moveOffset ? { moveOffset } : {}) });
+        const parts = action.type === "emphasis" && (action.effect === "circle" || action.effect === "spotlight") && scene.elements[action.targets[origin[targetIndex] ?? 0] ?? ""]?.type === "group" ? targets.filter((_, j) => origin[j] === origin[targetIndex]) : undefined;
+        if (target !== "" || action.type === "camera") actions.push({ action, target, targetIndex, startMs: s, endMs: e, ease, ...(focusTargets ? { focusTargets } : {}), ...(cameraTargets ? { cameraTargets } : {}), ...(moveOffset ? { moveOffset } : {}), ...(parts ? { groupParts: parts } : {}) });
         contentEnd = Math.max(contentEnd, e);
       });
     }
