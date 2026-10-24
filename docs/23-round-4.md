@@ -20,3 +20,5 @@ Status: audit and plan, 2026-10-24. Method: three samples that use most tools to
 |---|---|---|
 | G1 | Done. **On top while it moves**: an element that moves along a path or an arrow draws above arrows and their labels for the time of the move. | E6 |
 | G2 | Done. **Two-way arrow pairs**: the labels of two arrows between the same elements go to the outer sides of their lines. | E7 |
+| U1 | Done. **Start card**: an empty scene shows what to do first: draw a box, open the Library, or write a script. | A new user saw an empty frame. |
+| U2 | Done. A new blank scene uses the Studio theme. | The default slate theme looked plain next to the samples. |

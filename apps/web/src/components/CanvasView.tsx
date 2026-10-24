@@ -1,3 +1,4 @@
+import { EmptyCanvas } from "./EmptyCanvas.js";
 import { LIBRARY_MIME, dropLibraryItem } from "./LibraryPanel.js";
 import { keyTimesOf, motionPath } from "../motionPath.js";
 import { type FrameState, evaluate } from "@anivo/engine";
@@ -900,6 +901,7 @@ export function CanvasView() {
       <canvas ref={sceneRef} className={styles.canvas} aria-label="Scene canvas" />
       <canvas ref={overlayRef} className={styles.canvas} aria-hidden="true" />
       <ToolPalette />
+      <EmptyCanvas />
       <TextEditor />
       {recording && (
         <div aria-live="polite" style={{ position: "absolute", inset: 0, boxShadow: "inset 0 0 0 3px #e5484d", pointerEvents: "none" }}>

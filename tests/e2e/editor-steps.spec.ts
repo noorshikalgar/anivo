@@ -349,3 +349,13 @@ test("Library: search, click a widget to insert it, drag a widget onto the canva
   await page.getByRole("tab", { name: "Steps" }).click();
   await expect(page.getByRole("navigation", { name: "Steps" })).toBeVisible();
 });
+
+test("an empty scene shows where to start (docs/23 U1)", async ({ page }) => {
+  await page.evaluate(() => (window as unknown as { __anivoOpen(j: unknown): boolean }).__anivoOpen({ schemaVersion: 1, meta: { title: "Empty" } }));
+  const card = page.getByRole("note", { name: "Start here" });
+  await expect(card).toBeVisible();
+  await card.getByRole("button", { name: "Open the Library" }).click();
+  await expect(page.getByRole("region", { name: "Library" })).toBeVisible();
+  await card.getByRole("button", { name: "Draw a box (R)" }).click();
+  await expect(card).toHaveCount(0);
+});
