@@ -286,9 +286,12 @@ export function lintScene(scene: Scene): LintResult[] {
     }
   });
 
+  // An element that enters and leaves inside one step shows in the video, but not at a step end.
+  const entered = new Set<string>();
+  for (const ts of timeline.steps) for (const ta of ts.actions) if (ta.action.type === "enter") entered.add(ta.target);
   for (const el of Object.values(scene.elements)) {
     if (el.type === "group") continue;
-    if (!everVisible.has(el.id)) add({ code: "unused-element", level: "info", ids: [el.id], message: `'${el.id}' never shows in the video.`, hint: `Add an enter action for '${el.id}', or remove it.` });
+    if (!everVisible.has(el.id) && !entered.has(el.id)) add({ code: "unused-element", level: "info", ids: [el.id], message: `'${el.id}' never shows in the video.`, hint: `Add an enter action for '${el.id}', or remove it.` });
   }
 
   const order: Record<LintLevel, number> = { error: 0, warning: 1, info: 2 };
