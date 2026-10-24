@@ -4,7 +4,7 @@
  * to change the order.
  */
 import { Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, makeStyles, mergeClasses } from "@fluentui/react-components";
-import { Add16Regular, ArrowDown16Regular, ArrowUp16Regular, ChevronDown12Filled, ChevronRight12Filled, Copy16Regular, Delete16Regular, Image16Regular, MoreHorizontal16Regular } from "@fluentui/react-icons";
+import { Add16Regular, ArrowDown16Regular, ArrowUp16Regular, ChevronDown12Filled, ChevronRight12Filled, Copy16Regular, Delete16Regular, Image16Regular, Library16Regular, MoreHorizontal16Regular } from "@fluentui/react-icons";
 import { type Ctx2D, renderScene } from "@anivo/render";
 import { useEffect, useRef, useState } from "react";
 import { addStep, deleteStep, duplicateStep, moveStep } from "../commands.js";
@@ -193,6 +193,18 @@ export function StepsPanel() {
                     <MenuList>
                       <MenuItem icon={<Copy16Regular />} onClick={() => duplicateStep(step.id)}>
                         Duplicate
+                      </MenuItem>
+                      <MenuItem
+                        icon={<Library16Regular />}
+                        disabled={step.actions.length === 0}
+                        onClick={() => {
+                          // The elements that the step animates become the selection; the dialog saves them with their animations.
+                          const ids = [...new Set(step.actions.flatMap((a) => a.targets))].filter((id) => id in useEditor.getState().scene.elements && useEditor.getState().scene.elements[id]!.type !== "connector");
+                          useEditor.getState().setSelection(ids);
+                          useEditor.setState({ compositionsOpen: true });
+                        }}
+                      >
+                        Save as composition…
                       </MenuItem>
                       <MenuItem icon={<ArrowUp16Regular />} disabled={i === 0} onClick={() => moveStep(step.id, i - 1)}>
                         Move up
