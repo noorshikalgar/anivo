@@ -69,6 +69,42 @@ step "Flow" hold=1400ms
   flow c-user-lb
   flow c-lb-p1, c-lb-p2, c-lb-p3 round-robin +300ms`,
   },
+  {
+    title: "Titles that build",
+    text: "Words rise one by one; an icon floats while it holds.",
+    script: `scene "Titles that build" theme=studio-dark size=1920x1080 background=gradient
+text t "Ship ideas as short animated videos" at=210,330 size=1500x300 font-size=104 text-align=center
+icon star lucide:sparkles "" at=880,720 size=160x160 fill=accent
+step "Title" hold=300ms
+  enter t cascade unit=word dur=1300ms easing=linear
+  enter star pop after=prev
+  float star after=prev dur=3000ms`,
+  },
+  {
+    title: "Numbers that count",
+    text: "Bars fill in turn, then a number counts up in a short style.",
+    script: `scene "Numbers that count" theme=studio-dark size=1920x1080
+text n "0 users" at=560,120 size=800x160 font-size=120 text-align=center
+box b1 "" at=360,760 size=180x140 fill=purple-soft stroke=purple radius=14
+box b2 "" at=640,640 size=180x260 fill=purple-soft stroke=purple radius=14
+box b3 "" at=920,520 size=180x380 fill=purple-soft stroke=purple radius=14
+box b4 "" at=1200,400 size=180x500 fill=purple-soft stroke=purple radius=14
+step "Grow" hold=1200ms
+  enter b1, b2, b3, b4 wipe direction=up stagger=160ms dur=700ms
+  count n from=0 to=1240000 format="{n} users" style=compact decimals=1 dur=1600ms after=prev`,
+  },
+  {
+    title: "Motion you draw",
+    text: "Draw a path (P): an element flies along it.",
+    script: `scene "Motion you draw" theme=studio-dark size=1920x1080
+box a "Start" at=160,700 size=280x140 radius=20 font-size=44
+box b "Finish" at=1480,240 size=280x140 fill=teal-soft stroke=teal radius=20 font-size=44
+icon p lucide:send "" at=240,560 size=120x120 fill=accent
+step "Fly" hold=900ms
+  enter a, b pop stagger=150ms
+  move p path="300,620 700,300 1100,800 1560,420" curve orient after=prev dur=2200ms
+  pulse b after=prev`,
+  },
 ];
 
 const useStyles = makeStyles({

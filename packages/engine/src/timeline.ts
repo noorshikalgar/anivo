@@ -154,8 +154,8 @@ export function resolveTimeline(scene: Scene): Timeline {
       const targets = a.type === "camera" || (a.type === "wait" && a.targets.length === 0) ? [""] : expand(a.targets);
       let longest = 0;
       for (const t of targets) longest = Math.max(longest, defaultDurationMs(a, labelLength(scene, t)));
-      // The last start: the highest rank (from the center has fewer ranks than targets).
-      const lastRank = Math.max(0, ...staggerRanks(targets.length, a.staggerOrder, a.id));
+      // The last start: the highest rank of the named targets (from the center has fewer ranks than targets).
+      const lastRank = Math.max(0, ...staggerRanks(Math.max(1, a.targets.length), a.staggerOrder, a.id));
       return baseOf(a) + a.delayMs + lastRank * a.staggerMs + longest;
     };
     const baseOf = (a: Action): number => {
@@ -173,10 +173,14 @@ export function resolveTimeline(scene: Scene): Timeline {
     for (const action of step.actions) {
       const ease = actionEase(action);
       // A camera action is one action for all its targets. A wait has no target.
-      const targets = action.type === "camera" || (action.type === "wait" && action.targets.length === 0) ? [""] : expand(action.targets);
+      const single = action.type === "camera" || (action.type === "wait" && action.targets.length === 0);
+      // The stagger is for each target that the action names: the parts of a group start together (audit e1).
+      const origin: number[] = [];
+      const targets = single ? [""] : action.targets.flatMap((t, i) => expand([t]).map((leaf) => (origin.push(i), leaf)));
       const cameraTargets = action.type === "camera" ? expand(action.targets) : undefined;
       const focusTargets = action.type === "emphasis" && action.effect === "focus" ? targets : undefined;
-      const rank = staggerRanks(targets.length, action.staggerOrder, action.id);
+      const named = staggerRanks(single ? 1 : action.targets.length, action.staggerOrder, action.id);
+      const rank = targets.map((_, j) => named[origin[j] ?? 0] ?? 0);
       // A group that moves along a path keeps its shape: each part keeps its place from the group center.
       const offsets = new Map<string, { dx: number; dy: number }>();
       if (action.type === "motion") {

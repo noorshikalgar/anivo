@@ -31,7 +31,7 @@ import {
   toScene,
   toScreen,
 } from "../editing.js";
-import { addElement, commitGeometry, movableIds } from "../commands.js";
+import { addDrawnPath, addElement, commitGeometry, movableIds } from "../commands.js";
 import { TextEditor } from "./TextEditor.js";
 import { ToolPalette } from "./ToolPalette.js";
 import { useEditor } from "../store.js";
@@ -41,7 +41,8 @@ type Drag =
   | { kind: "resize"; start: Point; id: string; handle: Handle; box: Box; next: Box }
   | { kind: "marquee"; start: Point; end: Point; additive: boolean; base: string[] }
   | { kind: "create"; type: "rectangle" | "ellipse" | "diamond"; start: Point; end: Point }
-  | { kind: "arrow"; start: Point; end: Point; from: string | null; to: string | null };
+  | { kind: "arrow"; start: Point; end: Point; from: string | null; to: string | null }
+  | { kind: "path"; points: Point[] };
 
 const useStyles = makeStyles({
   root: {
@@ -290,6 +291,18 @@ export function CanvasView() {
         m.forEach((q, i) => (i ? ctx.lineTo(toS(q).x, toS(q).y) : ctx.moveTo(toS(q).x, toS(q).y)));
         ctx.stroke();
       }
+      // The points of a drawn path: square dots that you can drag (docs/24 H2). The first point is the element start.
+      ctx.setLineDash([]);
+      for (const path of mp.paths) {
+        for (const q0 of path.points.slice(1)) {
+          const q = toS(q0);
+          const r = 4.5 * dpr;
+          ctx.fillStyle = "rgba(20, 184, 166, 1)";
+          ctx.strokeStyle = "rgba(0,0,0,0.6)";
+          ctx.fillRect(q.x - r, q.y - r, r * 2, r * 2);
+          ctx.strokeRect(q.x - r, q.y - r, r * 2, r * 2);
+        }
+      }
       if (mp.keys.length) {
         ctx.strokeStyle = "rgba(245, 184, 74, 0.95)";
         ctx.setLineDash([6 * dpr, 4 * dpr]);
@@ -509,6 +522,20 @@ export function CanvasView() {
       ctx.lineTo(b.x * dpr, b.y * dpr);
       ctx.stroke();
     }
+    if (d?.kind === "path" && d.points.length > 1) {
+      // The motion path while you draw it (docs/24 H1).
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 2 * dpr;
+      ctx.setLineDash([6 * dpr, 5 * dpr]);
+      ctx.beginPath();
+      d.points.forEach((pt, i) => {
+        const q = toScreen(view, pt);
+        if (i === 0) ctx.moveTo(q.x * dpr, q.y * dpr);
+        else ctx.lineTo(q.x * dpr, q.y * dpr);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
     if (d?.kind === "marquee") {
       const r = screenBox(normalizeRect(d.start, d.end));
       ctx.fillStyle = "rgba(63, 130, 240, 0.12)";
@@ -548,8 +575,33 @@ export function CanvasView() {
     // A dot at the element center now is the element itself: a drag there moves the element (and its key).
     const f = last.current?.frame.elements.find((x) => x.id === id);
     const here = f ? { x: f.x + f.width / 2, y: f.y + f.height / 2 } : undefined;
-    const key = motionPath(st.scene, st.timeline, id).keys.find((k) => Math.abs(k.point.x - p.x) <= tol && Math.abs(k.point.y - p.y) <= tol && !(here && Math.hypot(here.x - k.point.x, here.y - k.point.y) < tol));
-    if (!key) return false;
+    const mp = motionPath(st.scene, st.timeline, id);
+    const key = mp.keys.find((k) => Math.abs(k.point.x - p.x) <= tol && Math.abs(k.point.y - p.y) <= tol && !(here && Math.hypot(here.x - k.point.x, here.y - k.point.y) < tol));
+    if (!key) {
+      // A point of a drawn path (docs/24 H2): drag it to change the path.
+      for (const path of mp.paths) {
+        const i = path.points.findIndex((q, k) => k > 0 && Math.abs(q.x - p.x) <= tol && Math.abs(q.y - p.y) <= tol);
+        if (i < 0) continue;
+        const el = e.currentTarget;
+        let mergeKey: string | undefined;
+        const move = (ev: PointerEvent) => {
+          const q = scenePoint(ev);
+          const s2 = useEditor.getState();
+          const a = s2.scene.steps.find((x) => x.id === path.stepId)?.actions.find((x) => x.id === path.actionId);
+          if (!a || a.type !== "motion") return;
+          const points = a.motion.points.map((pt, k) => (k === i ? { x: Math.round(q.x), y: Math.round(q.y) } : pt));
+          s2.apply({ label: "Move a path point", ops: [{ op: "action.update", step: path.stepId, id: path.actionId, set: { motion: { ...a.motion, points } } }], mergeKey: (mergeKey ??= `pathdot/${path.actionId}/${Date.now()}`) });
+        };
+        const up = () => {
+          el.removeEventListener("pointermove", move);
+          el.removeEventListener("pointerup", up);
+        };
+        el.addEventListener("pointermove", move);
+        el.addEventListener("pointerup", up);
+        return true;
+      }
+      return false;
+    }
     const el = e.currentTarget;
     const grab = { x: p.x - key.point.x, y: p.y - key.point.y };
     const valuesAt = (q: Point) => ({ x: Math.round(q.x - grab.x - key.width / 2), y: Math.round(q.y - grab.y - key.height / 2) });
@@ -704,6 +756,29 @@ export function CanvasView() {
     }
     const el = e.currentTarget;
     el.setPointerCapture(e.pointerId);
+    if (st.tool === "path") {
+      // Draw a motion path (docs/24 H1): drag from the element along the way it moves.
+      drag.current = { kind: "path", points: [p] };
+      const move = (ev: PointerEvent) => {
+        const d = drag.current;
+        if (d?.kind !== "path") return;
+        const q = scenePoint(ev);
+        const lastPt = d.points[d.points.length - 1]!;
+        if (Math.hypot(q.x - lastPt.x, q.y - lastPt.y) * useEditor.getState().view.zoom >= 6) d.points.push(q);
+        requestDraw();
+      };
+      const up = () => {
+        el.removeEventListener("pointermove", move);
+        el.removeEventListener("pointerup", up);
+        const d = drag.current;
+        drag.current = null;
+        if (d?.kind === "path") addDrawnPath(d.points);
+        requestDraw();
+      };
+      el.addEventListener("pointermove", move);
+      el.addEventListener("pointerup", up);
+      return;
+    }
     if (st.tool === "arrow") drag.current = { kind: "arrow", start: p, end: p, from: shapeAt(p), to: null };
     else drag.current = { kind: "create", type: st.tool as "rectangle" | "ellipse" | "diamond", start, end: start };
     const move = (ev: PointerEvent) => {

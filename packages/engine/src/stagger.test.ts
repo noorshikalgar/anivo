@@ -18,3 +18,24 @@ describe("staggerRanks (docs/21 C6)", () => {
     expect(r).not.toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
   });
 });
+
+describe("stagger with groups (audit e1)", () => {
+  it("starts the parts of a group together, and staggers the named targets", async () => {
+    const { loadScene } = await import("@anivo/schema");
+    const { resolveTimeline } = await import("./timeline.js");
+    const r = loadScene({
+      schemaVersion: 1,
+      meta: { title: "G" },
+      elements: {
+        g: { type: "group", z: "a0" },
+        p1: { type: "rectangle", z: "a1", parentId: "g", width: 10, height: 10 },
+        p2: { type: "rectangle", z: "a2", parentId: "g", width: 10, height: 10 },
+        b: { type: "rectangle", z: "a3", width: 10, height: 10 },
+      },
+      steps: [{ id: "s", title: "S", actions: [{ id: "e", type: "enter", effect: "fade", targets: ["g", "b"], staggerMs: 200, durationMs: 300 }] }],
+    });
+    if (!r.ok) throw new Error(JSON.stringify(r));
+    const starts = Object.fromEntries(resolveTimeline(r.scene).steps[0]!.actions.map((x) => [x.target, x.startMs]));
+    expect(starts).toEqual({ p1: 0, p2: 0, b: 200 });
+  });
+});

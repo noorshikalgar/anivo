@@ -3,7 +3,7 @@ import { OperationBus, type TransactionInput } from "@anivo/ops";
 import { type Scene, loadScene } from "@anivo/schema";
 import { create } from "zustand";
 
-export type Tool = "select" | "hand" | "rectangle" | "ellipse" | "diamond" | "text" | "arrow" | "icon" | "code";
+export type Tool = "select" | "hand" | "rectangle" | "ellipse" | "diamond" | "text" | "arrow" | "icon" | "code" | "path";
 
 export interface View {
   /** Scene coordinate at the top-left corner of the canvas. */

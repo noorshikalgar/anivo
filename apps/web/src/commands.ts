@@ -620,3 +620,48 @@ export function deleteKeysAtPlayhead(): number {
   }
   return n;
 }
+
+/** Fewer points with the same shape (Ramer–Douglas–Peucker), so a drawn path is smooth and small. */
+function simplify(pts: { x: number; y: number }[], eps: number): { x: number; y: number }[] {
+  if (pts.length < 3) return pts;
+  const a = pts[0]!;
+  const b = pts[pts.length - 1]!;
+  const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+  let worst = 0;
+  let at = 0;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const p = pts[i]!;
+    const d = Math.abs((b.y - a.y) * p.x - (b.x - a.x) * p.y + b.x * a.y - b.y * a.x) / len;
+    if (d > worst) {
+      worst = d;
+      at = i;
+    }
+  }
+  if (worst <= eps) return [a, b];
+  return [...simplify(pts.slice(0, at + 1), eps).slice(0, -1), ...simplify(pts.slice(at), eps)];
+}
+
+/**
+ * Draw a motion path (docs/24 H1): the selected elements move along the drawn
+ * line in the selected step, from the playhead. The path starts at the center
+ * of the elements.
+ */
+export function addDrawnPath(points: { x: number; y: number }[]): void {
+  const st = useEditor.getState();
+  st.setTool("select");
+  const ids = st.selection.filter((id) => st.scene.elements[id]?.type !== "connector");
+  if (ids.length === 0 || st.selectedStep === null) return notify("Select an element and a step, then draw its path.", "info");
+  if (points.length < 2) return notify("Drag to draw the path.", "info");
+  const ts = st.timeline.steps.find((s) => s.id === st.selectedStep);
+  const frame = evaluateWithLayout(st.scene, Math.max(0, (ts?.startMs ?? 0) - 1)).frame;
+  const leaves = new Set(ids.flatMap((id) => [id, ...leafDescendants(st.scene, id)]));
+  const boxes = frame.elements.filter((f) => leaves.has(f.id) && f.type !== "group" && f.type !== "connector");
+  const c = boxes.length ? { x: (Math.min(...boxes.map((b) => b.x)) + Math.max(...boxes.map((b) => b.x + b.width))) / 2, y: (Math.min(...boxes.map((b) => b.y)) + Math.max(...boxes.map((b) => b.y + b.height))) / 2 } : points[0]!;
+  const pts = simplify(points, 6 / st.view.zoom).map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) }));
+  if (Math.hypot(pts[0]!.x - c.x, pts[0]!.y - c.y) < 40 / st.view.zoom) pts[0] = { x: Math.round(c.x), y: Math.round(c.y) };
+  else pts.unshift({ x: Math.round(c.x), y: Math.round(c.y) });
+  const delayMs = ts && st.playhead > ts.startMs && st.playhead < ts.holdEndMs ? Math.round(st.playhead - ts.startMs) : 0;
+  const r = st.apply({ label: "Draw a motion path", ops: [{ op: "action.add", step: st.selectedStep, action: { type: "motion", targets: ids, delayMs, durationMs: 1600, easing: "smooth", motion: { points: pts, curve: pts.length > 2 } } }] });
+  if (!r.ok) notify(r.error.message, "error");
+  else notify("Added the motion path. Drag its dots to change it.", "success");
+}
