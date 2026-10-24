@@ -75,6 +75,8 @@ export interface ElementFrame {
   hiddenByEnds?: boolean;
   /** A counting number: the digits have the same width, so the text does not shake while it counts. */
   tabular?: boolean;
+  /** Rolling digits (docs/25 K4): the exact value now, with its decimals; the label shows the digits. */
+  roll?: { value: number; decimals: number };
   /** Scramble (0 to 1): random letters settle into the text, from the left. */
   scramble?: number;
   /** Blur radius in scene pixels (blur enter effect). */

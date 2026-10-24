@@ -908,7 +908,9 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
     return a;
   }
   if (verb === "count") {
-    const targets = resolveTargets(words, line.pos);
+    // roll: the digits roll as on a counter wheel (docs/25 K4).
+    const rollWord = words.some((w) => w.t === "word" && w.v === "roll");
+    const targets = resolveTargets(words.filter((w) => !(w.t === "word" && w.v === "roll")), line.pos);
     const from = num(kv.get("from")?.v ?? "");
     const to = num(kv.get("to")?.v ?? "");
     if (from === undefined || to === undefined) {
@@ -922,6 +924,7 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
     if (decimals !== undefined) counter["decimals"] = Number(decimals);
     const style = kv.get("style")?.v;
     if (style !== undefined) counter["style"] = style;
+    if (rollWord) counter["roll"] = true;
     const a: Record<string, unknown> = { type: "counter", targets, counter };
     if (delay !== undefined) a["delayMs"] = delay;
     for (const [k, { v }] of kv) {

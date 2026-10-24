@@ -480,7 +480,7 @@ export function ActionEditor({ step, action, part = "all" }: { step: Step; actio
               ]}
               onCommit={(v) => set({ counter: { ...action.counter, style: v === "plain" ? undefined : v } }, "Change number style")}
             />
-            <div />
+            <Check label="Roll the digits" checked={!!action.counter.roll} onChange={(v) => set({ counter: { ...action.counter, roll: v || undefined } }, "Change roll")} />
           </Row>
         </>
       )}

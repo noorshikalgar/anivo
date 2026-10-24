@@ -152,6 +152,7 @@ export const CounterAction = z.object({
       .enum(["plain", "thousands", "compact", "duration"])
       .optional()
       .describe("How to write the number (docs/21 C9). thousands: 12,400. compact: 12.4K, 3.1M (with decimals=1). duration: the number is seconds, written as 1:05 or 1:02:05. For currency or percent, put the sign in the format: '${n}', '{n}%'."),
+    roll: z.boolean().optional().describe("The digits roll up as on a counter wheel (docs/25 K4). For plain and thousands."),
   }),
 });
 

@@ -78,6 +78,7 @@ function settle(frame: ElementFrame): ElementFrame {
   delete f.moving;
   delete f.spotlight;
   delete f.circle;
+  delete f.roll;
   delete f.scramble;
   delete f.labelFrom;
   delete f.labelMix;
@@ -438,8 +439,12 @@ function applyTimedAction(state: StateMap, ta: TimedAction, t: number): void {
   else if (action.type === "counter") {
     const c = action.counter;
     const n = lerp(c.from, c.to, eased);
-    f.label = c.format.replace("{n}", formatCount(n, c.decimals, c.style));
+    const rolling = c.roll && raw < 1 && (c.style === undefined || c.style === "plain" || c.style === "thousands");
+    // Rolling digits show the digit below; the next digit rolls in from below (no round up).
+    const shownN = rolling ? Math.sign(n) * Math.floor(Math.abs(n) * 10 ** c.decimals) / 10 ** c.decimals : n;
+    f.label = c.format.replace("{n}", formatCount(shownN, c.decimals, c.style));
     f.tabular = true;
+    if (rolling) f.roll = { value: n, decimals: c.decimals };
   }
   state[ta.target] = f;
 }

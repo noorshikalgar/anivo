@@ -146,7 +146,7 @@ function drawText(dc: DrawContext, f: ElementFrame, el: Element, text: string, b
   const x = align === "left" ? box.x + pad : align === "right" ? box.x + box.width - pad : box.x + box.width / 2;
   const y0 = box.y + box.height / 2 - ((lines.length - 1) * lineHeight) / 2;
   if ((f.cascade !== undefined && f.cascade < 1) || (f.scramble !== undefined && f.scramble < 1)) return drawLetters(dc, f, el, lines, x, y0, lineHeight, size, color, alpha);
-  if (f.tabular && !f.marks?.length) return drawTabular(ctx, lines, x, y0, lineHeight, align, shown);
+  if (f.tabular && !f.marks?.length) return drawTabular(ctx, lines, x, y0, lineHeight, align, shown, f.roll, size);
   if (f.marks?.length || f.dimRest) return drawMarkedText(dc, f, el, text, lines, x, y0, lineHeight, size, color, alpha, shown);
   const typing = reveal > 0 && reveal < 1;
   let caret: { x: number; y: number } | undefined;
@@ -174,21 +174,45 @@ function drawText(dc: DrawContext, f: ElementFrame, el: Element, text: string, b
 }
 
 /** Text with digits of the same width (a counting number), so it does not shake while it counts. */
-function drawTabular(ctx: Ctx2D, lines: string[], x: number, y0: number, lineHeight: number, align: "left" | "center" | "right", shown: number): void {
+function drawTabular(ctx: Ctx2D, lines: string[], x: number, y0: number, lineHeight: number, align: "left" | "center" | "right", shown: number, roll?: { value: number; decimals: number }, size = lineHeight): void {
   const digit = Math.max(...[..."0123456789"].map((d) => ctx.measureText(d).width));
   const adv = (ch: string) => (ch >= "0" && ch <= "9" ? digit : ctx.measureText(ch).width);
   ctx.textAlign = "center";
+  // Rolling digits (docs/25 K4): the place of each digit of the number, from the right (0 = the last digit).
+  const V = roll ? Math.abs(roll.value) * 10 ** roll.decimals : 0;
   lines.forEach((line, i) => {
     if (shown <= 0) return;
     const part = line.slice(0, shown);
     shown -= line.length + 1;
     const width = [...line].reduce((w, ch) => w + adv(ch), 0);
     let cx = align === "left" ? x : align === "right" ? x - width : x - width / 2;
-    for (const ch of part) {
-      const w = adv(ch);
-      ctx.fillText(ch, cx + w / 2, y0 + i * lineHeight);
-      cx += w;
+    const num = roll ? /\d[\d,]*(?:\.\d+)?/.exec(part) : null;
+    const places = new Map<number, number>();
+    if (num) {
+      let p = 0;
+      for (let k = num.index + num[0].length - 1; k >= num.index; k--) if (part[k]! >= "0" && part[k]! <= "9") places.set(k, p++);
     }
+    const y = y0 + i * lineHeight;
+    [...part].forEach((ch, k) => {
+      const w = adv(ch);
+      const place = places.get(k);
+      if (place === undefined) ctx.fillText(ch, cx + w / 2, y);
+      else {
+        const unit = 10 ** place;
+        const base = Math.floor(V / unit) % 10;
+        const lower = V - Math.floor(V / unit) * unit;
+        const frac = place === 0 ? V - Math.floor(V) : Math.max(0, lower - (unit - 1));
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(cx, y - size * 0.62, w, size * 1.24);
+        ctx.clip();
+        const step = size * 1.24;
+        ctx.fillText(String(base), cx + w / 2, y - frac * step);
+        if (frac > 0) ctx.fillText(String((base + 1) % 10), cx + w / 2, y + (1 - frac) * step);
+        ctx.restore();
+      }
+      cx += w;
+    });
   });
 }
 
