@@ -324,3 +324,11 @@ test("Styles: copy the style of an element, paste it, apply a ready-made style, 
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByRole("button", { name: "Style: Brand" })).toBeVisible();
 });
+
+test("the Steps list shows a small frame of each step; the button hides them (docs/22 D4)", async ({ page }) => {
+  const steps = page.getByRole("navigation", { name: "Steps" });
+  const n = (await state(page)).scene.steps.length;
+  await expect(steps.locator("[data-step-thumb]")).toHaveCount(n);
+  await steps.getByRole("button", { name: "Hide step frames" }).click();
+  await expect(steps.locator("[data-step-thumb]")).toHaveCount(0);
+});

@@ -135,6 +135,8 @@ interface EditorState {
   play(rate?: number): void;
   /** The play rate now (shuttle). */
   rate: number;
+  /** The Steps list shows a small frame of each step (docs/22 D4). */
+  stepThumbs: boolean;
   /** The browser can install the app (PWA): show the Install button. */
   canInstall: boolean;
   /** A new version of the app is ready (service worker): show a Reload button. */
@@ -263,6 +265,7 @@ export const useEditor = create<EditorState>((set, get) => {
     playhead: 0,
     playing: false,
     rate: 1,
+    stepThumbs: true,
     selectedStep: null,
     selection: [],
     tool: "select",
@@ -368,7 +371,7 @@ export const useEditor = create<EditorState>((set, get) => {
       let last = performance.now();
       const tick = (now: number) => {
         if (!get().playing) return;
-        let next = get().playhead + (now - last) * get().rate;
+        let next = get().playhead + Math.max(0, now - last) * get().rate;
         last = now;
         const lp = get().loop;
         if (lp && next >= lp.toMs) next = lp.fromMs + ((next - lp.fromMs) % Math.max(1, lp.toMs - lp.fromMs));
@@ -377,7 +380,8 @@ export const useEditor = create<EditorState>((set, get) => {
           set({ playhead: get().timeline.totalMs, playing: false, rate: 1 });
           return;
         }
-        if (next <= 0) {
+        // Backward play stops at the start. (The first frame can come a little before "last": only for a rate below 0.)
+        if (get().rate < 0 && next <= 0) {
           set({ playhead: 0, playing: false, rate: 1 });
           return;
         }
