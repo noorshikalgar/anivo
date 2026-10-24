@@ -833,6 +833,21 @@ function stepCaptionAt(scene: Scene, steps: TimedStep[], i: number, t: number, b
   const avoid = Object.values(state)
     .filter((e) => e.visible && e.opacity > 0.05 && e.type !== "group" && e.type !== "connector" && e.id !== anchorId)
     .map((e) => ({ ...withIconLabel(e), text: e.type === "text" || !!e.label }));
+  // Arrow lines at the end of the step: small boxes along the line between the two ends (curves are close to it).
+  for (const el of Object.values(scene.elements)) {
+    if (el.type !== "connector" || el.start.kind !== "bound" || el.end.kind !== "bound") continue;
+    const c = state[el.id];
+    const a = state[el.start.elementId];
+    const b = state[el.end.elementId];
+    if (!c || !c.visible || c.opacity <= 0.05 || !a || !b) continue;
+    const ax = a.x + a.width / 2;
+    const ay = a.y + a.height / 2;
+    const bx = b.x + b.width / 2;
+    const by = b.y + b.height / 2;
+    const n = Math.max(1, Math.round(Math.hypot(bx - ax, by - ay) / 40));
+    // Weight: a box counts as text, so a caption does not lie on a line.
+    for (let i = 1; i < n; i++) avoid.push({ x: ax + ((bx - ax) * i) / n - 12, y: ay + ((by - ay) * i) / n - 12, width: 24, height: 24, text: true });
+  }
   // Elements that move in the step: keep their way clear too (the CDN filmstrip had a packet behind a caption).
   for (const ta of ts.actions) {
     if (ta.action.type !== "motion") continue;
