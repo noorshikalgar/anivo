@@ -14,3 +14,4 @@ Both draw above all elements and work in the SVG export (no radial gradient: the
 | K3 | Done. **Typing looks like typing**: a line that types keeps its letters in their final places (a centered line grew from its center before), and an accent caret follows the last letter. |
 | K4 | Done. **Rolling digits**: a count can roll its digits as on a counter wheel (`count … roll`, or Roll the digits in the action editor). |
 | K5 | Done. **Compositions for agents**: `anivo comp save|insert` and MCP `anivo_comp_save`, `anivo_comp_insert` (the same file as the editor). Chains inside a composition stay correct when it is inserted (the action IDs are kept or renamed together). |
+| K6 | Done. **Looks in the script**: `look=card` (and accent, soft, outline, pill, ghost, danger, success) gives an element a ready-made style. |
