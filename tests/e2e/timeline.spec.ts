@@ -213,3 +213,24 @@ test("drop a bar at the end of another bar: it chains, and moves when the first 
   expect(Math.abs((await second.boundingBox())!.x - (f2.x + f2.width))).toBeLessThan(3);
   expect((await acts())[1]).toMatchObject({ after: "first", delayMs: 0 });
 });
+
+test("shuttle keys: L plays, L again is faster, J plays backward; comma and period step one frame (docs/22 D3)", async ({ page }) => {
+  type P = { playhead: number; playing: boolean; rate: number };
+  const p = async () => (await state(page)) as unknown as P;
+  await page.locator("body").click({ position: { x: 5, y: 5 } }).catch(() => undefined);
+  await page.evaluate(() => (window as unknown as { __anivo: { setState(p: unknown): void } }).__anivo.setState({ playhead: 2000 }));
+  await page.keyboard.press("Period");
+  expect((await p()).playhead).toBeCloseTo(2000 + 1000 / 60, 1);
+  await page.keyboard.press("Shift+Comma");
+  expect((await p()).playhead).toBeCloseTo(2000 + 1000 / 60 - 10000 / 60, 1);
+  await page.keyboard.press("l");
+  await page.keyboard.press("l");
+  expect(await p()).toMatchObject({ playing: true, rate: 2 });
+  await page.keyboard.press("j");
+  expect((await p()).rate).toBe(-1);
+  const t = (await p()).playhead;
+  await page.waitForTimeout(300);
+  expect((await p()).playhead).toBeLessThan(t);
+  await page.keyboard.press("Space");
+  await expect.poll(async () => (await p()).playing).toBe(false);
+});

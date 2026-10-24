@@ -151,7 +151,7 @@ async function start(fromMs: number): Promise<void> {
   const buffers = await Promise.all(segs.map((s) => decode(s.assetId)?.catch(() => null) ?? null));
   // The playhead moved while the files were decoded; start from where it is now.
   const st = useEditor.getState();
-  if (!st.playing) return;
+  if (!st.playing || st.rate !== 1) return;
   const lag = st.playhead - fromMs;
   const t0 = ac.currentTime;
   // Ducking: the same gain ramps as the export.
@@ -191,8 +191,11 @@ async function start(fromMs: number): Promise<void> {
 /** Play the audio when the editor plays. A scene change while it plays starts the audio again. */
 export function startAudioSync(): () => void {
   return useEditor.subscribe((s, prev) => {
-    if (s.playing && (!prev.playing || s.scene.audio !== prev.scene.audio || s.assets !== prev.assets)) void start(s.playhead);
-    else if (!s.playing && prev.playing) stop();
+    // The shuttle (a rate other than 1) plays without sound.
+    const on = s.playing && s.rate === 1;
+    const was = prev.playing && prev.rate === 1;
+    if (on && (!was || s.scene.audio !== prev.scene.audio || s.assets !== prev.assets)) void start(s.playhead);
+    else if (!on && was) stop();
   });
 }
 

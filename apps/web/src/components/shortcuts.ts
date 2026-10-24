@@ -122,6 +122,18 @@ export function useShortcuts(): void {
         const on = !st.autoKey;
         useEditor.setState({ autoKey: on, ...(on ? { timelineOpen: true } : {}) });
         notify(on ? "Recording: changes make keyframes at the playhead" : "Recording is off: changes set the element in all steps", "info");
+      } else if (!mod && !e.altKey && (e.key.toLowerCase() === "j" || e.key.toLowerCase() === "l")) {
+        // Shuttle (docs/22 D3): L plays forward, J backward; press again for 2×, 4×, 8×. Space stops.
+        const dir = e.key.toLowerCase() === "l" ? 1 : -1;
+        const r = st.playing && Math.sign(st.rate) === dir ? Math.min(8, Math.abs(st.rate) * 2) * dir : dir;
+        st.play(r);
+      } else if (!mod && (e.key === "," || e.key === "." || e.key === "<" || e.key === ">")) {
+        // One frame back or forward (Shift: ten frames).
+        e.preventDefault();
+        const frame = 1000 / st.scene.settings.video.fps;
+        const dir = e.key === "," || e.key === "<" ? -1 : 1;
+        st.pause();
+        useEditor.setState({ playhead: Math.max(0, Math.min(st.timeline.totalMs, Math.round((st.playhead + dir * frame * (e.shiftKey ? 10 : 1)) * 1000) / 1000)), pinStepEnd: false });
       } else if (!mod && !e.altKey && e.key.toLowerCase() === "n") {
         addStep();
       } else if (!mod && !e.altKey && TOOL_KEYS[e.key.toLowerCase()]) {

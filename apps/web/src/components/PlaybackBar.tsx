@@ -32,6 +32,7 @@ export function formatTime(ms: number): string {
 export function PlaybackBar() {
   const s = useStyles();
   const playhead = useEditor((st) => st.playhead);
+  const rate = useEditor((st) => st.rate);
   const total = useEditor((st) => st.timeline.totalMs);
   const steps = useEditor((st) => st.timeline.steps);
   const titles = useEditor((st) => st.scene.steps);
@@ -72,6 +73,7 @@ export function PlaybackBar() {
           <IconButton label="Go to end" icon={<ArrowNext16Filled />} onClick={() => (pause(), setPlayhead(total))} />
           <span className={s.time} aria-live="off">
             {formatTime(playhead)} / {formatTime(total)}
+            {rate !== 1 && <b title="Shuttle speed (J / L)"> {rate < 0 ? "◀" : "▶"} {Math.abs(rate)}×</b>}
           </span>
         </div>
         <IconButton label={timelineOpen ? "Hide the timeline" : "Show the timeline"} pressed={timelineOpen} tool icon={<GanttChart16Regular />} onClick={() => useEditor.setState({ timelineOpen: !timelineOpen })} />

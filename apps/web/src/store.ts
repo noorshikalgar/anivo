@@ -131,7 +131,10 @@ interface EditorState {
   fitToVideo(): void;
   zoomAt(factor: number, cx: number, cy: number): void;
   setPlayhead(ms: number): void;
-  play(): void;
+  /** Play at a rate (docs/22 D3 shuttle): 1 is normal, 2 is twice as fast, -1 plays backward. */
+  play(rate?: number): void;
+  /** The play rate now (shuttle). */
+  rate: number;
   /** The browser can install the app (PWA): show the Install button. */
   canInstall: boolean;
   /** A new version of the app is ready (service worker): show a Reload button. */
@@ -259,6 +262,7 @@ export const useEditor = create<EditorState>((set, get) => {
     viewport: { width: 800, height: 600 },
     playhead: 0,
     playing: false,
+    rate: 1,
     selectedStep: null,
     selection: [],
     tool: "select",
@@ -348,23 +352,33 @@ export const useEditor = create<EditorState>((set, get) => {
 
     setPlayhead: (ms) => set({ playhead: Math.max(0, Math.min(ms, get().timeline.totalMs)), pinStepEnd: false }),
 
-    play() {
-      if (get().playing) return;
+    play(rate = 1) {
+      if (get().playing) {
+        // Playing: only change the rate (the shuttle keys press again for faster).
+        set({ rate });
+        return;
+      }
       const total = get().timeline.totalMs;
       if (total <= 0) return;
       const loop = get().loop;
-      if (loop && (get().playhead < loop.fromMs || get().playhead >= loop.toMs)) set({ playhead: loop.fromMs });
-      else if (!loop && get().playhead >= total) set({ playhead: 0 });
-      set({ playing: true, pinStepEnd: false });
+      if (rate > 0 && loop && (get().playhead < loop.fromMs || get().playhead >= loop.toMs)) set({ playhead: loop.fromMs });
+      else if (rate > 0 && !loop && get().playhead >= total) set({ playhead: 0 });
+      else if (rate < 0 && get().playhead <= 0) set({ playhead: total });
+      set({ playing: true, pinStepEnd: false, rate });
       let last = performance.now();
       const tick = (now: number) => {
         if (!get().playing) return;
-        let next = get().playhead + (now - last);
+        let next = get().playhead + (now - last) * get().rate;
         last = now;
         const lp = get().loop;
         if (lp && next >= lp.toMs) next = lp.fromMs + ((next - lp.fromMs) % Math.max(1, lp.toMs - lp.fromMs));
+        if (lp && next < lp.fromMs && get().rate < 0) next = lp.toMs - ((lp.fromMs - next) % Math.max(1, lp.toMs - lp.fromMs));
         if (!lp && next >= get().timeline.totalMs) {
-          set({ playhead: get().timeline.totalMs, playing: false });
+          set({ playhead: get().timeline.totalMs, playing: false, rate: 1 });
+          return;
+        }
+        if (next <= 0) {
+          set({ playhead: 0, playing: false, rate: 1 });
           return;
         }
         set({ playhead: next });
@@ -375,7 +389,7 @@ export const useEditor = create<EditorState>((set, get) => {
 
     pause() {
       cancelAnimationFrame(rafId);
-      set({ playing: false });
+      set({ playing: false, rate: 1 });
     },
 
     selectStep(id) {
