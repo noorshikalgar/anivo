@@ -122,6 +122,13 @@ export function useShortcuts(): void {
         const on = !st.autoKey;
         useEditor.setState({ autoKey: on, ...(on ? { timelineOpen: true } : {}) });
         notify(on ? "Recording: changes make keyframes at the playhead" : "Recording is off: changes set the element in all steps", "info");
+      } else if (!mod && (e.key === "PageDown" || e.key === "PageUp")) {
+        // The next or the previous step (Base is before step 1).
+        e.preventDefault();
+        const ids = st.scene.steps.map((x) => x.id);
+        const i = st.selectedStep === null ? -1 : ids.indexOf(st.selectedStep);
+        const j = Math.max(-1, Math.min(ids.length - 1, i + (e.key === "PageDown" ? 1 : -1)));
+        st.selectStep(j < 0 ? null : ids[j]!);
       } else if (!mod && !e.altKey && (e.key.toLowerCase() === "j" || e.key.toLowerCase() === "l")) {
         // Shuttle (docs/22 D3): L plays forward, J backward; press again for 2×, 4×, 8×. Space stops.
         const dir = e.key.toLowerCase() === "l" ? 1 : -1;

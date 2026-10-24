@@ -116,6 +116,11 @@ describe("lintScene", () => {
     expect(codes(s)).toContain("dangling-connector");
   });
 
+  it("does not call an element unused when it enters and leaves in one step", () => {
+    const s = script(`box a "A" at=100,100\nstep "S"\n  enter a pop\n  exit a fade +600ms\n`);
+    expect(codes(s)).not.toContain("unused-element");
+  });
+
   it("finds an arrow label that covers an element", () => {
     const s = script(`box a "A" at=100,100 size=200x80\nbox b "B" at=420,100 size=200x80\narrow a -> b "A long label on a short arrow"\nstep "S"\n  enter a, b, a->b fade\n`);
     expect(lintScene(s).filter((r) => r.code === "label-overlap").map((r) => r.ids[1])).toEqual(["a", "b"]);
