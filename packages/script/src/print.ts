@@ -202,6 +202,7 @@ function printAction(a: Action, index: number, prevId?: string): string {
     if (a.counter.format !== "{n}") parts.push(`format=${q(a.counter.format)}`);
     if (a.counter.decimals) parts.push(`decimals=${a.counter.decimals}`);
     if (a.counter.style && a.counter.style !== "plain") parts.push(`style=${a.counter.style}`);
+    if (a.counter.roll) parts.push("roll");
     common();
     return parts.join(" ");
   }

@@ -48,5 +48,7 @@ export function defaultDurationMs(action: Action, textLength = 0): number {
   if (action.type === "emphasis" && action.effect === "march") return 3000;
   // Idle motion (docs/22 D6): slow, for a hold.
   if (action.type === "emphasis" && (action.effect === "float" || action.effect === "breathe")) return 6000;
+  // Annotations (docs/25 K1, K2) stay long enough to read.
+  if (action.type === "emphasis" && (action.effect === "spotlight" || action.effect === "circle")) return 2500;
   return DEFAULT_DURATION_MS[action.type];
 }

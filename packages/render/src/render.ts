@@ -146,32 +146,73 @@ function drawText(dc: DrawContext, f: ElementFrame, el: Element, text: string, b
   const x = align === "left" ? box.x + pad : align === "right" ? box.x + box.width - pad : box.x + box.width / 2;
   const y0 = box.y + box.height / 2 - ((lines.length - 1) * lineHeight) / 2;
   if ((f.cascade !== undefined && f.cascade < 1) || (f.scramble !== undefined && f.scramble < 1)) return drawLetters(dc, f, el, lines, x, y0, lineHeight, size, color, alpha);
-  if (f.tabular && !f.marks?.length) return drawTabular(ctx, lines, x, y0, lineHeight, align, shown);
+  if (f.tabular && !f.marks?.length) return drawTabular(ctx, lines, x, y0, lineHeight, align, shown, f.roll, size);
   if (f.marks?.length || f.dimRest) return drawMarkedText(dc, f, el, text, lines, x, y0, lineHeight, size, color, alpha, shown);
+  const typing = reveal > 0 && reveal < 1;
+  let caret: { x: number; y: number } | undefined;
   lines.forEach((line, i) => {
     if (shown <= 0) return;
     const part = line.slice(0, shown);
     shown -= line.length + 1;
-    ctx.fillText(part, x, y0 + i * lineHeight);
+    if (!typing || part.length === line.length) {
+      ctx.fillText(part, x, y0 + i * lineHeight);
+      return;
+    }
+    // A line that types: its letters are in their final places (a centered line does not grow from its center).
+    const full = ctx.measureText(line).width;
+    const left = align === "left" ? x : align === "right" ? x - full : x - full / 2;
+    ctx.textAlign = "left";
+    ctx.fillText(part, left, y0 + i * lineHeight);
+    ctx.textAlign = align;
+    caret = { x: left + ctx.measureText(part).width + size * 0.06, y: y0 + i * lineHeight };
   });
+  if (caret) {
+    // A typing caret (docs/25 K3): an accent bar after the last letter while the text types.
+    ctx.fillStyle = toCss(withAlpha(resolveToken(dc.theme, "accent", "fill", "rectangle"), alpha));
+    ctx.fillRect(caret.x, caret.y - size * 0.55, Math.max(2, size * 0.07), size * 1.1);
+  }
 }
 
 /** Text with digits of the same width (a counting number), so it does not shake while it counts. */
-function drawTabular(ctx: Ctx2D, lines: string[], x: number, y0: number, lineHeight: number, align: "left" | "center" | "right", shown: number): void {
+function drawTabular(ctx: Ctx2D, lines: string[], x: number, y0: number, lineHeight: number, align: "left" | "center" | "right", shown: number, roll?: { value: number; decimals: number }, size = lineHeight): void {
   const digit = Math.max(...[..."0123456789"].map((d) => ctx.measureText(d).width));
   const adv = (ch: string) => (ch >= "0" && ch <= "9" ? digit : ctx.measureText(ch).width);
   ctx.textAlign = "center";
+  // Rolling digits (docs/25 K4): the place of each digit of the number, from the right (0 = the last digit).
+  const V = roll ? Math.abs(roll.value) * 10 ** roll.decimals : 0;
   lines.forEach((line, i) => {
     if (shown <= 0) return;
     const part = line.slice(0, shown);
     shown -= line.length + 1;
     const width = [...line].reduce((w, ch) => w + adv(ch), 0);
     let cx = align === "left" ? x : align === "right" ? x - width : x - width / 2;
-    for (const ch of part) {
-      const w = adv(ch);
-      ctx.fillText(ch, cx + w / 2, y0 + i * lineHeight);
-      cx += w;
+    const num = roll ? /\d[\d,]*(?:\.\d+)?/.exec(part) : null;
+    const places = new Map<number, number>();
+    if (num) {
+      let p = 0;
+      for (let k = num.index + num[0].length - 1; k >= num.index; k--) if (part[k]! >= "0" && part[k]! <= "9") places.set(k, p++);
     }
+    const y = y0 + i * lineHeight;
+    [...part].forEach((ch, k) => {
+      const w = adv(ch);
+      const place = places.get(k);
+      if (place === undefined) ctx.fillText(ch, cx + w / 2, y);
+      else {
+        const unit = 10 ** place;
+        const base = Math.floor(V / unit) % 10;
+        const lower = V - Math.floor(V / unit) * unit;
+        const frac = place === 0 ? V - Math.floor(V) : Math.max(0, lower - (unit - 1));
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(cx, y - size * 0.62, w, size * 1.24);
+        ctx.clip();
+        const step = size * 1.24;
+        ctx.fillText(String(base), cx + w / 2, y - frac * step);
+        if (frac > 0) ctx.fillText(String((base + 1) % 10), cx + w / 2, y + (1 - frac) * step);
+        ctx.restore();
+      }
+      cx += w;
+    });
   });
 }
 
@@ -773,6 +814,73 @@ function drawConnector(dc: DrawContext, f: ElementFrame, el: ConnectorElement): 
   }
 }
 
+/**
+ * Annotations (docs/25): a spotlight darkens the frame around an element with
+ * a soft edge, and a hand-drawn circle draws around an element. They draw
+ * above all elements.
+ */
+function drawAnnotations(dc: DrawContext, frames: ElementFrame[], cam: Rect4): void {
+  const { ctx, theme } = dc;
+  for (const f of frames) {
+    if (!f.visible || f.type === "connector" || f.type === "group") continue;
+    const cx = f.x + f.width / 2;
+    const cy = f.y + f.height / 2;
+    if (f.spotlight && f.spotlight > 0) {
+      const rx = (f.width / 2) * 1.2 + 36;
+      const ry = (f.height / 2) * 1.2 + 36;
+      // Layers with a growing hole make a soft edge (no radial gradient: the SVG export has none).
+      const LAYERS = 6;
+      ctx.save();
+      ctx.fillStyle = `rgba(0,0,0,${((0.68 * f.spotlight) / LAYERS).toFixed(4)})`;
+      for (let l = 0; l < LAYERS; l++) {
+        const k = 1 + l * 0.07;
+        ctx.beginPath();
+        // The frame, one way round; the hole, the other way round: the hole stays clear.
+        ctx.moveTo(cam.x - 10, cam.y - 10);
+        ctx.lineTo(cam.x + cam.width + 10, cam.y - 10);
+        ctx.lineTo(cam.x + cam.width + 10, cam.y + cam.height + 10);
+        ctx.lineTo(cam.x - 10, cam.y + cam.height + 10);
+        ctx.closePath();
+        for (let i = 0; i <= 48; i++) {
+          const t = -(i / 48) * Math.PI * 2;
+          const x = cx + Math.cos(t) * rx * k;
+          const y = cy + Math.sin(t) * ry * k;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+    if (f.circle && f.circle.p > 0 && f.circle.alpha > 0) {
+      // A loose ellipse that goes a little past its start, as a hand draws it. Fixed wobble (no random).
+      // Around the box, not inside it: an ellipse through the corners is about √2 times the half size.
+      const rx = (f.width / 2) * 1.2 + 16;
+      const ry = (f.height / 2) * 1.32 + 14;
+      const turns = 1.08;
+      const n = 72;
+      const shown = Math.max(2, Math.round(n * f.circle.p));
+      ctx.save();
+      ctx.beginPath();
+      for (let i = 0; i <= shown; i++) {
+        const t = (i / n) * turns * Math.PI * 2 - Math.PI * 0.6;
+        const wob = 1 + 0.035 * Math.sin(t * 3 + 1.3) + 0.02 * (i / n);
+        const x = cx + Math.cos(t) * rx * wob;
+        const y = cy + Math.sin(t) * ry * wob;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = toCss(withAlpha(resolveToken(theme, f.circle.color, "stroke", "rectangle"), f.circle.alpha));
+      ctx.lineWidth = Math.max(5, Math.min(f.width, f.height) * 0.04);
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+}
+
 /** Copies behind a particle with a trail, and their opacity. */
 const TRAIL_COPIES = 6;
 
@@ -1008,6 +1116,7 @@ export function renderFrame(ctx: Ctx2D, scene: Scene, frame: FrameState, routes:
 
   ctx.save();
   ctx.setTransform(sx, 0, 0, sy, -cam.x * sx, -cam.y * sy);
+  drawAnnotations(dc, ordered, cam);
   drawParticles(dc, frame.particles);
   if (frame.caption) drawStepCaption(dc, frame, frame.caption, cam);
   ctx.restore();

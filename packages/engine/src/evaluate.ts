@@ -76,6 +76,9 @@ function settle(frame: ElementFrame): ElementFrame {
   delete f.cascade;
   delete f.cascadeWords;
   delete f.moving;
+  delete f.spotlight;
+  delete f.circle;
+  delete f.roll;
   delete f.scramble;
   delete f.labelFrom;
   delete f.labelMix;
@@ -295,6 +298,13 @@ function applyEmphasis(f: ElementFrame, action: Extract<Action, { type: "emphasi
     case "focus":
       // Handled once per action in applyFocus, because it changes other elements.
       break;
+    case "spotlight":
+      f.spotlight = Math.max(f.spotlight ?? 0, envelope(raw));
+      break;
+    case "circle":
+      // Draws around in the first 30 %, stays, and fades in the last 15 %.
+      f.circle = { p: Math.min(1, raw / 0.3), alpha: raw > 0.85 ? (1 - raw) / 0.15 : 1, color: params.color ?? "danger" };
+      break;
     case "float":
     case "breathe": {
       // Idle motion (docs/22 D6): one slow wave each 3 s, that starts and stops softly.
@@ -429,8 +439,12 @@ function applyTimedAction(state: StateMap, ta: TimedAction, t: number): void {
   else if (action.type === "counter") {
     const c = action.counter;
     const n = lerp(c.from, c.to, eased);
-    f.label = c.format.replace("{n}", formatCount(n, c.decimals, c.style));
+    const rolling = c.roll && raw < 1 && (c.style === undefined || c.style === "plain" || c.style === "thousands");
+    // Rolling digits show the digit below; the next digit rolls in from below (no round up).
+    const shownN = rolling ? Math.sign(n) * Math.floor(Math.abs(n) * 10 ** c.decimals) / 10 ** c.decimals : n;
+    f.label = c.format.replace("{n}", formatCount(shownN, c.decimals, c.style));
     f.tabular = true;
+    if (rolling) f.roll = { value: n, decimals: c.decimals };
   }
   state[ta.target] = f;
 }

@@ -43,7 +43,7 @@ const useStyles = makeStyles({
 const SOUND_TEXT: Partial<Record<string, string>> = { keys: "Keys (typing, whole action)", ticks: "Ticks (counting, whole action)", rise: "Rise (whoosh up)", error: "Error (buzz)", success: "Success (three notes)" };
 
 export const ENTER_EFFECTS = ["rise", "fade", "pop", "blur", "scale", "slide", "draw-on", "wipe", "typewriter", "cascade", "scramble"] as const;
-export const EMPHASIS_EFFECTS = ["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus", "march", "float", "breathe"] as const;
+export const EMPHASIS_EFFECTS = ["pulse", "shake", "wiggle", "glow", "flash", "highlight", "focus", "march", "float", "breathe", "spotlight", "circle"] as const;
 const EASINGS = ["linear", "ease-in", "ease-out", "ease-in-out", "back-out", "spring-soft", "spring-bouncy", "smooth", "hold"] as const;
 const label = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g, " ");
 
@@ -480,7 +480,7 @@ export function ActionEditor({ step, action, part = "all" }: { step: Step; actio
               ]}
               onCommit={(v) => set({ counter: { ...action.counter, style: v === "plain" ? undefined : v } }, "Change number style")}
             />
-            <div />
+            <Check label="Roll the digits" checked={!!action.counter.roll} onChange={(v) => set({ counter: { ...action.counter, roll: v || undefined } }, "Change roll")} />
           </Row>
         </>
       )}

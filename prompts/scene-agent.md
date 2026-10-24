@@ -94,14 +94,14 @@ step "<title>" [hold=<time>] [cue=<time>] [caption="<one sentence>" [near=<id>] 
   any action: after=prev (or after=<action id>): start when that action ends; +<delay> is then the gap. It moves with that action.
   exit <targets> <effect>
   morph <targets> key=value…
-  pulse|shake|glow|flash|highlight|focus|float|breathe <targets>   (float, breathe: slow idle motion while it holds, 6 s default)
+  pulse|shake|glow|flash|highlight|focus|float|breathe|spotlight|circle <targets> [color=<token>]   (float, breathe: slow idle motion, 6 s; spotlight: the frame goes dark around it; circle: a hand-drawn circle around it)
   flow <connectors> [rate=<n>] [speed=<px/s>] [round-robin] [chain=<connector>] [skip=<connector>]
        [size=<px>] [color=<token>] [shape=dot|square|pill] [icon=<pack:name>] [image=<assetId>]
        [once | count=<n>] [orient] [trail=<0..1>]   (once: one particle travels the arrow; icon: an icon moves, for example icon=lucide:mail size=32)
        [back-icon=<pack:name>] [back-color=<token>] [back-size|back-speed|back-rate|back-count=<n>] [back-once] [back-delay=<time>]
                                                  (a back-* setting makes the flow two-way: requests go, answers come back with their own look)
   camera zoom-to <targets> [padding=80] | camera pan at=x,y size=WxH | camera reset | camera drift [<targets>] [zoom=1.08] (slow push-in) | camera follow <target> (keep a moving element in the center)
-  count <target> from=<n> to=<n> format="{n} <unit>" [decimals=<n>] [style=thousands|compact|duration]   (currency or percent: format="${n}" or "{n}%")
+  count <target> from=<n> to=<n> format="{n} <unit>" [decimals=<n>] [style=thousands|compact|duration] [roll]   (currency or percent: format="${n}" or "{n}%")
   code <target> highlight=<a>-<b> | type=<a>-<b>
   move <targets> path="x,y x,y …" [curve] [orient]   (the element center follows the points and stays at the end)
   preset <name> <targets> [+<delay>] [stagger=<time>]   (motion presets: rise-in, blur-in, pop-in, card-up, words-in, words-rise, letters-in, decode, type-in, draw-in, fill-up, fill-right, emphasize, no, sink-out, fade-out)

@@ -26,3 +26,21 @@ describe("idle motion (docs/22 D6)", () => {
     for (let t = 0; t < 6000; t += 16) expect(Math.abs(y(t + 16) - y(t))).toBeLessThan(1);
   });
 });
+
+describe("annotations (docs/25 K1, K2)", () => {
+  const r = loadScene({
+    schemaVersion: 1,
+    meta: { title: "A" },
+    elements: { a: { type: "rectangle", z: "a1", x: 0, y: 0, width: 50, height: 50 } },
+    steps: [{ id: "s", title: "S", actions: [{ id: "c", type: "emphasis", effect: "circle", targets: ["a"] }, { id: "l", type: "emphasis", effect: "spotlight", targets: ["a"] }] }],
+  });
+  if (!r.ok) throw new Error(JSON.stringify(r));
+  const at = (t: number) => evaluate(r.scene, t).elements.find((e) => e.id === "a")!;
+  it("draws the circle in, keeps it, and fades it; the spotlight comes and goes", () => {
+    expect(at(375).circle?.p).toBeCloseTo(0.5);
+    expect(at(1500).circle).toMatchObject({ p: 1, alpha: 1 });
+    expect(at(1500).spotlight).toBe(1);
+    expect(at(2500).circle).toBeUndefined();
+    expect(at(2500).spotlight).toBeUndefined();
+  });
+});
