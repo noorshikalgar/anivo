@@ -756,12 +756,16 @@ function drawConnector(dc: DrawContext, f: ElementFrame, el: ConnectorElement): 
     // The label fades in at the end of the draw.
     ctx.globalAlpha *= Math.min(1, (f.strokeProgress - 0.85) / 0.15);
     // The label sits on the line with a background pill, so the line does not cross the text.
-    const mid = pointAt(route, route.length / 2).point;
+    const at = pointAt(route, route.length / 2);
     ctx.font = fontFor(dc, { ...f, fontSize: f.fontSize ?? el.style.fontSize ?? 28 }, el);
     const lines = wrapText(ctx, f.label, 320);
     const size = f.fontSize ?? el.style.fontSize ?? 28;
     const w = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 20;
     const h = lines.length * size * 1.25 + 10;
+    // Two arrows between the same elements: each label goes to the outer side of its line, so the labels do not touch (docs/23 G2).
+    const side = route.labelSide ?? 0;
+    const push = side ? (Math.abs(at.dir.y) * w) / 2 + (Math.abs(at.dir.x) * h) / 2 + 4 : 0;
+    const mid = { x: at.point.x - at.dir.y * side * push, y: at.point.y + at.dir.x * side * push };
     const bg = resolveToken(theme, dc.scene.settings.background.color ?? "background", "fill", "rectangle");
     ctx.fillStyle = toCss(bg.a > 0 ? bg : resolveToken(theme, "surface", "fill", "rectangle"));
     fillPolyline(ctx, cleanOutline("rectangle", { x: mid.x - w / 2, y: mid.y - h / 2, width: w, height: h }, Math.min(h / 2, 10)).points);
@@ -962,7 +966,9 @@ export function renderFrame(ctx: Ctx2D, scene: Scene, frame: FrameState, routes:
   const sx = opts.width / cam.width;
   const sy = opts.height / cam.height;
 
-  for (const frameEl of frame.elements) {
+  // An element that moves along a path draws above the others, so it does not pass under arrows and labels (docs/23 G1).
+  const ordered = frame.elements.some((e) => e.moving) ? [...frame.elements.filter((e) => !e.moving), ...frame.elements.filter((e) => e.moving)] : frame.elements;
+  for (const frameEl of ordered) {
     let f = frameEl;
     if (!f.visible) {
       if (ghost <= 0) continue;

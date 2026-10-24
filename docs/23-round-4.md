@@ -11,12 +11,14 @@ Status: audit and plan, 2026-10-24. Method: three samples that use most tools to
 | E3 | With a camera zoom, the caption became larger. | Fixed: the caption keeps its size on the screen. |
 | E4 | A caption below an icon covered the icon label. | Fixed: the label is part of the icon box for captions. |
 | E5 | An exit left the arrows of the element on the screen, pointing at nothing. | Fixed: an arrow fades with the elements at its ends. Lint warns only when an arrow enters before its element. |
-| E6 | A moving element (a packet) goes under the arrow labels on its way. | Open: G1. |
-| E7 | Two arrows between the same two elements (request and answer) are close together; their labels touch. | Open: G2. |
+| E6 | A moving element (a packet) goes under the arrow labels on its way. | Fixed: G1. |
+| E7 | Two arrows between the same two elements (request and answer) are close together; their labels touch. | Fixed: G2. |
 
 ## 2. Build list
 
 | # | Item | Fixes |
 |---|---|---|
-| G1 | **On top while it moves**: an element that moves along a path or an arrow draws above arrows and their labels for the time of the move. | E6 |
-| G2 | **Two-way arrow pairs**: two arrows between the same elements in opposite directions get more space between them, and their labels go to the outer sides. | E7 |
+| G1 | Done. **On top while it moves**: an element that moves along a path or an arrow draws above arrows and their labels for the time of the move. | E6 |
+| G2 | Done. **Two-way arrow pairs**: the labels of two arrows between the same elements go to the outer sides of their lines. | E7 |
+| U1 | Done. **Start card**: an empty scene shows what to do first: draw a box, open the Library, or write a script. | A new user saw an empty frame. |
+| U2 | Done. A new blank scene uses the Studio theme. | The default slate theme looked plain next to the samples. |

@@ -205,7 +205,8 @@ export async function runImport(): Promise<void> {
 
 /** A blank scene. The default size is 1920 x 1080 (16:9). */
 export function newScene(size?: { width: number; height: number }): void {
-  const r = loadScene({ schemaVersion: 1, meta: { title: "Untitled" }, ...(size ? { settings: { video: size } } : {}) });
+  // A new scene starts with the Studio theme: calm, one accent (docs/20 B4).
+  const r = loadScene({ schemaVersion: 1, meta: { title: "Untitled" }, settings: { theme: "studio-dark", ...(size ? { video: size } : {}) } });
   if (r.ok) openScene({ scene: r.scene, assets: new Map() }, null, null);
 }
 
