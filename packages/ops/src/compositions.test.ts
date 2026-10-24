@@ -63,3 +63,22 @@ describe("composition slots (docs/21 C10)", () => {
     expect(t?.type === "text" && t.content.text).toBe("Hello");
   });
 });
+
+describe("chains in compositions", () => {
+  it("keeps a chain inside the composition when it is inserted twice", () => {
+    const r = loadScene({
+      schemaVersion: 1,
+      meta: { title: "C" },
+      elements: { a: { type: "rectangle", z: "a1", x: 0, y: 0, width: 50, height: 50 }, b: { type: "rectangle", z: "a2", x: 100, y: 0, width: 50, height: 50 } },
+      steps: [{ id: "s1", title: "S", actions: [{ id: "x", type: "enter", effect: "fade", targets: ["a"] }, { id: "y", type: "enter", effect: "fade", targets: ["b"], after: "x" }] }],
+    });
+    if (!r.ok) throw new Error(JSON.stringify(r));
+    const bus = new OperationBus(r.scene);
+    const c = compositionOf(bus.scene, ["a", "b"], "C", "c1");
+    if ("error" in c) throw new Error(c.error);
+    for (let i = 0; i < 2; i++) expect(bus.apply({ ops: insertCompositionOps(bus.scene, c, { x: 0, y: 300 }).ops }).ok).toBe(true);
+    const last = bus.scene.steps.at(-1)!.actions;
+    expect(last[1]!.after).toBe(last[0]!.id);
+    expect(new Set(bus.scene.steps.flatMap((s) => s.actions.map((a) => a.id))).size).toBe(6);
+  });
+});

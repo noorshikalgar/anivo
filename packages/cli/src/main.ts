@@ -3,7 +3,7 @@ import { basename, join, resolve as resolvePath } from "node:path";
 import { resolveTimeline, sceneCaptions, toSrt, toVtt, wavBytes } from "@anivo/engine";
 import { type NodeExportFormat, exportHtml, exportVideo, renderSvg } from "@anivo/export-node";
 import { formatLint, lintScene, lintSummary } from "@anivo/lint";
-import { OperationBus, planFit, planTake, speechIntervals, spliceTake, trimTake, voiceParts } from "@anivo/ops";
+import { type Composition, type MotionPreset, OperationBus, getPreset, presetOps, compositionOf, compositionSlots, insertCompositionOps, planFit, planTake, speechIntervals, spliceTake, trimTake, voiceParts } from "@anivo/ops";
 import { assetId } from "@anivo/fileio";
 import { getIconPack, iconName, iconPackFromSvgs, iconPacks, searchIcons } from "@anivo/render";
 import { CustomTheme, type Scene, TEMPLATES, loadScene } from "@anivo/schema";
@@ -310,6 +310,78 @@ theme
     if (!t) throw new ToolError("The scene has no custom theme.", "Make one in the editor, or use 'anivo theme import'.");
     writeFileSync(o.out, `${JSON.stringify(t, null, 2)}\n`);
     print(`Wrote ${o.out}.`);
+  });
+
+const comp = program.command("comp").description("Compositions: elements with their animations, to use again in any scene (docs/20 B6)");
+comp
+  .command("save")
+  .description("Save elements of a scene and their animations as a composition file (.anivo-comp.json, the same file as the editor export)")
+  .argument("<scene>")
+  .requiredOption("--ids <ids>", "Element IDs, separated by commas. Groups bring their parts; arrows between the elements come too")
+  .requiredOption("--out <file>", "Composition file")
+  .option("--name <name>", "Name of the composition")
+  .action((f: string, o: { ids: string; out: string; name?: string }) => {
+    const c = compositionOf(readSceneFile(f), o.ids.split(",").map((x) => x.trim()).filter(Boolean), o.name ?? basename(o.out).replace(/\.anivo-comp\.json$|\.json$/, ""), `comp-${Date.now().toString(36)}`, Date.now());
+    if ("error" in c) throw new ToolError(c.error, "Write: anivo comp save scene.anivo --ids card,title --out card.anivo-comp.json");
+    writeFileSync(o.out, `${JSON.stringify({ anivoComposition: 1, ...c }, null, 2)}\n`);
+    const slots = compositionSlots(c);
+    print(`Wrote ${o.out}: ${c.elements.length} elements, ${c.steps.length} steps.${slots.length ? ` Texts: ${slots.map((x) => `${x.id}="${x.text}"`).join(", ")}.` : ""}`, { elements: c.elements.length, steps: c.steps.length, slots });
+  });
+comp
+  .command("insert")
+  .description("Insert a composition into a scene: new IDs, its steps after a step (or at the end)")
+  .argument("<scene>")
+  .argument("<file>", "Composition file")
+  .option("--at <x,y>", "Top-left corner in scene pixels", "100,100")
+  .option("--after <step>", "Step ID: the steps of the composition come after it")
+  .option("--text <id=text...>", "Set a text of the composition (a slot), for example --text word=Latency")
+  .action((f: string, file: string, o: { at: string; after?: string; text?: string[] }) => {
+    const data = JSON.parse(readFileSync(file, "utf8")) as Composition & { anivoComposition?: number };
+    if (data.anivoComposition !== 1 || !Array.isArray(data.elements) || !Array.isArray(data.steps)) throw new ToolError(`'${file}' is not an Anivo composition file.`, "Make one with 'anivo comp save' or Export in the editor.");
+    const at = /^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/.exec(o.at);
+    if (!at) throw new ToolError(`The position '${o.at}' is not valid.`, "Write: --at 100,200");
+    const texts: Record<string, string> = {};
+    for (const t of o.text ?? []) {
+      const i = t.indexOf("=");
+      if (i <= 0) throw new ToolError(`'${t}' is not a slot text.`, "Write: --text <id>=<text>");
+      texts[t.slice(0, i)] = t.slice(i + 1);
+    }
+    const bus = new OperationBus(readSceneFile(f));
+    const ins = insertCompositionOps(bus.scene, data, { x: Number(at[1]), y: Number(at[2]) }, o.after, texts);
+    const r = bus.apply({ label: `Insert ${data.name}`, ops: ins.ops });
+    if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
+    writeSceneFile(f, bus.scene);
+    print(`Inserted '${data.name}': ${ins.ids.join(", ")} and ${ins.steps} step${ins.steps === 1 ? "" : "s"}. ${lintLine(bus.scene)}`, { ids: ins.ids, steps: ins.steps });
+  });
+
+const preset = program.command("preset").description("Motion presets: built-in, or from a preset file that the editor exports (docs/21 C11)");
+preset
+  .command("apply")
+  .description("Apply a motion preset to elements in a step")
+  .argument("<scene>")
+  .argument("<name>", "Preset name or ID")
+  .requiredOption("--step <step>", "Step ID")
+  .requiredOption("--targets <ids>", "Element IDs, separated by commas, in order")
+  .option("--file <file>", "Preset file (.anivo-presets.json). Without it: a built-in preset")
+  .option("--delay <ms>", "Delay before the preset, in ms", "0")
+  .action((f: string, name: string, o: { step: string; targets: string; file?: string; delay: string }) => {
+    let p: MotionPreset | undefined;
+    if (o.file) {
+      const data = JSON.parse(readFileSync(o.file, "utf8")) as { anivoPresets?: number; presets?: MotionPreset[] };
+      if (data.anivoPresets !== 1 || !Array.isArray(data.presets)) throw new ToolError(`'${o.file}' is not an Anivo preset file.`, "Export one in the editor: Actions › Presets › Export my presets.");
+      p = data.presets.find((x) => x.id === name || x.name.toLowerCase() === name.toLowerCase());
+      if (!p) throw new ToolError(`The file has no preset '${name}'.`, `Use: ${data.presets.map((x) => x.name).join(", ")}.`);
+    } else {
+      p = getPreset(name);
+      if (!p) throw new ToolError(`No built-in preset '${name}'.`, "See the preset list in 'anivo schema' or the agent guide.");
+    }
+    const bus = new OperationBus(readSceneFile(f));
+    const ops = presetOps(bus.scene, o.step, p, o.targets.split(",").map((x) => x.trim()).filter(Boolean), { delayMs: Number(o.delay) });
+    if ("error" in ops) throw new ToolError(ops.error);
+    const r = bus.apply({ label: `Preset: ${p.name}`, ops });
+    if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
+    writeSceneFile(f, bus.scene);
+    print(`Applied '${p.name}' (${ops.length} action${ops.length === 1 ? "" : "s"}). ${lintLine(bus.scene)}`);
   });
 
 const image = program.command("image").description("Image elements");

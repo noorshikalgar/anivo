@@ -41,6 +41,21 @@ describe("anivo CLI", () => {
     expect(anivo("summary", scene).out).toMatch(/Steps \(2\):/);
   });
 
+  it("saves and inserts a composition, and applies a preset (docs/25 K5)", () => {
+    const c = join(dir, "c.anivo");
+    anivo("apply", c, join(dir, "s.anivo.txt"));
+    const comp = join(dir, "ab.anivo-comp.json");
+    const saved = anivo("comp", "save", c, "--ids", "a,b", "--out", comp);
+    expect(saved.code, saved.err).toBe(0);
+    expect(saved.out).toContain('a="A"');
+    const ins = anivo("comp", "insert", c, comp, "--at", "100,700", "--text", "a=Again");
+    expect(ins.code, ins.err).toBe(0);
+    expect(anivo("print", c).out).toContain('"Again"');
+    const p = anivo("preset", "apply", c, "rise-in", "--step", "s-one", "--targets", "a,b");
+    expect(p.code, p.err).toBe(0);
+    expect(p.out).toContain("Applied 'Rise in' (2 actions)");
+  });
+
   it("returns exit code 1 for lint errors and for a missing file, with a hint", () => {
     writeFileSync(join(dir, "bad.txt"), `box a "A very long label that cannot fit" size=100x40\nstep "S"\n  enter a fade\n`);
     anivo("apply", join(dir, "bad.anivo"), join(dir, "bad.txt"));

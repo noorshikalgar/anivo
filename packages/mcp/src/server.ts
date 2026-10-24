@@ -3,7 +3,7 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { resolveTimeline, sceneCaptions, toSrt, toVtt } from "@anivo/engine";
 import { exportHtml, exportVideo, homePath, imageSize, registerBundledAssets, renderSvg } from "@anivo/export-node";
 import { formatLint, lintScene, lintSummary } from "@anivo/lint";
-import { OperationBus } from "@anivo/ops";
+import { type Composition, OperationBus, compositionOf, compositionSlots, insertCompositionOps } from "@anivo/ops";
 import { searchIcons } from "@anivo/render";
 import { type Scene, TEMPLATES, loadScene } from "@anivo/schema";
 import { importText } from "@anivo/import";
@@ -347,6 +347,56 @@ export function createAnivoServer(opts: ServerOptions): McpServer {
         if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
         writeSceneFile(path, bus.scene);
         return text(`Added image '${r.created[0]}' (asset ${asset.id}, ${size.width}×${size.height} px). In Anivo Script: image ${r.created[0]} asset=${asset.id}`);
+      }),
+  );
+
+  server.registerTool(
+    "anivo_comp_save",
+    {
+      title: "Save a composition",
+      description: "Save elements of a scene with their animations (all steps) as a composition file, to use again in any scene. Groups bring their parts; arrows between the elements come too. Returns the texts (slots) that anivo_comp_insert can set.",
+      inputSchema: {
+        scene: sceneArg,
+        ids: z.array(z.string()).min(1).describe("Element IDs."),
+        file: z.string().describe("Composition file path inside the scene folder, for example card.anivo-comp.json."),
+        name: z.string().optional(),
+      },
+    },
+    async (a) =>
+      run(() => {
+        const c = compositionOf(readSceneFile(sceneFile(a.scene)), a.ids, a.name ?? a.file.replace(/\.anivo-comp\.json$|\.json$/, ""), `comp-${Date.now().toString(36)}`, Date.now());
+        if ("error" in c) throw new ToolError(c.error);
+        writeFileSync(inside(a.file), `${JSON.stringify({ anivoComposition: 1, ...c }, null, 2)}\n`);
+        const slots = compositionSlots(c);
+        return text(`Saved ${a.file}: ${c.elements.length} elements, ${c.steps.length} steps.${slots.length ? ` Texts (slots): ${slots.map((x) => `${x.id}="${x.text}"`).join(", ")}.` : ""}`);
+      }),
+  );
+
+  server.registerTool(
+    "anivo_comp_insert",
+    {
+      title: "Insert a composition",
+      description: "Insert a composition file into a scene: the elements get new IDs at a place, and the steps come after a step (or at the end). Set its texts with 'texts' (slot ID to text).",
+      inputSchema: {
+        scene: sceneArg,
+        file: z.string().describe("Composition file path inside the scene folder."),
+        x: z.number().default(100),
+        y: z.number().default(100),
+        after: z.string().optional().describe("Step ID: the steps of the composition come after it."),
+        texts: z.record(z.string(), z.string()).optional().describe("New texts, by composition element ID (from anivo_comp_save)."),
+      },
+    },
+    async (a) =>
+      run(() => {
+        const data = JSON.parse(readFileSync(inside(a.file), "utf8")) as Composition & { anivoComposition?: number };
+        if (data.anivoComposition !== 1 || !Array.isArray(data.elements) || !Array.isArray(data.steps)) throw new ToolError(`'${a.file}' is not an Anivo composition file.`);
+        const path = sceneFile(a.scene);
+        const bus = new OperationBus(readSceneFile(path));
+        const ins = insertCompositionOps(bus.scene, data, { x: a.x, y: a.y }, a.after, a.texts ?? {});
+        const r = bus.apply({ label: `Insert ${data.name}`, ops: ins.ops });
+        if (!r.ok) throw new ToolError(r.error.message, r.error.hint);
+        writeSceneFile(path, bus.scene);
+        return text(`Inserted '${data.name}': ${ins.ids.join(", ")} and ${ins.steps} steps.`);
       }),
   );
 

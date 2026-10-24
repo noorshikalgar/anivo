@@ -52,7 +52,17 @@ export function compositionOf(scene: Scene, ids: string[], name: string, id: str
       title: s.title,
       holdMs: s.holdMs,
       ...(s.caption && (!s.caption.anchor || keep.has(s.caption.anchor)) ? { caption: s.caption } : {}),
-      actions: s.actions.filter((a) => a.targets.length > 0 && a.targets.every((t) => keep.has(t))),
+      actions: (() => {
+        const kept = s.actions.filter((a) => a.targets.length > 0 && a.targets.every((t) => keep.has(t)));
+        const ids = new Set(kept.map((a) => a.id));
+        // A chain to an action that stays behind is dropped.
+        return kept.map((a) => {
+          if (!a.after || ids.has(a.after)) return a;
+          const { after: _x, ...rest } = a;
+          void _x;
+          return rest as Action;
+        });
+      })(),
     }))
     .filter((s) => s.actions.length > 0);
   return { id, name, width: box.width, height: box.height, elements: moved, steps, savedAt };
@@ -116,11 +126,23 @@ export function insertCompositionOps(scene: Scene, c: Composition, at: { x: numb
   }
   let index = afterStep ? scene.steps.findIndex((s) => s.id === afterStep) + 1 : scene.steps.length;
   if (index <= 0) index = scene.steps.length;
+  // Action IDs: kept when they are free, so chains (`after`) still point at the right action (audit: anivo comp insert).
+  const takenActions = new Set(scene.steps.flatMap((st) => st.actions.map((x) => x.id)));
+  const actionId = new Map<string, string>();
+  for (const st of c.steps)
+    for (const a of st.actions) {
+      let n = a.id;
+      for (let k = 2; takenActions.has(n); k++) n = `${a.id}-${k}`;
+      takenActions.add(n);
+      actionId.set(a.id, n);
+    }
   for (const s of c.steps) {
     const actions = s.actions.map((a) => {
-      const { id: _a, ...rest } = a as Action & Record<string, unknown>;
+      const { id: _a, after, ...rest } = a as Action & Record<string, unknown>;
       void _a;
-      const out: Record<string, unknown> = { ...rest, targets: a.targets.map(r) };
+      const out: Record<string, unknown> = { ...rest, id: actionId.get(a.id), targets: a.targets.map(r) };
+      // A chain to an action that is not in the composition starts at the step start.
+      if (typeof after === "string" && actionId.has(after)) out["after"] = actionId.get(after);
       if (a.type === "motion" && a.motion.along) out["motion"] = { ...a.motion, along: r(a.motion.along) };
       if (a.type === "flow" && a.flow.chainFrom) out["flow"] = { ...a.flow, chainFrom: r(a.flow.chainFrom) };
       return out;

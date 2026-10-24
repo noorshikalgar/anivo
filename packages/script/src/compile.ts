@@ -1,5 +1,5 @@
 import { type LayoutKind, autoLayout } from "@anivo/layout";
-import { BUILTIN_PRESETS, type OperationInput, SEND_MS, WIDGETS, getPreset, getWidget, widgetOps } from "@anivo/ops";
+import { BUILTIN_PRESETS, BUILTIN_STYLES, type OperationInput, SEND_MS, WIDGETS, getPreset, getWidget, widgetOps } from "@anivo/ops";
 import type { Scene } from "@anivo/schema";
 import { type Line, type Pos, type ScriptError, type Token, parseLines } from "./syntax.js";
 
@@ -519,10 +519,17 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
       return;
     }
     const style: Record<string, unknown> = {};
+    // look=<name>: a ready-made style (docs/21 C12); other style keys change it.
+    const look = d.kv.get("look");
+    if (look) {
+      const preset = BUILTIN_STYLES.find((x) => x.id === look.v);
+      if (preset) Object.assign(style, preset.style);
+      else errors.push(err(look.pos, `The look '${look.v}' does not exist.`, `Use: ${BUILTIN_STYLES.map((x) => x.id).join(", ")}.`));
+    }
     const props: Record<string, unknown> = { x: round(d.x!), y: round(d.y!), width: round(d.w), height: round(d.h) };
     if (parentId) props["parentId"] = parentId;
     for (const [k, { v, pos }] of d.kv) {
-      if (["at", "size", "gap", "align", "spacing", "cols", "id", "lang", ...(d.kind === "image" ? ["asset", "fit"] : []), ...RELATIONS].includes(k)) {
+      if (["at", "size", "gap", "align", "spacing", "cols", "id", "lang", "look", ...(d.kind === "image" ? ["asset", "fit"] : []), ...RELATIONS].includes(k)) {
         continue;
       }
       if (k === "opacity") props["opacity"] = Number(v);
