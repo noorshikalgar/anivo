@@ -68,8 +68,9 @@ export function AddActionMenu({ iconOnly }: { iconOnly?: boolean }) {
   const none = selection.length === 0;
   const add = (action: Record<string, unknown>, name: string) => addAction({ targets: selection, ...action }, name);
   const step = useEditor((s) => s.selectedStep);
+  // autoSize: a long menu scrolls in the window instead of moving to find room (it moved without end).
   const sub = (title: string, type: "enter" | "exit" | "emphasis", effects: readonly string[]) => (
-    <Menu>
+    <Menu positioning={{ autoSize: true }}>
       <MenuTrigger disableButtonEnhancement>
         <MenuItem icon={actionIcon(type)} disabled={none}>
           {title}
@@ -87,7 +88,7 @@ export function AddActionMenu({ iconOnly }: { iconOnly?: boolean }) {
     </Menu>
   );
   return (
-    <Menu>
+    <Menu positioning={{ autoSize: true }}>
       <MenuTrigger disableButtonEnhancement>
         <MenuButtonSmall icon={<Add16Regular />} iconOnly={iconOnly} aria-label="Add action" disabled={none && step === null}>
           Add action
