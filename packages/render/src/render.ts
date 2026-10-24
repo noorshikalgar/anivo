@@ -821,38 +821,61 @@ function drawConnector(dc: DrawContext, f: ElementFrame, el: ConnectorElement): 
  */
 function drawAnnotations(dc: DrawContext, frames: ElementFrame[], cam: Rect4): void {
   const { ctx, theme } = dc;
+  // One dark layer with a hole for each element in the spotlight, so two spotlights do not darken each other.
+  const spots = frames.filter((f) => f.visible && f.spotlight && f.spotlight > 0 && f.type !== "connector" && f.type !== "group");
+  if (spots.length) {
+    const level = Math.max(...spots.map((f) => f.spotlight!));
+    // Holes that would overlap become one hole around both (overlapping holes would be dark again).
+    const pad = (b: Rect4) => ({ x: b.x - b.width * 0.35 - 60, y: b.y - b.height * 0.35 - 60, width: b.width * 1.7 + 120, height: b.height * 1.7 + 120 });
+    const hit = (a: Rect4, b: Rect4) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+    let holes: Rect4[] = spots.map((f) => ({ x: f.x, y: f.y, width: f.width, height: f.height }));
+    for (let merged = true; merged; ) {
+      merged = false;
+      outer: for (let i = 0; i < holes.length; i++)
+        for (let j = i + 1; j < holes.length; j++) {
+          const a = holes[i]!;
+          const b = holes[j]!;
+          if (!hit(pad(a), pad(b))) continue;
+          const x = Math.min(a.x, b.x);
+          const y = Math.min(a.y, b.y);
+          holes = [...holes.filter((_, k) => k !== i && k !== j), { x, y, width: Math.max(a.x + a.width, b.x + b.width) - x, height: Math.max(a.y + a.height, b.y + b.height) - y }];
+          merged = true;
+          break outer;
+        }
+    }
+    // Layers with a growing hole make a soft edge (no radial gradient: the SVG export has none).
+    const LAYERS = 6;
+    ctx.save();
+    ctx.fillStyle = `rgba(0,0,0,${((0.68 * level) / LAYERS).toFixed(4)})`;
+    for (let l = 0; l < LAYERS; l++) {
+      const k = 1 + l * 0.07;
+      ctx.beginPath();
+      // The frame, one way round; each hole, the other way round: the holes stay clear.
+      ctx.moveTo(cam.x - 10, cam.y - 10);
+      ctx.lineTo(cam.x + cam.width + 10, cam.y - 10);
+      ctx.lineTo(cam.x + cam.width + 10, cam.y + cam.height + 10);
+      ctx.lineTo(cam.x - 10, cam.y + cam.height + 10);
+      ctx.closePath();
+      for (const f of holes) {
+        const cx = f.x + f.width / 2;
+        const cy = f.y + f.height / 2;
+        const rx = ((f.width / 2) * 1.2 + 36) * k;
+        const ry = ((f.height / 2) * 1.2 + 36) * k;
+        for (let i = 0; i <= 48; i++) {
+          const t = -(i / 48) * Math.PI * 2;
+          if (i === 0) ctx.moveTo(cx + Math.cos(t) * rx, cy + Math.sin(t) * ry);
+          else ctx.lineTo(cx + Math.cos(t) * rx, cy + Math.sin(t) * ry);
+        }
+        ctx.closePath();
+      }
+      ctx.fill();
+    }
+    ctx.restore();
+  }
   for (const f of frames) {
     if (!f.visible || f.type === "connector" || f.type === "group") continue;
     const cx = f.x + f.width / 2;
     const cy = f.y + f.height / 2;
-    if (f.spotlight && f.spotlight > 0) {
-      const rx = (f.width / 2) * 1.2 + 36;
-      const ry = (f.height / 2) * 1.2 + 36;
-      // Layers with a growing hole make a soft edge (no radial gradient: the SVG export has none).
-      const LAYERS = 6;
-      ctx.save();
-      ctx.fillStyle = `rgba(0,0,0,${((0.68 * f.spotlight) / LAYERS).toFixed(4)})`;
-      for (let l = 0; l < LAYERS; l++) {
-        const k = 1 + l * 0.07;
-        ctx.beginPath();
-        // The frame, one way round; the hole, the other way round: the hole stays clear.
-        ctx.moveTo(cam.x - 10, cam.y - 10);
-        ctx.lineTo(cam.x + cam.width + 10, cam.y - 10);
-        ctx.lineTo(cam.x + cam.width + 10, cam.y + cam.height + 10);
-        ctx.lineTo(cam.x - 10, cam.y + cam.height + 10);
-        ctx.closePath();
-        for (let i = 0; i <= 48; i++) {
-          const t = -(i / 48) * Math.PI * 2;
-          const x = cx + Math.cos(t) * rx * k;
-          const y = cy + Math.sin(t) * ry * k;
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.closePath();
-        ctx.fill();
-      }
-      ctx.restore();
-    }
     if (f.circle && f.circle.p > 0 && f.circle.alpha > 0) {
       // A loose ellipse that goes a little past its start, as a hand draws it. Fixed wobble (no random).
       // Around the box, not inside it: an ellipse through the corners is about √2 times the half size.
