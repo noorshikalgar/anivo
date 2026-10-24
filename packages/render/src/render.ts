@@ -828,7 +828,7 @@ function drawAnnotations(dc: DrawContext, frames: ElementFrame[], cam: Rect4): v
     // Holes that would overlap become one hole around both (overlapping holes would be dark again).
     const pad = (b: Rect4) => ({ x: b.x - b.width * 0.35 - 60, y: b.y - b.height * 0.35 - 60, width: b.width * 1.7 + 120, height: b.height * 1.7 + 120 });
     const hit = (a: Rect4, b: Rect4) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
-    let holes: Rect4[] = spots.map((f) => ({ x: f.x, y: f.y, width: f.width, height: f.height }));
+    let holes: Rect4[] = spots.map((f) => f.markBox ?? { x: f.x, y: f.y, width: f.width, height: f.height });
     for (let merged = true; merged; ) {
       merged = false;
       outer: for (let i = 0; i < holes.length; i++)
@@ -874,13 +874,14 @@ function drawAnnotations(dc: DrawContext, frames: ElementFrame[], cam: Rect4): v
   }
   for (const f of frames) {
     if (!f.visible || f.type === "connector" || f.type === "group") continue;
-    const cx = f.x + f.width / 2;
-    const cy = f.y + f.height / 2;
     if (f.circle && f.circle.p > 0 && f.circle.alpha > 0) {
+      const box = f.markBox ?? f;
+      const cx = box.x + box.width / 2;
+      const cy = box.y + box.height / 2;
       // A loose ellipse that goes a little past its start, as a hand draws it. Fixed wobble (no random).
       // Around the box, not inside it: an ellipse through the corners is about √2 times the half size.
-      const rx = (f.width / 2) * 1.2 + 16;
-      const ry = (f.height / 2) * 1.32 + 14;
+      const rx = (box.width / 2) * 1.2 + 16;
+      const ry = (box.height / 2) * 1.32 + 14;
       const turns = 1.08;
       const n = 72;
       const shown = Math.max(2, Math.round(n * f.circle.p));
@@ -895,7 +896,7 @@ function drawAnnotations(dc: DrawContext, frames: ElementFrame[], cam: Rect4): v
         else ctx.lineTo(x, y);
       }
       ctx.strokeStyle = toCss(withAlpha(resolveToken(theme, f.circle.color, "stroke", "rectangle"), f.circle.alpha));
-      ctx.lineWidth = Math.max(5, Math.min(f.width, f.height) * 0.04);
+      ctx.lineWidth = Math.max(5, Math.min(box.width, box.height) * 0.04);
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
       ctx.stroke();
