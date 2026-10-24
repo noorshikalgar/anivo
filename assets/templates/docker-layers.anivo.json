@@ -18,7 +18,7 @@
       "height": 60,
       "seed": 409318666,
       "style": {
-        "fontSize": 44,
+        "fontSize": 52,
         "fontWeight": 700
       },
       "type": "text",
@@ -51,7 +51,8 @@
       },
       "seed": 1037866200,
       "style": {
-        "fill": "surface-strong"
+        "fill": "surface-strong",
+        "fontSize": 40
       },
       "type": "rectangle",
       "width": 520,
@@ -66,7 +67,8 @@
       },
       "seed": 453338240,
       "style": {
-        "fill": "surface-strong"
+        "fill": "surface-strong",
+        "fontSize": 40
       },
       "type": "rectangle",
       "width": 520,
@@ -81,7 +83,8 @@
       },
       "seed": 2033282293,
       "style": {
-        "fill": "surface-strong"
+        "fill": "surface-strong",
+        "fontSize": 40
       },
       "type": "rectangle",
       "width": 520,
@@ -97,6 +100,7 @@
       "seed": 609741375,
       "style": {
         "fill": "accent-soft",
+        "fontSize": 40,
         "stroke": "accent"
       },
       "type": "rectangle",
@@ -104,22 +108,6 @@
       "x": 700,
       "y": 420,
       "z": "zV"
-    },
-    "cached": {
-      "content": {
-        "text": "Cached layers reused. Only the top layer rebuilds."
-      },
-      "height": 70,
-      "seed": 1719355412,
-      "style": {
-        "fontSize": 38,
-        "textColor": "muted"
-      },
-      "type": "text",
-      "width": 1200,
-      "x": 360,
-      "y": 920,
-      "z": "zl"
     }
   },
   "steps": [
@@ -143,6 +131,10 @@
           "type": "enter"
         }
       ],
+      "caption": {
+        "side": "auto",
+        "text": "A Docker image is a stack of read-only layers."
+      },
       "id": "s1",
       "title": "An empty image"
     },
@@ -165,6 +157,10 @@
           "type": "enter"
         }
       ],
+      "caption": {
+        "side": "auto",
+        "text": "Each line of the Dockerfile adds one layer."
+      },
       "id": "s2",
       "title": "Layers stack up"
     },
@@ -214,17 +210,12 @@
             "deps"
           ],
           "type": "emphasis"
-        },
-        {
-          "delayMs": 1200,
-          "effect": "fade",
-          "id": "a8",
-          "targets": [
-            "cached"
-          ],
-          "type": "enter"
         }
       ],
+      "caption": {
+        "side": "auto",
+        "text": "Change the code: only the top layer builds again."
+      },
       "holdMs": 1500,
       "id": "s3",
       "title": "Code changes"

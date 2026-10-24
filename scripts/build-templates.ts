@@ -197,13 +197,17 @@ function fromSource(name: string): Scene {
   const mmd = `scripts/templates/${name}.mmd`;
   const t = TEMPLATES.find((x) => x.name === name)!;
   const scene = importMermaid(readFileSync(mmd, "utf8"), { title: t.title }).scene;
+  // (Only used when there is no .anivo.txt for the template.)
   // The built-in templates use the Studio look (docs/27).
   return { ...scene, settings: { ...scene.settings, theme: "studio-dark", background: { ...scene.settings.background, kind: "gradient" } } };
 }
 
 // load-balancer: scripts/templates/load-balancer.anivo.txt (docs/27). The editor tests use a frozen copy of the first version (packages/schema/fixtures).
+// tcp-handshake and docker-layers: scripts/templates too.
 void loadBalancer;
-const built: Record<string, Scene> = { "tcp-handshake": tcp, "docker-layers": docker };
+void tcp;
+void docker;
+const built: Record<string, Scene> = {};
 const out: [string, Scene][] = TEMPLATES.map((t) => [t.name, built[t.name] ?? fromSource(t.name)]);
 for (const [name, scene] of out) {
   const errors = lintScene(scene).filter((l) => l.level === "error");
