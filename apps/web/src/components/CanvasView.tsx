@@ -1,11 +1,11 @@
 import { EmptyCanvas } from "./EmptyCanvas.js";
 import { LIBRARY_MIME, dropLibraryItem } from "./LibraryPanel.js";
 import { keyTimesOf, motionPath } from "../motionPath.js";
-import { type FrameState, evaluate } from "@anivo/engine";
+import { type FrameState, evaluate, resolveTimeline } from "@anivo/engine";
 import { formatTime } from "./PlaybackBar.js";
 import { type Polyline, evaluateWithLayout } from "@anivo/layout";
 import { type Ctx2D, renderFrame } from "@anivo/render";
-import type { Point } from "@anivo/schema";
+import type { Point, Scene } from "@anivo/schema";
 import { makeStyles, mergeClasses, tokens } from "@fluentui/react-components";
 import { useEffect, useRef } from "react";
 import { insertImage } from "../images.js";
@@ -35,6 +35,26 @@ import { addDrawnPath, addElement, commitGeometry, movableIds } from "../command
 import { TextEditor } from "./TextEditor.js";
 import { ToolPalette } from "./ToolPalette.js";
 import { useEditor } from "../store.js";
+
+/**
+ * Elements that showed in an earlier step and are gone at time t (an exit):
+ * no ghost for them, so a title that left does not sit over the diagram.
+ * Cached for each scene and step.
+ */
+const goneCache = new WeakMap<object, Map<number, Set<string>>>();
+function goneBefore(scene: Scene, t: number): Set<string> {
+  const tl = resolveTimeline(scene);
+  const i = t < 0 ? -1 : tl.steps.findIndex((s) => t < s.holdEndMs);
+  const step = i < 0 ? (t < 0 ? -1 : tl.steps.length - 1) : i;
+  let byStep = goneCache.get(scene);
+  if (!byStep) goneCache.set(scene, (byStep = new Map()));
+  const hit = byStep.get(step);
+  if (hit) return hit;
+  const seen = new Set<string>();
+  for (let k = 0; k < step; k++) for (const f of evaluate(scene, Math.max(0, tl.steps[k]!.holdEndMs - 1)).elements) if (f.visible && f.opacity > 0.05) seen.add(f.id);
+  byStep.set(step, seen);
+  return seen;
+}
 
 type Drag =
   | { kind: "move"; start: Point; ids: string[]; boxes: Map<string, Box>; dx: number; dy: number; moved: boolean; others: Box[]; guides: GuideLine[] }
@@ -150,7 +170,7 @@ export function CanvasView() {
     } else if (d && d.kind === "resize") {
       result = previewFrame(scene, result.frame, new Map([[d.id, d.next]]));
     }
-    renderFrame(ctx as unknown as Ctx2D, scene, result.frame, result.routes, { width: canvas.width, height: canvas.height, camera, ghostHidden: playing || recording || takes || !showGhosts ? 0 : GHOST, skipIds: editorHiddenIds(scene) });
+    renderFrame(ctx as unknown as Ctx2D, scene, result.frame, result.routes, { width: canvas.width, height: canvas.height, camera, ghostHidden: playing || recording || takes || !showGhosts ? 0 : GHOST, noGhost: goneBefore(scene, t), skipIds: editorHiddenIds(scene) });
     drawOverlay(overlay, camera, result);
   }
 
