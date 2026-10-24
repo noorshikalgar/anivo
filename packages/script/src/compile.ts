@@ -1071,6 +1071,7 @@ function compileAction(line: Line, resolveTargets: (t: Token[], pos: Pos) => str
       if (["count", "scale", "amplitude", "degrees", "width"].includes(k)) params[k] = Number(v);
       else if (k === "color") params["color"] = v;
       else if (k === "dim") params["dimTo"] = Number(v);
+      else if (k === "shape" && ["circle", "box", "underline"].includes(v)) params["shape"] = v;
       else errors.push(err(pos, `The property '${k}' is not known for ${verb}.`, "Use: dur, count, scale, color, dim."));
     }
     if (Object.keys(params).length) a["params"] = params;

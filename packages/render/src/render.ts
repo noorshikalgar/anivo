@@ -878,23 +878,52 @@ function drawAnnotations(dc: DrawContext, frames: ElementFrame[], cam: Rect4): v
       const box = f.markBox ?? f;
       const cx = box.x + box.width / 2;
       const cy = box.y + box.height / 2;
-      // A loose ellipse that goes a little past its start, as a hand draws it. Fixed wobble (no random).
-      // Around the box, not inside it: an ellipse through the corners is about √2 times the half size.
-      const rx = (box.width / 2) * 1.2 + 16;
-      const ry = (box.height / 2) * 1.32 + 14;
-      const turns = 1.08;
-      const n = 72;
-      const shown = Math.max(2, Math.round(n * f.circle.p));
+      // A hand-drawn mark (docs/25 K2, docs/29): a loose path with a fixed wobble (no random), drawn up to p.
+      const pts: { x: number; y: number }[] = [];
+      const shape = f.circle.shape ?? "circle";
+      if (shape === "circle") {
+        // An ellipse through the corners is about √2 times the half size; it goes a little past its start.
+        const rx = (box.width / 2) * 1.2 + 16;
+        const ry = (box.height / 2) * 1.32 + 14;
+        const n = 72;
+        for (let i = 0; i <= n; i++) {
+          const t = (i / n) * 1.08 * Math.PI * 2 - Math.PI * 0.6;
+          const wob = 1 + 0.035 * Math.sin(t * 3 + 1.3) + 0.02 * (i / n);
+          pts.push({ x: cx + Math.cos(t) * rx * wob, y: cy + Math.sin(t) * ry * wob });
+        }
+      } else if (shape === "box") {
+        // A rough rectangle, the last side a little past the first corner.
+        const pad = 14;
+        const x0 = box.x - pad;
+        const y0 = box.y - pad;
+        const x1 = box.x + box.width + pad;
+        const y1 = box.y + box.height + pad;
+        const corners = [
+          { x: x0 + 6, y: y0 - 3 },
+          { x: x1 + 4, y: y0 + 2 },
+          { x: x1 - 2, y: y1 + 4 },
+          { x: x0 - 3, y: y1 - 2 },
+          { x: x0 + 2, y: y0 + 10 },
+        ];
+        for (let c = 0; c < corners.length - 1; c++) for (let i = 0; i < 18; i++) {
+          const a = corners[c]!;
+          const b = corners[c + 1]!;
+          const t = i / 18;
+          pts.push({ x: a.x + (b.x - a.x) * t + Math.sin(t * Math.PI) * 3, y: a.y + (b.y - a.y) * t + Math.sin(t * Math.PI * 2) * 2 });
+        }
+        pts.push(corners[corners.length - 1]!);
+      } else {
+        // An underline that rises a little to the right, as a quick stroke.
+        const y = box.y + box.height + 12;
+        for (let i = 0; i <= 40; i++) {
+          const t = i / 40;
+          pts.push({ x: box.x - 6 + (box.width + 12) * t, y: y + 4 - 8 * t + Math.sin(t * Math.PI * 3) * 2 });
+        }
+      }
+      const shown = Math.max(2, Math.round(pts.length * f.circle.p));
       ctx.save();
       ctx.beginPath();
-      for (let i = 0; i <= shown; i++) {
-        const t = (i / n) * turns * Math.PI * 2 - Math.PI * 0.6;
-        const wob = 1 + 0.035 * Math.sin(t * 3 + 1.3) + 0.02 * (i / n);
-        const x = cx + Math.cos(t) * rx * wob;
-        const y = cy + Math.sin(t) * ry * wob;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
+      pts.slice(0, shown).forEach((q, i) => (i === 0 ? ctx.moveTo(q.x, q.y) : ctx.lineTo(q.x, q.y)));
       ctx.strokeStyle = toCss(withAlpha(resolveToken(theme, f.circle.color, "stroke", "rectangle"), f.circle.alpha));
       ctx.lineWidth = Math.max(5, Math.min(box.width, box.height) * 0.04);
       ctx.lineCap = "round";

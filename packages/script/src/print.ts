@@ -276,6 +276,7 @@ function printAction(a: Action, index: number, prevId?: string): string {
     if (p.dimTo !== undefined) parts.push(`dim=${p.dimTo}`);
     if (p.amplitude !== undefined) parts.push(`amplitude=${p.amplitude}`);
     if (p.degrees !== undefined) parts.push(`degrees=${p.degrees}`);
+    if (p.shape && p.shape !== "circle") parts.push(`shape=${p.shape}`);
   }
   return parts.join(" ");
 }
