@@ -410,6 +410,7 @@ function applyTimedAction(state: StateMap, ta: TimedAction, t: number): void {
     const c = action.counter;
     const n = lerp(c.from, c.to, eased);
     f.label = c.format.replace("{n}", formatCount(n, c.decimals, c.style));
+    f.tabular = true;
   }
   state[ta.target] = f;
 }
@@ -425,7 +426,8 @@ export function formatCount(n: number, decimals: number, style: "plain" | "thous
   if (style === "thousands") return sign + group(a.toFixed(decimals));
   if (style === "compact") {
     const units: [number, string][] = [[1e12, "T"], [1e9, "B"], [1e6, "M"], [1e3, "K"]];
-    for (const [v, u] of units) if (a >= v) return sign + (a / v).toFixed(Math.max(decimals, 1)).replace(/\.0+$/, "") + u;
+    // The same number of decimals all the time, so the text does not change its length while it counts.
+    for (const [v, u] of units) if (a >= v) return sign + (a / v).toFixed(decimals) + u;
     return sign + a.toFixed(decimals);
   }
   if (style === "duration") {

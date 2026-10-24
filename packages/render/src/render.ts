@@ -146,12 +146,32 @@ function drawText(dc: DrawContext, f: ElementFrame, el: Element, text: string, b
   const x = align === "left" ? box.x + pad : align === "right" ? box.x + box.width - pad : box.x + box.width / 2;
   const y0 = box.y + box.height / 2 - ((lines.length - 1) * lineHeight) / 2;
   if ((f.cascade !== undefined && f.cascade < 1) || (f.scramble !== undefined && f.scramble < 1)) return drawLetters(dc, f, el, lines, x, y0, lineHeight, size, color, alpha);
+  if (f.tabular && !f.marks?.length) return drawTabular(ctx, lines, x, y0, lineHeight, align, shown);
   if (f.marks?.length || f.dimRest) return drawMarkedText(dc, f, el, text, lines, x, y0, lineHeight, size, color, alpha, shown);
   lines.forEach((line, i) => {
     if (shown <= 0) return;
     const part = line.slice(0, shown);
     shown -= line.length + 1;
     ctx.fillText(part, x, y0 + i * lineHeight);
+  });
+}
+
+/** Text with digits of the same width (a counting number), so it does not shake while it counts. */
+function drawTabular(ctx: Ctx2D, lines: string[], x: number, y0: number, lineHeight: number, align: "left" | "center" | "right", shown: number): void {
+  const digit = Math.max(...[..."0123456789"].map((d) => ctx.measureText(d).width));
+  const adv = (ch: string) => (ch >= "0" && ch <= "9" ? digit : ctx.measureText(ch).width);
+  ctx.textAlign = "center";
+  lines.forEach((line, i) => {
+    if (shown <= 0) return;
+    const part = line.slice(0, shown);
+    shown -= line.length + 1;
+    const width = [...line].reduce((w, ch) => w + adv(ch), 0);
+    let cx = align === "left" ? x : align === "right" ? x - width : x - width / 2;
+    for (const ch of part) {
+      const w = adv(ch);
+      ctx.fillText(ch, cx + w / 2, y0 + i * lineHeight);
+      cx += w;
+    }
   });
 }
 

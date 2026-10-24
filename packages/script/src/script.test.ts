@@ -43,6 +43,16 @@ function ok(text: string) {
 }
 
 describe("Anivo Script", () => {
+  it("chains an action after the one before it, and prints the chain again (docs/21 C7)", () => {
+    const scene = ok(`box a "A"\nbox b "B" right-of=a\nstep "S"\n  enter a fade dur=500ms\n  enter b rise after=prev +100ms order=reverse`);
+    const [x, y] = scene.steps[0]!.actions;
+    expect(y!.after).toBe(x!.id);
+    expect(y!.delayMs).toBe(100);
+    expect(y!.staggerOrder).toBe("reverse");
+    const again = ok(printScene(scene));
+    expect(again.steps[0]!.actions[1]!.after).toBe(again.steps[0]!.actions[0]!.id);
+  });
+
   it("compiles the docs/09 Example A except the caption inside a step", () => {
     const r = applyScript(EXAMPLE_A);
     expect(r.ok).toBe(false);

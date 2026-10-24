@@ -144,6 +144,30 @@ export function resolveTimeline(scene: Scene): Timeline {
 
     const actions: TimedAction[] = [];
     let contentEnd = startMs;
+    // Chains (docs/21 C7): an action with `after` starts when that action ends.
+    const byId = new Map(step.actions.map((a) => [a.id, a]));
+    const bases = new Map<string, number>();
+    const visiting = new Set<string>();
+    const endOf = (a: Action): number => {
+      const targets = a.type === "camera" || (a.type === "wait" && a.targets.length === 0) ? [""] : expand(a.targets);
+      let longest = 0;
+      for (const t of targets) longest = Math.max(longest, defaultDurationMs(a, labelLength(scene, t)));
+      // The last start: the highest rank (from the center has fewer ranks than targets).
+      const lastRank = Math.max(0, ...staggerRanks(targets.length, a.staggerOrder, a.id));
+      return baseOf(a) + a.delayMs + lastRank * a.staggerMs + longest;
+    };
+    const baseOf = (a: Action): number => {
+      const known = bases.get(a.id);
+      if (known !== undefined) return known;
+      const ref = a.after !== undefined ? byId.get(a.after) : undefined;
+      // A chain that comes back to itself starts at the step start.
+      if (!ref || visiting.has(a.id)) return startMs;
+      visiting.add(a.id);
+      const b = endOf(ref);
+      visiting.delete(a.id);
+      bases.set(a.id, b);
+      return b;
+    };
     for (const action of step.actions) {
       const ease = actionEase(action);
       // A camera action is one action for all its targets. A wait has no target.
@@ -153,7 +177,7 @@ export function resolveTimeline(scene: Scene): Timeline {
       const rank = staggerRanks(targets.length, action.staggerOrder, action.id);
       targets.forEach((target, targetIndex) => {
         const duration = defaultDurationMs(action, labelLength(scene, target));
-        const s = startMs + action.delayMs + rank[targetIndex]! * action.staggerMs;
+        const s = baseOf(action) + action.delayMs + rank[targetIndex]! * action.staggerMs;
         const e = s + duration;
         if (target !== "" || action.type === "camera") actions.push({ action, target, targetIndex, startMs: s, endMs: e, ease, ...(focusTargets ? { focusTargets } : {}), ...(cameraTargets ? { cameraTargets } : {}) });
         contentEnd = Math.max(contentEnd, e);

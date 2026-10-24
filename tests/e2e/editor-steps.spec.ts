@@ -124,7 +124,11 @@ test("a quick action with no selection asks for the elements, and After previous
   expect(s.activeAction).toBe((pulse as unknown as { id: string }).id);
   await page.getByRole("button", { name: "After previous" }).click();
   s = (await state(page)) as unknown as S;
-  expect(s.scene.steps.find((x) => x.id === "s-pods")!.actions.at(-1)!.delayMs).toBeGreaterThan(400);
+  const chained = s.scene.steps.find((x) => x.id === "s-pods")!.actions.at(-1) as unknown as { after?: string; delayMs: number };
+  const prevId = (s.scene.steps.find((x) => x.id === "s-pods")!.actions.at(-2) as unknown as { id: string }).id;
+  expect(chained).toMatchObject({ after: prevId, delayMs: 0 });
+  // The chain starts the pulse after the action before it ends.
+  await expect(page.getByRole("button", { name: "Unchain" })).toBeVisible();
 });
 
 test("a two-way flow gets own settings for the way back", async ({ page }) => {

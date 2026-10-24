@@ -109,6 +109,7 @@ const actionBase = {
   id: ActionId,
   targets: z.array(ElementId).min(1),
   delayMs: Ms.default(0),
+  after: ActionId.optional().describe("Chain (docs/21 C7): start when the action with this ID in the same step ends. delayMs is then the gap after it. If that action moves, this action moves with it."),
   durationMs: Ms.optional().describe("Omit to use the default duration for the action type."),
   easing: Easing.optional(),
   staggerMs: Ms.default(0),
@@ -150,7 +151,7 @@ export const CounterAction = z.object({
     style: z
       .enum(["plain", "thousands", "compact", "duration"])
       .optional()
-      .describe("How to write the number (docs/21 C9). thousands: 12,400. compact: 12.4K, 3.1M. duration: the number is seconds, written as 1:05 or 1:02:05. For currency or percent, put the sign in the format: '${n}', '{n}%'."),
+      .describe("How to write the number (docs/21 C9). thousands: 12,400. compact: 12.4K, 3.1M (with decimals=1). duration: the number is seconds, written as 1:05 or 1:02:05. For currency or percent, put the sign in the format: '${n}', '{n}%'."),
   }),
 });
 

@@ -95,10 +95,10 @@ export function printScene(scene: Scene): string {
     if (step.trigger.kind === "click") parts.push("click");
     if (step.notes) parts.push(`notes=${q(step.notes)}`);
     out.push(parts.join(" "));
-    for (const a of step.actions) {
+    step.actions.forEach((a, i) => {
       actionIndex++;
-      out.push(`  ${printAction(a, actionIndex)}`);
-    }
+      out.push(`  ${printAction(a, actionIndex, step.actions[i - 1]?.id)}`);
+    });
   }
   return `${out.join("\n")}\n`;
 }
@@ -158,9 +158,10 @@ function printConnector(c: ConnectorElement): string {
 
 const MORPH_OUT: Record<string, string> = { x: "x", y: "y", width: "width", height: "height", fill: "fill", stroke: "stroke", strokeWidth: "stroke-width", cornerRadius: "radius", opacity: "opacity", fontSize: "font-size", textColor: "color", label: "label", rotation: "rotate", shape: "shape" };
 
-function printAction(a: Action, index: number): string {
+function printAction(a: Action, index: number, prevId?: string): string {
   const parts: string[] = [];
   const common = () => {
+    if (a.after) parts.push(`after=${a.after === prevId ? "prev" : a.after}`);
     if (a.delayMs) parts.push(`+${a.delayMs}ms`);
     if (a.durationMs !== undefined) parts.push(`dur=${a.durationMs}ms`);
     if (a.staggerMs) parts.push(`stagger=${a.staggerMs}ms`);
@@ -173,6 +174,7 @@ function printAction(a: Action, index: number): string {
   if (a.type === "wait") {
     parts.push("wait", `${a.durationMs ?? 1000}ms`);
     if (a.delayMs) parts.push(`+${a.delayMs}ms`);
+    if (a.after) parts.push(`after=${a.after === prevId ? "prev" : a.after}`);
     if (a.id !== `a${index}`) parts.push(`id=${a.id}`);
     return parts.join(" ");
   }
