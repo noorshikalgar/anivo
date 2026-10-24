@@ -3,6 +3,7 @@ import { Search20Regular } from "@fluentui/react-icons";
 import { useMemo, useState } from "react";
 import {
   addStep,
+  changePace,
   alignSelection,
   autoLayoutSelection,
   commitSettings,
@@ -60,6 +61,8 @@ function commands(): Command[] {
     { title: "Present step by step", keys: "F5", run: () => (st.pause(), useEditor.setState({ presenting: true })) },
     { title: "Play or pause", keys: "Space", run: () => (st.playing ? st.pause() : st.play()) },
     { title: "Add step", keys: "N", run: addStep },
+    { title: "Slower pace: all times 25 % longer", run: () => changePace(1.25) },
+    { title: "Faster pace: all times 20 % shorter", run: () => changePace(0.8) },
     { title: "Open the library (widgets, compositions, presets)", run: () => useEditor.setState({ leftTab: "library" }) },
     { title: "Insert image", run: () => void withErrors(pickImage) },
     { title: "Insert table", run: () => void insertTable() },

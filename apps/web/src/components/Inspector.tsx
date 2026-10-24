@@ -2,6 +2,7 @@
  * The properties editor (docs/15): vertical tabs (Scene, Step, Element) and
  * collapsible panels with property rows.
  */
+import { changePace } from "../commands.js";
 import { StylesPanel } from "./StylesPanel.js";
 import { KeyLabel } from "./KeyButton.js";
 import { addFontFile } from "../fonts.js";
@@ -608,6 +609,16 @@ function SceneProperties() {
         )}
       </Panel>
       <Panel id="scene-video" title="Video">
+        <Prop label="Pace">
+          <div style={{ display: "flex", gap: 6 }}>
+            <Btn title="All times 25 % longer: delays, durations, holds, and transitions" onClick={() => changePace(1.25)}>
+              Slower
+            </Btn>
+            <Btn title="All times 20 % shorter" onClick={() => changePace(0.8)}>
+              Faster
+            </Btn>
+          </div>
+        </Prop>
         <Prop label="">
           <Check label="Motion blur for fast moves (in the video)" checked={settings.motionBlur ?? false} onChange={(v) => commitSettings({ motionBlur: v }, v ? "Motion blur on" : "Motion blur off")} />
         </Prop>

@@ -123,6 +123,8 @@ step "<title>" [hold=<time>] [cue=<time>] [caption="<one sentence>" [near=<id>] 
 - Themes: `slate-dark`, `slate-light`, `paper-light`, `night-dark`, `pop-light` (bold lines, bright fills, hard shadows), `neon-dark` (neon colors), `studio-dark` (near-black, one violet accent, soft cards: calm explainers).
 - Run `anivo print` (or call `anivo_scene_get` with format `script`) to see a scene in this language.
 
+If the video is too fast or too slow as a whole, run `anivo pace <scene> 1.25` (or 0.8) instead of changing each action.
+
 To check how a step moves (not only its end), call `anivo_filmstrip` with the step number.
 
 To use a part again in other scenes, save it with `anivo_comp_save` (elements with their animations) and insert it with `anivo_comp_insert` (set its texts with `texts`).
