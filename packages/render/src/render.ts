@@ -1087,6 +1087,18 @@ export function placeCaption(box: { width: number; height: number }, cap: { side
       }
     }
   });
+  // A crowded place: the top or the bottom band of the frame, if it covers less.
+  const xs = [a.x + a.width / 2 - box.width / 2, cam.x + margin, cam.x + (cam.width - box.width) / 2, cam.x + cam.width - margin - box.width];
+  for (const [y, x] of [cam.y + margin, cam.y + cam.height - margin - box.height].flatMap((y) => xs.map((x) => [y, x] as const))) {
+    const p = clamp({ x, y });
+    const c = { ...p, ...box };
+    let score = overlap(c, a) * 4 + 4000 + Math.abs(p.y - a.y) * 2;
+    for (const o of others) score += overlap(c, o) * (o.text ? 3 : 1);
+    if (score < bestScore - 1) {
+      bestScore = score;
+      best = p;
+    }
+  }
   return best;
 }
 
@@ -1104,7 +1116,7 @@ function drawStepCaption(dc: DrawContext, frame: FrameState, cap: NonNullable<Fr
   const lines = wrapText(ctx, cap.text, maxW - padX * 2);
   const textW = Math.max(...lines.map((l) => ctx.measureText(l).width));
   const box = { width: Math.ceil(textW + padX * 2 + bar), height: lines.length * lineH + padY * 2 };
-  const others = frame.elements.filter((e) => e.visible && e.opacity > 0.05 && e.type !== "group" && e.type !== "connector" && e.id !== cap.anchorId).map((e) => ({ x: e.x, y: e.y, width: e.width, height: e.height, text: e.type === "text" || !!e.label }));
+  const others = cap.avoid ?? frame.elements.filter((e) => e.visible && e.opacity > 0.05 && e.type !== "group" && e.type !== "connector" && e.id !== cap.anchorId).map((e) => ({ x: e.x, y: e.y, width: e.width, height: e.height, text: e.type === "text" || !!e.label }));
   const p = placeCaption(box, cap, cam, others);
   ctx.save();
   ctx.globalAlpha = cap.opacity;

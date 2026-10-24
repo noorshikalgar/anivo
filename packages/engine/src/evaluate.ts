@@ -384,7 +384,7 @@ function motionPath(m: MotionParams) {
 }
 
 /** Motion path (FR-STEP-15): the element center at the eased share of the path length. */
-function applyMotion(f: ElementFrame, m: MotionParams, p: number): void {
+function applyMotion(f: ElementFrame, m: MotionParams, p: number, off = { dx: 0, dy: 0 }): void {
   const { pts, cum } = motionPath(m);
   const total = cum[cum.length - 1]!;
   const d = Math.min(1, Math.max(0, p)) * total;
@@ -394,8 +394,8 @@ function applyMotion(f: ElementFrame, m: MotionParams, p: number): void {
   const b = pts[i]!;
   const seg = cum[i]! - cum[i - 1]!;
   const t = seg > 0 ? (d - cum[i - 1]!) / seg : 1;
-  f.x = a.x + (b.x - a.x) * t - f.width / 2;
-  f.y = a.y + (b.y - a.y) * t - f.height / 2;
+  f.x = a.x + (b.x - a.x) * t - f.width / 2 + off.dx;
+  f.y = a.y + (b.y - a.y) * t - f.height / 2 + off.dy;
   if (m.orient && seg > 0) f.rotation = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
 }
 
@@ -421,7 +421,7 @@ function applyTimedAction(state: StateMap, ta: TimedAction, t: number): void {
   else if (action.type === "mark") applyMark(f, action.mark, eased);
   else if (action.type === "emphasis" && raw < 1) applyEmphasis(f, action, raw);
   else if (action.type === "code") applyCode(f, action.code, eased);
-  else if (action.type === "motion") applyMotion(f, action.motion, eased);
+  else if (action.type === "motion") applyMotion(f, action.motion, eased, ta.moveOffset);
   else if (action.type === "counter") {
     const c = action.counter;
     const n = lerp(c.from, c.to, eased);
@@ -680,7 +680,7 @@ export function evaluateAt(prepared: Prepared, timeMs: number, opts: EvaluateOpt
       break;
     }
   }
-  const caption = i >= 0 ? stepCaptionAt(scene, timeline.steps, i, t, state) : undefined;
+  const caption = i >= 0 ? stepCaptionAt(scene, timeline.steps, i, t, boundaries) : undefined;
   const followed = applyFollow(scene, base, state);
   return { timeMs: Math.max(0, t), elements: order.map((id) => followed[id] ?? state[id]!), particles, camera, ...(caption ? { caption } : {}), ...(transition ? { transition } : {}) };
 }
@@ -739,7 +739,7 @@ function anchorBox(scene: Scene, id: string, state: StateMap): Rect | undefined 
 }
 
 /** The caption of step i at time t. A step with no caption fades out the caption of the step before. */
-function stepCaptionAt(scene: Scene, steps: TimedStep[], i: number, t: number, state: StateMap): CaptionFrame | undefined {
+function stepCaptionAt(scene: Scene, steps: TimedStep[], i: number, t: number, boundaries: StateMap[]): CaptionFrame | undefined {
   let k = i;
   let fadeOut = 1;
   if (!steps[i]!.caption) {
@@ -753,9 +753,14 @@ function stepCaptionAt(scene: Scene, steps: TimedStep[], i: number, t: number, s
   if (t < timing.startMs) return undefined;
   const reveal = timing.typedMs <= timing.startMs ? 1 : Math.min(1, (t - timing.startMs) / (timing.typedMs - timing.startMs));
   const fadeIn = Math.min(1, (t - timing.startMs) / 150);
+  // The place comes from the end of the step, so the caption does not move while elements move.
+  const state = boundaries[k]!;
   const anchorId = c.side === "top" || c.side === "bottom" ? undefined : (c.anchor ?? ts.actions.find((a) => a.target !== "" && state[a.target]?.type !== "connector")?.target);
   const anchor = anchorId ? anchorBox(scene, anchorId, state) : undefined;
-  return { text: c.text, reveal, opacity: Math.max(0, Math.min(fadeIn, fadeOut)), side: c.side, ...(anchor ? { anchor, anchorId } : {}) };
+  const avoid = Object.values(state)
+    .filter((e) => e.visible && e.opacity > 0.05 && e.type !== "group" && e.type !== "connector" && e.id !== anchorId)
+    .map((e) => ({ x: e.x, y: e.y, width: e.width, height: e.height, text: e.type === "text" || !!e.label }));
+  return { text: c.text, reveal, opacity: Math.max(0, Math.min(fadeIn, fadeOut)), side: c.side, avoid, ...(anchor ? { anchor, anchorId } : {}) };
 }
 
 const preparedCache = new WeakMap<Scene, Prepared>();

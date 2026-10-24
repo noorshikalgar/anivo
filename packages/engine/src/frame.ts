@@ -126,9 +126,14 @@ export interface CaptionFrame {
   reveal: number;
   opacity: number;
   side: "auto" | "above" | "below" | "left" | "right" | "top" | "bottom";
-  /** The box of the anchor element now, in scene pixels. None: the caption uses a band. */
+  /** The box of the anchor element at the end of the step, in scene pixels. None: the caption uses a band. */
   anchor?: Rect;
   anchorId?: string;
+  /**
+   * The boxes to keep clear, at the end of the step (text marked). The caption
+   * stays in one place for the whole step, also when elements move.
+   */
+  avoid?: (Rect & { text: boolean })[];
 }
 
 export interface FrameState {
