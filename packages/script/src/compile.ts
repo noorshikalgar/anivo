@@ -227,6 +227,8 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
       if (style) set["style"] = style;
       const theme = p.kv.get("theme")?.v;
       if (theme) set["theme"] = theme;
+      const captionPace = p.kv.get("captions")?.v;
+      if (captionPace && ["relaxed", "normal", "quick"].includes(captionPace)) set["captionPace"] = captionPace;
       const video: Record<string, number> = {};
       const sz = p.kv.get("size");
       if (sz) {

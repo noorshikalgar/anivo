@@ -38,9 +38,11 @@ export interface TimedStep {
  * Caption timing (docs/17 P4): it types at about 28 characters each second (at
  * most 2 s), then it stays for reading: 0.45 s for each word, minimum 2.5 s.
  */
-export function captionTiming(text: string): { typeMs: number; readMs: number } {
+export function captionTiming(text: string, pace: "relaxed" | "normal" | "quick" = "relaxed"): { typeMs: number; readMs: number } {
   const words = text.trim().split(/\s+/).filter(Boolean).length;
-  return { typeMs: Math.min(2000, Math.round(text.length * 35)), readMs: Math.max(2500, words * 450) };
+  const perWord = pace === "quick" ? 250 : pace === "normal" ? 330 : 450;
+  const min = pace === "quick" ? 1500 : pace === "normal" ? 2000 : 2500;
+  return { typeMs: Math.min(2000, Math.round(text.length * 35)), readMs: Math.max(min, words * perWord) };
 }
 
 export interface TimelineWarning {
@@ -221,7 +223,7 @@ export function resolveTimeline(scene: Scene): Timeline {
     let caption: TimedStep["caption"];
     if (step.caption) {
       // The step holds until a viewer can read the caption.
-      const c = captionTiming(step.caption.text);
+      const c = captionTiming(step.caption.text, scene.settings.captionPace);
       caption = { startMs, typedMs: startMs + c.typeMs, readEndMs: startMs + c.typeMs + c.readMs };
       holdEndMs = Math.max(holdEndMs, caption.readEndMs);
     }

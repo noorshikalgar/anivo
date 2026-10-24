@@ -609,6 +609,16 @@ function SceneProperties() {
         )}
       </Panel>
       <Panel id="scene-video" title="Video">
+        <SelectField
+          label="Caption reading"
+          value={settings.captionPace ?? "relaxed"}
+          options={[
+            { value: "relaxed", text: "Relaxed (0.45 s a word)" },
+            { value: "normal", text: "Normal (0.33 s a word)" },
+            { value: "quick", text: "Quick (0.25 s a word)" },
+          ]}
+          onCommit={(v) => commitSettings({ captionPace: v === "relaxed" ? null : v }, "Change caption reading")}
+        />
         <Prop label="Pace">
           <div style={{ display: "flex", gap: 6 }}>
             <Btn title="All times 25 % longer: delays, durations, holds, and transitions" onClick={() => changePace(1.25)}>
