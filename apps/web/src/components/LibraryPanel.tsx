@@ -18,6 +18,10 @@ import { StyleTile } from "./StylesPanel.js";
 import { AreaHeader, Note, SearchBox } from "./ui.js";
 import { Thumb, builtInScene, userScene } from "./WidgetsGallery.js";
 import { insertComposition } from "../compositions.js";
+import { TEMPLATES } from "@anivo/schema";
+import { newFromTemplate } from "../files.js";
+import { withErrors } from "../notify.js";
+import { TemplateThumb } from "./TemplateGallery.js";
 
 /** The drag data type for a library item dropped on the canvas. */
 export const LIBRARY_MIME = "application/x-anivo-library";
@@ -91,7 +95,8 @@ export function LibraryPanel() {
   const compositions = comps.filter((c) => has(c.name));
   const motion = [...allBuiltins(), ...presets].filter((p) => has(p.name, p.description));
   const styles = [...builtinStyles(), ...looks].filter((p) => has(p.name));
-  const none = widgets.length + myWidgets.length + compositions.length + motion.length + styles.length === 0;
+  const templates = TEMPLATES.filter((t) => has(t.title, t.name, t.description));
+  const none = widgets.length + myWidgets.length + compositions.length + motion.length + styles.length + templates.length === 0;
   return (
     <section className={s.root} aria-label="Library">
       <AreaHeader title="Library">
@@ -144,6 +149,21 @@ export function LibraryPanel() {
             <div className={s.grid} style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
               {styles.map((p) => (
                 <StyleTile key={p.id} p={p} prefix="Library style" />
+              ))}
+            </div>
+          </>
+        )}
+        {templates.length > 0 && (
+          <>
+            <div className={s.head}>
+              Templates <span>open as a new scene</span>
+            </div>
+            <div className={s.grid}>
+              {templates.map((t) => (
+                <button key={t.name} type="button" className={s.tile} style={{ cursor: "pointer" }} title={t.description} aria-label={`Library template: ${t.title}`} onClick={() => void withErrors(() => newFromTemplate(t.name))}>
+                  <TemplateThumb name={t.name} />
+                  <span className={s.name}>{t.title}</span>
+                </button>
               ))}
             </div>
           </>

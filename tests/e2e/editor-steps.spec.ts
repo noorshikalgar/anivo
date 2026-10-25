@@ -447,3 +447,11 @@ test("Build: the selected diagram rises in reading order, then its arrows draw (
   expect(acts[0]!.targets[0]).toBe("pod-1");
   expect(acts[1]).toMatchObject({ effect: "draw-on", after: acts[0]!.id });
 });
+
+test("Library: templates open as a new scene", async ({ page }) => {
+  await page.getByRole("tab", { name: "Library" }).click();
+  const lib = page.getByRole("region", { name: "Library" });
+  await lib.getByRole("searchbox", { name: "Search the library" }).fill("handshake");
+  await lib.getByRole("button", { name: /Library template: TCP/ }).click();
+  await expect.poll(async () => (await state(page)).scene.meta.title).toBe("TCP three-way handshake");
+});
