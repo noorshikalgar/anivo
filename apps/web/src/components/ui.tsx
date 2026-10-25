@@ -7,17 +7,18 @@ import { ColorSwatch, Popover, PopoverSurface, PopoverTrigger, SwatchPicker, Too
 import { ChevronDown12Filled, ChevronLeft12Regular, ChevronRight12Filled, ChevronRight12Regular } from "@fluentui/react-icons";
 import { type ReactNode, forwardRef, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 
-export const H = "22px";
+/** The height of a control row (docs/35: roomier than before). */
+export const H = "26px";
 
 const useStyles = makeStyles({
   // --- panel
-  panel: { backgroundColor: "var(--ui-panel)", borderRadius: "4px", overflow: "hidden", flexShrink: 0 },
+  panel: { backgroundColor: "var(--ui-panel)", borderRadius: "6px", overflow: "hidden", flexShrink: 0 },
   panelHeader: {
     display: "flex",
     alignItems: "center",
     gap: "4px",
-    height: "24px",
-    padding: "0 4px 0 2px",
+    height: "30px",
+    padding: "0 6px 0 4px",
     backgroundColor: "var(--ui-panel-header)",
     color: "var(--ui-text)",
     fontSize: "12px",
@@ -39,9 +40,9 @@ const useStyles = makeStyles({
     ":focus-visible": { outline: "1px solid var(--ui-select)", outlineOffset: "-1px" },
   },
   chevron: { color: "var(--ui-muted)", display: "flex" },
-  panelBody: { display: "flex", flexDirection: "column", gap: "2px", padding: "6px 8px 8px" },
+  panelBody: { display: "flex", flexDirection: "column", gap: "6px", padding: "10px 12px 12px" },
   // --- property row
-  prop: { display: "grid", gridTemplateColumns: "40% minmax(0, 1fr)", alignItems: "center", columnGap: "8px", minHeight: H },
+  prop: { display: "grid", gridTemplateColumns: "36% minmax(0, 1fr)", alignItems: "center", columnGap: "10px", minHeight: H },
   propLabel: { textAlign: "right", color: "var(--ui-muted)", fontSize: "12px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
   propFull: { gridColumn: "1 / -1" },
   propTop: { alignItems: "start" },

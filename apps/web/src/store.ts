@@ -228,7 +228,7 @@ export function setLayout(p: Partial<LayoutPrefs>): void {
 export function setAreas(p: Partial<AreaSizes>): void {
   const areas = { ...useEditor.getState().areas, ...p };
   useEditor.setState({ areas });
-  writePref("anivo.areas", areas);
+  writePref("anivo.areas.v2", areas);
 }
 
 function emptyScene(): Scene {
@@ -320,7 +320,8 @@ export const useEditor = create<EditorState>((set, get) => {
     compositionsOpen: false,
     targetHighlight: [],
     layout: readPref("anivo.layout", { showGrid: false, snapGrid: true, snapObjects: true, gridSize: 8, onion: true }),
-    areas: readPref("anivo.areas", { left: 230, right: 300, outliner: 34, timeline: 200 }),
+    // v2 (docs/35): a wider right column, so names and values do not cut.
+    areas: readPref("anivo.areas.v2", { left: 240, right: 340, outliner: 30, timeline: 220 }),
     propTab: "scene",
     drawer: null,
     libraryId: null,
