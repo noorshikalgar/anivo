@@ -9,11 +9,11 @@ import { formatTime } from "./PlaybackBar.js";
 import { IconButton, MenuButtonSmall } from "./ui.js";
 
 const useStyles = makeStyles({
-  root: { display: "flex", alignItems: "center", gap: "4px", height: "26px", padding: "0 4px 0 6px", backgroundColor: "var(--ui-header)", color: "var(--ui-text)", fontSize: "12px", borderBottom: "1px solid var(--ui-line)", minWidth: 0 },
-  menu: { height: "22px", padding: "0 8px", border: "none", borderRadius: "4px", background: "none", color: "var(--ui-text)", font: "inherit", fontSize: "12px", cursor: "pointer", ":hover": { backgroundColor: "var(--ui-hover)" } },
+  root: { display: "flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 6px 0 8px", backgroundColor: "var(--ui-header)", color: "var(--ui-text)", fontSize: "12px", borderBottom: "1px solid var(--ui-line)", minWidth: 0 },
+  menu: { height: "26px", padding: "0 10px", border: "none", borderRadius: "4px", background: "none", color: "var(--ui-text)", font: "inherit", fontSize: "12px", cursor: "pointer", ":hover": { backgroundColor: "var(--ui-hover)" } },
   where: { flexGrow: 1, minWidth: 0, color: "var(--ui-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingLeft: "6px" },
   whereName: { color: "var(--ui-text)" },
-  zoom: { minWidth: "44px", height: "22px", padding: "0 6px", border: "none", borderRadius: "4px", backgroundColor: "var(--ui-widget)", color: "var(--ui-text)", font: "inherit", fontSize: "11px", fontVariantNumeric: "tabular-nums", cursor: "pointer", ":hover": { backgroundColor: "var(--ui-widget-hover)" } },
+  zoom: { minWidth: "48px", height: "26px", padding: "0 8px", border: "none", borderRadius: "4px", backgroundColor: "var(--ui-widget)", color: "var(--ui-text)", font: "inherit", fontSize: "11px", fontVariantNumeric: "tabular-nums", cursor: "pointer", ":hover": { backgroundColor: "var(--ui-widget-hover)" } },
 });
 
 export function ViewportHeader() {
