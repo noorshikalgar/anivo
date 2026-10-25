@@ -86,10 +86,12 @@ test("drag a block into another step: the action moves to that step, and one und
   const step4 = s0.timeline.steps[3]!;
   // From the block start to 0.5 s into step 4.
   const targetX = ruler.x + ((step4.startMs + 500) / span) * ruler.width;
-  await page.mouse.move(box.x + 2, box.y + box.height / 2);
+  // Grab the middle: the edges of a block change its start or length (docs/34).
+  const grab = box.width / 2;
+  await page.mouse.move(box.x + grab, box.y + box.height / 2);
   await page.mouse.down();
-  await page.mouse.move((box.x + targetX) / 2, box.y + box.height / 2, { steps: 5 });
-  await page.mouse.move(targetX, box.y + box.height / 2, { steps: 5 });
+  await page.mouse.move((box.x + targetX) / 2 + grab, box.y + box.height / 2, { steps: 5 });
+  await page.mouse.move(targetX + grab, box.y + box.height / 2, { steps: 5 });
   await page.mouse.up();
   const s1 = (await state(page)) as unknown as typeof s0 & { selectedStep: string };
   expect(s1.scene.steps[1]!.actions.some((a) => a.id === enter.id)).toBe(false);
