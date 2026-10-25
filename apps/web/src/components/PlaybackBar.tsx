@@ -70,7 +70,8 @@ export function PlaybackBar() {
 
   return (
     <div className={s.root}>
-      <div className={s.header}>
+      {/* Open: the left tools take the free space. Hidden: the play controls are in the center. */}
+      <div className={s.header} style={timelineOpen ? undefined : { gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)" }}>
         <div className={s.side}>
           <span className={s.title}>Timeline</span>
           <div id={TOOLS_LEFT} className={s.slot} />

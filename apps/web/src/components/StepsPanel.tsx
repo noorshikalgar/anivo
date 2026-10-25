@@ -21,22 +21,22 @@ const useStyles = makeStyles({
     position: "relative",
     display: "flex",
     alignItems: "center",
-    height: "22px",
-    paddingRight: "2px",
+    height: "30px",
+    paddingRight: "4px",
     ":hover": { backgroundColor: "var(--ui-hover)" },
     ":hover .step-more": { opacity: 1 },
   },
   alt: { backgroundColor: "var(--ui-list-alt)" },
   selected: { backgroundColor: "var(--ui-row-selected) !important", "--ui-muted": "var(--ui-muted-on-select)" } as never,
   dropBefore: { boxShadow: "inset 0 2px 0 var(--ui-select)" },
-  disclose: { width: "16px", height: "22px", display: "flex", alignItems: "center", justifyContent: "center", border: "none", background: "none", color: "var(--ui-muted)", padding: 0, cursor: "pointer", flexShrink: 0 },
+  disclose: { width: "20px", height: "30px", display: "flex", alignItems: "center", justifyContent: "center", border: "none", background: "none", color: "var(--ui-muted)", padding: 0, cursor: "pointer", flexShrink: 0 },
   item: {
     flexGrow: 1,
     minWidth: 0,
-    height: "22px",
+    height: "30px",
     display: "flex",
     alignItems: "center",
-    gap: "6px",
+    gap: "8px",
     padding: "0 4px 0 0",
     border: "none",
     background: "transparent",
@@ -50,13 +50,13 @@ const useStyles = makeStyles({
   title: { flexGrow: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
   meta: { color: "var(--ui-muted)", fontSize: "11px", fontVariantNumeric: "tabular-nums", flexShrink: 0 },
   icon: { display: "flex", color: "var(--ui-muted)", flexShrink: 0 },
-  child: { paddingLeft: "34px" },
+  child: { paddingLeft: "40px" },
   childActive: { color: "var(--ui-text)" },
-  more: { opacity: 0 },
-  rowThumb: { height: "44px" },
+  more: { opacity: 0, position: "absolute", right: "4px", top: "50%", transform: "translateY(-50%)", backgroundColor: "var(--ui-list) !important" },
+  rowThumb: { height: "52px" },
   metaLine: { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
-  stack: { flexGrow: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "1px", lineHeight: "15px" },
-  itemThumb: { height: "44px" },
+  stack: { flexGrow: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px", lineHeight: "16px" },
+  itemThumb: { height: "52px" },
   thumb: { width: "64px", height: "36px", borderRadius: "3px", flexShrink: 0, backgroundColor: "var(--ui-viewport)", outline: "1px solid var(--ui-line)" },
   empty: { color: "var(--ui-faint)", fontSize: "11px", padding: "6px 10px" },
 });
@@ -106,7 +106,7 @@ export function StepsPanel() {
 
   return (
     <nav className={s.root} aria-label="Steps">
-      <AreaHeader title="Steps">
+      <AreaHeader>
         <SearchBox label="Search steps" value={query} onChange={setQuery} />
         <IconButton label={thumbs ? "Hide step frames" : "Show step frames"} pressed={thumbs} icon={<Image16Regular />} onClick={() => useEditor.setState({ stepThumbs: !thumbs })} />
         <IconButton label="Add step (N)" icon={<Add16Regular />} onClick={addStep} />
