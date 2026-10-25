@@ -1,7 +1,8 @@
 /**
  * The timeline header and the time ruler (docs/15): play controls, the time,
  * and a ruler with one segment for each step. Click or drag the ruler to move
- * the playhead.
+ * the playhead. The timeline puts its own tools in the two slots of this bar
+ * (docs/36), so there is one bar, not two.
  */
 import { makeStyles, mergeClasses } from "@fluentui/react-components";
 import { GanttChart16Regular, Next16Filled, Pause16Filled, Play16Filled, Previous16Filled, ArrowPrevious16Filled, ArrowNext16Filled } from "@fluentui/react-icons";
@@ -11,9 +12,11 @@ import { IconButton } from "./ui.js";
 
 const useStyles = makeStyles({
   root: { display: "flex", flexDirection: "column", backgroundColor: "var(--ui-region)", color: "var(--ui-text)", fontSize: "12px" },
-  header: { display: "flex", alignItems: "center", gap: "2px", height: "26px", padding: "0 6px", backgroundColor: "var(--ui-header)" },
-  title: { fontWeight: 600, marginRight: "8px" },
-  transport: { display: "flex", alignItems: "center", gap: "1px", margin: "0 auto" },
+  header: { display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto auto", alignItems: "center", columnGap: "12px", height: "34px", padding: "0 8px 0 12px", backgroundColor: "var(--ui-header)", borderBottom: "1px solid var(--ui-line)" },
+  side: { display: "flex", alignItems: "center", gap: "6px", minWidth: 0 },
+  slot: { display: "flex", alignItems: "center", gap: "6px", minWidth: 0, overflow: "hidden" },
+  title: { fontWeight: 600, marginRight: "6px" },
+  transport: { display: "flex", alignItems: "center", gap: "1px" },
   play: { backgroundColor: "var(--ui-widget)", color: "var(--ui-text) !important" },
   time: { minWidth: "112px", height: "20px", padding: "0 8px", display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", backgroundColor: "var(--ui-field)", fontVariantNumeric: "tabular-nums", fontSize: "11px", marginLeft: "6px" },
   ruler: { position: "relative", height: "26px", margin: "0 8px", cursor: "ew-resize", touchAction: "none", userSelect: "none", outline: "none", ":focus-visible": { boxShadow: "inset 0 0 0 1px var(--ui-select)" } },
@@ -22,6 +25,10 @@ const useStyles = makeStyles({
   head: { position: "absolute", top: 0, bottom: 0, width: "2px", marginLeft: "-1px", backgroundColor: "var(--ui-select)", pointerEvents: "none" },
   headKnob: { position: "absolute", top: "-1px", left: "50%", transform: "translateX(-50%)", width: "8px", height: "8px", borderRadius: "2px", backgroundColor: "var(--ui-select)" },
 });
+
+/** The slots in the bar where the open timeline puts its tools. */
+export const TOOLS_LEFT = "timeline-tools-left";
+export const TOOLS_RIGHT = "timeline-tools-right";
 
 export function formatTime(ms: number): string {
   const s = ms / 1000;
@@ -64,7 +71,10 @@ export function PlaybackBar() {
   return (
     <div className={s.root}>
       <div className={s.header}>
-        <span className={s.title}>Timeline</span>
+        <div className={s.side}>
+          <span className={s.title}>Timeline</span>
+          <div id={TOOLS_LEFT} className={s.slot} />
+        </div>
         <div className={s.transport} role="group" aria-label="Playback">
           <IconButton label="Go to start" icon={<ArrowPrevious16Filled />} onClick={() => (pause(), setPlayhead(0))} />
           <IconButton label="Previous step" icon={<Previous16Filled />} onClick={() => go(-1)} />
@@ -76,7 +86,10 @@ export function PlaybackBar() {
             {rate !== 1 && <b title="Shuttle speed (J / L)"> {rate < 0 ? "◀" : "▶"} {Math.abs(rate)}×</b>}
           </span>
         </div>
-        <IconButton label={timelineOpen ? "Hide the timeline" : "Show the timeline"} pressed={timelineOpen} tool icon={<GanttChart16Regular />} onClick={() => useEditor.setState({ timelineOpen: !timelineOpen })} />
+        <div className={s.side} style={{ justifyContent: "flex-end" }}>
+          <div id={TOOLS_RIGHT} className={s.slot} />
+          <IconButton label={timelineOpen ? "Hide the timeline" : "Show the timeline"} pressed={timelineOpen} tool icon={<GanttChart16Regular />} onClick={() => useEditor.setState({ timelineOpen: !timelineOpen })} />
+        </div>
       </div>
       <div
         ref={ruler}
