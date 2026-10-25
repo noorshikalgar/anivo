@@ -284,3 +284,26 @@ test("effect blocks: Delete removes, the start edge keeps the end, the right-cli
   await page.keyboard.press("Delete");
   expect(await act()).toBeUndefined();
 });
+
+test("the timeline follows the selection: the track of a selected element scrolls into view (docs/37)", async ({ page }) => {
+  const s = (await state(page)) as unknown as { scene: { elements: Record<string, { type: string }> } };
+  const timeline = page.getByRole("region", { name: "Timeline" });
+  const box = timeline.getByLabel("Timeline tracks");
+  const tracks = timeline.getByRole("group", { name: /^Track / });
+  const ids = Object.entries(s.scene.elements).filter(([, e]) => e.type !== "group").map(([id]) => id);
+  // Select the element of the last track in the list.
+  const last = (await tracks.last().getAttribute("aria-label"))!.replace("Track ", "");
+  expect(ids).toContain(last);
+  await box.evaluate((el) => (el.scrollTop = 0));
+  const visible = async () => {
+    const t = (await tracks.last().boundingBox())!;
+    const b = (await box.boundingBox())!;
+    return t.y >= b.y && t.y + t.height <= b.y + b.height + 1;
+  };
+  expect(await visible()).toBe(false);
+  await page.evaluate((id) => (window as unknown as { __anivo: { setState: (s: object) => void } }).__anivo.setState({ selection: [id] }), last);
+  await expect.poll(visible).toBe(true);
+  // A first key on a property opens the track, so the new key row shows.
+  await page.getByLabel("Inspector").getByRole("button", { name: /^Add a keyframe at/ }).first().click();
+  await expect(timeline.getByRole("button", { name: `Hide the keyed properties of ${last}` })).toHaveAttribute("aria-expanded", "true");
+});

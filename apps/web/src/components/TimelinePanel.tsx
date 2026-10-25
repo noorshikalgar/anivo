@@ -24,6 +24,8 @@ import { Splitter } from "./ui.js";
 
 const LABEL_W = 200;
 const ROW_H = 28;
+/** The height of the sticky ruler over the tracks. */
+const RULER_H = 40;
 const MIN_MS = 50;
 /** Time after the end that the ruler shows, so a key can make the last step longer. */
 const TAIL_MS = 3000;
@@ -53,7 +55,7 @@ const useStyles = makeStyles({
   recDotOn: { backgroundColor: "#fff" },
   select: { height: "20px", fontSize: "11px", backgroundColor: "var(--ui-field)", color: "var(--ui-text)", border: "1px solid var(--ui-outline)", borderRadius: "3px" },
   scroll: { position: "relative", flexGrow: 1, overflow: "auto", minHeight: 0 },
-  ruler: { position: "sticky", top: 0, zIndex: 3, display: "flex", height: "40px", backgroundColor: "var(--ui-region)", borderBottom: "1px solid var(--ui-line)" },
+  ruler: { position: "sticky", top: 0, zIndex: 3, display: "flex", height: `${RULER_H}px`, backgroundColor: "var(--ui-region)", borderBottom: "1px solid var(--ui-line)" },
   corner: { position: "sticky", left: 0, zIndex: 4, width: `${LABEL_W}px`, flexShrink: 0, boxSizing: "border-box", padding: "4px 8px", backgroundColor: "var(--ui-region)", borderRight: "1px solid var(--ui-line)", color: "var(--ui-muted)", display: "flex", alignItems: "flex-end" },
   rulerTrack: { position: "relative", flexShrink: 0, cursor: "pointer" },
   section: { position: "absolute", top: 0, height: "18px", boxSizing: "border-box", padding: "0 6px", fontSize: "11px", lineHeight: "18px", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", borderLeft: "1px solid var(--ui-outline)", cursor: "pointer", ":hover": { backgroundColor: "var(--ui-hover)" } },
@@ -768,6 +770,28 @@ export function TimelinePanel() {
       }
     }
   };
+
+  // The timeline follows the selection (docs/37): the track of a selected
+  // element scrolls into view, and a new keyed property opens its track.
+  const focusId = selection[0];
+  const focusGroups = focusId ? new Set((rows.keys.get(focusId) ?? []).map((k) => k.group)).size : 0;
+  const lastGroups = useRef<{ id?: string; n: number }>({ n: 0 });
+  useEffect(() => {
+    if (!focusId) return;
+    const prev = lastGroups.current;
+    lastGroups.current = { id: focusId, n: focusGroups };
+    if (prev.id === focusId && focusGroups > prev.n) setOpen((o) => new Set(o).add(focusId));
+    requestAnimationFrame(() => {
+      const box = scrollRef.current;
+      const track = box?.querySelector<HTMLElement>(`[aria-label="Track ${CSS.escape(focusId)}"]`);
+      if (!box || !track) return;
+      const r = track.getBoundingClientRect();
+      const b = box.getBoundingClientRect();
+      const top = b.top + RULER_H;
+      if (r.top < top) box.scrollTop -= top - r.top;
+      else if (r.bottom > b.bottom) box.scrollTop += Math.min(r.bottom - b.bottom, r.top - top);
+    });
+  }, [focusId, focusGroups]);
 
   const shown = rows.ids.filter((id) => (filter === "all" ? true : filter === "selected" ? selection.includes(id) : (rows.blocks.get(id)?.length ?? 0) > 0 || (rows.keys.get(id)?.length ?? 0) > 0));
 
