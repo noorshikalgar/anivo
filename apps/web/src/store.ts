@@ -1,4 +1,4 @@
-import { type Timeline, resolveTimeline } from "@anivo/engine";
+import { type Timeline, resolveTimeline, stepIndexAt } from "@anivo/engine";
 import { OperationBus, type TransactionInput } from "@anivo/ops";
 import { type Scene, loadScene } from "@anivo/schema";
 import { create } from "zustand";
@@ -416,4 +416,17 @@ export const useEditor = create<EditorState>((set, get) => {
     setEditingText: (id) => set({ editingText: id }),
     setIconPicker: (at) => set({ iconPicker: at }),
   };
+});
+
+/**
+ * One cursor (docs/33): when the playhead moves (a scrub, a click on the
+ * ruler, the end of playback), the step under it becomes the current step.
+ * A click on a step pins the playhead to the step end; that does not count.
+ */
+useEditor.subscribe((s, prev) => {
+  if (s.playing || s.pinStepEnd || s.scene.steps.length === 0) return;
+  if (s.playhead === prev.playhead && !(prev.playing && !s.playing)) return;
+  const i = Math.max(0, stepIndexAt(s.timeline, s.playhead));
+  const id = s.timeline.steps[Math.min(i, s.timeline.steps.length - 1)]?.id ?? null;
+  if (id !== s.selectedStep) useEditor.setState({ selectedStep: id });
 });

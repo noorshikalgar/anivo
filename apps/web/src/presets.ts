@@ -6,6 +6,7 @@
 import { BUILTIN_PRESETS, type MotionPreset, capturePreset, presetOps } from "@anivo/ops";
 import { idbGet, idbSet } from "./idb.js";
 import { notify } from "./notify.js";
+import { delayAtPlayhead, ensureStep } from "./commands.js";
 import { useEditor } from "./store.js";
 
 const KEY = "motion-presets";
@@ -20,12 +21,14 @@ export function allBuiltins(): MotionPreset[] {
 
 /** Apply a preset to the selected elements in the selected step. */
 export function applyPreset(preset: MotionPreset): boolean {
-  const st = useEditor.getState();
-  if (st.selectedStep === null) {
-    notify("Select a step first (or press N for a new step).", "info");
+  if (useEditor.getState().selection.length === 0) {
+    notify("Select the elements first.", "info");
     return false;
   }
-  const ops = presetOps(st.scene, st.selectedStep, preset, st.selection);
+  const step = ensureStep();
+  if (step === null) return false;
+  const st = useEditor.getState();
+  const ops = presetOps(st.scene, step, preset, st.selection, { delayMs: delayAtPlayhead(step) });
   if ("error" in ops) {
     notify(ops.error, "info");
     return false;

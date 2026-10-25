@@ -1,6 +1,7 @@
 /**
  * The top bar (docs/15): the menus, the scene title, and the main commands.
  */
+import { ensureStep } from "../commands.js";
 import { Menu, MenuDivider, MenuItem, MenuList, MenuPopover, MenuTrigger, Tooltip, makeStyles, mergeClasses } from "@fluentui/react-components";
 import {
   ArrowClockwise16Regular,
@@ -128,8 +129,11 @@ export function TopBar() {
   const setAnimate = () => {
     const st = useEditor.getState();
     useEditor.setState({ timelineOpen: true });
-    if (st.selectedStep === null && st.scene.steps.length > 0) st.selectStep(st.scene.steps[0]!.id);
-    if (st.scene.steps.length === 0) notify("Add a step (N) to animate the elements", "info");
+    // Animate needs a step (docs/33): a scene with none gets "Step 1".
+    if (st.selectedStep === null) {
+      if (st.scene.steps.length > 0) st.selectStep(st.scene.steps[0]!.id);
+      else ensureStep();
+    }
   };
   const tool = (label: string, icon: React.ReactElement, onClick: () => void, opts: { text?: string; primary?: boolean; pressed?: boolean; disabled?: boolean } = {}) => (
     <Tooltip content={label} relationship="description" withArrow={false}>

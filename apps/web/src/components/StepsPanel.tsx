@@ -115,10 +115,10 @@ export function StepsPanel() {
         {!q && (
           <div className={mergeClasses(s.row, selected === null && s.selected)} role="treeitem" aria-selected={selected === null}>
             <span className={s.disclose} />
-            <button className={s.item} onClick={() => selectStep(null)} aria-current={selected === null} aria-label="Base: before step 1">
+            <button className={s.item} onClick={() => selectStep(null)} aria-current={selected === null} aria-label="Start: the elements before anything moves" title="The elements before anything moves: arrange them here">
               <span className={s.index}>0</span>
-              <span className={s.title}>Base</span>
-              <span className={s.meta}>before step 1</span>
+              <span className={s.title}>Start</span>
+              <span className={s.meta}>0:00</span>
             </button>
           </div>
         )}
@@ -245,7 +245,7 @@ export function StepsPanel() {
             </div>
           );
         })}
-        {steps.length === 0 && <div className={s.empty}>Add a step (+ or N). Each step shows one change in the video.</div>}
+        {steps.length === 0 && <div className={s.empty}>Steps are the chapters of your video, with a title and a caption. You do not need one to start: add an animation, and Anivo makes Step 1.</div>}
         {steps.length > 0 && q && row === 0 && <div className={s.empty}>No step matches.</div>}
       </div>
     </nav>

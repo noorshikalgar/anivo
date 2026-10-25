@@ -455,3 +455,27 @@ test("Library: templates open as a new scene", async ({ page }) => {
   await lib.getByRole("button", { name: /Library template: TCP/ }).click();
   await expect.poll(async () => (await state(page)).scene.meta.title).toBe("TCP three-way handshake");
 });
+
+test("one cursor: the step under the playhead becomes the current step; a new action starts at the playhead (docs/33)", async ({ page }) => {
+  const s0 = (await state(page)) as unknown as { timeline: { steps: { id: string; startMs: number; holdEndMs: number }[] } };
+  const third = s0.timeline.steps[2]!;
+  await page.evaluate((t) => (window as unknown as { __anivo: { getState(): { setPlayhead(ms: number): void } } }).__anivo.getState().setPlayhead(t), third.startMs + 300);
+  await expect.poll(async () => (await state(page)).selectedStep).toBe(third.id);
+  await page.evaluate(() => (window as unknown as { __anivo: { getState(): { setSelection(ids: string[]): void } } }).__anivo.getState().setSelection(["lb"]));
+  await page.evaluate(() => (window as unknown as { __anivo: { setState(p: unknown): void } }).__anivo.setState({ propTab: "actions" }));
+  await page.getByRole("group", { name: "Quick actions" }).getByRole("button", { name: "Pulse" }).click();
+  const s = await state(page);
+  const added = s.scene.steps.find((x) => x.id === third.id)!.actions.at(-1) as unknown as { effect: string; delayMs: number };
+  expect(added).toMatchObject({ effect: "pulse", delayMs: 300 });
+});
+
+test("no step needed: in a new scene, an animation makes Step 1 (docs/33)", async ({ page }) => {
+  await page.evaluate(() => (window as unknown as { __anivoOpen(j: unknown): boolean }).__anivoOpen({ schemaVersion: 1, meta: { title: "Empty" }, elements: { a: { type: "rectangle", z: "a1", x: 100, y: 100, width: 200, height: 100 } } }));
+  await page.evaluate(() => (window as unknown as { __anivo: { getState(): { setSelection(ids: string[]): void } } }).__anivo.getState().setSelection(["a"]));
+  await page.getByRole("button", { name: "Animate" }).click();
+  await page.evaluate(() => (window as unknown as { __anivo: { setState(p: unknown): void } }).__anivo.setState({ propTab: "actions" }));
+  await page.getByRole("group", { name: "Quick actions" }).getByRole("button", { name: "Rise" }).click();
+  const s = await state(page);
+  expect(s.scene.steps.map((x) => x.title)).toEqual(["Step 1"]);
+  expect(s.scene.steps[0]!.actions[0]).toMatchObject({ type: "enter", effect: "rise", targets: ["a"] });
+});

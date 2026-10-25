@@ -90,7 +90,7 @@ export function AddActionMenu({ iconOnly }: { iconOnly?: boolean }) {
   return (
     <Menu positioning={{ autoSize: true }}>
       <MenuTrigger disableButtonEnhancement>
-        <MenuButtonSmall icon={<Add16Regular />} iconOnly={iconOnly} aria-label="Add action" disabled={none && step === null}>
+        <MenuButtonSmall icon={<Add16Regular />} iconOnly={iconOnly} aria-label="Add action" disabled={none}>
           Add action
         </MenuButtonSmall>
       </MenuTrigger>

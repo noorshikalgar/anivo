@@ -293,10 +293,45 @@ export function updateStep(id: string, set: Record<string, unknown>, label = "Ch
 }
 
 /** Add an action for the selected elements to the selected step. */
-export function addAction(action: Record<string, unknown>, label = "Add action"): string | undefined {
+/**
+ * The step to edit (docs/33): the current step, else the step under the
+ * playhead. A scene with no steps gets "Step 1", so no tool asks for a step.
+ */
+export function ensureStep(): string | null {
   const st = useEditor.getState();
-  if (st.selectedStep === null) return undefined;
-  const r = st.apply({ label, ops: [{ op: "action.add", step: st.selectedStep, action }] });
+  if (st.selectedStep !== null && st.scene.steps.some((x) => x.id === st.selectedStep)) return st.selectedStep;
+  if (st.scene.steps.length > 0) {
+    const i = Math.max(0, stepIndexAt(st.timeline, st.playhead));
+    const id = st.timeline.steps[Math.min(i, st.timeline.steps.length - 1)]!.id;
+    useEditor.setState({ selectedStep: id });
+    return id;
+  }
+  const r = st.apply({ label: "Add step", ops: [{ op: "step.add", index: 0, props: { title: "Step 1" } }] });
+  if (!r.ok) return null;
+  const id = useEditor.getState().scene.steps[0]!.id;
+  useEditor.setState({ selectedStep: id });
+  return id;
+}
+
+/**
+ * Where a new action starts in its step (docs/33): at the playhead, when the
+ * user put the playhead in the step; at the step start right after a click on
+ * the step (the playhead is pinned to the step end then).
+ */
+export function delayAtPlayhead(stepId: string): number {
+  const st = useEditor.getState();
+  if (st.pinStepEnd) return 0;
+  const ts = st.timeline.steps.find((x) => x.id === stepId);
+  if (!ts || st.playhead < ts.startMs) return 0;
+  return Math.round(st.playhead - ts.startMs);
+}
+
+export function addAction(action: Record<string, unknown>, label = "Add action"): string | undefined {
+  const step = ensureStep();
+  if (step === null) return undefined;
+  const st = useEditor.getState();
+  const at = action["delayMs"] === undefined ? { delayMs: delayAtPlayhead(step) } : {};
+  const r = st.apply({ label, ops: [{ op: "action.add", step, action: { ...action, ...at } }] });
   if (!r.ok) notify(r.error.message, "error");
   return r.ok ? r.created[0] : undefined;
 }
@@ -580,12 +615,13 @@ export function autoLayoutSelection(kind: LayoutKind): void {
  * arrow and the other selected elements.
  */
 export function addMotionAlongArrow(targets?: string[], connector?: string, reverse = false): boolean {
+  const step = ensureStep();
+  if (step === null) return false;
   const st = useEditor.getState();
-  if (st.selectedStep === null) return false;
   const conn = connector ?? st.selection.find((id) => st.scene.elements[id]?.type === "connector");
   const ids = targets ?? st.selection.filter((id) => st.scene.elements[id] && st.scene.elements[id]!.type !== "connector");
   if (!conn || ids.length === 0) return false;
-  const ops = sendAlongOps(st.scene, st.selectedStep, ids, conn, { reverse });
+  const ops = sendAlongOps(st.scene, step, ids, conn, { reverse });
   if (ops.length === 0) return false;
   return st.apply({ label: "Send along arrow", ops }).ok;
 }
@@ -663,10 +699,12 @@ function simplify(pts: { x: number; y: number }[], eps: number): { x: number; y:
  * of the elements.
  */
 export function addDrawnPath(points: { x: number; y: number }[]): void {
+  useEditor.getState().setTool("select");
+  const ids = useEditor.getState().selection.filter((id) => useEditor.getState().scene.elements[id]?.type !== "connector");
+  if (ids.length === 0) return notify("Select an element, then draw its path.", "info");
+  const stepId = ensureStep();
+  if (stepId === null) return;
   const st = useEditor.getState();
-  st.setTool("select");
-  const ids = st.selection.filter((id) => st.scene.elements[id]?.type !== "connector");
-  if (ids.length === 0 || st.selectedStep === null) return notify("Select an element and a step, then draw its path.", "info");
   if (points.length < 2) return notify("Drag to draw the path.", "info");
   const ts = st.timeline.steps.find((s) => s.id === st.selectedStep);
   const frame = evaluateWithLayout(st.scene, Math.max(0, (ts?.startMs ?? 0) - 1)).frame;
@@ -677,7 +715,7 @@ export function addDrawnPath(points: { x: number; y: number }[]): void {
   if (Math.hypot(pts[0]!.x - c.x, pts[0]!.y - c.y) < 40 / st.view.zoom) pts[0] = { x: Math.round(c.x), y: Math.round(c.y) };
   else pts.unshift({ x: Math.round(c.x), y: Math.round(c.y) });
   const delayMs = ts && st.playhead > ts.startMs && st.playhead < ts.holdEndMs ? Math.round(st.playhead - ts.startMs) : 0;
-  const r = st.apply({ label: "Draw a motion path", ops: [{ op: "action.add", step: st.selectedStep, action: { type: "motion", targets: ids, delayMs, durationMs: 1600, easing: "smooth", motion: { points: pts, curve: pts.length > 2 } } }] });
+  const r = st.apply({ label: "Draw a motion path", ops: [{ op: "action.add", step: stepId, action: { type: "motion", targets: ids, delayMs, durationMs: 1600, easing: "smooth", motion: { points: pts, curve: pts.length > 2 } } }] });
   if (!r.ok) notify(r.error.message, "error");
   else notify("Added the motion path. Drag its dots to change it.", "success");
 }
