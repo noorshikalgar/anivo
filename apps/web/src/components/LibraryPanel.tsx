@@ -99,7 +99,7 @@ export function LibraryPanel() {
   const none = widgets.length + myWidgets.length + compositions.length + motion.length + styles.length + templates.length === 0;
   return (
     <section className={s.root} aria-label="Library">
-      <AreaHeader title="Library">
+      <AreaHeader>
         <SearchBox label="Search the library" value={query} onChange={setQuery} />
       </AreaHeader>
       <div className={s.body} key={theme}>

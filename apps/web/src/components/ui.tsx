@@ -204,16 +204,16 @@ const useStyles = makeStyles({
   note: { color: "var(--ui-muted)", fontSize: "11px", lineHeight: "15px" },
   separator: { height: "1px", backgroundColor: "var(--ui-line)", margin: "4px 0" },
   // --- area header
-  areaHeader: { display: "flex", alignItems: "center", gap: "4px", height: "26px", minHeight: "26px", padding: "0 4px 0 8px", backgroundColor: "var(--ui-header)", color: "var(--ui-text)", fontSize: "12px", borderBottom: "1px solid var(--ui-line)" },
+  areaHeader: { display: "flex", alignItems: "center", gap: "6px", height: "34px", minHeight: "34px", padding: "0 6px 0 10px", backgroundColor: "var(--ui-header)", color: "var(--ui-text)", fontSize: "12px", borderBottom: "1px solid var(--ui-line)" },
   areaTitle: { fontWeight: 600, marginRight: "auto", paddingRight: "6px", whiteSpace: "nowrap", flexShrink: 0 },
   search: {
-    height: "20px",
+    height: "24px",
     minWidth: 0,
     width: "100%",
-    maxWidth: "140px",
+    maxWidth: "180px",
     flexShrink: 1,
     border: "1px solid transparent",
-    borderRadius: "10px",
+    borderRadius: "12px",
     backgroundColor: "var(--ui-field)",
     color: "var(--ui-text)",
     font: "inherit",
@@ -667,11 +667,12 @@ export const MenuButtonSmall = forwardRef<HTMLButtonElement, React.ButtonHTMLAtt
 // --- area header --------------------------------------------------------------------------
 
 /** The header strip of an area (docs/15): the title on the left, tools on the right. */
-export function AreaHeader({ title, children }: { title: ReactNode; children?: ReactNode }) {
+/** The header of an area. No title when a tab above already names the area (docs/38). */
+export function AreaHeader({ title, children }: { title?: ReactNode; children?: ReactNode }) {
   const s = useStyles();
   return (
     <div className={s.areaHeader}>
-      <span className={s.areaTitle}>{title}</span>
+      {title !== undefined && <span className={s.areaTitle}>{title}</span>}
       {children}
     </div>
   );

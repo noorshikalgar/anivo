@@ -15,8 +15,8 @@ const useStyles = makeStyles({
   input: {
     width: "100%",
     minWidth: 0,
-    minHeight: "22px",
-    height: "22px",
+    minHeight: "24px",
+    height: "24px",
     borderRadius: "4px",
     backgroundColor: "var(--ui-field)",
     border: "1px solid transparent",
@@ -40,15 +40,15 @@ const useStyles = makeStyles({
   select: {
     width: "100%",
     minWidth: 0,
-    height: "22px",
-    minHeight: "22px",
+    height: "24px",
+    minHeight: "24px",
     borderRadius: "4px",
     backgroundColor: "var(--ui-menu)",
     border: "none",
     "::after": { display: "none" },
     ":hover": { backgroundColor: "var(--ui-hover)" },
   },
-  selectButton: { minHeight: "22px", height: "22px", padding: "0 4px 0 6px", fontSize: "12px", color: "var(--ui-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 },
+  selectButton: { minHeight: "24px", height: "24px", padding: "0 4px 0 6px", fontSize: "12px", color: "var(--ui-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 },
   error: { color: "var(--colorPaletteRedForeground1, #e06c6c)", fontSize: "11px", gridColumn: "2" },
 });
 
