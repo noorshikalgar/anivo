@@ -10,7 +10,7 @@ async function selectLb(page: Parameters<typeof state>[0]) {
   const lb = (await state(page)).scene.elements["lb"]!;
   const p = await screen(page, lb.x + lb.width / 2, lb.y + lb.height / 2);
   await page.mouse.click(p.x, p.y);
-  await expect(page.getByLabel("Inspector").getByText("Element", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Inspector").getByRole("button", { name: "Element", pressed: true })).toBeVisible();
 }
 
 test("fill swatch changes the element fill in the base state", async ({ page }) => {

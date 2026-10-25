@@ -16,12 +16,12 @@ import { Btn, Panel } from "./ui.js";
 
 const useStyles = makeStyles({
   list: { display: "flex", flexDirection: "column", gap: "2px", marginBottom: "8px" },
-  row: { display: "flex", alignItems: "center", gap: "6px", padding: "4px 6px", borderRadius: "4px", cursor: "pointer", fontSize: "12px", ":hover": { backgroundColor: "var(--ui-hover)" } },
+  row: { display: "flex", alignItems: "center", gap: "8px", minHeight: "28px", padding: "0 6px 0 8px", borderRadius: "6px", cursor: "pointer", fontSize: "12px", ":hover": { backgroundColor: "var(--ui-hover)" } },
   on: { backgroundColor: "var(--ui-row-selected)" },
   name: { flexGrow: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
-  time: { color: "var(--ui-muted)", fontVariantNumeric: "tabular-nums", fontSize: "11px" },
+  time: { color: "var(--ui-muted)", fontVariantNumeric: "tabular-nums", fontSize: "11px", whiteSpace: "nowrap", flexShrink: 0 },
   x: { border: "none", background: "transparent", color: "var(--ui-muted)", cursor: "pointer", padding: "2px", lineHeight: 0, ":hover": { color: "var(--ui-text)" } },
-  add: { display: "flex", flexWrap: "wrap", gap: "4px" },
+  add: { display: "flex", flexWrap: "wrap", gap: "6px" },
   empty: { color: "var(--ui-muted)", fontSize: "12px", marginBottom: "8px" },
 });
 

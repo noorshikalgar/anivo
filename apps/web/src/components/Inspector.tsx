@@ -10,7 +10,7 @@ import { addFontFile } from "../fonts.js";
 
 import { evaluate } from "@anivo/engine";
 import type { Element } from "@anivo/schema";
-import { Text, makeStyles, mergeClasses } from "@fluentui/react-components";
+import { makeStyles, mergeClasses } from "@fluentui/react-components";
 import {
   Add16Regular,
   AlignBottom16Regular,
@@ -52,14 +52,32 @@ import { Aligned, Btn, Check, ColorPick, DragNumber, IconButton, Note, Panel, Pr
 const useStyles = makeStyles({
   root: {
     display: "grid",
-    gridTemplateColumns: "28px minmax(0, 1fr)",
+    gridTemplateRows: "auto minmax(0, 1fr)",
+    gridTemplateColumns: "minmax(0, 1fr)",
     minHeight: 0,
     backgroundColor: "var(--ui-region)",
     color: "var(--ui-text)",
     fontSize: "12px",
   },
-  tabs: { display: "flex", flexDirection: "column", gap: "2px", padding: "4px 3px", backgroundColor: "var(--ui-header)" },
-  body: { overflowY: "auto", minHeight: 0, display: "flex", flexDirection: "column", gap: "4px", padding: "4px 6px 12px" },
+  // Text tabs at the top (docs/35): Scene, Step, Actions, Element.
+  tabs: { display: "flex", gap: "2px", padding: "0 8px", height: "34px", alignItems: "stretch", backgroundColor: "var(--ui-header)", borderBottom: "1px solid var(--ui-line)" },
+  tab: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "0 10px",
+    border: "none",
+    borderBottom: "2px solid transparent",
+    background: "transparent",
+    color: "var(--ui-muted)",
+    font: "inherit",
+    fontSize: "12px",
+    cursor: "pointer",
+    ":hover": { color: "var(--ui-text)" },
+    ":focus-visible": { outline: "1px solid var(--ui-select)", outlineOffset: "-2px" },
+  },
+  tabOn: { color: "var(--ui-text)", borderBottomColor: "var(--ui-select)", fontWeight: 600 },
+  body: { overflowY: "auto", minHeight: 0, display: "flex", flexDirection: "column", gap: "8px", padding: "10px 10px 16px" },
   title: { display: "flex", alignItems: "center", gap: "6px", height: "24px", padding: "0 2px", color: "var(--ui-muted)", flexShrink: 0 },
   titleName: { color: "var(--ui-text)", fontWeight: 600 },
   headerRow: { display: "flex", alignItems: "center", gap: "2px", flexShrink: 0 },
@@ -182,8 +200,8 @@ function ElementProperties({ el }: { el: Element }) {
       )}
       <Info action={<AddActionMenu />}>
         {autoKey
-          ? "Recording: a change to position, size, opacity, or color makes a keyframe at the playhead. Press K to stop."
-          : "A change sets the element for the whole video. To animate a property, click its ◆ (a keyframe at the playhead), or press K to record."}
+          ? "Recording: each change makes a key at the playhead. K stops."
+          : "To animate, click a ◆ or press K."}
       </Info>
 
       <ElementAnimations el={el} />
@@ -680,22 +698,33 @@ export function Inspector() {
     else if (!step && (tab === "step" || tab === "actions") && useEditor.getState().selection.length === 0) setTab("scene");
   }, [step?.id]);
   const shown: Tab = tab === "element" && selection.length === 0 ? (step ? "actions" : "scene") : tab === "step" && !step ? "scene" : tab === "actions" && !hasSteps ? "scene" : tab;
-  const name = shown === "element" ? "Element" : shown === "step" ? "Step" : shown === "actions" ? "Actions" : "Scene";
 
   return (
     <aside className={s.root} aria-label="Inspector">
       <nav className={s.tabs} aria-label="Properties tabs">
-        <IconButton tool label="Scene" pressed={shown === "scene"} icon={<Video16Regular />} onClick={() => setTab("scene")} />
-        {step && <IconButton tool label="Step" pressed={shown === "step"} icon={<TextNumberListLtr16Regular />} onClick={() => setTab("step")} />}
-        {hasSteps && <IconButton tool label="Actions" pressed={shown === "actions"} icon={<Sparkle16Regular />} onClick={() => setTab("actions")} />}
-        {selection.length > 0 && <IconButton tool label="Element" pressed={shown === "element"} icon={el ? elementIcon(el.type) : <Add16Regular />} onClick={() => setTab("element")} />}
+        {(
+          [
+            ["scene", "Scene", <Video16Regular key="i" />, true],
+            ["step", "Step", <TextNumberListLtr16Regular key="i" />, !!step],
+            ["actions", "Actions", <Sparkle16Regular key="i" />, hasSteps],
+            ["element", "Element", el ? elementIcon(el.type) : <Add16Regular key="i" />, selection.length > 0],
+          ] as const
+        )
+          .filter((t) => t[3])
+          .map(([id, label, icon]) => (
+            <button key={id} type="button" className={mergeClasses(s.tab, shown === id && s.tabOn)} aria-label={label} aria-pressed={shown === id} onClick={() => setTab(id)}>
+              {icon}
+              {label}
+            </button>
+          ))}
       </nav>
       <div className={s.body}>
-        <div className={s.title}>
-          <Text size={200}>{name}</Text>
-          {shown === "element" && el && <span className={s.titleName}>{el.id}</span>}
-          {(shown === "step" || shown === "actions") && step && <span className={s.titleName}>{step.title}</span>}
-        </div>
+        {/* The tab says what this is (docs/35). The element ID is in its own field. */}
+        {(shown === "step" || shown === "actions") && step && (
+          <div className={s.title}>
+            <span className={s.titleName}>{step.title}</span>
+          </div>
+        )}
         {shown === "element" ? (
           el ? (
             el.type === "group" ? <GroupProperties key={el.id} el={el} /> : <ElementProperties key={el.id} el={el} />
