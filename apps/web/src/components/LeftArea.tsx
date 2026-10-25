@@ -8,10 +8,11 @@ import { StepsPanel } from "./StepsPanel.js";
 
 const useStyles = makeStyles({
   root: { display: "grid", gridTemplateRows: "auto minmax(0, 1fr)", gridTemplateColumns: "minmax(0, 1fr)", minHeight: 0, minWidth: 0, height: "100%", overflow: "hidden" },
-  tabs: { display: "flex", gap: "2px", padding: "3px 4px 0", backgroundColor: "var(--ui-list)", borderBottom: "1px solid var(--ui-line)" },
+  // 34 px, the same as the other area headers in this row (docs/39).
+  tabs: { display: "flex", gap: "2px", height: "34px", padding: "0 6px", backgroundColor: "var(--ui-list)", borderBottom: "1px solid var(--ui-line)" },
   tab: {
     flex: 1,
-    height: "24px",
+    height: "100%",
     border: "none",
     borderBottom: "2px solid transparent",
     background: "transparent",
