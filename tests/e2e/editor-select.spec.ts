@@ -36,9 +36,9 @@ test("drag in a step with Record on makes a keyframe at the playhead", async ({ 
   await drag(page, from, { x: from.x, y: from.y + 100 });
   const s = await state(page);
   expect(s.scene.elements["lb"]!.y).toBe(lb.y);
-  const morph = s.scene.steps.find((st) => st.id === "s-traffic")!.actions.find((a) => a.type === "morph");
-  expect(morph?.targets).toEqual(["lb"]);
-  expect(morph?.to?.["y"]).toBeGreaterThan(lb.y);
+  // An element key on the video time (docs/32): from the step start to the playhead.
+  const keys = (s.scene.elements["lb"] as unknown as { keys: { y: { t: number; v: number }[] } }).keys;
+  expect(keys.y.at(-1)!.v).toBeGreaterThan(lb.y);
   await expect(page.getByText("● Recording keyframes (K to stop)")).toBeVisible();
 });
 

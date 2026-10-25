@@ -3,6 +3,13 @@ import { OperationBus, type TransactionInput } from "@anivo/ops";
 import { type Scene, loadScene } from "@anivo/schema";
 import { create } from "zustand";
 
+/**
+ * The playhead can go past the end of the video, into the work area of the
+ * timeline (at least 10 s, docs/32), so a key can be set later than the video
+ * ends now. The timeline shows the video plus 3 s.
+ */
+export const workEnd = (totalMs: number) => Math.max(10000, totalMs + 3000);
+
 export type Tool = "select" | "hand" | "rectangle" | "ellipse" | "diamond" | "text" | "arrow" | "icon" | "code" | "path";
 
 export interface View {
@@ -253,7 +260,7 @@ export const useEditor = create<EditorState>((set, get) => {
       version: bus.version,
       selectedStep: stepExists ? selectedStep : null,
       selection: selection.filter((id) => id in scene.elements),
-      playhead: pinned ? stepEndMs(timeline, selectedStep) : Math.min(get().playhead, timeline.totalMs),
+      playhead: pinned ? stepEndMs(timeline, selectedStep) : Math.min(get().playhead, workEnd(timeline.totalMs)),
     });
   });
 
@@ -356,7 +363,7 @@ export const useEditor = create<EditorState>((set, get) => {
       set({ autoFit: false, view: { zoom, x: sx - cx / zoom, y: sy - cy / zoom } });
     },
 
-    setPlayhead: (ms) => set({ playhead: Math.max(0, Math.min(ms, get().timeline.totalMs)), pinStepEnd: false }),
+    setPlayhead: (ms) => set({ playhead: Math.max(0, Math.min(ms, workEnd(get().timeline.totalMs))), pinStepEnd: false }),
 
     play(rate = 1) {
       if (get().playing) {

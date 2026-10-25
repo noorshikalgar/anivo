@@ -1,6 +1,8 @@
+import { sceneTheme } from "@anivo/render";
 import { prepare, stepIndexAt } from "@anivo/engine";
 import { type LayoutKind, autoLayout, evaluateWithLayout } from "@anivo/layout";
-import { type ExitPlace, type OperationInput, deleteKeyframeOps, exitForOps, paceOps, hasKeys, keyframesIn, sendAlongOps, setKeyframeOps } from "@anivo/ops";
+import { type ExitPlace, type OperationInput, exitForOps, paceOps, keyframesIn, sendAlongOps, setElementKeysOps } from "@anivo/ops";
+import { KEY_PROPS, deleteKeyOps, elementTimelineKeys } from "./keys.js";
 import type { Element } from "@anivo/schema";
 import { type Box, boundsOf, editorSkip, geometryOps, leafDescendants } from "./editing.js";
 import { notify } from "./notify.js";
@@ -51,10 +53,26 @@ export function keyAtPlayhead(): { stepId: string; t: number } | null {
  */
 function keyOps(id: string, values: Record<string, unknown>): OperationInput[] | null {
   const st = useEditor.getState();
-  const at = keyAtPlayhead();
-  if (!at || Object.keys(values).length === 0) return null;
-  if (!st.autoKey && !hasKeys(st.scene, id, Object.keys(values))) return null;
-  return setKeyframeOps(st.scene, at.stepId, id, values, at.t);
+  const el = st.scene.elements[id];
+  // Element keys (docs/32): keys are on the video time, at the playhead, in any view.
+  const keyable = Object.fromEntries(Object.entries(values).filter(([k, v]) => KEY_PROPS.has(k) && (typeof v === "number" || typeof v === "string"))) as Record<string, number | string>;
+  if (!el || Object.keys(keyable).length === 0) return null;
+  const hasOwn = Object.keys(keyable).some((k) => (el.keys as Record<string, unknown> | undefined)?.[k]);
+  if (!st.autoKey && !hasOwn) return null;
+  // The value before the change, so a first key after 0 animates from it.
+  const f = evaluateWithLayout(st.scene, Math.max(0, st.playhead)).frame.elements.find((e) => e.id === id);
+  const base: Record<string, number | string> = {};
+  const defaults = sceneTheme(st.scene).defaults as unknown as Record<string, unknown>;
+  for (const k of Object.keys(keyable)) {
+    const now = k === "scale" ? 1 : (f as unknown as Record<string, unknown> | undefined)?.[k];
+    // A color at the theme default has no own value: the default token is the value before the change.
+    const v = now ?? (k === "fill" || k === "stroke" || k === "textColor" ? defaults[k] : undefined);
+    if (typeof v === "number" || typeof v === "string") base[k] = v;
+  }
+  // The change starts at the start of the step that holds the playhead (or at 0).
+  const i = stepIndexAt(st.timeline, st.playhead);
+  const baseT = i >= 0 ? st.timeline.steps[i]!.startMs : 0;
+  return setElementKeysOps(st.scene, id, keyable, st.playhead, base, baseT);
 }
 
 /** Apply a geometry change: a key at the playhead (see keyOps), or a static change. */
@@ -196,7 +214,8 @@ export function commitProps(id: string, changes: Record<string, unknown>, label 
   const set: Record<string, unknown> = {};
   const style: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(changes)) {
-    if (keyed && k in morph) continue;
+    // A keyed property is in the keys; others (label, shape) change the element.
+    if (keyed && k in morph && KEY_PROPS.has(k)) continue;
     if (STYLE_KEYS.has(k)) style[k] = v;
     else if (k === "label" && el.type === "text") set["content"] = { text: String(v ?? "") };
     else if (k === "label") set["label"] = v === "" || v === null ? null : { text: v };
@@ -579,8 +598,6 @@ export function addMotionAlongArrow(targets?: string[], connector?: string, reve
  */
 export function insertKeysAtPlayhead(all: boolean): number {
   const st = useEditor.getState();
-  const at = keyAtPlayhead();
-  if (!at) return 0;
   const { frame } = evaluateWithLayout(st.scene, st.playhead);
   const mergeKey = `insert-keys/${Date.now()}`;
   let n = 0;
@@ -597,7 +614,7 @@ export function insertKeysAtPlayhead(all: boolean): number {
       }
     }
     const s2 = useEditor.getState();
-    const ops = setKeyframeOps(s2.scene, at.stepId, id, values, at.t);
+    const ops = setElementKeysOps(s2.scene, id, values as Record<string, number | string>, s2.playhead);
     if (ops.length && s2.apply({ label: all ? "Insert keys" : "Insert position key", ops, mergeKey }).ok) n++;
   }
   if (n > 0) useEditor.setState({ timelineOpen: true });
@@ -607,15 +624,14 @@ export function insertKeysAtPlayhead(all: boolean): number {
 /** Delete the keys of the selected elements at the playhead (Blender: Alt+I). Returns how many. */
 export function deleteKeysAtPlayhead(): number {
   const st = useEditor.getState();
-  const at = keyAtPlayhead();
-  if (!at) return 0;
   const ids = new Set(movableIds(st.selection));
   const mergeKey = `delete-keys/${Date.now()}`;
   let n = 0;
-  for (const k of keyframesIn(st.scene, at.stepId)) {
-    if (!ids.has(k.element) || Math.abs(k.timeMs - at.t) > 20) continue;
+  const keys = [...elementTimelineKeys(st.scene), ...st.timeline.steps.flatMap((ts) => keyframesIn(st.scene, ts.id).map((k) => ({ ...k, atMs: ts.startMs + k.timeMs, fromAtMs: ts.startMs + k.fromMs })))];
+  for (const k of keys) {
+    if (!ids.has(k.element) || Math.abs(k.atMs - st.playhead) > 20) continue;
     const s2 = useEditor.getState();
-    const ops = deleteKeyframeOps(s2.scene, at.stepId, k.actionId);
+    const ops = deleteKeyOps(s2.scene, k);
     if (ops.length && s2.apply({ label: "Delete keys", ops, mergeKey }).ok) n++;
   }
   return n;

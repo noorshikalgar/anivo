@@ -108,7 +108,7 @@ export function useShortcuts(): void {
         // M during play: a cue for the next step at the playhead (docs/08).
         const id = cueAtPlayhead();
         if (id) notify(`Cue set for step '${id}'`, "info");
-      } else if (!mod && e.code === "KeyI" && st.selection.length > 0 && st.selectedStep !== null) {
+      } else if (!mod && e.code === "KeyI" && st.selection.length > 0) {
         // I: a key at the playhead (Shift: all properties). Alt+I: delete the keys at the playhead.
         e.preventDefault();
         if (e.altKey) {

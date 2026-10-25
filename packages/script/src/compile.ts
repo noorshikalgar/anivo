@@ -124,6 +124,7 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
   const mode = opts.mode ?? "replace";
   const ops: OperationInput[] = [];
   const elements: ElemDecl[] = [];
+  const keyLines: Line[] = [];
   const arrows: ArrowDecl[] = [];
   const stepLines: Line[] = [];
   const layoutLines: Line[] = [];
@@ -257,6 +258,9 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
     } else if (ELEMENT_KINDS.has(head.v)) {
       const d = readElement(line);
       if (d) elements.push(d);
+    } else if (head.v === "key") {
+      // key <id> at=<time> <property>=<value>… [ease=<easing>]: element keyframes on the video time (docs/32).
+      keyLines.push(line);
     } else if (head.v === "widget") {
       // widget <id> <name> [at=x,y] [size=WxH] [<text key>="text"]…: a ready-made group (docs/05 "Widgets").
       const idTok = line.tokens[1];
@@ -624,6 +628,43 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
   // A group comes before its elements, so a child can refer to its parent.
   ordered.sort((a, b) => a.order - b.order);
   ops.push(...settingsOps, ...ordered.map((o) => o.op));
+  // Element keyframes (docs/32), after the elements.
+  if (keyLines.length) {
+    const KEY_NAMES: Record<string, string> = { x: "x", y: "y", width: "width", height: "height", opacity: "opacity", rotate: "rotation", rotation: "rotation", scale: "scale", fill: "fill", stroke: "stroke", color: "textColor", "text-color": "textColor", "font-size": "fontSize", "stroke-width": "strokeWidth", radius: "cornerRadius" };
+    const byEl = new Map<string, Record<string, { t: number; v: number | string; ease?: string }[]>>();
+    for (const line of keyLines) {
+      const p = readProps(line.tokens, 2);
+      const id = line.tokens[1]?.t === "word" ? line.tokens[1].v : undefined;
+      if (!id || !(allDecls.has(id) || existing.has(id))) {
+        errors.push(err(line.pos, `The element '${id ?? ""}' does not exist.`, "Write: key <id> at=1s opacity=0"));
+        continue;
+      }
+      const at = p.kv.get("at");
+      const t = at ? parseTime(at.v) : undefined;
+      if (t === undefined) {
+        errors.push(err(line.pos, "A key needs a time: at=<time>.", "Write: key title at=0s opacity=0"));
+        continue;
+      }
+      const ease = p.kv.get("ease")?.v;
+      const keys = byEl.get(id) ?? (mode === "append" ? structuredClone((opts.base?.elements[id]?.keys as Record<string, { t: number; v: number | string }[]> | undefined) ?? {}) : {});
+      for (const [k, { v, pos }] of p.kv) {
+        if (k === "at" || k === "ease") continue;
+        const prop = KEY_NAMES[k];
+        if (!prop) {
+          errors.push(err(pos, `The property '${k}' cannot have keys.`, `Use: ${Object.keys(KEY_NAMES).join(", ")}.`));
+          continue;
+        }
+        const n = v.endsWith("%") && prop === "opacity" ? Number(v.slice(0, -1)) / 100 : Number(v);
+        const value = Number.isFinite(n) && !["fill", "stroke", "textColor"].includes(prop) ? n : v;
+        const list = (keys[prop] ?? []).filter((x) => Math.abs(x.t - t) > 20);
+        list.push({ t, v: value, ...(ease ? { ease } : {}) });
+        keys[prop] = list.sort((x, y) => x.t - y.t);
+      }
+      byEl.set(id, keys);
+    }
+    for (const [id, keys] of byEl) ops.push({ op: "element.update", id, set: { keys } });
+    if (errors.length > 0) return { ok: false, errors: errors.slice(0, 20) };
+  }
 
   // --- pass 4: steps ------------------------------------------------------------------------
   const declOrder = [...existing, ...allDecls.keys(), ...tableCells(allDecls)];

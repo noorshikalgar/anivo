@@ -125,9 +125,9 @@ test("a dragged block snaps to the playhead", async ({ page }) => {
   await block.scrollIntoViewIfNeeded();
   const box = (await block.boundingBox())!;
   const ruler = (await page.getByLabel("Time ruler").boundingBox())!;
-  const span = Math.max(1000, s0.timeline.totalMs + 3000);
-  // Drop the block start 3 px from the playhead: it snaps.
-  const target = ruler.x + (t / span) * ruler.width + 3;
+  const span = Math.max(10000, s0.timeline.totalMs + 3000);
+  // Drop the block start 3 px from the playhead: it snaps. (The tracks start 10 px after the ruler edge.)
+  const target = ruler.x + 10 + (t / span) * (ruler.width - 10) + 3;
   await page.mouse.move(box.x + 1, box.y + box.height / 2);
   await page.mouse.down();
   await page.mouse.move(target, box.y + box.height / 2, { steps: 6 });

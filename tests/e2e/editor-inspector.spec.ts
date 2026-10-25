@@ -62,8 +62,8 @@ test("a fill change in a step is static, and with Record on it becomes a keyfram
   await page.getByRole("radiogroup", { name: "Fill" }).getByRole("radio", { name: "danger", exact: true }).click();
   s = await state(page);
   expect(s.scene.elements["lb"]!.style?.["fill"]).toBe("success");
-  const morph = s.scene.steps.find((st) => st.id === "s-traffic")!.actions.find((a) => a.type === "morph");
-  expect(morph).toMatchObject({ targets: ["lb"], to: { fill: "danger" } });
+  const keys = (s.scene.elements["lb"] as unknown as { keys: { fill: { v: string }[] } }).keys;
+  expect(keys.fill.at(-1)!.v).toBe("danger");
 });
 
 test("scene panel changes the style", async ({ page }) => {
@@ -72,20 +72,18 @@ test("scene panel changes the style", async ({ page }) => {
   expect((await state(page)).scene.settings.style).toBe("sketch");
 });
 
-test("a base edit warns when a step morph sets the property at the playhead", async ({ page }) => {
+test("with keys, the panel shows the value at the playhead, the same as the canvas (docs/32)", async ({ page }) => {
   await page.getByRole("button", { name: /Traffic flows/ }).click();
   await selectLb(page);
   await page.keyboard.press("k");
   await page.getByRole("button", { name: /^Fill:/ }).click();
   await page.getByRole("radiogroup", { name: "Fill" }).getByRole("radio", { name: "success", exact: true }).click();
-  await page.evaluate(() => {
-    const st = (window as unknown as { __anivo: { getState(): { selectStep(id: null): void; setPlayhead(ms: number): void; timeline: { totalMs: number } } } }).__anivo.getState();
-    st.selectStep(null);
-    st.setPlayhead(st.timeline.totalMs);
-  });
-  await expect(page.getByLabel("Inspector").getByText(/sets fill/)).toBeVisible();
-  await page.getByRole("button", { name: /Go to step "Traffic flows/ }).click();
-  expect((await state(page)).selectedStep).toBe("s-traffic");
+  await expect(page.getByRole("button", { name: /^Fill:/ })).toHaveAccessibleName(/success/);
+  // Back to 0 s: the key before (the old color, from the step start) shows in the panel too.
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => (window as unknown as { __anivo: { setState(p: unknown): void } }).__anivo.setState({ playhead: 0 }));
+  await page.evaluate(() => (window as unknown as { __anivo: { getState(): { setSelection(ids: string[]): void } } }).__anivo.getState().setSelection(["lb"]));
+  await expect(page.getByRole("button", { name: /^Fill:/ })).not.toHaveAccessibleName(/success/);
 });
 
 test("drag a number field: the value changes, and one undo restores it", async ({ page }) => {

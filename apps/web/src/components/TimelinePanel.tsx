@@ -6,13 +6,14 @@
  */
 import { Popover, PopoverSurface, PopoverTrigger, Tooltip, makeStyles, mergeClasses } from "@fluentui/react-components";
 import { easingFn, stepIndexAt } from "@anivo/engine";
-import { type Keyframe, type OperationInput, deleteKeyframeOps, keyframesIn, moveKeyframeOps, setKeyframeOps } from "@anivo/ops";
+import { type Keyframe, type OperationInput, keyframesIn, setElementKeysOps } from "@anivo/ops";
 import { type Action, type Easing, EasingName, type Scene } from "@anivo/schema";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { updateAction } from "../commands.js";
 import { layerSpans } from "../layers.js";
 import { setAreas, useEditor } from "../store.js";
 import { formatTime } from "./PlaybackBar.js";
+import { KEY_PROPS, deleteKeyOps, easeKeyOps, easeOfKey, elementTimelineKeys, isElementKey, moveKeyOps } from "../keys.js";
 import { ScrubPreview } from "./ScrubPreview.js";
 import { describe } from "./StepInspector.js";
 import { actionIcon, elementIcon } from "./typeIcons.js";
@@ -24,6 +25,7 @@ const ROW_H = 28;
 const MIN_MS = 50;
 /** Time after the end that the ruler shows, so a key can make the last step longer. */
 const TAIL_MS = 3000;
+const TRACK_PAD = 10;
 
 const COLORS: Record<string, string> = { enter: "#1d4ed8", exit: "#475569", emphasis: "#b45309", motion: "#0f766e", flow: "#15803d", counter: "#7e22ce", code: "#be185d", camera: "#0369a1", morph: "#6d28d9", wait: "#334155" };
 
@@ -193,7 +195,8 @@ export function TimelinePanel() {
     return () => ro.disconnect();
   }, []);
 
-  const span = Math.max(1000, timeline.totalMs + TAIL_MS);
+  // At least 10 s of room: keys and blocks can go later than the video ends now (docs/32).
+  const span = Math.max(10000, timeline.totalMs + TAIL_MS);
 
   // While it plays, the timeline follows the playhead (it scrolls when the playhead leaves the view).
   useEffect(() => {
@@ -203,8 +206,11 @@ export function TimelinePanel() {
     if (x < el.scrollLeft || x > el.scrollLeft + viewW - 40) el.scrollLeft = Math.max(0, x - viewW * 0.2);
   }, [playhead, playing]);
   const pxPerMs = (viewW / span) * zoom;
-  const trackW = Math.ceil(span * pxPerMs);
-  const px = (ms: number) => ms * pxPerMs;
+  // A small margin before 0 s, so a key at 0 shows whole (docs/32).
+  const trackW = Math.ceil(span * pxPerMs) + TRACK_PAD;
+  const px = (ms: number) => TRACK_PAD + ms * pxPerMs;
+  /** A length in pixels (no margin). */
+  const pw = (ms: number) => ms * pxPerMs;
   const msOf = (dx: number) => Math.round(dx / pxPerMs / 10) * 10;
 
   // Blocks and keys for each element row.
@@ -230,6 +236,8 @@ export function TimelinePanel() {
     for (const ts of timeline.steps) {
       for (const k of keyframesIn(scene, ts.id)) keys.set(k.element, [...(keys.get(k.element) ?? []), { ...k, atMs: ts.startMs + k.timeMs, fromAtMs: ts.startMs + k.fromMs }]);
     }
+    // Element keys (docs/32): on the video time.
+    for (const k of elementTimelineKeys(scene)) keys.set(k.element, [...(keys.get(k.element) ?? []), k]);
     const spans = new Map(layerSpans(scene, timeline).map((l) => [l.id, l.spans]));
     const ids = Object.values(scene.elements)
       .filter((e) => e.type !== "group")
@@ -244,7 +252,7 @@ export function TimelinePanel() {
     const x = clientX - r.left - LABEL_W + el.scrollLeft;
     useEditor.getState().pause();
     // The ruler goes past the end, so a key can make the last step longer.
-    useEditor.setState({ playhead: Math.max(0, Math.min(span, x / pxPerMs)), pinStepEnd: false });
+    useEditor.setState({ playhead: Math.max(0, Math.min(span, (x - TRACK_PAD) / pxPerMs)), pinStepEnd: false });
   };
 
   const startRulerDrag = (e: React.PointerEvent) => {
@@ -253,7 +261,7 @@ export function TimelinePanel() {
     if (e.altKey) {
       // Alt + drag sets the loop region (docs/19 R7).
       const r = scrollRef.current!.getBoundingClientRect();
-      const timeAt = (cx: number) => Math.max(0, Math.min(span, Math.round((cx - r.left - LABEL_W + scrollRef.current!.scrollLeft) / pxPerMs)));
+      const timeAt = (cx: number) => Math.max(0, Math.min(span, Math.round((cx - r.left - LABEL_W - TRACK_PAD + scrollRef.current!.scrollLeft) / pxPerMs)));
       const a = timeAt(e.clientX);
       const move = (ev: PointerEvent) => {
         const b = timeAt(ev.clientX);
@@ -427,7 +435,7 @@ export function TimelinePanel() {
         <div
           className={mergeClasses(styles.block, on && styles.blockOn, lead && styles.blockLead)}
           data-lead={lead || undefined}
-          style={{ left: px(start), width: Math.max(6, px(dur)), backgroundColor: COLORS[b.action.type] ?? "#64748b" }}
+          style={{ left: px(start), width: Math.max(6, pw(dur)), backgroundColor: COLORS[b.action.type] ?? "#64748b" }}
           role="slider"
           tabIndex={0}
           aria-label={`${label} of ${elId || "the scene"} in step ${b.stepIndex + 1}`}
@@ -460,10 +468,10 @@ export function TimelinePanel() {
           }}
         >
           {b.action.after && <span className={styles.chain} aria-hidden data-chain />}
-          {px(dur) > 30 && (
+          {pw(dur) > 30 && (
             <span style={{ display: "inline-flex", alignItems: "center", gap: 3, verticalAlign: "top" }}>
               <span style={{ display: "inline-flex", transform: "scale(0.8)" }}>{actionIcon(b.action.type)}</span>
-              {px(dur) > 60 ? label : ""}
+              {pw(dur) > 60 ? label : ""}
             </span>
           )}
           {b.action.type !== "wait" && (
@@ -487,7 +495,7 @@ export function TimelinePanel() {
   };
   const keyAt = (k: GlobalKey) => {
     if (!drag || !(drag.key === k.actionId || (selKeys.includes(drag.key) && selKeys.includes(k.actionId)))) return k.atMs;
-    if (drag.kind === "key") return Math.max(k.fromAtMs + MIN_MS, k.atMs + drag.dms);
+    if (drag.kind === "key") return isElementKey(k) ? Math.max(0, k.atMs + drag.dms) : Math.max(k.fromAtMs + MIN_MS, k.atMs + drag.dms);
     if (drag.kind === "scale") {
       const lead = allKeysRef.current.find((x) => x.actionId === drag.key);
       return lead ? scaleOf(selKeys, lead.atMs, drag.dms)(k.atMs) : k.atMs;
@@ -550,7 +558,7 @@ export function TimelinePanel() {
   const eachKey = (ids: string[], label: string, make: (sc: Scene, k: Keyframe) => OperationInput[], mergeKey = `keys/${label}/${Date.now()}`) => {
     for (const id of ids) {
       const st = useEditor.getState();
-      const k = st.scene.steps.flatMap((x) => keyframesIn(st.scene, x.id)).find((x) => x.actionId === id);
+      const k = allKeysRef.current.find((x) => x.actionId === id);
       if (!k) continue;
       const ops = make(st.scene, k);
       if (ops.length) st.apply({ label, ops, mergeKey });
@@ -592,14 +600,14 @@ export function TimelinePanel() {
                   setSelKeys([k.actionId]);
                   selectEl(k.element);
                   const st = useEditor.getState();
-                  if (st.selectedStep !== k.stepId) st.selectStep(k.stepId);
+                  if (!isElementKey(k) && st.selectedStep !== k.stepId) st.selectStep(k.stepId);
                   useEditor.setState({ playhead: k.atMs, pinStepEnd: false });
                 },
                 (dms) => {
-                  if (!scale) return eachKey(byTime(group, dms), "Move keyframes", (sc, x) => moveKeyframeOps(sc, x.stepId, x.actionId, x.timeMs + dms));
+                  if (!scale) return eachKey(byTime(group, dms), "Move keyframes", (sc, x) => moveKeyOps(sc, x, x.timeMs + dms));
                   const to = scaleOf(group, k.atMs, dms);
                   const at = new Map(allKeysRef.current.map((x) => [x.actionId, x.atMs]));
-                  eachKey(byTime(group, dms), "Stretch keyframes", (sc, x) => moveKeyframeOps(sc, x.stepId, x.actionId, x.timeMs + (to(at.get(x.actionId) ?? 0) - (at.get(x.actionId) ?? 0))));
+                  eachKey(byTime(group, dms), "Stretch keyframes", (sc, x) => moveKeyOps(sc, x, x.timeMs + (to(at.get(x.actionId) ?? 0) - (at.get(x.actionId) ?? 0))));
                 },
                 k.atMs,
                 (t) => group.includes(t.key),
@@ -611,7 +619,7 @@ export function TimelinePanel() {
               if (e.key === "Delete" || e.key === "Backspace") {
                 e.preventDefault();
                 e.stopPropagation();
-                eachKey(ids, "Delete keyframes", (sc, x) => deleteKeyframeOps(sc, x.stepId, x.actionId));
+                eachKey(ids, "Delete keyframes", (sc, x) => deleteKeyOps(sc, x));
                 setSelKeys([]);
                 return;
               }
@@ -620,9 +628,9 @@ export function TimelinePanel() {
               e.stopPropagation();
               const d = (e.key === "ArrowLeft" ? -1 : 1) * (e.shiftKey ? 500 : 100);
               if (ids.length === 1) {
-                const ops = moveKeyframeOps(st.scene, k.stepId, k.actionId, k.timeMs + d);
-                if (ops.length) st.apply({ label: "Move keyframe", ops, mergeKey: `key/${k.actionId}` });
-              } else eachKey(byTime(ids, d), "Move keyframes", (sc, x) => moveKeyframeOps(sc, x.stepId, x.actionId, x.timeMs + d));
+                const ops = moveKeyOps(st.scene, k, k.timeMs + d);
+                if (ops.length) st.apply({ label: "Move keyframe", ops, mergeKey: `key/${k.element}/${k.group}` });
+              } else eachKey(byTime(ids, d), "Move keyframes", (sc, x) => moveKeyOps(sc, x, x.timeMs + d));
             }}
           />
         </Tooltip>
@@ -634,14 +642,13 @@ export function TimelinePanel() {
   const allKeys = useMemo(() => [...rows.keys.values()].flat(), [rows]);
   allKeysRef.current = allKeys;
   const active = allKeys.find((k) => k.actionId === activeKey);
-  const activeAct = active ? scene.steps.find((s) => s.id === active.stepId)?.actions.find((a) => a.id === active.actionId) : undefined;
-  const easingVal: Easing = (activeAct && "easing" in activeAct && activeAct.easing) || "ease-in-out";
+  const easingVal: Easing = active ? easeOfKey(scene, active) : "ease-in-out";
   const easing = typeof easingVal === "string" ? easingVal : "custom";
   const curveDrag = useRef<string | null>(null);
   const setKeysEasing = (v: Easing, done = true) => {
     // One history entry for a whole handle drag.
     curveDrag.current ??= `curve/${Date.now()}`;
-    eachKey(selKeys, "Change easing", (_sc, x) => [{ op: "action.update", step: x.stepId, id: x.actionId, set: { easing: v } }], curveDrag.current);
+    eachKey(selKeys, "Change easing", (sc, x) => easeKeyOps(x, sc, v), curveDrag.current);
     if (done) curveDrag.current = null;
   };
   const keyTimes = useMemo(() => {
@@ -710,13 +717,11 @@ export function TimelinePanel() {
       e.stopPropagation();
       const target = st.selection[0]!;
       const mergeKey = `paste-keys/${Date.now()}`;
+      // Pasted keys are element keys on the video time (docs/32).
       for (const c of clip.current) {
         const s2 = useEditor.getState();
-        const at = s2.playhead + c.relMs;
-        const i = stepIndexAt(s2.timeline, at);
-        if (i < 0) continue;
-        const ts = s2.timeline.steps[i]!;
-        const ops = setKeyframeOps(s2.scene, ts.id, target, c.values, at - ts.startMs);
+        const values = Object.fromEntries(Object.entries(c.values).filter(([k, v]) => KEY_PROPS.has(k) && (typeof v === "number" || typeof v === "string")));
+        const ops = setElementKeysOps(s2.scene, target, values, s2.playhead + c.relMs);
         if (ops.length) s2.apply({ label: "Paste keyframes", ops, mergeKey });
       }
     }
@@ -735,7 +740,7 @@ export function TimelinePanel() {
     const el = scrollRef.current!;
     const r = el.getBoundingClientRect();
     const local = e.clientX - r.left - LABEL_W;
-    const ms = (local + el.scrollLeft) / pxPerMs;
+    const ms = (local + el.scrollLeft - TRACK_PAD) / pxPerMs;
     const next = Math.min(40, Math.max(1, zoom * (e.deltaY < 0 ? 1.2 : 1 / 1.2)));
     setZoom(next);
     requestAnimationFrame(() => {
@@ -771,7 +776,7 @@ export function TimelinePanel() {
             <span style={{ color: "var(--ui-muted)" }}>⟳</span>
           </Tooltip>
         )}
-        {active && activeAct ? (
+        {active ? (
           <>
             <span style={{ color: "var(--ui-muted)" }}>
               · {selKeys.length > 1 ? `${selKeys.length} keys` : `${active.element} · ${GROUP_NAMES[active.group] ?? active.group} · ${formatTime(active.atMs)}`}
@@ -805,7 +810,7 @@ export function TimelinePanel() {
               type="button"
               className={styles.btn}
               onClick={() => {
-                eachKey(selKeys, "Delete keyframes", (sc, x) => deleteKeyframeOps(sc, x.stepId, x.actionId));
+                eachKey(selKeys, "Delete keyframes", (sc, x) => deleteKeyOps(sc, x));
                 setSelKeys([]);
               }}
             >
@@ -841,7 +846,7 @@ export function TimelinePanel() {
         onPointerMove={(e) => {
           const el = scrollRef.current!;
           const x = e.clientX - el.getBoundingClientRect().left - LABEL_W + el.scrollLeft;
-          setHoverMs(e.clientX - el.getBoundingClientRect().left < LABEL_W ? null : Math.max(0, Math.min(span, x / pxPerMs)));
+          setHoverMs(e.clientX - el.getBoundingClientRect().left < LABEL_W ? null : Math.max(0, Math.min(span, (x - TRACK_PAD) / pxPerMs)));
         }}
         onPointerLeave={() => setHoverMs(null)} tabIndex={0} aria-label="Timeline tracks" onKeyDown={onTimeKeys}>
         <div style={{ width: LABEL_W + trackW, position: "relative" }} onPointerDown={startBoxSelect}>
@@ -867,7 +872,7 @@ export function TimelinePanel() {
                 <div
                   key={ts.id}
                   className={mergeClasses(styles.section, selectedStep === ts.id && styles.sectionOn)}
-                  style={{ left: px(ts.startMs), width: Math.max(4, px(ts.holdEndMs - ts.startMs)) }}
+                  style={{ left: px(ts.startMs), width: Math.max(4, pw(ts.holdEndMs - ts.startMs)) }}
                   title={`Step ${ts.index + 1}: ${scene.steps[ts.index]!.title}`}
                   role="button"
                   aria-label={`Step section ${ts.index + 1}`}
@@ -952,7 +957,7 @@ export function TimelinePanel() {
             <span key={ts.id} className={styles.boundary} style={{ left: LABEL_W + px(ts.startMs) }} />
           ))}
           {box && <span className={styles.boxSel} style={{ left: Math.min(box.x0, box.x1), top: Math.min(box.y0, box.y1), width: Math.abs(box.x1 - box.x0), height: Math.abs(box.y1 - box.y0) }} aria-hidden />}
-          {loop && <span className={styles.loopBand} style={{ left: LABEL_W + px(loop.fromMs), width: px(loop.toMs - loop.fromMs) }} aria-hidden />}
+          {loop && <span className={styles.loopBand} style={{ left: LABEL_W + px(loop.fromMs), width: pw(loop.toMs - loop.fromMs) }} aria-hidden />}
           {scrub && hoverMs !== null && <ScrubPreview ms={hoverMs} clientX={scrub.clientX} top={scrub.top} />}
           {hoverMs !== null && <span className={styles.hoverLine} style={{ left: LABEL_W + px(hoverMs) }} aria-hidden />}
           <span className={styles.playhead} style={{ left: LABEL_W + px(playhead) }} />

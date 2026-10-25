@@ -2,6 +2,7 @@ import type { Action, Color, Element, FlowParams, MorphableProps, Rect, Scene } 
 import { defaultDurationMs } from "@anivo/schema";
 import type { CaptionFrame, ElementFrame, FrameColor, FrameState, Particle } from "./frame.js";
 import { type TimedAction, type TimedStep, type Timeline, resolveTimeline, stepIndexAt } from "./timeline.js";
+import { easingFn } from "./easing.js";
 
 type StateMap = Record<string, ElementFrame>;
 
@@ -712,6 +713,7 @@ export function evaluateAt(prepared: Prepared, timeMs: number, opts: EvaluateOpt
       break;
     }
   }
+  applyKeys(scene, state, t);
   fadeWithEnds(scene, state);
   // A particle travels only on an arrow that shows and is drawn (the cache filmstrip had mail flying before its arrow).
   const onShownArrow = (p: Particle) => {
@@ -748,6 +750,40 @@ function applyFollow(scene: Scene, base: StateMap, state: StateMap): StateMap {
     if (d.dx !== 0 || d.dy !== 0) out[el.id] = { ...f, x: f.x + d.dx, y: f.y + d.dy };
   }
   return out;
+}
+
+/**
+ * Element keyframes (docs/32): a property with keys takes its value from the
+ * keys at video time t, over what the steps set. Before the first key: the
+ * first value; after the last: the last value; between: the ease of the
+ * earlier key (default ease-in-out).
+ */
+function applyKeys(scene: Scene, state: StateMap, t: number): void {
+  const time = Math.max(0, t);
+  for (const el of Object.values(scene.elements)) {
+    if (!el.keys) continue;
+    const cur = state[el.id];
+    if (!cur) continue;
+    const f: ElementFrame = { ...cur };
+    for (const [prop, keys] of Object.entries(el.keys)) {
+      if (!keys || keys.length === 0) continue;
+      let i = 0;
+      while (i < keys.length && keys[i]!.t <= time) i++;
+      const a = keys[Math.max(0, i - 1)]!;
+      const b = keys[Math.min(keys.length - 1, i)]!;
+      const span = b.t - a.t;
+      const p = i === 0 || i >= keys.length || span <= 0 ? (i === 0 ? 0 : 1) : easingFn(a.ease ?? "ease-in-out")((time - a.t) / span);
+      const from = i === 0 ? b : a;
+      if (typeof from.v === "number" && typeof b.v === "number") {
+        const v = from.v + (b.v - from.v) * p;
+        if (prop === "scale") f.scale *= v;
+        else (f as unknown as Record<string, number>)[prop] = v;
+      } else if (typeof from.v === "string" && typeof b.v === "string") {
+        (f as unknown as Record<string, FrameColor>)[prop] = p >= 1 || from.v === b.v ? b.v : p <= 0 ? from.v : { from: from.v, to: b.v, p };
+      }
+    }
+    state[el.id] = f;
+  }
 }
 
 /**

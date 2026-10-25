@@ -43,6 +43,16 @@ function ok(text: string) {
 }
 
 describe("Anivo Script", () => {
+  it("element keys on the video time (docs/32), and they print back", () => {
+    const scene = ok(`text t "Hi" at=100,100 size=300x80\nkey t at=0s opacity=0 ease=linear\nkey t at=1.5s opacity=100% x=400\nkey t at=0s x=100`);
+    const keys = scene.elements["t"]!.keys!;
+    expect(keys.opacity).toEqual([{ t: 0, v: 0, ease: "linear" }, { t: 1500, v: 1 }]);
+    expect(keys.x!.map((k) => [k.t, k.v])).toEqual([[0, 100], [1500, 400]]);
+    const again = ok(printScene(scene));
+    expect(again.elements["t"]!.keys).toEqual(keys);
+    expect(applyScript(`box a "A"\nkey a at=1s label=x`).ok).toBe(false);
+  });
+
   it("build: shapes rise in reading order, then their arrows draw after them", () => {
     const scene = ok(`box c "C" at=600,400\nbox a "A" at=0,0\nbox b "B" at=600,0\narrow a -> b\narrow b -> c\nstep "S"\n  build a, b, c`);
     const [shapes, arrows] = scene.steps[0]!.actions;

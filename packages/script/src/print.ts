@@ -85,6 +85,28 @@ export function printScene(scene: Scene): string {
   }
 
 
+  // Element keyframes (docs/32): one line for each element and time.
+  const KEY_OUT: Record<string, string> = { x: "x", y: "y", width: "width", height: "height", opacity: "opacity", rotation: "rotate", scale: "scale", fill: "fill", stroke: "stroke", textColor: "color", fontSize: "font-size", strokeWidth: "stroke-width", cornerRadius: "radius" };
+  let keyed = false;
+  for (const el of sorted) {
+    if (!el.keys) continue;
+    // One line for each time and ease: keys with another ease at the same time get their own line.
+    const lines = new Map<string, { t: number; ease?: string; parts: string[] }>();
+    for (const [prop, list] of Object.entries(el.keys)) {
+      for (const k of list ?? []) {
+        const ease = typeof k.ease === "string" ? k.ease : undefined;
+        const id = `${k.t}|${ease ?? ""}`;
+        const line = lines.get(id) ?? { t: k.t, ...(ease ? { ease } : {}), parts: [] };
+        line.parts.push(`${KEY_OUT[prop] ?? prop}=${typeof k.v === "string" ? q(k.v) : k.v}`);
+        lines.set(id, line);
+      }
+    }
+    for (const l of [...lines.values()].sort((a, b) => a.t - b.t)) {
+      if (!keyed) out.push("");
+      keyed = true;
+      out.push(`key ${el.id} at=${l.t}ms ${l.parts.join(" ")}${l.ease ? ` ease=${l.ease}` : ""}`);
+    }
+  }
   let actionIndex = 0;
   for (const step of scene.steps) {
     out.push("");

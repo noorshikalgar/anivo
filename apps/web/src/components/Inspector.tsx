@@ -145,7 +145,8 @@ function ElementProperties({ el }: { el: Element }) {
     return out;
   }, [timeline, scene.steps, selectedStep, playing, playhead, el.id]);
   if (!f) return null;
-  const keyable = selectedStep !== null;
+  // Keys are on the video time (docs/32): every view can add them.
+  const keyable = true;
   const theme = scene.settings.theme;
   const set = (changes: Record<string, unknown>, label?: string, mergeKey?: string) => commitProps(el.id, changes, label, mergeKey);
   // The text at the playhead: in a step, a morph can change it.
