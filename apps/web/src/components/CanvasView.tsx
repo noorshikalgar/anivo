@@ -1,3 +1,5 @@
+import { ELEMENT_KEY } from "../keys.js";
+import { setElementKeysOps } from "@anivo/ops";
 import { EmptyCanvas } from "./EmptyCanvas.js";
 import { LIBRARY_MIME, dropLibraryItem } from "./LibraryPanel.js";
 import { keyTimesOf, motionPath } from "../motionPath.js";
@@ -629,6 +631,10 @@ export function CanvasView() {
     const move = (ev: PointerEvent) => {
       const v = valuesAt(scenePoint(ev));
       const s2 = useEditor.getState();
+      if (key.stepId === ELEMENT_KEY) {
+        s2.apply({ label: "Move keyframe position", ops: setElementKeysOps(s2.scene, id, v, key.atMs), mergeKey: (mergeKey ??= `keydot/${key.actionId}/${Date.now()}`) });
+        return;
+      }
       const a = s2.scene.steps.find((x) => x.id === key.stepId)?.actions.find((x) => x.id === key.actionId);
       if (!a || a.type !== "morph") return;
       s2.apply({ label: "Move keyframe position", ops: [{ op: "action.update", step: key.stepId, id: key.actionId, set: { to: { ...a.to, ...v } } }], mergeKey: (mergeKey ??= `keydot/${key.actionId}/${Date.now()}`) });

@@ -6,6 +6,7 @@
 import { type Timeline, evaluate } from "@anivo/engine";
 import { keyframesIn } from "@anivo/ops";
 import type { Point, Scene } from "@anivo/schema";
+import { ELEMENT_KEY } from "./keys.js";
 
 export interface PathKey {
   point: Point;
@@ -43,6 +44,15 @@ export function motionPath(scene: Scene, timeline: Timeline, id: string): Motion
       if (!c) continue;
       if (!first) first = { fromAtMs: ts.startMs + k.fromMs };
       keys.push({ point: c.point, width: c.width, height: c.height, stepId: ts.id, actionId: k.actionId, atMs });
+    }
+  }
+  // Element position keys (docs/32): on the video time.
+  const ek = scene.elements[id]?.keys;
+  if (ek?.x || ek?.y) {
+    const times = [...new Set([...(ek.x ?? []), ...(ek.y ?? [])].map((k) => k.t))];
+    for (const t of times) {
+      const c = centerAt(scene, id, t);
+      if (c) keys.push({ point: c.point, width: c.width, height: c.height, stepId: ELEMENT_KEY, actionId: `ek|${id}|position|${t}`, atMs: t });
     }
   }
   keys.sort((a, b) => a.atMs - b.atMs);

@@ -1,5 +1,6 @@
 import * as z from "zod";
-import { Color, ElementId, Point } from "./primitives.js";
+import { Color, ElementId, Ms, Point } from "./primitives.js";
+import { Easing } from "./steps.js";
 
 export const StrokeStyle = z.enum(["solid", "dashed", "dotted"]);
 export type StrokeStyle = z.infer<typeof StrokeStyle>;
@@ -42,6 +43,23 @@ export const TextContent = z.object({
 });
 export type TextContent = z.infer<typeof TextContent>;
 
+/**
+ * Keyframes on the element (docs/32): values of one property at times of the
+ * video, as in After Effects. Before the first key the property has the first
+ * key value; after the last key, the last value; between two keys it moves
+ * with the ease of the first key. Keys are on the video time, not in a step.
+ */
+export const KeyProp = z.enum(["x", "y", "width", "height", "opacity", "rotation", "scale", "fill", "stroke", "textColor", "fontSize", "strokeWidth", "cornerRadius"]);
+export type KeyProp = z.infer<typeof KeyProp>;
+export const Keyframe = z.object({
+  t: Ms.describe("Video time of the key, from 0."),
+  v: z.union([z.number(), Color]).describe("The value: a number, or a color for fill, stroke, and textColor."),
+  ease: Easing.optional().describe("How the value moves from this key to the next key. Default ease-in-out."),
+});
+export type Keyframe = z.infer<typeof Keyframe>;
+export const ElementKeys = z.partialRecord(KeyProp, z.array(Keyframe).min(1)).describe("Keyframes of the element, for each property (docs/32).");
+export type ElementKeys = z.infer<typeof ElementKeys>;
+
 const base = {
   id: ElementId,
   z: z.string().min(1).describe("Fractional index for the draw order."),
@@ -59,6 +77,7 @@ const base = {
   seed: z.number().int().nonnegative().default(1).describe("Seed for the sketch style. Fixed at create time."),
   style: ElementStyle.default({}),
   label: TextContent.optional(),
+  keys: ElementKeys.optional(),
   meta: z.record(z.string(), z.string()).optional(),
 };
 

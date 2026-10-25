@@ -8,7 +8,7 @@ const seek = async (page: import("@playwright/test").Page, stepRel: number) => {
   const { at, span } = await page.evaluate(() => {
     const st = (window as unknown as { __anivo: { getState(): { timeline: { totalMs: number; steps: { id: string; startMs: number }[] }; selectedStep: string } } }).__anivo.getState();
     const s = st.timeline.steps.find((x) => x.id === st.selectedStep)!;
-    return { at: s.startMs, span: Math.max(1000, st.timeline.totalMs + 3000) };
+    return { at: s.startMs, span: Math.max(10000, st.timeline.totalMs + 3000) };
   });
   // The lower half of the ruler: the upper half has the step sections.
   await page.mouse.click(box.x + ((at + stepRel) / span) * box.width, box.y + box.height * 0.75);
@@ -16,7 +16,14 @@ const seek = async (page: import("@playwright/test").Page, stepRel: number) => {
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
 };
 
-type Morph = { delayMs: number; durationMs?: number };
+type K = { t: number; v: number | string; ease?: unknown };
+/** The element keys of an element (docs/32). */
+const keysOf = async (page: import("@playwright/test").Page, id: string) => ((await state(page)).scene.elements[id] as unknown as { keys?: Record<string, K[]> }).keys ?? {};
+const stepStart = async (page: import("@playwright/test").Page) =>
+  page.evaluate(() => {
+    const st = (window as unknown as { __anivo: { getState(): { timeline: { steps: { id: string; startMs: number }[] }; selectedStep: string } } }).__anivo.getState();
+    return st.timeline.steps.find((x) => x.id === st.selectedStep)!.startMs;
+  });
 
 test.beforeEach(async ({ page }) => {
   await openEditor(page);
@@ -40,25 +47,61 @@ test("auto-key: moves at two times make two keyframes, and the Keys view edits t
   await seek(page, 1240);
   await page.keyboard.press("Shift+ArrowDown");
 
-  const s = await state(page);
-  const step = s.scene.steps.find((x) => x.id === s.selectedStep)!;
-  const morphs = step.actions.filter((a) => a.type === "morph") as unknown as Morph[];
-  expect(morphs).toHaveLength(2);
-  expect(morphs.map((m) => [m.delayMs, m.durationMs])).toEqual([
-    [0, 1000],
-    [1000, expect.any(Number)],
-  ]);
+  const t0 = await stepStart(page);
+  const k = await keysOf(page, "pod-2");
+  // x: from the step start (the old place) to 1 s; y: from the step start to about 1.24 s.
+  expect(k.x!.map((x) => x.t)).toEqual([t0, expect.any(Number)]);
+  expect(Math.abs(k.x![1]!.t - (t0 + 1000))).toBeLessThan(60);
+  expect(k.y).toHaveLength(2);
 
   const keys = page.getByRole("slider", { name: /Keyframe Position of pod-2/ });
-  await expect(keys).toHaveCount(2);
-  // Arrow keys move a keyframe; Delete removes it.
-  await keys.first().focus();
+  await expect(keys).toHaveCount(3);
+  // Arrow keys move a keyframe on the video time; Delete removes it.
+  await keys.nth(1).focus();
   await page.keyboard.press("ArrowRight");
-  const after = (await state(page)).scene.steps.find((x) => x.id === s.selectedStep)!.actions.filter((a) => a.type === "morph") as unknown as Morph[];
-  expect(after.map((m) => m.delayMs)).toEqual([0, 1100]);
-  await keys.first().focus();
+  expect((await keysOf(page, "pod-2")).x![1]!.t).toBe(k.x![1]!.t + 100);
+  await keys.nth(1).focus();
   await page.keyboard.press("Delete");
-  await expect(keys).toHaveCount(1);
+  await expect(keys).toHaveCount(2);
+});
+
+test("a key goes to the very start of the video: drag it to 0, and it stays there (docs/32)", async ({ page }) => {
+  const pod = (await state(page)).scene.elements["pod-2"]!;
+  const p = await screen(page, pod.x + pod.width / 2, pod.y + pod.height / 2);
+  await page.mouse.click(p.x, p.y);
+  await page.evaluate(() => (window as unknown as { __anivo: { setState(p: unknown): void } }).__anivo.setState({ playhead: 1500 }));
+  await page.keyboard.press("i");
+  const key = page.getByRole("slider", { name: /Keyframe Position of pod-2/ });
+  await expect(key).toHaveCount(1);
+  await key.scrollIntoViewIfNeeded();
+  const b = (await key.boundingBox())!;
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(b.x - 400, b.y + b.height / 2, { steps: 8 });
+  await page.mouse.up();
+  expect((await keysOf(page, "pod-2")).x![0]!.t).toBe(0);
+});
+
+test("invisible at the start, then it comes in: opacity 0 at 0 s, 100 at 1 s (docs/32)", async ({ page }) => {
+  const pod = (await state(page)).scene.elements["pod-2"]!;
+  const p = await screen(page, pod.x + pod.width / 2, pod.y + pod.height / 2);
+  await page.mouse.click(p.x, p.y);
+  await page.evaluate(() => (window as unknown as { __anivo: { setState(p: unknown): void } }).__anivo.setState({ playhead: 0, autoKey: true, selectedStep: null }));
+  await page.getByRole("button", { name: "Element", exact: true }).click();
+  const opacity = page.getByRole("spinbutton", { name: "Opacity" });
+  await opacity.fill("0");
+  await opacity.press("Enter");
+  await page.evaluate(() => (window as unknown as { __anivo: { setState(p: unknown): void } }).__anivo.setState({ playhead: 1000 }));
+  await opacity.fill("100");
+  await opacity.press("Enter");
+  const k = await keysOf(page, "pod-2");
+  expect(k.opacity!.map((x) => [x.t, x.v])).toEqual([
+    [0, 0],
+    [1000, 1],
+  ]);
+  // At 0 s the panel and the canvas agree: opacity 0.
+  await page.evaluate(() => (window as unknown as { __anivo: { setState(p: unknown): void } }).__anivo.setState({ playhead: 0 }));
+  await expect(opacity).toHaveValue("0%");
 });
 
 test("the keyframe button of a property adds and removes a keyframe at the playhead", async ({ page }) => {
@@ -93,8 +136,7 @@ test("a property with a keyframe records the next change at the playhead, with R
   await page.mouse.click(p2.x, p2.y);
   await page.keyboard.press("Shift+ArrowRight");
   const s = await state(page);
-  const morphs = s.scene.steps.find((x) => x.id === s.selectedStep)!.actions.filter((a) => a.type === "morph");
-  expect(morphs).toHaveLength(2);
+  expect((await keysOf(page, "pod-2")).x).toHaveLength(2);
   expect(s.scene.elements["pod-2"]!.x).toBe(pod.x);
 });
 
@@ -116,15 +158,13 @@ test("the motion path shows the position keys on the canvas; drag a key dot to c
   await page.mouse.move(keyAt.x + 30, keyAt.y + 10, { steps: 4 });
   await page.mouse.move(keyAt.x + 60, keyAt.y + 20, { steps: 4 });
   await page.mouse.up();
-  const s = await state(page);
-  const morph = s.scene.steps.find((x) => x.id === s.selectedStep)!.actions.find((a) => a.type === "morph") as unknown as { to: { x: number; y: number } };
-  expect(morph.to.x).toBeGreaterThan(pod.x + 20);
-  expect(morph.to.y).toBeGreaterThan(pod.y - 100);
+  const k = await keysOf(page, "pod-2");
+  expect(k.x!.at(-1)!.v).toBeGreaterThan(pod.x + 20);
+  expect(k.y!.at(-1)!.v).toBeGreaterThan(pod.y - 100);
   // One undo restores the key.
   await page.keyboard.press("Control+z");
-  const u = await state(page);
-  const back = u.scene.steps.find((x) => x.id === u.selectedStep)!.actions.find((a) => a.type === "morph") as unknown as { to: { x?: number; y: number } };
-  expect(back.to).toEqual({ y: pod.y - 100 });
+  const back = await keysOf(page, "pod-2");
+  expect(back.y!.at(-1)!.v).toBe(pod.y - 100);
 });
 
 test("select many keys with Shift: delete them together; copy keys and paste them on another element", async ({ page }) => {
@@ -141,20 +181,21 @@ test("select many keys with Shift: delete them together; copy keys and paste the
   await page.keyboard.press("Shift+ArrowUp");
   await page.keyboard.press("k");
   const keys = page.getByRole("slider", { name: /Keyframe Position of pod-2/ });
-  await expect(keys).toHaveCount(2);
-  // Copy both, paste on pod-1.
-  await keys.nth(0).click();
-  await keys.nth(1).click({ modifiers: ["Shift"] });
+  // The step start (where the move starts) and the two moves.
+  await expect(keys).toHaveCount(3);
+  // Copy the two moves, paste on pod-1.
+  await keys.nth(1).click();
+  await keys.nth(2).click({ modifiers: ["Shift"] });
   await page.keyboard.press("Control+c");
   await page.evaluate(() => (window as unknown as { __anivo: { getState(): { setSelection(ids: string[]): void } } }).__anivo.getState().setSelection(["pod-1"]));
   await keys.nth(0).focus();
   await page.keyboard.press("Control+v");
   await expect(page.getByRole("slider", { name: /Keyframe Position of pod-1/ })).toHaveCount(2);
-  // Delete both keys of pod-2 at once.
-  await keys.nth(0).click();
-  await keys.nth(1).click({ modifiers: ["Shift"] });
+  // Delete the two keys of pod-2 at once.
+  await keys.nth(1).click();
+  await keys.nth(2).click({ modifiers: ["Shift"] });
   await page.keyboard.press("Delete");
-  await expect(keys).toHaveCount(0);
+  await expect(keys).toHaveCount(1);
 });
 
 test("I inserts a position key at the playhead, Alt+I deletes it", async ({ page }) => {
@@ -177,11 +218,7 @@ test("F9 eases the selected key; the curve editor sets a custom curve", async ({
   await page.keyboard.press("i");
   const key = page.getByRole("slider", { name: /Keyframe Position of pod-2/ });
   await key.click();
-  type M = { type: string; easing?: unknown; targets: string[] };
-  const easingNow = async () => {
-    const s = (await state(page)) as unknown as { scene: { steps: { actions: M[] }[] } };
-    return s.scene.steps.flatMap((x) => x.actions).find((a) => a.type === "morph" && a.targets[0] === "pod-2")!.easing;
-  };
+  const easingNow = async () => (await keysOf(page, "pod-2")).x![0]!.ease ?? "ease-in-out";
   await page.keyboard.press("Shift+F9");
   expect(await easingNow()).toBe("ease-out");
   await page.keyboard.press("F9");
@@ -214,10 +251,10 @@ test("box select keys, then Alt + drag stretches their times", async ({ page }) 
   await page.keyboard.press("Shift+ArrowUp");
   await page.keyboard.press("k");
   const keys = page.getByRole("slider", { name: /Keyframe Position of pod-2/ });
-  await expect(keys).toHaveCount(2);
-  await keys.nth(1).scrollIntoViewIfNeeded();
-  const a = (await keys.nth(0).boundingBox())!;
-  const b = (await keys.nth(1).boundingBox())!;
+  await expect(keys).toHaveCount(3);
+  await keys.nth(2).scrollIntoViewIfNeeded();
+  const a = (await keys.nth(1).boundingBox())!;
+  const b = (await keys.nth(2).boundingBox())!;
   // Box select from left of the first key to right of the second.
   await page.mouse.move(a.x - 15, a.y - 6);
   await page.mouse.down();
@@ -225,16 +262,12 @@ test("box select keys, then Alt + drag stretches their times", async ({ page }) 
   await page.mouse.up();
   await expect(page.getByText("2 keys")).toBeVisible();
   // Alt + drag the second key: twice as far from the first.
-  type M = { delayMs: number; durationMs: number };
-  const timesNow = async () => {
-    const s = await state(page);
-    return (s.scene.steps.find((x) => x.id === s.selectedStep)!.actions.filter((x) => x.type === "morph") as unknown as M[]).map((m) => m.delayMs + m.durationMs);
-  };
+  const timesNow = async () => (await keysOf(page, "pod-2")).y!.map((k) => k.t).slice(-2);
   const before = await timesNow();
   // The tracks can scroll during the box drag: measure again.
-  await keys.nth(1).scrollIntoViewIfNeeded();
-  const a2 = (await keys.nth(0).boundingBox())!;
-  const b2 = (await keys.nth(1).boundingBox())!;
+  await keys.nth(2).scrollIntoViewIfNeeded();
+  const a2 = (await keys.nth(1).boundingBox())!;
+  const b2 = (await keys.nth(2).boundingBox())!;
   await page.keyboard.down("Alt");
   await page.mouse.move(b2.x + b2.width / 2, b2.y + b2.height / 2);
   await page.mouse.down();

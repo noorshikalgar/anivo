@@ -36,24 +36,22 @@ Click the timeline button (bottom right of the playback bar).
 
 ## Keys
 
-A change is static until you animate it. This is the rule:
+Keys are on the video time, as in After Effects. They do not need a step.
 
-- **Record off**: a change sets the element in all steps. Nothing moves in the video.
-- **Record on** (press **K**, or the red **Record** button): a change makes a key at the playhead. The canvas has a red frame.
-- A property that has a key already records its next change as a key.
+- **Record** (press **K**, or the red **Record** button): a change makes a key at the playhead. The canvas has a red frame.
+- A property that has keys records its next change as a key, also with Record off.
+- Click **◆** next to a property (Position, Size, Opacity, Fill, Text color, …) to add a key with the value now, or to remove the key at the playhead.
+- Select elements and press **I** (position) or **Shift+I** (all properties). **Alt+I** deletes the keys at the playhead.
 
-Ways to make keys:
-
-1. Press **K**, move the playhead, move or change the element. Move the playhead again, change it again.
-2. Click **◆** next to a property (Position, Size, Opacity, Fill, …).
-3. Select elements and press **I** (position) or **Shift+I** (all properties). **Alt+I** deletes the keys at the playhead.
+Example: invisible at the start, then it comes in. Press K. Put the playhead at 0 and set Opacity to 0. Put the playhead at 1 s and set Opacity to 100. Play.
 
 Edit keys:
 
-- Drag a ◆ in the timeline. Arrow keys move the focused ◆ 100 ms (Shift: 500 ms). **Delete** removes it.
+- Drag a ◆ in the timeline, also to 0. Arrow keys move the focused ◆ 100 ms (Shift: 500 ms). **Delete** removes it.
 - **Shift + click** selects many keys. Drag on an empty part of the tracks to box select. **Alt + drag** a selected key to stretch or shrink their times.
 - **Ctrl+C** and **Ctrl+V** copy keys to another element, from the playhead.
-- On the canvas: the dashed path shows the position keys of the selected element. Drag a dot to change that key. The onion skin shows the element at the key before (red) and after (green).
+- The property panel shows the value at the playhead, the same as the canvas.
+- On the canvas: the dashed path shows the position keys of the selected element. Drag a dot to change that key.
 
 ## Easing
 

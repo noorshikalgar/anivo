@@ -1,7 +1,6 @@
 import { Tooltip, makeStyles, mergeClasses } from "@fluentui/react-components";
-import { deleteKeyframeOps, keyframesIn, setKeyframeOps } from "@anivo/ops";
+import { ELEMENT_KEY_GROUPS, deleteElementKeysAtOps, setElementKeysOps } from "@anivo/ops";
 import type { ReactNode } from "react";
-import { keyAtPlayhead } from "../commands.js";
 import { useEditor } from "../store.js";
 
 const useStyles = makeStyles({
@@ -27,31 +26,28 @@ const useStyles = makeStyles({
 const SAME_MS = 20;
 
 /**
- * A property label with a keyframe button (docs/16): empty when the property
- * has no keyframes in the step, an outline when it has keyframes at other
- * times, and full when a keyframe is at the playhead. Click to add a keyframe
- * with the current value at the playhead, or to remove the one there.
+ * A property label with a keyframe button (docs/32): empty when the property
+ * has no keys, an outline when it has keys at other times, and full when a
+ * key is at the playhead. Click to add a key with the value now, at the
+ * playhead, or to remove the key there. Keys are on the video time, so the
+ * button works in any view, also before the first step.
  */
 export function KeyLabel({ element, group, values, children }: { element: string; group: string; values: Record<string, unknown>; children: ReactNode }) {
   const s = useStyles();
-  const scene = useEditor((st) => st.scene);
-  const selectedStep = useEditor((st) => st.selectedStep);
+  const keysOf = useEditor((st) => st.scene.elements[element]?.keys);
   const playhead = useEditor((st) => st.playhead);
-  if (selectedStep === null) return <>{children}</>;
-  void playhead;
-  const at = keyAtPlayhead();
-  const t = at?.t ?? null;
-  const stepId = at?.stepId ?? selectedStep;
+  const props = ELEMENT_KEY_GROUPS[group];
+  if (!props) return <>{children}</>;
   // A theme default color has no value to key.
-  const set = Object.fromEntries(Object.entries(values).filter(([, v]) => v !== undefined && v !== null));
+  const set = Object.fromEntries(Object.entries(values).filter(([k, v]) => (props as string[]).includes(k) && (typeof v === "number" || typeof v === "string"))) as Record<string, number | string>;
   const canKey = Object.keys(set).length > 0;
-  const keys = keyframesIn(scene, stepId).filter((k) => k.element === element && k.group === group);
-  const here = t === null ? undefined : keys.find((k) => Math.abs(k.timeMs - t) <= SAME_MS);
-  const label = here ? "Remove the keyframe at the playhead" : t === null ? "Move the playhead into the step to add a keyframe" : !canKey ? "Choose a value first: the theme default has no keyframe" : "Add a keyframe at the playhead";
+  const times = props.flatMap((p) => (keysOf?.[p] ?? []).map((k) => k.t));
+  const t = Math.max(0, Math.round(playhead));
+  const here = times.some((x) => Math.abs(x - t) <= SAME_MS);
+  const label = here ? "Remove the keyframe at the playhead" : !canKey ? "Choose a value first: the theme default has no keyframe" : `Add a keyframe at ${(t / 1000).toFixed(2)} s`;
   const toggle = () => {
     const st = useEditor.getState();
-    if (t === null) return;
-    const ops = here ? deleteKeyframeOps(st.scene, stepId, here.actionId) : setKeyframeOps(st.scene, stepId, element, set, t);
+    const ops = here ? deleteElementKeysAtOps(st.scene, element, props, t) : setElementKeysOps(st.scene, element, set, t);
     if (ops.length === 0) return;
     st.apply({ label: here ? "Delete keyframe" : "Add keyframe", ops });
     useEditor.setState({ timelineOpen: true });
@@ -60,8 +56,8 @@ export function KeyLabel({ element, group, values, children }: { element: string
     <span className={s.label}>
       {children}
       <Tooltip content={label} relationship="label">
-        <button type="button" className={s.key} disabled={t === null || (!here && !canKey)} onClick={toggle} aria-pressed={here !== undefined} data-key-group={group}>
-          <span className={mergeClasses(s.diamond, keys.length > 0 && s.has, here && s.on)} />
+        <button type="button" className={s.key} disabled={!here && !canKey} onClick={toggle} aria-pressed={here} data-key-group={group}>
+          <span className={mergeClasses(s.diamond, times.length > 0 && s.has, here && s.on)} />
         </button>
       </Tooltip>
     </span>

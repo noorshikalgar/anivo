@@ -87,6 +87,8 @@ widget <id> <name> [at=x,y] [size=WxH] [<text>="…"]   (a ready-made group; par
   names and texts: browser (url, page), phone (screen), server (label), database (label), chat (text), terminal (code),
   stat (value, caption), step-badge (number, label), progress (label), callout (text), user-card (name, role), packet (header, body), stamp (text), envelope (label), lock (label), definition (word, kind, meaning), skeleton-card (title), meter (label; animate <id>-fill with preset fill-up), slider (label, value; preset fill-right on <id>-fill), toggle (label), bar-chart (a, b, c, d; preset fill-up on <id>-bar-1…4), cursor, notification (title, body)
 
+key <id> at=<time> <property>=<value>… [ease=<easing>]   (keyframes on the video time, not in a step: x, y, width, height, opacity (0..1 or 50%), rotate, scale, fill, stroke, color, font-size, stroke-width, radius. Before the first key the first value holds; a key at 0 sets the start.)
+
 step "<title>" [hold=<time>] [cue=<time>] [caption="<one sentence>" [near=<id>] [side=auto|above|below|left|right|top|bottom]]
   (caption: types in next to the element that changes; the step holds until a viewer can read it. Use one idea and one caption for each step.)
   [transition=fade|dip|flash|wipe|zoom|blur|slide] [transition-dur=<time>]   (a change of scene: use it between parts of the story, not on every step)

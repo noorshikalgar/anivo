@@ -236,6 +236,8 @@ export function resolveTimeline(scene: Scene): Timeline {
   // The video lasts until the end of the last audio track, if that is later than the last step.
   let total = cursor;
   for (const t of scene.audio ?? []) total = Math.max(total, trackSpan(t).endMs);
+  // Element keyframes are on the video time (docs/32): the video lasts until the last key.
+  for (const el of Object.values(scene.elements)) for (const keys of Object.values(el.keys ?? {})) for (const k of keys ?? []) total = Math.max(total, k.t);
   return { steps, totalMs: total, warnings };
 }
 
