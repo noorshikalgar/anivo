@@ -12,7 +12,7 @@ import { IconButton } from "./ui.js";
 
 const useStyles = makeStyles({
   root: { display: "flex", flexDirection: "column", backgroundColor: "var(--ui-region)", color: "var(--ui-text)", fontSize: "12px" },
-  header: { display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)", alignItems: "center", columnGap: "12px", height: "34px", padding: "0 8px 0 12px", backgroundColor: "var(--ui-header)", borderBottom: "1px solid var(--ui-line)" },
+  header: { display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto auto", alignItems: "center", columnGap: "12px", height: "34px", padding: "0 8px 0 12px", backgroundColor: "var(--ui-header)", borderBottom: "1px solid var(--ui-line)" },
   side: { display: "flex", alignItems: "center", gap: "6px", minWidth: 0 },
   slot: { display: "flex", alignItems: "center", gap: "6px", minWidth: 0, overflow: "hidden" },
   title: { fontWeight: 600, marginRight: "6px" },

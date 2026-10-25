@@ -10,6 +10,7 @@ import { type Keyframe, type OperationInput, keyframesIn, setElementKeysOps } fr
 import { type Action, type Easing, EasingName, type Scene } from "@anivo/schema";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Delete16Regular } from "@fluentui/react-icons";
 import { addAction, removeAction, updateAction } from "../commands.js";
 import { layerSpans } from "../layers.js";
 import { setAreas, useEditor } from "../store.js";
@@ -860,8 +861,9 @@ export function TimelinePanel() {
             )}
             {active ? (
               <>
-                <span style={{ color: "var(--ui-muted)" }}>
-                  · {selKeys.length > 1 ? `${selKeys.length} keys` : `${active.element} · ${GROUP_NAMES[active.group] ?? active.group} · ${formatTime(active.atMs)}`}
+                {/* Short: the bar is shared with the play controls (docs/36). The tooltip has all. */}
+                <span style={{ color: "var(--ui-muted)", overflow: "hidden", textOverflow: "ellipsis" }} title={selKeys.length > 1 ? undefined : `${active.element} · ${GROUP_NAMES[active.group] ?? active.group} · ${formatTime(active.atMs)}`}>
+                  ◆ {selKeys.length > 1 ? `${selKeys.length} keys` : (GROUP_NAMES[active.group] ?? active.group)}
                 </span>
                 <Popover positioning="above-start" withArrow>
                   <PopoverTrigger disableButtonEnhancement>
@@ -874,7 +876,6 @@ export function TimelinePanel() {
                   </PopoverSurface>
                 </Popover>
                 <label style={{ display: "flex", gap: "4px", alignItems: "center" }}>
-                  Easing
                   <select className={styles.select} aria-label="Easing of the selected keys" value={easing} onChange={(e) => setKeysEasing(e.target.value as Easing)}>
                     {easing === "custom" && (
                       <option value="custom" disabled>
@@ -891,12 +892,14 @@ export function TimelinePanel() {
                 <button
                   type="button"
                   className={styles.btn}
+                  aria-label="Delete key"
+                  title="Delete the selected keys (Delete)"
                   onClick={() => {
                     eachKey(selKeys, "Delete keyframes", (sc, x) => deleteKeyOps(sc, x));
                     setSelKeys([]);
                   }}
                 >
-                  Delete key
+                  <Delete16Regular />
                 </button>
               </>
             ) : null}

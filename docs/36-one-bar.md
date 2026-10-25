@@ -29,3 +29,4 @@ One bar, as in Premiere Pro and DaVinci Resolve:
 | B1 | Done. One bar, 34 px, three columns; the play controls stay in the center. |
 | B2 | Done. One time display. |
 | B3 | Done. No always-on hint. The Record tooltip uses the words of docs/32 ("for the whole video"). |
+| B4 | Done. The selected key tools are short (◆ group name, curve, easing, a Delete icon), and the left side gets all free space, so they fit at 1280 px. |
