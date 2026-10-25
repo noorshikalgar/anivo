@@ -179,13 +179,11 @@ function ElementProperties({ el }: { el: Element }) {
           At this time, {overrides.map((o) => `step "${o.title}" sets ${o.keys.join(", ")}`).join("; ")}. Your change to {overrides.length > 1 || overrides[0]!.keys.length > 1 ? "these properties" : "it"} changes the element before that step only.
         </Info>
       )}
-      {selectedStep !== null && (
-        <Info action={<AddActionMenu />}>
-          {autoKey
-            ? "Recording: a change to position, size, color, or label makes a keyframe at the playhead. Press K to stop."
-            : "A change sets the element in all steps. To animate a property, click its ◆ (a keyframe at the playhead), or press K to record. A property with keyframes records its changes."}
-        </Info>
-      )}
+      <Info action={<AddActionMenu />}>
+        {autoKey
+          ? "Recording: a change to position, size, opacity, or color makes a keyframe at the playhead. Press K to stop."
+          : "A change sets the element for the whole video. To animate a property, click its ◆ (a keyframe at the playhead), or press K to record."}
+      </Info>
 
       {hasText && (
         <Panel id="el-text" title={el.type === "text" ? "Text" : "Label"} group={MAIN}>

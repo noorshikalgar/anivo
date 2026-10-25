@@ -8,7 +8,7 @@ test.describe("editor shell", () => {
 
   test("loads the template and lists its steps", async ({ page }) => {
     const steps = page.getByRole("navigation", { name: "Steps" });
-    await expect(steps.getByRole("button", { name: /^(Base|Step \d+:)/ })).toHaveCount(5);
+    await expect(steps.getByRole("button", { name: /^(Start|Step \d+:)/ })).toHaveCount(5);
     await expect(steps.getByRole("button", { name: /Traffic flows/ })).toBeVisible();
     await expect(page.getByText("0:00.0 / 0:10.3")).toBeVisible();
   });
