@@ -86,10 +86,12 @@ test("drag a block into another step: the action moves to that step, and one und
   const step4 = s0.timeline.steps[3]!;
   // From the block start to 0.5 s into step 4.
   const targetX = ruler.x + ((step4.startMs + 500) / span) * ruler.width;
-  await page.mouse.move(box.x + 2, box.y + box.height / 2);
+  // Grab the middle: the edges of a block change its start or length (docs/34).
+  const grab = box.width / 2;
+  await page.mouse.move(box.x + grab, box.y + box.height / 2);
   await page.mouse.down();
-  await page.mouse.move((box.x + targetX) / 2, box.y + box.height / 2, { steps: 5 });
-  await page.mouse.move(targetX, box.y + box.height / 2, { steps: 5 });
+  await page.mouse.move((box.x + targetX) / 2 + grab, box.y + box.height / 2, { steps: 5 });
+  await page.mouse.move(targetX + grab, box.y + box.height / 2, { steps: 5 });
   await page.mouse.up();
   const s1 = (await state(page)) as unknown as typeof s0 & { selectedStep: string };
   expect(s1.scene.steps[1]!.actions.some((a) => a.id === enter.id)).toBe(false);
@@ -251,4 +253,34 @@ test("point at the ruler: a small frame of that time shows; the playhead does no
   expect(((await state(page)) as unknown as { playhead: number }).playhead).toBe(before);
   await page.mouse.move(box.x + box.width * 0.45, box.y + 400);
   await expect(page.locator("[data-scrub-preview]")).toHaveCount(0);
+});
+
+test("effect blocks: Delete removes, the start edge keeps the end, the right-click menu changes the effect (docs/34)", async ({ page }) => {
+  type A = { id: string; type: string; effect?: string; delayMs: number; durationMs?: number; targets: string[] };
+  const s0 = (await state(page)) as unknown as { scene: { steps: { id: string; actions: A[] }[] } };
+  const step = s0.scene.steps[1]!;
+  const enter = step.actions.find((a) => a.type === "enter" && a.targets.includes("lb"))!;
+  const block = page.getByRole("group", { name: "Track lb" }).locator(`[data-action="${enter.id}"]`);
+  await block.scrollIntoViewIfNeeded();
+  // Right click: change the effect to Rise.
+  await block.click({ button: "right" });
+  await page.getByRole("menu", { name: "Block menu" }).getByRole("menuitemradio", { name: /Rise/ }).click();
+  const act = async () => ((await state(page)) as unknown as typeof s0).scene.steps[1]!.actions.find((a) => a.id === enter.id);
+  expect((await act())!.effect).toBe("rise");
+  // The start edge: drag right, the end stays.
+  const before = (await act())!;
+  const end0 = before.delayMs + (before.durationMs ?? 0);
+  const edge = block.locator('[data-edge="start"]');
+  const b = (await edge.boundingBox())!;
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(b.x + b.width / 2 + 15, b.y + b.height / 2, { steps: 4 });
+  await page.mouse.up();
+  const after = (await act())!;
+  expect(after.delayMs).toBeGreaterThan(before.delayMs);
+  if (before.durationMs !== undefined) expect(after.delayMs + after.durationMs!).toBeCloseTo(end0, -1);
+  // Delete key removes the block.
+  await block.focus();
+  await page.keyboard.press("Delete");
+  expect(await act()).toBeUndefined();
 });

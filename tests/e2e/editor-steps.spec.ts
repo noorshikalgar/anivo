@@ -479,3 +479,14 @@ test("no step needed: in a new scene, an animation makes Step 1 (docs/33)", asyn
   expect(s.scene.steps.map((x) => x.title)).toEqual(["Step 1"]);
   expect(s.scene.steps[0]!.actions[0]).toMatchObject({ type: "enter", effect: "rise", targets: ["a"] });
 });
+
+test("the Animation list of an element: add at the playhead, see the time, delete (docs/34)", async ({ page }) => {
+  await page.evaluate(() => (window as unknown as { __anivo: { getState(): { setSelection(ids: string[]): void } } }).__anivo.getState().setSelection(["lb"]));
+  await page.getByRole("button", { name: "Element", exact: true }).click();
+  const list = page.getByRole("list", { name: "Animations of lb" });
+  const n0 = await list.getByRole("listitem").count();
+  await page.getByRole("group", { name: "Add an animation" }).getByRole("button", { name: "Pulse" }).click();
+  await expect(list.getByRole("listitem")).toHaveCount(n0 + 1);
+  await list.getByRole("button", { name: /Delete .*pulse/i }).first().click();
+  await expect(list.getByRole("listitem")).toHaveCount(n0);
+});

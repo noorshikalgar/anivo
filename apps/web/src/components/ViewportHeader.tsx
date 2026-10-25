@@ -66,7 +66,7 @@ export function ViewportHeader() {
         </MenuPopover>
       </Menu>
       <div className={s.where}>
-        {selected === null ? <span className={s.whereName}>Start</span> : <span className={s.whereName}>{`Step ${index + 1} · ${steps[index]?.title ?? ""}`}</span>}
+        {selected === null ? <span className={s.whereName}>Start</span> : <span className={s.whereName}>{steps[index]?.title && steps[index]!.title !== `Step ${index + 1}` ? `Step ${index + 1} · ${steps[index]!.title}` : `Step ${index + 1}`}</span>}
         {" · "}
         {formatTime(playhead)}
       </div>

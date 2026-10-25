@@ -9,7 +9,7 @@ import { easingFn, stepIndexAt } from "@anivo/engine";
 import { type Keyframe, type OperationInput, keyframesIn, setElementKeysOps } from "@anivo/ops";
 import { type Action, type Easing, EasingName, type Scene } from "@anivo/schema";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { updateAction } from "../commands.js";
+import { addAction, removeAction, updateAction } from "../commands.js";
 import { layerSpans } from "../layers.js";
 import { setAreas, useEditor } from "../store.js";
 import { formatTime } from "./PlaybackBar.js";
@@ -90,6 +90,9 @@ const useStyles = makeStyles({
   /** The bar that the active bar follows (a chain). */
   blockLead: { outline: "1px dashed rgba(255,255,255,0.9)", outlineOffset: "1px" },
   edge: { position: "absolute", top: 0, bottom: 0, right: "-3px", width: "7px", cursor: "ew-resize" },
+  edgeStart: { position: "absolute", top: 0, bottom: 0, left: "-3px", width: "7px", cursor: "ew-resize" },
+  ctx: { position: "fixed", zIndex: 40, minWidth: "170px", padding: "4px", borderRadius: "6px", backgroundColor: "var(--ui-menu)", boxShadow: "0 8px 24px rgba(0,0,0,.4)", border: "1px solid var(--ui-line)", display: "flex", flexDirection: "column" },
+  ctxItem: { textAlign: "left", padding: "6px 10px", border: "none", background: "transparent", color: "var(--ui-text)", font: "inherit", fontSize: "12px", borderRadius: "4px", cursor: "pointer", ":hover": { backgroundColor: "var(--ui-hover)" } },
   diamond: {
     position: "absolute",
     top: "6px",
@@ -140,7 +143,7 @@ interface GlobalKey extends Keyframe {
   fromAtMs: number;
 }
 
-type Drag = { kind: "move" | "end" | "key" | "scale"; key: string; dms: number };
+type Drag = { kind: "move" | "start" | "end" | "key" | "scale"; key: string; dms: number };
 
 /** A small preview of an easing curve: time to the right, value up. */
 function EaseCurve({ value }: { value: Easing }) {
@@ -173,6 +176,8 @@ export function TimelinePanel() {
   const playing = useEditor((s) => s.playing);
   /** The time under the pointer (a guide line and a time tag). */
   const [hoverMs, setHoverMs] = useState<number | null>(null);
+  // The menu of a block (right click, docs/34 E1).
+  const [ctx, setCtx] = useState<{ x: number; y: number; b: Block } | null>(null);
   // The pointer is over the ruler: show a frame of that time (docs/22 D1).
   const [scrub, setScrub] = useState<{ clientX: number; top: number } | null>(null);
   const [viewW, setViewW] = useState(800);
@@ -423,8 +428,10 @@ export function TimelinePanel() {
 
   const renderBlock = (b: Block, elId: string) => {
     const d = drag && drag.key === b.key ? drag : null;
-    const delay = d?.kind === "move" ? Math.max(0, b.action.delayMs + d.dms) : b.action.delayMs;
-    const dur = d?.kind === "end" ? Math.max(MIN_MS, durationOf(b) + d.dms) : durationOf(b);
+    // The start edge moves the start and keeps the end (docs/34 E2).
+    const startShift = d?.kind === "start" ? Math.max(-b.action.delayMs, Math.min(d.dms, durationOf(b) - MIN_MS)) : 0;
+    const delay = d?.kind === "move" ? Math.max(0, b.action.delayMs + d.dms) : b.action.delayMs + startShift;
+    const dur = d?.kind === "end" ? Math.max(MIN_MS, durationOf(b) + d.dms) : durationOf(b) - startShift;
     const follow = drag && dragged && b.stepId === dragged[0] && followers.has(b.action.id) ? drag.dms : 0;
     const start = b.startMs + (delay - b.action.delayMs) + follow;
     const label = describe(b.action);
@@ -457,7 +464,20 @@ export function TimelinePanel() {
               b.startMs,
             )
           }
+          onContextMenu={(e) => {
+            e.preventDefault();
+            useEditor.getState().selectStep(b.stepId);
+            useEditor.setState({ activeAction: b.action.id });
+            setCtx({ x: e.clientX, y: e.clientY, b });
+          }}
           onKeyDown={(e) => {
+            if (e.key === "Delete" || e.key === "Backspace") {
+              // Delete the action of this block (docs/34 E1).
+              e.preventDefault();
+              e.stopPropagation();
+              removeAction(b.stepId, b.action.id);
+              return;
+            }
             if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
             e.preventDefault();
             e.stopPropagation();
@@ -473,6 +493,18 @@ export function TimelinePanel() {
               <span style={{ display: "inline-flex", transform: "scale(0.8)" }}>{actionIcon(b.action.type)}</span>
               {pw(dur) > 60 ? label : ""}
             </span>
+          )}
+          {b.action.type !== "wait" && (
+            <span
+              className={styles.edgeStart}
+              data-edge="start"
+              onPointerDown={(e) =>
+                startDrag(e, "start", b.key, () => undefined, (dms) => {
+                  const shift = Math.max(-b.action.delayMs, Math.min(dms, durationOf(b) - MIN_MS));
+                  updateAction(b.stepId, b.action.id, { delayMs: b.action.delayMs + shift, durationMs: durationOf(b) - shift }, "Change start");
+                }, b.startMs)
+              }
+            />
           )}
           {b.action.type !== "wait" && (
             <span
@@ -750,6 +782,45 @@ export function TimelinePanel() {
 
   return (
     <div className={styles.root} role="region" aria-label="Timeline" style={{ height: `${areaH}px` }} onKeyDown={onKeysClipboard}>
+      {ctx && (
+        <>
+          <div style={{ position: "fixed", inset: 0, zIndex: 39 }} onPointerDown={() => setCtx(null)} onContextMenu={(e) => (e.preventDefault(), setCtx(null))} aria-hidden />
+          <div className={styles.ctx} style={{ left: Math.min(ctx.x, window.innerWidth - 190), top: Math.max(8, ctx.y - 10) }} role="menu" aria-label="Block menu">
+            <button type="button" role="menuitem" className={styles.ctxItem} onClick={() => (useEditor.setState({ propTab: "actions", activeAction: ctx.b.action.id }), setCtx(null))}>
+              Edit…
+            </button>
+            {(ctx.b.action.type === "enter" || ctx.b.action.type === "exit") && (
+              <>
+                {(["fade", "rise", "pop", "typewriter", "cascade", "blur"] as const).map((fx) => (
+                  <button key={fx} type="button" role="menuitemradio" aria-checked={"effect" in ctx.b.action && ctx.b.action.effect === fx} className={styles.ctxItem} onClick={() => (updateAction(ctx.b.stepId, ctx.b.action.id, { effect: fx }, "Change effect"), setCtx(null))}>
+                    {"effect" in ctx.b.action && ctx.b.action.effect === fx ? "✓ " : "\u2003"}
+                    {fx === "typewriter" ? "Type" : fx === "cascade" ? "Letters cascade" : fx.charAt(0).toUpperCase() + fx.slice(1)}
+                  </button>
+                ))}
+              </>
+            )}
+            <button
+              type="button"
+              role="menuitem"
+              className={styles.ctxItem}
+              onClick={() => {
+                // A copy right after the block.
+                const { id: _id, after: _after, ...rest } = ctx.b.action as typeof ctx.b.action & { after?: string };
+                void _id;
+                void _after;
+                useEditor.getState().selectStep(ctx.b.stepId);
+                addAction({ ...rest, delayMs: ctx.b.action.delayMs + durationOf(ctx.b) }, "Duplicate action");
+                setCtx(null);
+              }}
+            >
+              Duplicate
+            </button>
+            <button type="button" role="menuitem" className={styles.ctxItem} onClick={() => (removeAction(ctx.b.stepId, ctx.b.action.id), setCtx(null))}>
+              Delete
+            </button>
+          </div>
+        </>
+      )}
       <Splitter axis="y" label="Resize the timeline" style={{ top: "-3px" }} onStart={() => (startH.current = useEditor.getState().areas.timeline)} onDrag={(d) => setAreas({ timeline: Math.min(700, Math.max(110, startH.current - d)) })} onReset={() => setAreas({ timeline: 240 })} />
       <div className={styles.bar} role="toolbar" aria-label="Timeline tools">
         <Tooltip content="Record (K): while it is on, a change to an element makes a keyframe at the playhead. While it is off, a change sets the element in all steps." relationship="description">

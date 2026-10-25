@@ -2,6 +2,7 @@
  * The properties editor (docs/15): vertical tabs (Scene, Step, Element) and
  * collapsible panels with property rows.
  */
+import { ElementAnimations } from "./ElementAnimations.js";
 import { changePace } from "../commands.js";
 import { StylesPanel } from "./StylesPanel.js";
 import { KeyLabel } from "./KeyButton.js";
@@ -184,6 +185,8 @@ function ElementProperties({ el }: { el: Element }) {
           ? "Recording: a change to position, size, opacity, or color makes a keyframe at the playhead. Press K to stop."
           : "A change sets the element for the whole video. To animate a property, click its ◆ (a keyframe at the playhead), or press K to record."}
       </Info>
+
+      <ElementAnimations el={el} />
 
       {hasText && (
         <Panel id="el-text" title={el.type === "text" ? "Text" : "Label"} group={MAIN}>
