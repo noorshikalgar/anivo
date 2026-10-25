@@ -9,10 +9,11 @@ import { easingFn, stepIndexAt } from "@anivo/engine";
 import { type Keyframe, type OperationInput, keyframesIn, setElementKeysOps } from "@anivo/ops";
 import { type Action, type Easing, EasingName, type Scene } from "@anivo/schema";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { addAction, removeAction, updateAction } from "../commands.js";
 import { layerSpans } from "../layers.js";
 import { setAreas, useEditor } from "../store.js";
-import { formatTime } from "./PlaybackBar.js";
+import { TOOLS_LEFT, TOOLS_RIGHT, formatTime } from "./PlaybackBar.js";
 import { KEY_PROPS, deleteKeyOps, easeKeyOps, easeOfKey, elementTimelineKeys, isElementKey, moveKeyOps } from "../keys.js";
 import { ScrubPreview } from "./ScrubPreview.js";
 import { describe } from "./StepInspector.js";
@@ -31,7 +32,8 @@ const COLORS: Record<string, string> = { enter: "#1d4ed8", exit: "#475569", emph
 
 const useStyles = makeStyles({
   root: { position: "relative", display: "flex", flexDirection: "column", backgroundColor: "var(--ui-list)", color: "var(--ui-text)", minHeight: 0, fontSize: "12px" },
-  bar: { display: "flex", alignItems: "center", gap: "6px", height: "26px", padding: "0 8px", flexShrink: 0, backgroundColor: "var(--ui-region)", borderBottom: "1px solid var(--ui-line)", fontVariantNumeric: "tabular-nums" },
+  bar: { display: "flex", alignItems: "center", gap: "6px", minWidth: 0, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" },
+  group: { display: "flex", gap: "2px" },
   btn: {
     border: "none",
     borderRadius: "3px",
@@ -185,6 +187,13 @@ export function TimelinePanel() {
   const [open, setOpen] = useState<Set<string>>(new Set());
   /** Track filter (docs/19 R4): all, only tracks with actions or keys, or only the selection. */
   const [filter, setFilter] = useState<"all" | "animated" | "selected">("all");
+  // The playback bar renders first, so its slots are in the document.
+  const [slots, setSlots] = useState<{ left: HTMLElement; right: HTMLElement } | null>(null);
+  useEffect(() => {
+    const left = document.getElementById(TOOLS_LEFT);
+    const right = document.getElementById(TOOLS_RIGHT);
+    if (left && right) setSlots({ left, right });
+  }, []);
   const [drag, setDrag] = useState<Drag | null>(null);
   /** Selected keys (action IDs). Shift + click adds one. The last is the active key. */
   const [selKeys, setSelKeys] = useState<string[]>([]);
@@ -822,94 +831,102 @@ export function TimelinePanel() {
         </>
       )}
       <Splitter axis="y" label="Resize the timeline" style={{ top: "-3px" }} onStart={() => (startH.current = useEditor.getState().areas.timeline)} onDrag={(d) => setAreas({ timeline: Math.min(700, Math.max(110, startH.current - d)) })} onReset={() => setAreas({ timeline: 240 })} />
-      <div className={styles.bar} role="toolbar" aria-label="Timeline tools">
-        <Tooltip content="Record (K): while it is on, a change to an element makes a keyframe at the playhead. While it is off, a change sets the element in all steps." relationship="description">
-          <button type="button" aria-pressed={autoKey} aria-label="Record keyframes" className={mergeClasses(styles.btn, styles.rec, autoKey && styles.recOn)} onClick={() => useEditor.setState({ autoKey: !autoKey })}>
-            <span className={mergeClasses(styles.recDot, autoKey && styles.recDotOn)} />
-            Record
-          </button>
-        </Tooltip>
-        <button type="button" className={styles.btn} aria-label="Previous keyframe" onClick={() => goKey(-1)} disabled={keyTimes.length === 0}>
-          ◀◆
-        </button>
-        <button type="button" className={styles.btn} aria-label="Next keyframe" onClick={() => goKey(1)} disabled={keyTimes.length === 0}>
-          ◆▶
-        </button>
-        <span>{formatTime(playhead)}</span>
-        {loop ? (
-          <Tooltip content="Play goes round in the loop region. Alt + drag on the ruler to change it." relationship="description">
-            <button type="button" className={mergeClasses(styles.btn, styles.btnOn)} aria-label="Clear the loop region" onClick={() => useEditor.setState({ loop: null })}>
-              ⟳ {formatTime(loop.fromMs)}–{formatTime(loop.toMs)} ✕
+      {/* One bar (docs/36): the tools go into the slots of the playback bar. */}
+      {slots &&
+        createPortal(
+          <div className={styles.bar} role="toolbar" aria-label="Timeline tools">
+            <Tooltip content="Record (K): while it is on, a change to an element makes a keyframe at the playhead. While it is off, a change sets the element for the whole video." relationship="description">
+              <button type="button" aria-pressed={autoKey} aria-label="Record keyframes" className={mergeClasses(styles.btn, styles.rec, autoKey && styles.recOn)} onClick={() => useEditor.setState({ autoKey: !autoKey })}>
+                <span className={mergeClasses(styles.recDot, autoKey && styles.recDotOn)} />
+                Record
+              </button>
+            </Tooltip>
+            <button type="button" className={styles.btn} aria-label="Previous keyframe" onClick={() => goKey(-1)} disabled={keyTimes.length === 0}>
+              ◀◆
             </button>
-          </Tooltip>
-        ) : (
-          <Tooltip content="Alt + drag on the ruler to set a loop region" relationship="description">
-            <span style={{ color: "var(--ui-muted)" }}>⟳</span>
-          </Tooltip>
-        )}
-        {active ? (
-          <>
-            <span style={{ color: "var(--ui-muted)" }}>
-              · {selKeys.length > 1 ? `${selKeys.length} keys` : `${active.element} · ${GROUP_NAMES[active.group] ?? active.group} · ${formatTime(active.atMs)}`}
-            </span>
-            <Popover positioning="above-start" withArrow>
-              <PopoverTrigger disableButtonEnhancement>
-                <button type="button" className={styles.btn} aria-label="Edit the easing curve" style={{ padding: 0, display: "flex" }}>
-                  <EaseCurve value={easingVal} />
+            <button type="button" className={styles.btn} aria-label="Next keyframe" onClick={() => goKey(1)} disabled={keyTimes.length === 0}>
+              ◆▶
+            </button>
+            {loop ? (
+              <Tooltip content="Play goes round in the loop region. Alt + drag on the ruler to change it." relationship="description">
+                <button type="button" className={mergeClasses(styles.btn, styles.btnOn)} aria-label="Clear the loop region" onClick={() => useEditor.setState({ loop: null })}>
+                  ⟳ {formatTime(loop.fromMs)}–{formatTime(loop.toMs)} ✕
                 </button>
-              </PopoverTrigger>
-              <PopoverSurface onPointerDown={(e) => e.stopPropagation()} style={{ backgroundColor: "var(--ui-menu)", color: "var(--ui-text)", border: "1px solid var(--ui-outline)" }}>
-                <CurveEditor value={easingVal} onChange={setKeysEasing} />
-              </PopoverSurface>
-            </Popover>
-            <label style={{ display: "flex", gap: "4px", alignItems: "center" }}>
-              Easing
-              <select className={styles.select} aria-label="Easing of the selected keys" value={easing} onChange={(e) => setKeysEasing(e.target.value as Easing)}>
-                {easing === "custom" && (
-                  <option value="custom" disabled>
-                    custom curve
-                  </option>
-                )}
-                {EasingName.options.map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button
-              type="button"
-              className={styles.btn}
-              onClick={() => {
-                eachKey(selKeys, "Delete keyframes", (sc, x) => deleteKeyOps(sc, x));
-                setSelKeys([]);
-              }}
-            >
-              Delete key
-            </button>
-          </>
-        ) : (
-          <span style={{ color: "var(--ui-muted)" }}>Click a block or a ◆ to edit it. Ctrl + wheel zooms.</span>
+              </Tooltip>
+            ) : (
+              <Tooltip content="Alt + drag on the ruler to set a loop region" relationship="description">
+                <span style={{ color: "var(--ui-muted)" }}>⟳</span>
+              </Tooltip>
+            )}
+            {active ? (
+              <>
+                <span style={{ color: "var(--ui-muted)" }}>
+                  · {selKeys.length > 1 ? `${selKeys.length} keys` : `${active.element} · ${GROUP_NAMES[active.group] ?? active.group} · ${formatTime(active.atMs)}`}
+                </span>
+                <Popover positioning="above-start" withArrow>
+                  <PopoverTrigger disableButtonEnhancement>
+                    <button type="button" className={styles.btn} aria-label="Edit the easing curve" style={{ padding: 0, display: "flex" }}>
+                      <EaseCurve value={easingVal} />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverSurface onPointerDown={(e) => e.stopPropagation()} style={{ backgroundColor: "var(--ui-menu)", color: "var(--ui-text)", border: "1px solid var(--ui-outline)" }}>
+                    <CurveEditor value={easingVal} onChange={setKeysEasing} />
+                  </PopoverSurface>
+                </Popover>
+                <label style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                  Easing
+                  <select className={styles.select} aria-label="Easing of the selected keys" value={easing} onChange={(e) => setKeysEasing(e.target.value as Easing)}>
+                    {easing === "custom" && (
+                      <option value="custom" disabled>
+                        custom curve
+                      </option>
+                    )}
+                    {EasingName.options.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  className={styles.btn}
+                  onClick={() => {
+                    eachKey(selKeys, "Delete keyframes", (sc, x) => deleteKeyOps(sc, x));
+                    setSelKeys([]);
+                  }}
+                >
+                  Delete key
+                </button>
+              </>
+            ) : null}
+          </div>,
+          slots.left,
         )}
-        <span style={{ marginLeft: "auto", display: "flex", gap: "2px" }} role="group" aria-label="Show tracks">
-          {(["all", "animated", "selected"] as const).map((f) => (
-            <button key={f} type="button" aria-pressed={filter === f} className={mergeClasses(styles.btn, filter === f && styles.btnOn)} onClick={() => setFilter(f)}>
-              {f === "all" ? "All" : f === "animated" ? "Animated" : "Selected"}
-            </button>
-          ))}
-        </span>
-        <span style={{ display: "flex", gap: "2px" }}>
-          <button type="button" className={styles.btn} aria-label="Zoom out the timeline" onClick={() => setZoom((z) => Math.max(1, z / 1.5))}>
-            −
-          </button>
-          <button type="button" className={styles.btn} aria-label="Fit the timeline" onClick={() => setZoom(1)}>
-            Fit
-          </button>
-          <button type="button" className={styles.btn} aria-label="Zoom in the timeline" onClick={() => setZoom((z) => Math.min(40, z * 1.5))}>
-            +
-          </button>
-        </span>
-      </div>
+      {slots &&
+        createPortal(
+          <div className={styles.bar} role="group" aria-label="Timeline view">
+            <span className={styles.group} role="group" aria-label="Show tracks">
+              {(["all", "animated", "selected"] as const).map((f) => (
+                <button key={f} type="button" aria-pressed={filter === f} className={mergeClasses(styles.btn, filter === f && styles.btnOn)} onClick={() => setFilter(f)}>
+                  {f === "all" ? "All" : f === "animated" ? "Animated" : "Selected"}
+                </button>
+              ))}
+            </span>
+            <span className={styles.group} role="group" aria-label="Zoom">
+              <button type="button" className={styles.btn} aria-label="Zoom out the timeline" onClick={() => setZoom((z) => Math.max(1, z / 1.5))}>
+                −
+              </button>
+              <button type="button" className={styles.btn} aria-label="Fit the timeline" onClick={() => setZoom(1)}>
+                Fit
+              </button>
+              <button type="button" className={styles.btn} aria-label="Zoom in the timeline" onClick={() => setZoom((z) => Math.min(40, z * 1.5))}>
+                +
+              </button>
+            </span>
+          </div>,
+          slots.right,
+        )}
       <div
         className={styles.scroll}
         ref={scrollRef}
