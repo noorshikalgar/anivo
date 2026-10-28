@@ -704,16 +704,21 @@ export function evaluateAt(prepared: Prepared, timeMs: number, opts: EvaluateOpt
   const camera = i < 0 ? baseCamera : cameraAt(timeline.steps[i]!, i === 0 ? baseCamera : cameras[i - 1]!, baseCamera, state, v.width / v.height, t);
   // A step transition is centered on the step start: half before, half after.
   let transition: FrameState["transition"];
+  let hideExits: string[] = [];
   for (const ts of timeline.steps) {
     const tr = scene.steps[ts.index]!.transition;
     if (!tr || tr.durationMs <= 0) continue;
     const from = ts.startMs - tr.durationMs / 2;
     if (t >= from && t < from + tr.durationMs) {
       transition = { kind: tr.kind, progress: (t - from) / tr.durationMs };
+      // The second half shows the new step. An element that the new step removes in that
+      // half stays hidden: else it comes back with the transition, then fades out (a flash).
+      if (t >= ts.startMs) hideExits = ts.actions.filter((ta) => ta.action.type === "exit" && ta.startMs < from + tr.durationMs).map((ta) => ta.target);
       break;
     }
   }
   applyKeys(scene, state, t);
+  for (const id of hideExits) if (state[id]) state[id] = { ...state[id]!, opacity: 0 };
   fadeWithEnds(scene, state);
   // A particle travels only on an arrow that shows and is drawn (the cache filmstrip had mail flying before its arrow).
   const onShownArrow = (p: Particle) => {
