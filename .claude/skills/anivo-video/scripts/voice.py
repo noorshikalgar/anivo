@@ -1,9 +1,11 @@
 """Voiceover for an Anivo Script video, with Kokoro (local, free, Apache 2.0).
 
 The narration of a step is its caption, or a `# say: ...` comment line after
-the step line (for a step with no caption, for example the title).
+the step line (for a step with no caption, for example the title). A
+`# part: intro` or `# part: outro` line after a step line marks the intro and
+the outro: fit puts 1 s of silence after the intro and before the outro.
 
-  voice.py synth  <script.txt> <dir> [--voice af_heart] [--speed 1.0]
+  voice.py synth  <script.txt> <dir> [--voice am_puck] [--speed 0.9]
       One WAV for each spoken step in <dir>, and <dir>/lines.json.
   voice.py fit    <script.txt> <scene.anivo> <dir> [--anivo CMD]
       Make each step at least as long as its line + a pause: rewrites hold= in
@@ -23,13 +25,18 @@ import wave
 from pathlib import Path
 
 RATE = 24000
-# A natural pace (docs/42): a short breath between sentences, a longer one
-# where a new section starts (a step with a transition).
-LEAD_MS = 80  # the voice starts just after the picture changes
-PAUSE_MS = 350  # between two sentences
-SECTION_MS = 700  # before a step with a transition
+# A calm pace (docs/42, owner: "make it a little slow so the viewer can understand"):
+# a breath between sentences, a longer one where a new section starts (a step
+# with a transition), and 1 s of silence between the intro, the body, and the outro.
+LEAD_MS = 150  # the voice starts just after the picture changes
+PAUSE_MS = 600  # between two sentences
+SECTION_MS = 1000  # before a step with a transition
+GAP_MS = 1000  # after the intro, and before the outro
+END_MS = 2000  # the last frame holds after the last line
 EDGE_MS = 40  # silence kept at each end of a clip
+IDLE = ("float", "breathe")  # idle motion fills the hold; it is not an action that the line waits for
 
+PART = re.compile(r"^#\s*part:\s*(intro|outro)\s*$")
 STEP = re.compile(r'^step\s+"((?:[^"\\]|\\.)*)"(.*)$')
 CAPTION = re.compile(r'caption="((?:[^"\\]|\\.)*)"')
 HOLD = re.compile(r"\bhold=(\d+)ms\b")
@@ -43,9 +50,13 @@ def spoken(script: str) -> list[dict]:
         if m:
             c = CAPTION.search(m.group(2))
             rest = CAPTION.sub("", m.group(2))
-            out.append({"title": m.group(1), "line": i, "say": c.group(1).replace('\\"', '"') if c else "", "section": "transition=" in rest})
+            out.append({"title": m.group(1), "line": i, "say": c.group(1).replace('\\"', '"') if c else "", "section": "transition=" in rest, "part": "body"})
             continue
         s = line.strip()
+        p = PART.match(s)
+        if out and p:
+            out[-1]["part"] = p.group(1)
+            continue
         if out and s.startswith("# say:") and not out[-1]["say"]:
             out[-1]["say"] = s[len("# say:"):].strip()
     return out
@@ -93,17 +104,32 @@ def timeline(scene: str, anivo: str) -> list[tuple[float, float, float]]:
             s = float(m.group(1))
             out.append((s, float(m.group(2)), s))
             continue
-        m = re.match(r"^\s+- .* ([\d.]+)-([\d.]+) s", line)
-        if m and out:
+        m = re.match(r"^\s+- (\S+) .* ([\d.]+)-([\d.]+) s", line)
+        if m and out and m.group(1) not in IDLE:
             s, e, act = out[-1]
-            out[-1] = (s, e, max(act, float(m.group(2))))
+            out[-1] = (s, e, max(act, float(m.group(3))))
     return out
+
+
+def pause_after(lines: list[dict], n: int) -> int:
+    """The silence after the line of step n, before the next step starts."""
+    cur, nxt = lines[n], lines[n + 1] if n + 1 < len(lines) else None
+    if nxt is None:
+        return END_MS
+    if cur.get("part") == "intro" and nxt.get("part") != "intro":
+        return GAP_MS
+    if nxt.get("part") == "outro" and cur.get("part") != "outro":
+        return GAP_MS
+    return SECTION_MS if nxt.get("section") else PAUSE_MS
 
 
 def fit(a: argparse.Namespace) -> None:
     """Set hold= so that each step lasts its line: hold = line - (actions), plus a margin."""
     lines = json.loads((Path(a.dir) / "lines.json").read_text())
     path = Path(a.script)
+    # The parts and sections come from the script as it is now; the line lengths from synth.
+    for st, now in zip(lines, spoken(path.read_text())):
+        st["section"], st["part"] = now["section"], now["part"]
     for rnd in range(3):
         subprocess.run([*a.anivo.split(), "apply", a.scene, str(path), "--mode", "replace"], capture_output=True, check=True)
         spans = timeline(a.scene, a.anivo)
@@ -114,8 +140,7 @@ def fit(a: argparse.Namespace) -> None:
         for n, (st, (s, e, act)) in enumerate(zip(lines, spans)):
             if not st["ms"]:
                 continue
-            nxt = lines[n + 1] if n + 1 < len(lines) else None
-            pause = SECTION_MS if nxt is None or nxt.get("section") else PAUSE_MS
+            pause = pause_after(lines, n)
             need = (LEAD_MS + st["ms"] + pause) / 1000
             # Too short cuts the line; too long is a dead pause. The summary gives times to 0.1 s.
             if need - 0.1 <= e - s <= need + 0.15 or (e - s > need and act - s >= need - 0.05):
@@ -160,8 +185,8 @@ def main() -> None:
     s = sub.add_parser("synth")
     s.add_argument("script")
     s.add_argument("dir")
-    s.add_argument("--voice", default="af_heart")
-    s.add_argument("--speed", type=float, default=1.0)
+    s.add_argument("--voice", default="am_puck")
+    s.add_argument("--speed", type=float, default=0.9, help="Kokoro speed: 0.9 is calm and clear (default), 1.0 is quick")
     f = sub.add_parser("fit")
     f.add_argument("script")
     f.add_argument("scene")
