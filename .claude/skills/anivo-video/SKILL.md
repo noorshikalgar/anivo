@@ -14,7 +14,7 @@ This skill makes a finished MP4 with a voiceover: one idea for each step, a capt
 | `node packages/cli/bin/anivo.js` (`pnpm build:cli` first) | `new`, `apply --mode replace`, `lint`, `summary`, `contact-sheet`, `preview --step N`, `render` |
 | `scripts/voice.py synth` | One WAV for each step, with Kokoro. Needs the Kokoro Python (see Setup). |
 | `scripts/voice.py fit` | Sets `hold=` in the script so that each step lasts its spoken line. One round. |
-| `scripts/voice.py mix` | One voice track; each line starts 0.15 s after its step starts. |
+| `scripts/voice.py mix` | One voice track; each line starts 0.12 s after its step starts. |
 | `scripts/look.py` | A look preset (`classroom`, `black-metal`) and optional font files, into the `.anivo` file. |
 | `ffmpeg` | Put the voice track on the silent video. |
 
@@ -32,7 +32,7 @@ Voices that the owner chose: **`am_puck`** (male, default) and **`af_heart`** (f
 
 ## Pace (docs/42)
 
-Use `captions=voice` in the scene line of a narrated video: the voice sets each step's time, not the caption reading time. The pace is calm, so that a viewer can follow: Kokoro speed 0.9 (`synth` default), 0.6 s between two lines, 1 s before a section (a step with `transition=`), 1 s after the intro and before the outro, 2 s on the last frame, 1.5 s of silence at the start (`START_MS`; the first step must start with `wait 1500ms`). `voice.py` cuts the silence at the ends of each Kokoro clip, so these pauses are the only pauses. `fit` sets `hold=` both ways (longer and shorter). A step whose actions take longer than its line makes a dead pause: shorten the actions. Idle motion (`float`, `breathe`) does not count as an action.
+Use `captions=voice` in the scene line of a narrated video: the voice sets each step's time, not the caption reading time. The pace is calm, about 0.9 of a natural pace, so that a viewer can follow: Kokoro speed 0.95 (`synth` default), 0.45 s between two lines, 0.8 s before a section (a step with `transition=`), 1 s after the intro and before the outro, 2 s on the last frame, 1.5 s of silence at the start (`START_MS`; the first step must start with `wait 1500ms`). `voice.py` cuts the silence at the ends of each Kokoro clip, so these pauses are the only pauses. `fit` sets `hold=` both ways (longer and shorter). A step whose actions take longer than its line makes a dead pause: shorten the actions. Idle motion (`float`, `breathe`) does not count as an action. Do not slow it more: speed 0.9 with 0.6 s pauses felt like a teleprompter.
 
 ## Procedure
 
@@ -52,7 +52,7 @@ ffmpeg -y -i silent.mp4 -i voice.wav -c:v copy -c:a aac -b:a 160k -shortest fina
 7. **Check frames of the MP4**, not only the sheet: at step changes (a flash, a jump) and in the middle of long steps.
 8. **Report**: the length, the voice, the look, what you did not fix.
 
-> **CAUTION:** Run `look.py` after `anivo new`. `fit` keeps the settings (it uses replace mode), but a new file has no look.
+> **CAUTION:** Run `look.py` after `fit` and before `render`. `fit` applies the script in replace mode, which removes the look.
 
 ## Intro and outro
 

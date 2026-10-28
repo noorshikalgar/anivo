@@ -5,7 +5,7 @@ the step line (for a step with no caption, for example the title). A
 `# part: intro` or `# part: outro` line after a step line marks the intro and
 the outro: fit puts 1 s of silence after the intro and before the outro.
 
-  voice.py synth  <script.txt> <dir> [--voice am_puck] [--speed 0.9]
+  voice.py synth  <script.txt> <dir> [--voice am_puck] [--speed 0.95]
       One WAV for each spoken step in <dir>, and <dir>/lines.json.
   voice.py fit    <script.txt> <scene.anivo> <dir> [--anivo CMD]
       Make each step at least as long as its line + a pause: rewrites hold= in
@@ -25,12 +25,13 @@ import wave
 from pathlib import Path
 
 RATE = 24000
-# A calm pace (docs/42, owner: "make it a little slow so the viewer can understand"):
+# A calm pace (docs/42): about 0.9 of a natural pace. 0.9 speed with 0.6 s pauses felt
+# like a teleprompter (owner), so the voice is 0.95 and the pauses are short:
 # a breath between sentences, a longer one where a new section starts (a step
 # with a transition), and 1 s of silence between the intro, the body, and the outro.
-LEAD_MS = 150  # the voice starts just after the picture changes
-PAUSE_MS = 600  # between two sentences
-SECTION_MS = 1000  # before a step with a transition
+LEAD_MS = 120  # the voice starts just after the picture changes
+PAUSE_MS = 450  # between two sentences
+SECTION_MS = 800  # before a step with a transition
 START_MS = 1500  # silence at the start: a viewer presses play, then the title and the voice begin
 GAP_MS = 1000  # after the intro, and before the outro
 END_MS = 2000  # the last frame holds after the last line
@@ -190,7 +191,7 @@ def main() -> None:
     s.add_argument("script")
     s.add_argument("dir")
     s.add_argument("--voice", default="am_puck")
-    s.add_argument("--speed", type=float, default=0.9, help="Kokoro speed: 0.9 is calm and clear (default), 1.0 is quick")
+    s.add_argument("--speed", type=float, default=0.95, help="Kokoro speed: 0.95 is calm (default); 0.9 drags, 1.0 is quick")
     f = sub.add_parser("fit")
     f.add_argument("script")
     f.add_argument("scene")

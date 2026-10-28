@@ -112,3 +112,23 @@ describe("caption pace (docs/31)", () => {
     expect(captionTiming(text, "quick").readMs).toBe(2500);
   });
 });
+
+describe("step caption change", () => {
+  it("fades out at the end of its step when the next step has a caption", () => {
+    const r = loadScene({
+      schemaVersion: 1,
+      meta: { title: "C" },
+      elements: { a: { type: "rectangle", z: "a0", x: 100, y: 100, width: 200, height: 100 } },
+      steps: [
+        { id: "s1", holdMs: 0, caption: { text: "One" }, actions: [{ id: "e", type: "enter", effect: "fade", targets: ["a"], durationMs: 300 }] },
+        { id: "s2", holdMs: 0, caption: { text: "Two" }, actions: [{ id: "w", type: "wait", durationMs: 1000 }] },
+      ],
+    });
+    if (!r.ok) throw new Error("scene");
+    const tl = resolveTimeline(r.scene);
+    const end = tl.steps[0]!.holdEndMs;
+    expect(evaluate(r.scene, end - 300).caption!.opacity).toBe(1);
+    expect(evaluate(r.scene, end - 125).caption!.opacity).toBeCloseTo(0.5, 1);
+    expect(evaluate(r.scene, end - 5).caption!.opacity).toBeLessThan(0.05);
+  });
+});

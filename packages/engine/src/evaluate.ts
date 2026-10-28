@@ -860,6 +860,9 @@ function stepCaptionAt(scene: Scene, steps: TimedStep[], i: number, t: number, b
     if (i === 0 || !steps[i - 1]!.caption || t >= steps[i]!.startMs + CAPTION_FADE_MS) return undefined;
     k = i - 1;
     fadeOut = 1 - (t - steps[i]!.startMs) / CAPTION_FADE_MS;
+  } else if (steps[i + 1]?.caption) {
+    // The next caption replaces this one: fade out at the end of the step, so it does not vanish in one frame.
+    fadeOut = Math.min(1, (steps[i]!.holdEndMs - t) / CAPTION_FADE_MS);
   }
   const ts = steps[k]!;
   const c = scene.steps[ts.index]!.caption!;
