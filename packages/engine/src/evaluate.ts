@@ -856,12 +856,13 @@ function anchorBox(scene: Scene, id: string, state: StateMap): Rect | undefined 
 function stepCaptionAt(scene: Scene, steps: TimedStep[], i: number, t: number, boundaries: StateMap[], cameras: Rect[]): CaptionFrame | undefined {
   let k = i;
   let fadeOut = 1;
+  // A caption fades out at the end of its step, so it does not vanish in one frame (a flash).
+  // Before a click step the end is not known: the caption fades out when the click step starts.
   if (!steps[i]!.caption) {
-    if (i === 0 || !steps[i - 1]!.caption || t >= steps[i]!.startMs + CAPTION_FADE_MS) return undefined;
+    if (i === 0 || !steps[i - 1]!.caption || steps[i]!.trigger !== "click" || t >= steps[i]!.startMs + CAPTION_FADE_MS) return undefined;
     k = i - 1;
     fadeOut = 1 - (t - steps[i]!.startMs) / CAPTION_FADE_MS;
-  } else if (steps[i + 1]?.caption) {
-    // The next caption replaces this one: fade out at the end of the step, so it does not vanish in one frame.
+  } else if (steps[i + 1] && steps[i + 1]!.trigger !== "click") {
     fadeOut = Math.min(1, (steps[i]!.holdEndMs - t) / CAPTION_FADE_MS);
   }
   const ts = steps[k]!;
