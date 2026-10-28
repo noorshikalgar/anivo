@@ -2,10 +2,11 @@
 
   look.py <scene.anivo> <preset> [--font FILE ...] [--family NAME]
 
-Presets: classroom, classic, black-metal. A font file goes into the scene file, and
+Presets: classroom, classic, blueprint, black-metal. A font file goes into the scene file, and
 the theme uses it for all text, captions, and code (customTheme.font).
-Run it after each `anivo apply --mode replace`: replace mode keeps the
-settings, but run it again after `anivo new`.
+A look is colors only: it keeps the style, the background pattern, and the
+caption style of the scene. Run it after `voice.py fit` and before `render`:
+fit applies the script in replace mode, which removes the look.
 """
 import argparse
 import json
@@ -74,6 +75,36 @@ PRESETS = {
             "teal-soft": "#DDF1F0",
         },
     },
+    # Blueprint: deep blue paper, a fine light grid, white ink, pale cyan, and a warm highlighter.
+    "blueprint": {
+        "base": "studio-dark",
+        "dark": True,
+        "strokeWidth": 2.5,
+        "cornerRadius": 14,
+        "background": {"kind": "grid"},
+        "captionStyle": "marker",
+        "tokens": {
+            "background": "#16467E",
+            "grid": "#2A5C96",
+            "surface": "#1C4F8A",
+            "surface-strong": "#225896",
+            "text": "#F2F7FF",
+            "muted": "#B3C8E4",
+            "line": "#DCE8F8",
+            "accent": "#8FD3FF",
+            "accent-soft": "#235E9C",
+            "danger": "#FF9C8F",
+            "danger-soft": "#5A3A5E",
+            "success": "#9EEBB8",
+            "success-soft": "#1F6670",
+            "warning": "#E8913A",
+            "warning-soft": "#5B5560",
+            "purple": "#D2B8FF",
+            "purple-soft": "#3B4F96",
+            "teal": "#7FE6E0",
+            "teal-soft": "#1C6680",
+        },
+    },
     # Pitch black, bone white, blood red, cold steel.
     "black-metal": {
         "base": "studio-dark",
@@ -85,7 +116,7 @@ PRESETS = {
         "tokens": {
             "background": "#050505", "grid": "#121212", "surface": "#0D0D0D", "surface-strong": "#171717",
             "text": "#E6E1D8", "muted": "#7D7872", "line": "#3A3836",
-            "accent": "#A3001B", "accent-soft": "#24060A", "danger": "#E3263B", "danger-soft": "#2A080D",
+            "accent": "#D0203A", "accent-soft": "#24060A", "danger": "#E3263B", "danger-soft": "#2A080D",
             "success": "#B9C7D0", "success-soft": "#12181C", "warning": "#C7B08A", "warning-soft": "#221D14",
             "purple": "#8A8494", "purple-soft": "#16141A", "teal": "#8FA3AD", "teal-soft": "#101619",
         },
@@ -115,16 +146,14 @@ def main() -> None:
         files = {n: z.read(n) for n in z.namelist() if n != "scene.json"}
     pr = PRESETS[a.preset]
     st = scene["settings"]
-    old = PRESETS.get(st.get("theme", ""))
     st["theme"] = a.preset
     st["customTheme"] = {"name": a.preset, "base": pr["base"], "dark": pr["dark"], "tokens": pr["tokens"], "strokeWidth": pr["strokeWidth"], "cornerRadius": pr["cornerRadius"]}
-    st["background"] = {**st.get("background", {}), **pr["background"]}
-    if "style" in pr:
-        st["style"] = pr["style"]
-    # The caption look that fits the preset (docs/41). A caption-style= in the script line wins;
-    # a caption style that an earlier preset set changes with the preset.
-    if "captionStyle" not in st or (old and st["captionStyle"] == old["captionStyle"]):
-        st["captionStyle"] = pr["captionStyle"]
+    # A look is colors only (owner): it keeps the background pattern, the style, and the caption
+    # style of the scene. It adds only the effects (vignette, grain) and the defaults that are not set.
+    bg = st.get("background", {})
+    st["background"] = {**pr["background"], **bg, **{k: v for k, v in pr["background"].items() if k != "kind"}}
+    # The caption look that fits the preset (docs/41), only if the scene has none.
+    st.setdefault("captionStyle", pr["captionStyle"])
     if a.font:
         st["customTheme"]["font"] = a.family
         st["fonts"] = []

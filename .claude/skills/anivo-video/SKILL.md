@@ -112,9 +112,10 @@ If a step uses the top-right corner (y < 80, x > 1600), move the watermark to th
 |---|---|---|
 | `classroom` | `style=sketch theme=paper-light background=grid` | Exercise book: paper, navy ink, blue and red pen, yellow highlighter, hand-drawn shapes. |
 | `classic` | `style=sketch theme=paper-light background=grid` | The classroom look in other colors: cool white paper, black ink, classic blue, red, and green. |
-| `black-metal` | `theme=studio-dark background=solid` + `--font` a mono font | Black, bone white, blood red. |
+| `blueprint` | `style=sketch theme=paper-light background=grid` | Deep blue paper, a fine light grid, white ink, pale cyan. |
+| `black-metal` | any script line; `--font` a mono font is optional | Black, bone white, blood red, with a vignette and grain. |
 
-Each preset also sets a caption style (`classroom`: marker, `classic`: marker, `black-metal`: subtitle) unless the script sets `caption-style=`.
+A look is colors only: `look.py` keeps the style, the background pattern, and the caption style of the scene (it sets a caption style only if the scene has none). To show the same video in other looks, copy the `.anivo` file and run `look.py` on the copy; the voice track stays the same. `--font` puts a font file in the scene for all text (for example JetBrains Mono Nerd Font).
 
 ### Caption styles (docs/41)
 
