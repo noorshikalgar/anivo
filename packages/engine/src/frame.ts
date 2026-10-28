@@ -148,6 +148,10 @@ export interface CaptionFrame {
   avoid?: (Rect & { text: boolean })[];
   /** The camera at the end of the step: the caption takes its place and size from it, so a camera drift does not move it. */
   cam?: Rect;
+  /** The look (docs/41). */
+  style: "card" | "subtitle" | "bar" | "marker" | "slam";
+  /** Time since the caption started, for its own motion (a slam pops in). */
+  ageMs: number;
 }
 
 export interface FrameState {

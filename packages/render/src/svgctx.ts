@@ -177,6 +177,21 @@ export class SvgContext implements Ctx2D {
     return { width: this.opts.measure(this.s.font, text) };
   }
 
+  strokeText(text: string, x: number, y: number): void {
+    // A text outline: the same text element with a stroke and no fill.
+    const { color, alpha } = paint(String(this.s.strokeStyle));
+    const o = alpha * this.s.globalAlpha;
+    if (o <= 0 || !text) return;
+    const fill = this.s.fillStyle;
+    this.s.fillStyle = this.s.strokeStyle;
+    const count = this.out.length;
+    this.fillText(text, x, y);
+    this.s.fillStyle = fill;
+    if (this.out.length === count) return;
+    const last = this.out.pop()!.replace(/ fill-opacity="[^"]*"/, "");
+    this.out.push(last.replace(/ fill="[^"]*"/, ` fill="none" stroke="${esc(color)}" stroke-width="${n(this.s.lineWidth)}" stroke-linejoin="${this.s.lineJoin}"${o < 1 ? ` stroke-opacity="${n(o)}"` : ""}`));
+  }
+
   fillText(text: string, x: number, y: number): void {
     const { color, alpha } = paint(String(this.s.fillStyle));
     const o = alpha * this.s.globalAlpha;

@@ -865,6 +865,8 @@ function stepCaptionAt(scene: Scene, steps: TimedStep[], i: number, t: number, b
   const c = scene.steps[ts.index]!.caption!;
   const timing = ts.caption!;
   if (t < timing.startMs) return undefined;
+  const style = c.style ?? scene.settings.captionStyle ?? "card";
+  if (style === "none") return undefined;
   const reveal = timing.typedMs <= timing.startMs ? 1 : Math.min(1, (t - timing.startMs) / (timing.typedMs - timing.startMs));
   const fadeIn = Math.min(1, (t - timing.startMs) / 150);
   // The place comes from the end of the step, so the caption does not move while elements move.
@@ -902,7 +904,7 @@ function stepCaptionAt(scene: Scene, steps: TimedStep[], i: number, t: number, b
     }
   }
   const cam = cameras[k];
-  return { text: c.text, reveal, opacity: Math.max(0, Math.min(fadeIn, fadeOut)), side: c.side, avoid, ...(cam ? { cam } : {}), ...(anchor ? { anchor, anchorId } : {}) };
+  return { text: c.text, reveal, opacity: Math.max(0, Math.min(fadeIn, fadeOut)), side: c.side, style, ageMs: t - timing.startMs, avoid, ...(cam ? { cam } : {}), ...(anchor ? { anchor, anchorId } : {}) };
 }
 
 const preparedCache = new WeakMap<Scene, Prepared>();

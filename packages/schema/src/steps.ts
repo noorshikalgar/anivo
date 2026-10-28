@@ -21,6 +21,10 @@ export const Easing = z.union([
 ]);
 export type Easing = z.infer<typeof Easing>;
 
+/** How captions look (docs/41): a card, floating subtitle text, a band, a highlighter, a big slam, or none. */
+export const CaptionStyle = z.enum(["card", "subtitle", "bar", "marker", "slam", "none"]);
+export type CaptionStyle = z.infer<typeof CaptionStyle>;
+
 export const EnterEffect = z.enum(["fade", "pop", "scale", "slide", "draw-on", "wipe", "typewriter", "rise", "blur", "cascade", "scramble"]);
 export type EnterEffect = z.infer<typeof EnterEffect>;
 
@@ -229,6 +233,7 @@ export const Step = z.object({
       text: z.string().min(1).max(240).describe("One short sentence that tells what happens in this step."),
       anchor: ElementId.optional().describe("The element that the caption shows next to. Default: the first target of the step."),
       side: z.enum(["auto", "above", "below", "left", "right", "top", "bottom"]).default("auto").describe("auto: next to the anchor, where it covers the least. top and bottom: a band at the edge of the frame."),
+      style: CaptionStyle.optional().describe("The look of this caption. Default: settings.captionStyle (docs/41)."),
     })
     .optional()
     .describe("A step caption (docs/17 P4): it types in at the step start, and the step holds until a viewer can read it."),

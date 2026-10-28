@@ -2,7 +2,7 @@ import * as z from "zod";
 import { AssetRef, AudioTrack, ScriptLine } from "./audio.js";
 import { Element } from "./elements.js";
 import { Color, Rect } from "./primitives.js";
-import { EasingName, EnterEffect, Step } from "./steps.js";
+import { CaptionStyle, EasingName, EnterEffect, Step } from "./steps.js";
 
 /** The current scene file format version. See docs/05-scene-model.md. */
 export const SCHEMA_VERSION = 1;
@@ -70,6 +70,7 @@ export const SceneSettings = z.object({
     .array(z.object({ family: z.string().min(1).describe("The name that styles use (style.fontFamily)."), assetId: z.string().describe("The font file asset (woff2, woff, ttf, otf).") }))
     .optional()
     .describe("Custom fonts of the scene (docs/20 B10)."),
+  captionStyle: CaptionStyle.optional().describe("How captions look (docs/41): card (default), subtitle, bar, marker, slam, or none. A step can change it."),
   captionPace: z.enum(["relaxed", "normal", "quick"]).optional().describe("How long a step holds so a viewer can read its caption (docs/31): relaxed 0.45 s for each word (default), normal 0.33 s, quick 0.25 s."),
   motionBlur: z.boolean().optional().describe("Video export: fast moves get a soft trail (docs/19 R13). The editor does not show it."),
 });

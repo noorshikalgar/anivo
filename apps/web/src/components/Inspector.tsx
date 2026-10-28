@@ -630,6 +630,19 @@ function SceneProperties() {
       </Panel>
       <Panel id="scene-video" title="Video">
         <SelectField
+          label="Caption style"
+          value={settings.captionStyle ?? "card"}
+          options={[
+            { value: "card", text: "Card" },
+            { value: "subtitle", text: "Subtitle (floating text)" },
+            { value: "bar", text: "Bar (full width)" },
+            { value: "marker", text: "Marker (highlighter)" },
+            { value: "slam", text: "Slam (big, on the content)" },
+            { value: "none", text: "None (voice only)" },
+          ]}
+          onCommit={(v) => commitSettings({ captionStyle: v === "card" ? null : v }, "Change caption style")}
+        />
+        <SelectField
           label="Caption reading"
           value={settings.captionPace ?? "relaxed"}
           options={[
