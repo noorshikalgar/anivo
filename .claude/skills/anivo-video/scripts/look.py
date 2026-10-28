@@ -43,18 +43,18 @@ PRESETS = {
             "teal-soft": "#D8EFEE",
         },
     },
-    # Classic textbook: crisp lines (not hand-drawn), clean white, no grid, blue and red ink, subtitle captions.
+    # Classic: the classroom look (hand-drawn, grid, highlighter) in cool white with classic ink colors.
+    # A theme is colors only: it does not change the style, the font, or the caption style.
     "classic": {
         "base": "paper-light",
-        "style": "clean",
         "dark": False,
-        "strokeWidth": 3,
-        "cornerRadius": 12,
-        "background": {"kind": "solid"},
-        "captionStyle": "subtitle",
+        "strokeWidth": 2.5,
+        "cornerRadius": 14,
+        "background": {"kind": "grid"},
+        "captionStyle": "marker",
         "tokens": {
-            "background": "#FDFDFB",
-            "grid": "#EEF0F2",
+            "background": "#FFFFFF",
+            "grid": "#E3EAF2",
             "surface": "#FFFFFF",
             "surface-strong": "#F2F3F5",
             "text": "#1C1F24",
@@ -67,7 +67,7 @@ PRESETS = {
             "success": "#23874B",
             "success-soft": "#E1F3E8",
             "warning": "#C27A00",
-            "warning-soft": "#FFF0D2",
+            "warning-soft": "#FFEFA6",
             "purple": "#6B4BAF",
             "purple-soft": "#EEE8F8",
             "teal": "#16807C",

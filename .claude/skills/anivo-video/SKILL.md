@@ -34,6 +34,10 @@ Voices that the owner chose: **`am_puck`** (male, default) and **`af_heart`** (f
 
 Use `captions=voice` in the scene line of a narrated video: the voice sets each step's time, not the caption reading time. The pace is calm, about 0.9 of a natural pace, so that a viewer can follow: Kokoro speed 0.95 (`synth` default), 0.45 s between two lines, 0.8 s before a section (a step with `transition=`), 1 s after the intro and before the outro, 2 s on the last frame, 1.5 s of silence at the start (`START_MS`; the first step must start with `wait 1500ms`). `voice.py` cuts the silence at the ends of each Kokoro clip, so these pauses are the only pauses. `fit` sets `hold=` both ways (longer and shorter). A step whose actions take longer than its line makes a dead pause: shorten the actions. Idle motion (`float`, `breathe`) does not count as an action. Do not slow it more: speed 0.9 with 0.6 s pauses felt like a teleprompter.
 
+## Reference example
+
+`examples/cells-gen.py` ("Life's Building Blocks", classroom look, 13 steps, 90.8 s) is the owner's best video. Copy its shape: the intro (title, then a map of chips), one idea for each step, one picture that grows across steps (a cell with organelles, then a note panel for each organelle), a side-by-side compare, a numbered recap, and an end card.
+
 ## Procedure
 
 1. **Story first, in plain words.** Write the narration before the layout. Shape: **intro** (see below) → the simple case → the new idea → how it works (2-4 steps) → what it causes → real examples → a catch or a limit → **outro**. 12-25 steps. Rewrite the user's text: one idea for each step, 15-30 words for each line, short sentences, numbers as words if the voice must say them.
@@ -107,10 +111,10 @@ If a step uses the top-right corner (y < 80, x > 1600), move the watermark to th
 | Preset | Script line | Feel |
 |---|---|---|
 | `classroom` | `style=sketch theme=paper-light background=grid` | Exercise book: paper, navy ink, blue and red pen, yellow highlighter, hand-drawn shapes. |
-| `classic` | any light script line (the preset sets `style=clean` and a solid background) | Classic textbook: clean white, crisp lines, blue and red ink, subtitle captions. |
+| `classic` | `style=sketch theme=paper-light background=grid` | The classroom look in other colors: cool white paper, black ink, classic blue, red, and green. |
 | `black-metal` | `theme=studio-dark background=solid` + `--font` a mono font | Black, bone white, blood red. |
 
-Each preset also sets a caption style (`classroom`: marker, `classic`: subtitle, `black-metal`: subtitle) unless the script sets `caption-style=`.
+Each preset also sets a caption style (`classroom`: marker, `classic`: marker, `black-metal`: subtitle) unless the script sets `caption-style=`.
 
 ### Caption styles (docs/41)
 
@@ -122,7 +126,7 @@ Each preset also sets a caption style (`classroom`: marker, `classic`: subtitle,
 | `slam` | Big words over a dimmed picture. Only for one short line (3 to 8 words): set it on that step (`caption-style=slam`), for a hook or a key result. |
 | `none` | Voice only. |
 
-Do not use `card` (a box with a left bar): the owner does not like it. Match the caption to the look. Do not use `slam` for the whole video.
+Do not use `card` (a box with a left bar): the owner does not like it. A new look is colors only (the tokens and the background color): keep the style, the font, and the caption style. Match the caption to the look. Do not use `slam` for the whole video.
 
 Add a preset to `PRESETS` in `look.py` for a new look. Use theme tokens in the script (`accent`, `success`, …), not hex colors, so a look changes everything.
 
