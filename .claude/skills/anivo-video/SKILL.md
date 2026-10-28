@@ -107,9 +107,10 @@ If a step uses the top-right corner (y < 80, x > 1600), move the watermark to th
 | Preset | Script line | Feel |
 |---|---|---|
 | `classroom` | `style=sketch theme=paper-light background=grid` | Exercise book: paper, navy ink, blue and red pen, yellow highlighter, hand-drawn shapes. |
+| `classic` | any light script line (the preset sets `style=clean` and a solid background) | Classic textbook: clean white, crisp lines, blue and red ink, a card caption. |
 | `black-metal` | `theme=studio-dark background=solid` + `--font` a mono font | Black, bone white, blood red. |
 
-Each preset also sets a caption style (`classroom`: marker, `black-metal`: subtitle) unless the script sets `caption-style=`.
+Each preset also sets a caption style (`classroom`: marker, `classic`: card, `black-metal`: subtitle) unless the script sets `caption-style=`.
 
 ### Caption styles (docs/41)
 

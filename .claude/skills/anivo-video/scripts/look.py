@@ -2,7 +2,7 @@
 
   look.py <scene.anivo> <preset> [--font FILE ...] [--family NAME]
 
-Presets: classroom, black-metal. A font file goes into the scene file, and
+Presets: classroom, classic, black-metal. A font file goes into the scene file, and
 the theme uses it for all text, captions, and code (customTheme.font).
 Run it after each `anivo apply --mode replace`: replace mode keeps the
 settings, but run it again after `anivo new`.
@@ -41,6 +41,37 @@ PRESETS = {
             "purple-soft": "#ECE4F7",
             "teal": "#1F8C88",
             "teal-soft": "#D8EFEE",
+        },
+    },
+    # Classic textbook: crisp lines (not hand-drawn), clean white, no grid, blue and red ink, a card caption.
+    "classic": {
+        "base": "paper-light",
+        "style": "clean",
+        "dark": False,
+        "strokeWidth": 3,
+        "cornerRadius": 12,
+        "background": {"kind": "solid"},
+        "captionStyle": "card",
+        "tokens": {
+            "background": "#FDFDFB",
+            "grid": "#EEF0F2",
+            "surface": "#FFFFFF",
+            "surface-strong": "#F2F3F5",
+            "text": "#1C1F24",
+            "muted": "#5E656E",
+            "line": "#2B3038",
+            "accent": "#1F5FBF",
+            "accent-soft": "#E3ECFA",
+            "danger": "#C8312B",
+            "danger-soft": "#FBE4E2",
+            "success": "#23874B",
+            "success-soft": "#E1F3E8",
+            "warning": "#C27A00",
+            "warning-soft": "#FFF0D2",
+            "purple": "#6B4BAF",
+            "purple-soft": "#EEE8F8",
+            "teal": "#16807C",
+            "teal-soft": "#DDF1F0",
         },
     },
     # Pitch black, bone white, blood red, cold steel.
@@ -84,11 +115,16 @@ def main() -> None:
         files = {n: z.read(n) for n in z.namelist() if n != "scene.json"}
     pr = PRESETS[a.preset]
     st = scene["settings"]
+    old = PRESETS.get(st.get("theme", ""))
     st["theme"] = a.preset
     st["customTheme"] = {"name": a.preset, "base": pr["base"], "dark": pr["dark"], "tokens": pr["tokens"], "strokeWidth": pr["strokeWidth"], "cornerRadius": pr["cornerRadius"]}
     st["background"] = {**st.get("background", {}), **pr["background"]}
-    # The caption look that fits the preset (docs/41). A caption-style= in the script line wins.
-    st.setdefault("captionStyle", pr["captionStyle"])
+    if "style" in pr:
+        st["style"] = pr["style"]
+    # The caption look that fits the preset (docs/41). A caption-style= in the script line wins;
+    # a caption style that an earlier preset set changes with the preset.
+    if "captionStyle" not in st or (old and st["captionStyle"] == old["captionStyle"]):
+        st["captionStyle"] = pr["captionStyle"]
     if a.font:
         st["customTheme"]["font"] = a.family
         st["fonts"] = []
