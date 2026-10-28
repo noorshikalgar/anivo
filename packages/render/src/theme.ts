@@ -200,6 +200,7 @@ export function customTheme(c: CustomTheme): Theme {
     name: c.name,
     dark: c.dark ?? b.dark,
     tokens: { ...b.tokens, ...c.tokens },
+    fonts: c.font ? { clean: c.font, sketch: c.font, code: c.font } : b.fonts,
     defaults: { ...b.defaults, ...(c.strokeWidth !== undefined ? { strokeWidth: c.strokeWidth } : {}), ...(c.cornerRadius !== undefined ? { cornerRadius: c.cornerRadius } : {}) },
   };
   customCache.set(c, t);
