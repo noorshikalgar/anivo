@@ -713,7 +713,12 @@ export function evaluateAt(prepared: Prepared, timeMs: number, opts: EvaluateOpt
       break;
     }
   }
+  // After a transition, the screen shows the new step. An element that the new step removes
+  // during the transition stays hidden: else it comes back with the transition, then fades out (a flash).
+  const tr = i >= 0 ? scene.steps[timeline.steps[i]!.index]!.transition : undefined;
+  const hideExits = tr && tr.durationMs > 0 ? timeline.steps[i]!.actions.filter((ta) => ta.action.type === "exit" && ta.startMs < timeline.steps[i]!.startMs + tr.durationMs / 2).map((ta) => ta.target) : [];
   applyKeys(scene, state, t);
+  for (const id of hideExits) if (state[id]) state[id] = { ...state[id]!, opacity: 0 };
   fadeWithEnds(scene, state);
   // A particle travels only on an arrow that shows and is drawn (the cache filmstrip had mail flying before its arrow).
   const onShownArrow = (p: Particle) => {
