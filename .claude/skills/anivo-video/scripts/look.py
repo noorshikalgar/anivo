@@ -43,7 +43,7 @@ PRESETS = {
             "teal-soft": "#D8EFEE",
         },
     },
-    # Classic textbook: crisp lines (not hand-drawn), clean white, no grid, blue and red ink, a card caption.
+    # Classic textbook: crisp lines (not hand-drawn), clean white, no grid, blue and red ink, subtitle captions.
     "classic": {
         "base": "paper-light",
         "style": "clean",
@@ -51,7 +51,7 @@ PRESETS = {
         "strokeWidth": 3,
         "cornerRadius": 12,
         "background": {"kind": "solid"},
-        "captionStyle": "card",
+        "captionStyle": "subtitle",
         "tokens": {
             "background": "#FDFDFB",
             "grid": "#EEF0F2",
