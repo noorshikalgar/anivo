@@ -1222,8 +1222,8 @@ export function placeCaption(box: { width: number; height: number }, cap: { side
   });
   const a = cap.anchor;
   if (!a || cap.side === "top" || cap.side === "bottom") {
-    // A band: the top (or the bottom) first; the place in the band that covers the least.
-    const ys = cap.side === "bottom" ? [cam.y + cam.height - margin - box.height] : cap.side === "top" ? [cam.y + margin] : [cam.y + margin, cam.y + cam.height - margin - box.height];
+    // A band: the bottom first, as movie subtitles (docs/40), then the top; the place in the band that covers the least.
+    const ys = cap.side === "bottom" ? [cam.y + cam.height - margin - box.height] : cap.side === "top" ? [cam.y + margin] : [cam.y + cam.height - margin - box.height, cam.y + margin];
     const xs = [cam.x + (cam.width - box.width) / 2, cam.x + margin, cam.x + cam.width - margin - box.width];
     let best = clamp({ x: xs[0]!, y: ys[0]! });
     let bestScore = Infinity;
@@ -1253,6 +1253,9 @@ export function placeCaption(box: { width: number; height: number }, cap: { side
     };
   };
   if (cap.side !== "auto") return clamp(sidesOf(a)[cap.side]!);
+  // As movie subtitles (docs/40): the bottom center, when it covers nothing.
+  const sub = clamp({ x: cam.x + (cam.width - box.width) / 2, y: cam.y + cam.height - margin - box.height });
+  if (overlap({ ...sub, ...box }, a) === 0 && others.every((o) => overlap({ ...sub, ...box }, o) === 0)) return sub;
   const inside = (o: Rect4, r: Rect4) => o.x <= r.x + 1 && o.y <= r.y + 1 && o.x + o.width >= r.x + r.width - 1 && o.y + o.height >= r.y + r.height - 1;
   // The anchor first, then the boxes that contain it (for example a field in a card): the caption can go next to the card.
   const around = [a, ...others.filter((o) => inside(o, a) && (o.width > a.width + 2 || o.height > a.height + 2)).sort((x, y) => x.width * x.height - y.width * y.height)];
@@ -1278,7 +1281,8 @@ export function placeCaption(box: { width: number; height: number }, cap: { side
   for (const [y, x] of [cam.y + margin, cam.y + cam.height - margin - box.height].flatMap((y) => xs.map((x) => [y, x] as const))) {
     const p = clamp({ x, y });
     const c = { ...p, ...box };
-    let score = overlap(c, a) * 4 + 4000 + Math.abs(p.y - a.y) * 2;
+    // The bottom band is the subtitle place (docs/40): the top band costs more.
+    let score = overlap(c, a) * 4 + 4000 + Math.abs(p.y - a.y) * 2 + (p.y < a.y ? 600 : 0);
     for (const o of others) score += overlap(c, o) * (o.text ? 3 : 1);
     if (score < bestScore - 1) {
       bestScore = score;
@@ -1286,6 +1290,23 @@ export function placeCaption(box: { width: number; height: number }, cap: { side
     }
   }
   return best;
+}
+
+/**
+ * Lines of a caption, as movie subtitles (docs/40): one line when it fits,
+ * else two lines of about the same length, else as many lines as it needs.
+ */
+export function captionLines(ctx: Ctx2D, text: string, maxW: number): string[] {
+  const one = wrapText(ctx, text, maxW);
+  if (one.length <= 1) return one;
+  const total = ctx.measureText(text).width;
+  if (total > maxW * 2) return one;
+  // The narrowest width that still gives two lines: both lines are about half.
+  for (let w = Math.ceil(total / 2); w < maxW; w += 8) {
+    const two = wrapText(ctx, text, w);
+    if (two.length <= 2) return two;
+  }
+  return one;
 }
 
 /** The step caption (docs/17 P4): a card with the text, that types in. Scene coordinates. */
@@ -1303,8 +1324,7 @@ function drawStepCaption(dc: DrawContext, frame: FrameState, cap: NonNullable<Fr
   const lineH = Math.round(size * 1.3);
   const bar = Math.max(3, Math.round(size * 0.12));
   ctx.font = `500 ${size}px "${theme.fonts.clean}", "${SYMBOLS}"`;
-  const maxW = Math.round(cam.width * (cap.anchor ? 0.42 : 0.7));
-  const lines = wrapText(ctx, cap.text, maxW - padX * 2);
+  const lines = captionLines(ctx, cap.text, Math.round(cam.width * 0.75) - padX * 2);
   const textW = Math.max(...lines.map((l) => ctx.measureText(l).width));
   const box = { width: Math.ceil(textW + padX * 2 + bar), height: lines.length * lineH + padY * 2 };
   const others = cap.avoid ?? frame.elements.filter((e) => e.visible && e.opacity > 0.05 && e.type !== "group" && e.type !== "connector" && e.id !== cap.anchorId).map((e) => ({ x: e.x, y: e.y, width: e.width, height: e.height, text: e.type === "text" || !!e.label }));
