@@ -20,6 +20,7 @@ PRESETS = {
         "strokeWidth": 2.5,
         "cornerRadius": 14,
         "background": {"kind": "grid"},
+        "captionStyle": "marker",
         "tokens": {
             "background": "#FCF9F0",
             "grid": "#E4EAF2",
@@ -49,6 +50,7 @@ PRESETS = {
         "strokeWidth": 1.5,
         "cornerRadius": 2,
         "background": {"kind": "solid", "vignette": 0.55, "grain": 0.18},
+        "captionStyle": "subtitle",
         "tokens": {
             "background": "#050505", "grid": "#121212", "surface": "#0D0D0D", "surface-strong": "#171717",
             "text": "#E6E1D8", "muted": "#7D7872", "line": "#3A3836",
@@ -85,6 +87,8 @@ def main() -> None:
     st["theme"] = a.preset
     st["customTheme"] = {"name": a.preset, "base": pr["base"], "dark": pr["dark"], "tokens": pr["tokens"], "strokeWidth": pr["strokeWidth"], "cornerRadius": pr["cornerRadius"]}
     st["background"] = {**st.get("background", {}), **pr["background"]}
+    # The caption look that fits the preset (docs/41). A caption-style= in the script line wins.
+    st.setdefault("captionStyle", pr["captionStyle"])
     if a.font:
         st["customTheme"]["font"] = a.family
         st["fonts"] = []

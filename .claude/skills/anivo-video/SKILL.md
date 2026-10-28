@@ -28,6 +28,10 @@ The first run downloads the model (about 330 MB) from Hugging Face. Kokoro is Ap
 
 Voices that the owner chose: **`am_puck`** (male, default) and **`af_heart`** (female). Other voices: `am_liam`, `am_echo`, `bm_fable`. Do not use `am_michael` (sounds too old).
 
+## Pace (docs/42)
+
+Use `captions=voice` in the scene line of a narrated video: the voice sets each step's time, not the caption reading time. `voice.py` cuts the silence at the ends of each Kokoro clip and leaves 0.35 s between sentences and 0.7 s before a section (a step with `transition=`). `fit` sets `hold=` both ways (longer and shorter). A step whose actions take longer than its line makes a dead pause: shorten the actions.
+
 ## Procedure
 
 1. **Story first, in plain words.** Write the narration before the layout. Shape: hook question → the simple case → the new idea → how it works (2-4 steps) → what it causes → real examples → a catch or a limit → "In short". 12-25 steps. Rewrite the user's text: one idea for each step, 15-30 words for each line, short sentences, numbers as words if the voice must say them.
@@ -75,6 +79,21 @@ ffmpeg -y -i silent.mp4 -i voice.wav -c:v copy -c:a aac -b:a 160k -shortest fina
 |---|---|---|
 | `classroom` | `style=sketch theme=paper-light background=grid` | Exercise book: paper, navy ink, blue and red pen, yellow highlighter, hand-drawn shapes. |
 | `black-metal` | `theme=studio-dark background=solid` + `--font` a mono font | Black, bone white, blood red. |
+
+Each preset also sets a caption style (`classroom`: marker, `black-metal`: subtitle) unless the script sets `caption-style=`.
+
+### Caption styles (docs/41)
+
+| Style | Use |
+|---|---|
+| `subtitle` | Floating text, no box. A good default for any look. |
+| `marker` | Highlighter strokes, hand-drawn font in the sketch style. Classroom and notes. |
+| `bar` | A full-width band. Strong contrast; keep the bottom band free. |
+| `card` | A card with an accent bar. Tutorials. |
+| `slam` | Big words over a dimmed picture. Only for one short line (3 to 8 words): set it on that step (`caption-style=slam`), for a hook or a key result. |
+| `none` | Voice only. |
+
+Match the caption to the look. Do not use `slam` for the whole video.
 
 Add a preset to `PRESETS` in `look.py` for a new look. Use theme tokens in the script (`accent`, `success`, …), not hex colors, so a look changes everything.
 
