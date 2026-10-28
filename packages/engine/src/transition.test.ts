@@ -20,7 +20,8 @@ describe("step transition and exits", () => {
     // The first half: the old step, a shows while the screen fades.
     expect(a(start - 100).opacity).toBeCloseTo(1);
     // The second half: a does not come back.
-    for (const dt of [0, 100, 200, 299]) expect(a(start + dt).opacity).toBe(0);
+    // Also after the transition, while its exit still runs.
+    for (const dt of [0, 100, 200, 299, 300, 350, 399]) expect(a(start + dt).opacity).toBe(0);
     // b enters normally after the transition.
     expect(evaluate(r.scene, start + 1000).elements.find((e) => e.id === "b")!.opacity).toBeCloseTo(1);
   });
