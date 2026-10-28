@@ -76,6 +76,21 @@ ffmpeg -y -i silent.mp4 -i voice.wav -c:v copy -c:a aac -b:a 160k -shortest fina
 | `classroom` | `style=sketch theme=paper-light background=grid` | Exercise book: paper, navy ink, blue and red pen, yellow highlighter, hand-drawn shapes. |
 | `black-metal` | `theme=studio-dark background=solid` + `--font` a mono font | Black, bone white, blood red. |
 
+Each preset also sets a caption style (`classroom`: marker, `black-metal`: subtitle) unless the script sets `caption-style=`.
+
+### Caption styles (docs/41)
+
+| Style | Use |
+|---|---|
+| `subtitle` | Floating text, no box. A good default for any look. |
+| `marker` | Highlighter strokes, hand-drawn font in the sketch style. Classroom and notes. |
+| `bar` | A full-width band. Strong contrast; keep the bottom band free. |
+| `card` | A card with an accent bar. Tutorials. |
+| `slam` | Big words over a dimmed picture. Only for one short line (3 to 8 words): set it on that step (`caption-style=slam`), for a hook or a key result. |
+| `none` | Voice only. |
+
+Match the caption to the look. Do not use `slam` for the whole video.
+
 Add a preset to `PRESETS` in `look.py` for a new look. Use theme tokens in the script (`accent`, `success`, …), not hex colors, so a look changes everything.
 
 ## Facts and honesty
