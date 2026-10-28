@@ -129,7 +129,21 @@ A look is colors only: `look.py` keeps the style, the background pattern, and th
 
 Do not use `card` (a box with a left bar): the owner does not like it. A new look is colors only (the tokens and the background color): keep the style, the font, and the caption style. Match the caption to the look. Do not use `slam` for the whole video.
 
-Add a preset to `PRESETS` in `look.py` for a new look. Use theme tokens in the script (`accent`, `success`, …), not hex colors, so a look changes everything.
+Add a preset to `PRESETS` in `look.py` for a new look.
+
+### Color boundary: a look never changes the subject
+
+A look sets only the environment: the paper, the ink, the headings, the captions, and the emphasis colors. It must not change a color that the explanation depends on.
+
+| Color kind | Examples | Write |
+|---|---|---|
+| **Environment color** | Heading ink, a highlight, a box that only groups things, "from mother" in red and "from father" in blue (any two colors work) | A theme token: `accent`, `danger`, `muted`, … |
+| **Subject color** | Eye colors, a green leaf, a blue copper sulfate solution, a flame test, the colors of a map key, a color wheel | A literal hex color: `fill=#2F6DB5`. Put a dark label color on a light swatch (`color=#1F2D4A`), so it reads in a dark look too. |
+
+1. If a line names a color ("blue eyes", "green chlorophyll"), the shape that shows it must use a literal color of that name.
+2. Do not color a text label with a subject color. Write the label in the theme ink and put a swatch next to it.
+3. A code or a system diagram usually has no subject colors: use theme tokens only, so any look works.
+4. Before you render in a dark look, examine each step that names a color.
 
 ## Facts and honesty
 
