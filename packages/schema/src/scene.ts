@@ -38,6 +38,7 @@ export const CustomTheme = z.object({
   tokens: z.record(z.string().regex(/^[a-z][a-z0-9-]*$/), z.string().regex(/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/)).default({}).describe("Color tokens, for example { accent: '#FF5A1F' }."),
   strokeWidth: z.number().positive().optional(),
   cornerRadius: z.number().nonnegative().optional(),
+  font: z.string().min(1).optional().describe("Font family for all text, captions, and code (a bundled font or a family in settings.fonts)."),
 });
 export type CustomTheme = z.infer<typeof CustomTheme>;
 

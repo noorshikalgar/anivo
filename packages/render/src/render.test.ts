@@ -169,6 +169,12 @@ describe("custom theme", () => {
     // Another theme name uses the built-in theme.
     expect(sceneTheme(scene, "night-dark").name).toBe("night-dark");
   });
+  it("sets one font for all text, captions, and code", async () => {
+    const { sceneTheme } = await import("./theme.js");
+    const scene = load({ schemaVersion: 1, settings: { theme: "mono", customTheme: { name: "mono", base: "studio-dark", font: "JetBrainsMono Nerd Font Mono" } } });
+    expect(sceneTheme(scene).fonts).toEqual({ clean: "JetBrainsMono Nerd Font Mono", sketch: "JetBrainsMono Nerd Font Mono", code: "JetBrainsMono Nerd Font Mono" });
+    expect(sceneTheme(load({ schemaVersion: 1, settings: { theme: "x", customTheme: { name: "x", base: "studio-dark" } } })).fonts.clean).toBe("Inter");
+  });
 });
 
 describe("shape morph outline", () => {
