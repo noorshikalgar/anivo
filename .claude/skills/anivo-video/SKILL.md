@@ -28,6 +28,10 @@ The first run downloads the model (about 330 MB) from Hugging Face. Kokoro is Ap
 
 Voices that the owner chose: **`am_puck`** (male, default) and **`af_heart`** (female). Other voices: `am_liam`, `am_echo`, `bm_fable`. Do not use `am_michael` (sounds too old).
 
+## Pace (docs/42)
+
+Use `captions=voice` in the scene line of a narrated video: the voice sets each step's time, not the caption reading time. `voice.py` cuts the silence at the ends of each Kokoro clip and leaves 0.35 s between sentences and 0.7 s before a section (a step with `transition=`). `fit` sets `hold=` both ways (longer and shorter). A step whose actions take longer than its line makes a dead pause: shorten the actions.
+
 ## Procedure
 
 1. **Story first, in plain words.** Write the narration before the layout. Shape: hook question → the simple case → the new idea → how it works (2-4 steps) → what it causes → real examples → a catch or a limit → "In short". 12-25 steps. Rewrite the user's text: one idea for each step, 15-30 words for each line, short sentences, numbers as words if the voice must say them.
