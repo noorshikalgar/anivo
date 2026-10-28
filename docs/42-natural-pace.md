@@ -16,7 +16,8 @@ Status: built, 2026-10-28. Owner feedback on the narrated videos: the pauses bet
 |---|---|
 | Caption pace `voice` | `captionPace: "voice"` (script `captions=voice`). The caption does not make a step longer. The text types at 0.3 s for each word, at about the speed of speech. |
 | Clip edges | `voice.py synth` cuts the silence at the two ends of each clip. It keeps 40 ms at each end. |
-| Pauses | The voice starts 80 ms after the step starts. 0.35 s between two sentences. 0.7 s before a section: a step with `transition=`, and the end of the video. |
+| Pauses | The voice starts 150 ms after the step starts. 0.6 s between two lines. 1 s before a section: a step with `transition=`. 1 s after the intro and before the outro (`# part: intro` or `# part: outro` after the step line). 2 s on the last frame. |
+| Speed | Kokoro speed 0.9. Owner feedback on the plasma membrane video: "make it a little slow, so the viewer can understand". |
 | Fit both ways | `voice.py fit` sets `hold=` so that each step is as long as its line plus the pause. It makes a step longer or shorter. |
 | Dead pause | If the actions of a step take longer than its line, `fit` cannot make the step shorter. Make the actions shorter. |
 
@@ -39,6 +40,7 @@ Use `captions=voice` only in a video with a voiceover.
 | V3 | Done. Script: `captions=voice` on the scene line. |
 | V4 | Done. Editor: Caption reading → Voice in the Scene panel. |
 | V5 | Done. Skill `anivo-video`: `voice.py` cuts clip edges, uses the new pauses, and fits in two directions. The skill uses `captions=voice` for a narrated video. |
+| V6 | Done. Skill `anivo-video`: speed 0.9, longer pauses, 1 s gaps around the intro and the outro, and `fit` ignores idle motion (`float`, `breathe`). |
 
 ## 5. Acceptance
 
