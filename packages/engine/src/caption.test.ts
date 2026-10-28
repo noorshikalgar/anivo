@@ -26,17 +26,18 @@ describe("step caption", () => {
     expect(c.readMs).toBeGreaterThanOrEqual(2000);
   });
 
-  it("types in, shows next to the first target, then fades in the next step", () => {
+  it("types in, shows next to the first target, then fades out at the end of its step", () => {
     const s = scene();
     const tl = resolveTimeline(s);
     const half = evaluate(s, tl.steps[0]!.caption!.typedMs / 2).caption!;
     expect(half.reveal).toBeGreaterThan(0.3);
     expect(half.reveal).toBeLessThan(0.7);
-    const full = evaluate(s, tl.steps[0]!.holdEndMs - 10).caption!;
+    const full = evaluate(s, tl.steps[0]!.holdEndMs - 300).caption!;
     expect(full).toMatchObject({ reveal: 1, opacity: 1, anchorId: "a", anchor: { x: 100, y: 100, width: 200, height: 100 } });
-    const fading = evaluate(s, tl.steps[1]!.startMs + 125).caption!;
+    const fading = evaluate(s, tl.steps[0]!.holdEndMs - 125).caption!;
     expect(fading.opacity).toBeCloseTo(0.5, 1);
-    expect(evaluate(s, tl.steps[1]!.startMs + 400).caption).toBeUndefined();
+    // The next step has no caption: the old caption does not come back (with a fade transition it showed as a flash).
+    expect(evaluate(s, tl.steps[1]!.startMs + 10).caption).toBeUndefined();
   });
 });
 
@@ -110,5 +111,41 @@ describe("caption pace (docs/31)", () => {
     expect(captionTiming(text).readMs).toBe(4500);
     expect(captionTiming(text, "normal").readMs).toBe(3300);
     expect(captionTiming(text, "quick").readMs).toBe(2500);
+  });
+});
+
+describe("step caption change", () => {
+  it("before a click step, fades out when the click step starts", () => {
+    const r = loadScene({
+      schemaVersion: 1,
+      meta: { title: "C" },
+      elements: { a: { type: "rectangle", z: "a0", x: 100, y: 100, width: 200, height: 100 } },
+      steps: [
+        { id: "s1", holdMs: 0, caption: { text: "One" }, actions: [{ id: "e", type: "enter", effect: "fade", targets: ["a"], durationMs: 300 }] },
+        { id: "s2", holdMs: 0, trigger: { kind: "click" }, actions: [{ id: "w", type: "wait", durationMs: 1000 }] },
+      ],
+    });
+    if (!r.ok) throw new Error("scene");
+    const tl = resolveTimeline(r.scene);
+    expect(evaluate(r.scene, tl.steps[0]!.holdEndMs - 5).caption!.opacity).toBe(1);
+    expect(evaluate(r.scene, tl.steps[1]!.startMs + 125).caption!.opacity).toBeCloseTo(0.5, 1);
+  });
+
+  it("fades out at the end of its step when the next step has a caption", () => {
+    const r = loadScene({
+      schemaVersion: 1,
+      meta: { title: "C" },
+      elements: { a: { type: "rectangle", z: "a0", x: 100, y: 100, width: 200, height: 100 } },
+      steps: [
+        { id: "s1", holdMs: 0, caption: { text: "One" }, actions: [{ id: "e", type: "enter", effect: "fade", targets: ["a"], durationMs: 300 }] },
+        { id: "s2", holdMs: 0, caption: { text: "Two" }, actions: [{ id: "w", type: "wait", durationMs: 1000 }] },
+      ],
+    });
+    if (!r.ok) throw new Error("scene");
+    const tl = resolveTimeline(r.scene);
+    const end = tl.steps[0]!.holdEndMs;
+    expect(evaluate(r.scene, end - 300).caption!.opacity).toBe(1);
+    expect(evaluate(r.scene, end - 125).caption!.opacity).toBeCloseTo(0.5, 1);
+    expect(evaluate(r.scene, end - 5).caption!.opacity).toBeLessThan(0.05);
   });
 });

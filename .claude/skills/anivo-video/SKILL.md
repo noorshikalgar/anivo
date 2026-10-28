@@ -14,15 +14,17 @@ This skill makes a finished MP4 with a voiceover: one idea for each step, a capt
 | `node packages/cli/bin/anivo.js` (`pnpm build:cli` first) | `new`, `apply --mode replace`, `lint`, `summary`, `contact-sheet`, `preview --step N`, `render` |
 | `scripts/voice.py synth` | One WAV for each step, with Kokoro. Needs the Kokoro Python (see Setup). |
 | `scripts/voice.py fit` | Sets `hold=` in the script so that each step lasts its spoken line. One round. |
-| `scripts/voice.py mix` | One voice track; each line starts 0.3 s after its step starts. |
+| `scripts/voice.py mix` | One voice track; each line starts 0.12 s after its step starts. |
 | `scripts/look.py` | A look preset (`classroom`, `black-metal`) and optional font files, into the `.anivo` file. |
 | `ffmpeg` | Put the voice track on the silent video. |
 
 ## Setup (one time)
 
 ```bash
-uv venv --python 3.12 ~/.anivo-tts && uv pip install --python ~/.anivo-tts/bin/python kokoro soundfile
+uv venv --python 3.12 ~/.anivo-tts && uv pip install --python ~/.anivo-tts/bin/python kokoro soundfile "en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl"
 ```
+
+If `synth` stops with "No virtual environment found", the spaCy model `en_core_web_sm` is missing. Install it as above.
 
 The first run downloads the model (about 330 MB) from Hugging Face. Kokoro is Apache 2.0: you can use the voice in videos that earn money. `espeak-ng` (Homebrew) helps with words that are not in the dictionary.
 
@@ -30,11 +32,15 @@ Voices that the owner chose: **`am_puck`** (male, default) and **`af_heart`** (f
 
 ## Pace (docs/42)
 
-Use `captions=voice` in the scene line of a narrated video: the voice sets each step's time, not the caption reading time. `voice.py` cuts the silence at the ends of each Kokoro clip and leaves 0.35 s between sentences and 0.7 s before a section (a step with `transition=`). `fit` sets `hold=` both ways (longer and shorter). A step whose actions take longer than its line makes a dead pause: shorten the actions.
+Use `captions=voice` in the scene line of a narrated video: the voice sets each step's time, not the caption reading time. The pace is calm, about 0.9 of a natural pace, so that a viewer can follow: Kokoro speed 0.95 (`synth` default), 0.45 s between two lines, 0.8 s before a section (a step with `transition=`), 1 s after the intro and before the outro, 2 s on the last frame, 1.5 s of silence at the start (`START_MS`; the first step must start with `wait 1500ms`). `voice.py` cuts the silence at the ends of each Kokoro clip, so these pauses are the only pauses. `fit` sets `hold=` both ways (longer and shorter). A step whose actions take longer than its line makes a dead pause: shorten the actions. Idle motion (`float`, `breathe`) does not count as an action. Do not slow it more: speed 0.9 with 0.6 s pauses felt like a teleprompter.
+
+## Reference example
+
+`examples/cells-gen.py` ("Life's Building Blocks", classroom look, 13 steps, 90.8 s) is the owner's best video. Copy its shape: the intro (title, then a map of chips), one idea for each step, one picture that grows across steps (a cell with organelles, then a note panel for each organelle), a side-by-side compare, a numbered recap, and an end card.
 
 ## Procedure
 
-1. **Story first, in plain words.** Write the narration before the layout. Shape: hook question → the simple case → the new idea → how it works (2-4 steps) → what it causes → real examples → a catch or a limit → "In short". 12-25 steps. Rewrite the user's text: one idea for each step, 15-30 words for each line, short sentences, numbers as words if the voice must say them.
+1. **Story first, in plain words.** Write the narration before the layout. Shape: **intro** (see below) → the simple case → the new idea → how it works (2-4 steps) → what it causes → real examples → a catch or a limit → **outro**. 12-25 steps. Rewrite the user's text: one idea for each step, 15-30 words for each line, short sentences, numbers as words if the voice must say them.
 2. **Plan each step as a pair: line + picture.** The picture shows what the line says, at the moment it says it. If a step has no picture change, join it with the next step.
 3. **Write a generator** (`gen.py`) that writes the `.txt` script. Loops make rows of bars, ticks, and cells; a generator keeps the IDs and positions consistent. One `caption="..."` for each step = the narration. For a step with no caption (the title), write `# say: ...` on the line after the step line.
 4. **Compile and lint.** `new` → `apply --mode replace` → fix all lint errors. Overlap warnings are fine when you mean them (a dot on a line).
@@ -50,7 +56,30 @@ ffmpeg -y -i silent.mp4 -i voice.wav -c:v copy -c:a aac -b:a 160k -shortest fina
 7. **Check frames of the MP4**, not only the sheet: at step changes (a flash, a jump) and in the middle of long steps.
 8. **Report**: the length, the voice, the look, what you did not fix.
 
-> **CAUTION:** Run `look.py` after `anivo new`. `fit` keeps the settings (it uses replace mode), but a new file has no look.
+> **CAUTION:** Run `look.py` after `fit` and before `render`. `fit` applies the script in replace mode, which removes the look.
+
+## Intro and outro
+
+Each video has an intro and an outro. Mark each of their steps with a `# part: intro` or `# part: outro` line after the step line. `fit` then puts 1 s of silence between the intro and the body, and between the body and the outro. The picture holds during the silence.
+
+| Part | Steps | Picture | Voice |
+|---|---|---|---|
+| Intro 1: title | 1 | 1.5 s of empty paper first (`wait 1500ms` is the first action; the watermark is already there), then the title types in (font 110-130), a subtitle fades in, a hand-drawn underline wipes. | `# say:` a hook question, then the topic: "What … ? Let's explore …". |
+| Intro 2: map | 1 | Three or four chips (boxes with `look=soft`, font 40-44) enter one by one: the parts of the video. Keep the title on the screen, smaller (`morph` the title y and font size). | "In the next few minutes: …, …, and …". One chip enters when the voice says it. |
+| Outro 1: recap | 1 | "In short": a numbered list, one point for each main idea. Each point enters when the voice says it. | The recap, 20-30 words. |
+| Outro 2: end card | 1 | The title again, "Thanks for watching" (accent), and the watermark stays. Calm: `fade` and one `rise`. | "Thanks for watching." and one sentence to remember. |
+
+Use `transition=fade` on the first body step and on the first outro step.
+
+## Watermark
+
+Add a small Anivo watermark to each video, at the top right. Put this line last in the elements, so it draws on top. Do not enter or exit it: it shows for the whole video.
+
+```
+text wm "made with anivo" at=1600,24 size=296x48 font-size=30 text-align=right color=muted opacity=0.75
+```
+
+If a step uses the top-right corner (y < 80, x > 1600), move the watermark to the bottom left: `at=24,1010`. Keep the caption band free of it: a caption is in the bottom center.
 
 ## Layout rules (1920 × 1080)
 
@@ -65,6 +94,10 @@ ffmpeg -y -i silent.mp4 -i voice.wav -c:v copy -c:a aac -b:a 160k -shortest fina
 - A box label with two lines: `"64 weights\nscale 0.11"`.
 - Bars of a chart: compute the heights so the tallest bar stays below the heading (top ≥ 220).
 - Do not use IDs that are verbs or keywords (`scale`, `count`, `move`): the script reads them as words. Arrow IDs and element IDs share one namespace.
+- IDs are lower case: `meml`, not `memL`. Action IDs (`id=up1`) share the namespace with element IDs.
+- The sketch (hand-drawn) font has no subscript or superscript characters. Write `O2`, `H2O`, `K+`, `Na+`, not `O₂` or `K⁺`.
+- A caption of more than about 120 characters wraps to three lines and moves up over the picture. Keep each line to two subtitle lines.
+- Moving things (`move path=`) must end clear of other shapes and above the caption band (y < 840).
 
 ## Motion rules
 
@@ -78,9 +111,11 @@ ffmpeg -y -i silent.mp4 -i voice.wav -c:v copy -c:a aac -b:a 160k -shortest fina
 | Preset | Script line | Feel |
 |---|---|---|
 | `classroom` | `style=sketch theme=paper-light background=grid` | Exercise book: paper, navy ink, blue and red pen, yellow highlighter, hand-drawn shapes. |
-| `black-metal` | `theme=studio-dark background=solid` + `--font` a mono font | Black, bone white, blood red. |
+| `classic` | `style=sketch theme=paper-light background=grid` | The classroom look in other colors: cool white paper, black ink, classic blue, red, and green. |
+| `blueprint` | `style=sketch theme=paper-light background=grid` | Deep blue paper, a fine light grid, white ink, pale cyan. |
+| `black-metal` | any script line; `--font` a mono font is optional | Black, bone white, blood red, with a vignette and grain. |
 
-Each preset also sets a caption style (`classroom`: marker, `black-metal`: subtitle) unless the script sets `caption-style=`.
+A look is colors only: `look.py` keeps the style, the background pattern, and the caption style of the scene (it sets a caption style only if the scene has none). To show the same video in other looks, copy the `.anivo` file and run `look.py` on the copy; the voice track stays the same. `--font` puts a font file in the scene for all text (for example JetBrains Mono Nerd Font).
 
 ### Caption styles (docs/41)
 
@@ -89,13 +124,26 @@ Each preset also sets a caption style (`classroom`: marker, `black-metal`: subti
 | `subtitle` | Floating text, no box. A good default for any look. |
 | `marker` | Highlighter strokes, hand-drawn font in the sketch style. Classroom and notes. |
 | `bar` | A full-width band. Strong contrast; keep the bottom band free. |
-| `card` | A card with an accent bar. Tutorials. |
 | `slam` | Big words over a dimmed picture. Only for one short line (3 to 8 words): set it on that step (`caption-style=slam`), for a hook or a key result. |
 | `none` | Voice only. |
 
-Match the caption to the look. Do not use `slam` for the whole video.
+Do not use `card` (a box with a left bar): the owner does not like it. A new look is colors only (the tokens and the background color): keep the style, the font, and the caption style. Match the caption to the look. Do not use `slam` for the whole video.
 
-Add a preset to `PRESETS` in `look.py` for a new look. Use theme tokens in the script (`accent`, `success`, …), not hex colors, so a look changes everything.
+Add a preset to `PRESETS` in `look.py` for a new look.
+
+### Color boundary: a look never changes the subject
+
+A look sets only the environment: the paper, the ink, the headings, the captions, and the emphasis colors. It must not change a color that the explanation depends on.
+
+| Color kind | Examples | Write |
+|---|---|---|
+| **Environment color** | Heading ink, a highlight, a box that only groups things, "from mother" in red and "from father" in blue (any two colors work) | A theme token: `accent`, `danger`, `muted`, … |
+| **Subject color** | Eye colors, a green leaf, a blue copper sulfate solution, a flame test, the colors of a map key, a color wheel | A literal hex color: `fill=#2F6DB5`. Put a dark label color on a light swatch (`color=#1F2D4A`), so it reads in a dark look too. |
+
+1. If a line names a color ("blue eyes", "green chlorophyll"), the shape that shows it must use a literal color of that name.
+2. Do not color a text label with a subject color. Write the label in the theme ink and put a swatch next to it.
+3. A code or a system diagram usually has no subject colors: use theme tokens only, so any look works.
+4. Before you render in a dark look, examine each step that names a color.
 
 ## Facts and honesty
 

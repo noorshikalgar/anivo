@@ -2,10 +2,11 @@
 
   look.py <scene.anivo> <preset> [--font FILE ...] [--family NAME]
 
-Presets: classroom, black-metal. A font file goes into the scene file, and
+Presets: classroom, classic, blueprint, black-metal. A font file goes into the scene file, and
 the theme uses it for all text, captions, and code (customTheme.font).
-Run it after each `anivo apply --mode replace`: replace mode keeps the
-settings, but run it again after `anivo new`.
+A look is colors only: it keeps the style, the background pattern, and the
+caption style of the scene. Run it after `voice.py fit` and before `render`:
+fit applies the script in replace mode, which removes the look.
 """
 import argparse
 import json
@@ -43,6 +44,67 @@ PRESETS = {
             "teal-soft": "#D8EFEE",
         },
     },
+    # Classic: the classroom look (hand-drawn, grid, highlighter) in cool white with classic ink colors.
+    # A theme is colors only: it does not change the style, the font, or the caption style.
+    "classic": {
+        "base": "paper-light",
+        "dark": False,
+        "strokeWidth": 2.5,
+        "cornerRadius": 14,
+        "background": {"kind": "grid"},
+        "captionStyle": "marker",
+        "tokens": {
+            "background": "#FFFFFF",
+            "grid": "#E3EAF2",
+            "surface": "#FFFFFF",
+            "surface-strong": "#F2F3F5",
+            "text": "#1C1F24",
+            "muted": "#5E656E",
+            "line": "#2B3038",
+            "accent": "#1F5FBF",
+            "accent-soft": "#E3ECFA",
+            "danger": "#C8312B",
+            "danger-soft": "#FBE4E2",
+            "success": "#23874B",
+            "success-soft": "#E1F3E8",
+            "warning": "#C27A00",
+            "warning-soft": "#FFEFA6",
+            "purple": "#6B4BAF",
+            "purple-soft": "#EEE8F8",
+            "teal": "#16807C",
+            "teal-soft": "#DDF1F0",
+        },
+    },
+    # Blueprint: deep blue paper, a fine light grid, white ink, pale cyan, and a warm highlighter.
+    "blueprint": {
+        "base": "studio-dark",
+        "dark": True,
+        "strokeWidth": 2.5,
+        "cornerRadius": 14,
+        "background": {"kind": "grid"},
+        "captionStyle": "marker",
+        "tokens": {
+            "background": "#16467E",
+            "grid": "#2A5C96",
+            "surface": "#1C4F8A",
+            "surface-strong": "#225896",
+            "text": "#F2F7FF",
+            "muted": "#B3C8E4",
+            "line": "#DCE8F8",
+            "accent": "#8FD3FF",
+            "accent-soft": "#235E9C",
+            "danger": "#FF9C8F",
+            "danger-soft": "#5A3A5E",
+            "success": "#9EEBB8",
+            "success-soft": "#1F6670",
+            "warning": "#E8913A",
+            "warning-soft": "#5B5560",
+            "purple": "#D2B8FF",
+            "purple-soft": "#3B4F96",
+            "teal": "#7FE6E0",
+            "teal-soft": "#1C6680",
+        },
+    },
     # Pitch black, bone white, blood red, cold steel.
     "black-metal": {
         "base": "studio-dark",
@@ -54,7 +116,7 @@ PRESETS = {
         "tokens": {
             "background": "#050505", "grid": "#121212", "surface": "#0D0D0D", "surface-strong": "#171717",
             "text": "#E6E1D8", "muted": "#7D7872", "line": "#3A3836",
-            "accent": "#A3001B", "accent-soft": "#24060A", "danger": "#E3263B", "danger-soft": "#2A080D",
+            "accent": "#D0203A", "accent-soft": "#24060A", "danger": "#E3263B", "danger-soft": "#2A080D",
             "success": "#B9C7D0", "success-soft": "#12181C", "warning": "#C7B08A", "warning-soft": "#221D14",
             "purple": "#8A8494", "purple-soft": "#16141A", "teal": "#8FA3AD", "teal-soft": "#101619",
         },
@@ -86,8 +148,11 @@ def main() -> None:
     st = scene["settings"]
     st["theme"] = a.preset
     st["customTheme"] = {"name": a.preset, "base": pr["base"], "dark": pr["dark"], "tokens": pr["tokens"], "strokeWidth": pr["strokeWidth"], "cornerRadius": pr["cornerRadius"]}
-    st["background"] = {**st.get("background", {}), **pr["background"]}
-    # The caption look that fits the preset (docs/41). A caption-style= in the script line wins.
+    # A look is colors only (owner): it keeps the background pattern, the style, and the caption
+    # style of the scene. It adds only the effects (vignette, grain) and the defaults that are not set.
+    bg = st.get("background", {})
+    st["background"] = {**pr["background"], **bg, **{k: v for k, v in pr["background"].items() if k != "kind"}}
+    # The caption look that fits the preset (docs/41), only if the scene has none.
     st.setdefault("captionStyle", pr["captionStyle"])
     if a.font:
         st["customTheme"]["font"] = a.family
