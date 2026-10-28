@@ -649,6 +649,7 @@ function SceneProperties() {
             { value: "relaxed", text: "Relaxed (0.45 s a word)" },
             { value: "normal", text: "Normal (0.33 s a word)" },
             { value: "quick", text: "Quick (0.25 s a word)" },
+            { value: "voice", text: "Voice (the voiceover sets the time)" },
           ]}
           onCommit={(v) => commitSettings({ captionPace: v === "relaxed" ? null : v }, "Change caption reading")}
         />

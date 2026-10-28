@@ -26,3 +26,17 @@ describe("step transition and exits", () => {
     expect(evaluate(r.scene, start + 1000).elements.find((e) => e.id === "b")!.opacity).toBeCloseTo(1);
   });
 });
+
+describe("caption pace voice (docs/42)", () => {
+  it("a caption does not make a step longer, and it types at about the speed of speech", async () => {
+    const { captionTiming } = await import("./timeline.js");
+    const mk = (pace: string) => {
+      const r = loadScene({ schemaVersion: 1, settings: { captionPace: pace }, elements: { a: { type: "rectangle", z: "a1", x: 0, y: 0, width: 10, height: 10 } }, steps: [{ id: "s", title: "S", holdMs: 200, caption: { text: "one two three four five six seven eight nine ten eleven twelve" }, actions: [{ id: "e", type: "enter", targets: ["a"], effect: "fade", durationMs: 300 }] }] });
+      if (!r.ok) throw new Error(JSON.stringify(r));
+      return resolveTimeline(r.scene).totalMs;
+    };
+    expect(mk("voice")).toBe(500);
+    expect(mk("quick")).toBeGreaterThan(3000);
+    expect(captionTiming("one two three", "voice")).toEqual({ typeMs: 900, readMs: 0 });
+  });
+});
