@@ -32,7 +32,7 @@ Voices that the owner chose: **`am_puck`** (male, default) and **`af_heart`** (f
 
 ## Pace (docs/42)
 
-Use `captions=voice` in the scene line of a narrated video: the voice sets each step's time, not the caption reading time. The pace is calm, so that a viewer can follow: Kokoro speed 0.9 (`synth` default), 0.6 s between two lines, 1 s before a section (a step with `transition=`), 1 s after the intro and before the outro, 2 s on the last frame. `voice.py` cuts the silence at the ends of each Kokoro clip, so these pauses are the only pauses. `fit` sets `hold=` both ways (longer and shorter). A step whose actions take longer than its line makes a dead pause: shorten the actions. Idle motion (`float`, `breathe`) does not count as an action.
+Use `captions=voice` in the scene line of a narrated video: the voice sets each step's time, not the caption reading time. The pace is calm, so that a viewer can follow: Kokoro speed 0.9 (`synth` default), 0.6 s between two lines, 1 s before a section (a step with `transition=`), 1 s after the intro and before the outro, 2 s on the last frame, 1.5 s of silence at the start (`START_MS`; the first step must start with `wait 1500ms`). `voice.py` cuts the silence at the ends of each Kokoro clip, so these pauses are the only pauses. `fit` sets `hold=` both ways (longer and shorter). A step whose actions take longer than its line makes a dead pause: shorten the actions. Idle motion (`float`, `breathe`) does not count as an action.
 
 ## Procedure
 
@@ -60,7 +60,7 @@ Each video has an intro and an outro. Mark each of their steps with a `# part: i
 
 | Part | Steps | Picture | Voice |
 |---|---|---|---|
-| Intro 1: title | 1 | The title types in (font 110-130), a subtitle fades in, a hand-drawn underline wipes. | `# say:` a hook question, then the topic: "What … ? Let's explore …". |
+| Intro 1: title | 1 | 1.5 s of empty paper first (`wait 1500ms` is the first action; the watermark is already there), then the title types in (font 110-130), a subtitle fades in, a hand-drawn underline wipes. | `# say:` a hook question, then the topic: "What … ? Let's explore …". |
 | Intro 2: map | 1 | Three or four chips (boxes with `look=soft`, font 40-44) enter one by one: the parts of the video. Keep the title on the screen, smaller (`morph` the title y and font size). | "In the next few minutes: …, …, and …". One chip enters when the voice says it. |
 | Outro 1: recap | 1 | "In short": a numbered list, one point for each main idea. Each point enters when the voice says it. | The recap, 20-30 words. |
 | Outro 2: end card | 1 | The title again, "Thanks for watching" (accent), and the watermark stays. Calm: `fade` and one `rise`. | "Thanks for watching." and one sentence to remember. |

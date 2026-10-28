@@ -31,6 +31,7 @@ RATE = 24000
 LEAD_MS = 150  # the voice starts just after the picture changes
 PAUSE_MS = 600  # between two sentences
 SECTION_MS = 1000  # before a step with a transition
+START_MS = 1500  # silence at the start: a viewer presses play, then the title and the voice begin
 GAP_MS = 1000  # after the intro, and before the outro
 END_MS = 2000  # the last frame holds after the last line
 EDGE_MS = 40  # silence kept at each end of a clip
@@ -128,8 +129,11 @@ def fit(a: argparse.Namespace) -> None:
     lines = json.loads((Path(a.dir) / "lines.json").read_text())
     path = Path(a.script)
     # The parts and sections come from the script as it is now; the line lengths from synth.
-    for st, now in zip(lines, spoken(path.read_text())):
-        st["section"], st["part"] = now["section"], now["part"]
+    now_steps = spoken(path.read_text())
+    if len(now_steps) != len(lines):
+        sys.exit(f"The script has {len(now_steps)} steps, the voice {len(lines)}. Run synth again.")
+    for st, now in zip(lines, now_steps):
+        st["section"], st["part"], st["line"] = now["section"], now["part"], now["line"]
     for rnd in range(3):
         subprocess.run([*a.anivo.split(), "apply", a.scene, str(path), "--mode", "replace"], capture_output=True, check=True)
         spans = timeline(a.scene, a.anivo)
@@ -141,7 +145,7 @@ def fit(a: argparse.Namespace) -> None:
             if not st["ms"]:
                 continue
             pause = pause_after(lines, n)
-            need = (LEAD_MS + st["ms"] + pause) / 1000
+            need = (LEAD_MS + (START_MS if n == 0 else 0) + st["ms"] + pause) / 1000
             # Too short cuts the line; too long is a dead pause. The summary gives times to 0.1 s.
             if need - 0.1 <= e - s <= need + 0.15 or (e - s > need and act - s >= need - 0.05):
                 continue
@@ -163,12 +167,12 @@ def mix(a: argparse.Namespace) -> None:
     spans = timeline(a.scene, a.anivo)
     total = round(spans[-1][1] * RATE)
     track = bytearray(total * 2)
-    for st, (s, _, _) in zip(lines, spans):
+    for n, (st, (s, _, _)) in enumerate(zip(lines, spans)):
         if not st["wav"]:
             continue
         with wave.open(str(d / st["wav"])) as w:
             pcm = w.readframes(w.getnframes())
-        at = round((s + LEAD_MS / 1000) * RATE) * 2
+        at = round((s + (LEAD_MS + (START_MS if n == 0 else 0)) / 1000) * RATE) * 2
         pcm = pcm[: max(0, len(track) - at)]
         track[at : at + len(pcm)] = pcm
     with wave.open(a.out, "wb") as w:
