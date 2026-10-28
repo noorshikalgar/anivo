@@ -230,6 +230,10 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
       if (theme) set["theme"] = theme;
       const captionPace = p.kv.get("captions")?.v;
       if (captionPace && ["relaxed", "normal", "quick"].includes(captionPace)) set["captionPace"] = captionPace;
+      // caption-style= (docs/41): how all captions look.
+      const cs = p.kv.get("caption-style");
+      if (cs && !["card", "subtitle", "bar", "marker", "slam", "none"].includes(cs.v)) errors.push(err(cs.pos, `The caption style '${cs.v}' is not known.`, "Use: card, subtitle, bar, marker, slam, none."));
+      else if (cs) set["captionStyle"] = cs.v;
       const video: Record<string, number> = {};
       const sz = p.kv.get("size");
       if (sz) {
@@ -714,7 +718,9 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
       const side = p.kv.get("side")?.v ?? "auto";
       if (!["auto", "above", "below", "left", "right", "top", "bottom"].includes(side)) errors.push(err(p.kv.get("side")!.pos, `The side '${side}' is not known.`, "Use: auto, above, below, left, right, top, bottom."));
       const near = p.kv.get("near")?.v;
-      props["caption"] = { text: cap.v, side, ...(near ? { anchor: near } : {}) };
+      const cs = p.kv.get("caption-style");
+      if (cs && !["card", "subtitle", "bar", "marker", "slam", "none"].includes(cs.v)) errors.push(err(cs.pos, `The caption style '${cs.v}' is not known.`, "Use: card, subtitle, bar, marker, slam, none."));
+      props["caption"] = { text: cap.v, side, ...(near ? { anchor: near } : {}), ...(cs ? { style: cs.v } : {}) };
     }
     if (p.flags.has("click")) props["trigger"] = { kind: "click" };
     const actions = line.children.flatMap((c) => {

@@ -19,6 +19,7 @@ export function printScene(scene: Scene): string {
   if (bgx.vignette) head.push(`vignette=${bgx.vignette}`);
   if (bgx.grain) head.push(`grain=${bgx.grain}`);
   if (s.captionPace && s.captionPace !== "relaxed") head.push(`captions=${s.captionPace}`);
+  if (s.captionStyle) head.push(`caption-style=${s.captionStyle}`);
   if (bgx.drift) head.push("drift");
   out.push(head.join(" "), "");
 
@@ -112,7 +113,7 @@ export function printScene(scene: Scene): string {
     out.push("");
     const parts = [`step ${q(step.title)}`, `id=${step.id}`];
     if (step.holdMs !== 500) parts.push(`hold=${step.holdMs}ms`);
-    if (step.caption) parts.push(`caption=${q(step.caption.text)}`, ...(step.caption.anchor ? [`near=${step.caption.anchor}`] : []), ...(step.caption.side !== "auto" ? [`side=${step.caption.side}`] : []));
+    if (step.caption) parts.push(`caption=${q(step.caption.text)}`, ...(step.caption.anchor ? [`near=${step.caption.anchor}`] : []), ...(step.caption.side !== "auto" ? [`side=${step.caption.side}`] : []), ...(step.caption.style ? [`caption-style=${step.caption.style}`] : []));
     if (step.transition) parts.push(`transition=${step.transition.kind}${step.transition.durationMs !== 600 ? ` transition-dur=${step.transition.durationMs}ms` : ""}`);
     if (step.durationMs !== undefined) parts.push(`dur=${step.durationMs}ms`);
     if (step.trigger.kind === "click") parts.push("click");

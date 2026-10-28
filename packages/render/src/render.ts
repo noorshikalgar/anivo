@@ -1315,57 +1315,132 @@ function drawStepCaption(dc: DrawContext, frame: FrameState, cap: NonNullable<Fr
   // The camera at the end of the step: a drift or a zoom in the step does not move or resize the caption.
   const cam = cap.cam ?? liveCam;
   const v = dc.scene.settings.video;
+  const style = cap.style ?? "card";
   // The caption has the same size on the screen when the camera zooms (it is drawn in scene pixels).
   // A vertical video plays on a phone: the caption is larger there.
   const portrait = v.height > v.width ? 1.4 : 1;
-  const size = Math.round(Math.min(v.width, v.height) * 0.037 * portrait * (cam.width / v.width));
+  const scale = style === "slam" ? 2.1 : style === "marker" ? 1.15 : 1;
+  const size = Math.round(Math.min(v.width, v.height) * 0.037 * portrait * scale * (cam.width / v.width));
   const padX = Math.round(size * 0.7);
   const padY = Math.round(size * 0.45);
-  const lineH = Math.round(size * 1.3);
-  const bar = Math.max(3, Math.round(size * 0.12));
-  ctx.font = `500 ${size}px "${theme.fonts.clean}", "${SYMBOLS}"`;
-  const lines = captionLines(ctx, cap.text, Math.round(cam.width * 0.75) - padX * 2);
-  const textW = Math.max(...lines.map((l) => ctx.measureText(l).width));
+  const lineH = Math.round(size * (style === "slam" ? 1.15 : 1.3));
+  const bar = style === "card" ? Math.max(3, Math.round(size * 0.12)) : 0;
+  // A marker and a slam use the drawing font of the scene (hand-drawn in the sketch style).
+  const family = (style === "marker" || style === "slam") && dc.style === "sketch" ? theme.fonts.sketch : theme.fonts.clean;
+  ctx.font = `${style === "slam" ? 700 : 500} ${size}px "${family}", "${SYMBOLS}"`;
+  const lines = captionLines(ctx, cap.text, Math.round(cam.width * (style === "slam" ? 0.8 : 0.75)) - padX * 2);
+  const widths = lines.map((l) => ctx.measureText(l).width);
+  const textW = Math.max(...widths);
   const box = { width: Math.ceil(textW + padX * 2 + bar), height: lines.length * lineH + padY * 2 };
-  const others = cap.avoid ?? frame.elements.filter((e) => e.visible && e.opacity > 0.05 && e.type !== "group" && e.type !== "connector" && e.id !== cap.anchorId).map((e) => ({ x: e.x, y: e.y, width: e.width, height: e.height, text: e.type === "text" || !!e.label }));
-  // Arrow labels are text too: keep them clear (the CDN sample hid "far: 220 ms" under a caption).
-  const labels = frame.elements.flatMap((e) => {
-    const route = e.type === "connector" && e.visible && e.opacity > 0.05 && e.label ? dc.routes.get(e.id) : undefined;
-    if (!route || route.length === 0) return [];
-    const mid = pointAt(route, route.length / 2).point;
-    const w = Math.min(320, e.label!.length * 16 + 24);
-    return [{ x: mid.x - w / 2, y: mid.y - 24, width: w, height: 48, text: true }];
-  });
-  const p = placeCaption(box, cap, cam, [...others, ...labels]);
+  const color = (token: string, alpha = 1) => toCss(withAlpha(resolveToken(theme, token, "fill", "rectangle"), alpha));
+
+  // The place: a band, the center, or the free place that placeCaption finds.
+  let p: { x: number; y: number };
+  if (style === "bar") {
+    p = { x: cam.x, y: cam.y + cam.height - box.height - Math.round(cam.height * 0.06) };
+  } else if (style === "slam") {
+    p = { x: cam.x + (cam.width - box.width) / 2, y: cam.y + (cam.height - box.height) / 2 };
+  } else {
+    const others = cap.avoid ?? frame.elements.filter((e) => e.visible && e.opacity > 0.05 && e.type !== "group" && e.type !== "connector" && e.id !== cap.anchorId).map((e) => ({ x: e.x, y: e.y, width: e.width, height: e.height, text: e.type === "text" || !!e.label }));
+    // Arrow labels are text too: keep them clear (the CDN sample hid "far: 220 ms" under a caption).
+    const labels = frame.elements.flatMap((e) => {
+      const route = e.type === "connector" && e.visible && e.opacity > 0.05 && e.label ? dc.routes.get(e.id) : undefined;
+      if (!route || route.length === 0) return [];
+      const mid = pointAt(route, route.length / 2).point;
+      const w = Math.min(320, e.label!.length * 16 + 24);
+      return [{ x: mid.x - w / 2, y: mid.y - 24, width: w, height: 48, text: true }];
+    });
+    p = placeCaption(box, cap, cam, [...others, ...labels]);
+  }
+
   ctx.save();
   ctx.globalAlpha = cap.opacity;
-  roundRectPath(ctx, p.x, p.y, box.width, box.height, Math.round(size * 0.35));
-  ctx.fillStyle = toCss(withAlpha(resolveToken(theme, "surface", "fill", "rectangle"), 0.96));
-  ctx.fill();
-  ctx.strokeStyle = toCss(withAlpha(resolveToken(theme, "text", "textColor", "text"), 0.12));
-  ctx.lineWidth = 1;
-  ctx.stroke();
-  ctx.fillStyle = toCss(resolveToken(theme, "accent", "fill", "rectangle"));
-  roundRectPath(ctx, p.x, p.y, bar * 2, box.height, bar);
-  ctx.fill();
-  ctx.fillStyle = toCss(resolveToken(theme, "text", "textColor", "text"));
-  ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  // Typing: show the first characters, line by line.
-  let left = Math.round(cap.text.length * cap.reveal);
-  let caret: { x: number; y: number } | undefined;
-  lines.forEach((l, i) => {
-    if (left <= 0) return;
-    const part = l.slice(0, left);
+  // Typing shows the first characters, line by line: only the card and the marker type.
+  const types = style === "card" || style === "marker";
+  let left = types ? Math.round(cap.text.length * cap.reveal) : cap.text.length;
+  const shown = lines.map((l) => {
+    const part = left > 0 ? l.slice(0, left) : "";
     left -= l.length + 1;
-    const y = p.y + padY + lineH * (i + 0.5);
-    ctx.fillText(part, p.x + bar + padX, y);
-    caret = { x: p.x + bar + padX + ctx.measureText(part).width + size * 0.08, y };
+    return part;
   });
-  // The caret while the caption types (as on a typed text, docs/25 K3).
-  if (caret && cap.reveal < 1) {
-    ctx.fillStyle = toCss(resolveToken(theme, "accent", "fill", "rectangle"));
-    ctx.fillRect(caret.x, caret.y - size * 0.55, Math.max(2, size * 0.08), size * 1.1);
+  const centerX = p.x + box.width / 2;
+  const lineY = (i: number) => p.y + padY + lineH * (i + 0.5);
+
+  if (style === "card") {
+    roundRectPath(ctx, p.x, p.y, box.width, box.height, Math.round(size * 0.35));
+    ctx.fillStyle = color("surface", 0.96);
+    ctx.fill();
+    ctx.strokeStyle = toCss(withAlpha(resolveToken(theme, "text", "textColor", "text"), 0.12));
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = color("accent");
+    roundRectPath(ctx, p.x, p.y, bar * 2, box.height, bar);
+    ctx.fill();
+    ctx.fillStyle = color("text");
+    ctx.textAlign = "left";
+    let caret: { x: number; y: number } | undefined;
+    shown.forEach((part, i) => {
+      if (!part) return;
+      ctx.fillText(part, p.x + bar + padX, lineY(i));
+      caret = { x: p.x + bar + padX + ctx.measureText(part).width + size * 0.08, y: lineY(i) };
+    });
+    // The caret while the caption types (as on a typed text, docs/25 K3).
+    if (caret && cap.reveal < 1) {
+      ctx.fillStyle = color("accent");
+      ctx.fillRect(caret.x, caret.y - size * 0.55, Math.max(2, size * 0.08), size * 1.1);
+    }
+  } else if (style === "subtitle") {
+    // Floating text, as in a film: a soft halo of the background color keeps it readable on any picture.
+    ctx.textAlign = "center";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = Math.max(4, size * 0.3);
+    ctx.strokeStyle = color("background", 0.92);
+    ctx.fillStyle = color("text");
+    shown.forEach((part, i) => {
+      ctx.strokeText(part, centerX, lineY(i));
+      ctx.fillText(part, centerX, lineY(i));
+    });
+  } else if (style === "bar") {
+    // A band over the full width, in the inverse colors, with an accent line on top.
+    ctx.fillStyle = color("text", 0.88);
+    ctx.fillRect(cam.x, p.y, cam.width, box.height);
+    ctx.fillStyle = color("accent");
+    ctx.fillRect(cam.x, p.y, cam.width, Math.max(3, Math.round(size * 0.1)));
+    ctx.fillStyle = color("background");
+    ctx.textAlign = "center";
+    shown.forEach((part, i) => ctx.fillText(part, cam.x + cam.width / 2, lineY(i)));
+  } else if (style === "marker") {
+    // A highlighter stroke under each line; it grows with the typed text.
+    ctx.textAlign = "left";
+    shown.forEach((part, i) => {
+      if (!part) return;
+      const x = centerX - widths[i]! / 2;
+      const w = ctx.measureText(part).width;
+      ctx.fillStyle = color("warning", 0.45);
+      roundRectPath(ctx, x - size * 0.25, lineY(i) - size * 0.42, w + size * 0.5, size * 0.84, size * 0.18);
+      ctx.fill();
+      ctx.fillStyle = color("text");
+      ctx.fillText(part, x, lineY(i));
+    });
+  } else {
+    // Slam: big words over the content. The picture dims, and the words pop in.
+    const k = Math.min(1, cap.ageMs / 260);
+    const pop = 1 + 0.35 * (1 - k) ** 3;
+    ctx.fillStyle = color("background", 0.6 * Math.min(1, cap.ageMs / 200));
+    ctx.fillRect(cam.x, cam.y, cam.width, cam.height);
+    ctx.translate(centerX, p.y + box.height / 2);
+    ctx.scale(pop, pop);
+    ctx.textAlign = "center";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = Math.max(6, size * 0.16);
+    ctx.strokeStyle = color("background");
+    ctx.fillStyle = color("accent");
+    shown.forEach((part, i) => {
+      const y = -box.height / 2 + padY + lineH * (i + 0.5);
+      ctx.strokeText(part, 0, y);
+      ctx.fillText(part, 0, y);
+    });
   }
   ctx.restore();
 }

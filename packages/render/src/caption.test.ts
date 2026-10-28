@@ -97,3 +97,37 @@ describe("caption lines (docs/40)", () => {
     expect(Math.abs(a! - b!)).toBeLessThan(0.25 * Math.max(a!, b!));
   });
 });
+
+describe("caption styles (docs/41)", () => {
+  it("each style draws, and none draws no caption", async () => {
+    const { createCanvas } = await import("@napi-rs/canvas");
+    const { loadScene } = await import("@anivo/schema");
+    const { evaluate } = await import("@anivo/engine");
+    const { renderScene } = await import("./render.js");
+    const make = (style: string) => {
+      const r = loadScene({
+        schemaVersion: 1,
+        settings: { captionStyle: style },
+        elements: { a: { type: "rectangle", z: "a1", x: 100, y: 100, width: 200, height: 100 } },
+        steps: [{ id: "s", title: "S", caption: { text: "Each gene adds a small amount to the trait." }, actions: [{ id: "e", type: "enter", targets: ["a"], effect: "fade", durationMs: 300 }] }],
+      });
+      if (!r.ok) throw new Error(JSON.stringify(r));
+      return r.scene;
+    };
+    const pixels = (style: string) => {
+      const scene = make(style);
+      const canvas = createCanvas(960, 540);
+      renderScene(canvas.getContext("2d") as never, scene, 2500, { width: 960, height: 540 });
+      return canvas.getContext("2d").getImageData(0, 0, 960, 540).data;
+    };
+    const none = pixels("none");
+    expect(evaluate(make("none"), 2500).caption).toBeUndefined();
+    for (const style of ["card", "subtitle", "bar", "marker", "slam"]) {
+      expect(evaluate(make(style), 2500).caption!.style).toBe(style);
+      const px = pixels(style);
+      let diff = 0;
+      for (let i = 0; i < px.length; i += 4) if (px[i] !== none[i]) diff++;
+      expect(diff, style).toBeGreaterThan(500);
+    }
+  });
+});

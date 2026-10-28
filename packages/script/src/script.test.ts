@@ -43,6 +43,16 @@ function ok(text: string) {
 }
 
 describe("Anivo Script", () => {
+  it("caption styles for the scene and for one step (docs/41), and they print back", () => {
+    const scene = ok(`scene "S" caption-style=subtitle\nbox a "A"\nstep "One" caption="Hello there"\n  enter a fade\nstep "Two" caption="Big words" caption-style=slam\n  pulse a`);
+    expect(scene.settings.captionStyle).toBe("subtitle");
+    expect(scene.steps[0]!.caption!.style).toBeUndefined();
+    expect(scene.steps[1]!.caption!.style).toBe("slam");
+    const text = printScene(scene);
+    expect(text).toContain("caption-style=subtitle");
+    expect(text).toContain("caption-style=slam");
+    expect(applyScript(`scene "S" caption-style=fancy`).ok).toBe(false);
+  });
   it("element keys on the video time (docs/32), and they print back", () => {
     const scene = ok(`text t "Hi" at=100,100 size=300x80\nkey t at=0s opacity=0 ease=linear\nkey t at=1.5s opacity=100% x=400\nkey t at=0s x=100`);
     const keys = scene.elements["t"]!.keys!;
