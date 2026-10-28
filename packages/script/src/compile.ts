@@ -229,7 +229,7 @@ export function compile(text: string, opts: CompileOptions = {}): CompileResult 
       const theme = p.kv.get("theme")?.v;
       if (theme) set["theme"] = theme;
       const captionPace = p.kv.get("captions")?.v;
-      if (captionPace && ["relaxed", "normal", "quick"].includes(captionPace)) set["captionPace"] = captionPace;
+      if (captionPace && ["relaxed", "normal", "quick", "voice"].includes(captionPace)) set["captionPace"] = captionPace;
       // caption-style= (docs/41): how all captions look.
       const cs = p.kv.get("caption-style");
       if (cs && !["card", "subtitle", "bar", "marker", "slam", "none"].includes(cs.v)) errors.push(err(cs.pos, `The caption style '${cs.v}' is not known.`, "Use: card, subtitle, bar, marker, slam, none."));

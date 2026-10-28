@@ -71,7 +71,7 @@ export const SceneSettings = z.object({
     .optional()
     .describe("Custom fonts of the scene (docs/20 B10)."),
   captionStyle: CaptionStyle.optional().describe("How captions look (docs/41): card (default), subtitle, bar, marker, slam, or none. A step can change it."),
-  captionPace: z.enum(["relaxed", "normal", "quick"]).optional().describe("How long a step holds so a viewer can read its caption (docs/31): relaxed 0.45 s for each word (default), normal 0.33 s, quick 0.25 s."),
+  captionPace: z.enum(["relaxed", "normal", "quick", "voice"]).optional().describe("How long a step holds so a viewer can read its caption (docs/31): relaxed 0.45 s for each word (default), normal 0.33 s, quick 0.25 s. voice (docs/42): a voiceover sets the time; the caption does not make a step longer, and it types at about the speed of speech."),
   motionBlur: z.boolean().optional().describe("Video export: fast moves get a soft trail (docs/19 R13). The editor does not show it."),
 });
 export type SceneSettings = z.infer<typeof SceneSettings>;
