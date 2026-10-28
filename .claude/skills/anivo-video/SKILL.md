@@ -1,0 +1,84 @@
+---
+name: anivo-video
+description: Make a narrated explainer video (2-10 min) with Anivo, from a topic or a script - story, layout, a look, a local voiceover (Kokoro), checks, and an MP4. Use when the user asks for an explainer video, a YouTube video, or a video on a topic with Anivo.
+---
+
+# Anivo explainer video
+
+This skill makes a finished MP4 with a voiceover: one idea for each step, a caption that the voice reads, and a look. It builds on `prompts/scene-agent.md` (the Anivo Script reference and the base design rules). Read that file first if you do not know Anivo Script.
+
+## Tools
+
+| Tool | Use |
+|---|---|
+| `node packages/cli/bin/anivo.js` (`pnpm build:cli` first) | `new`, `apply --mode replace`, `lint`, `summary`, `contact-sheet`, `preview --step N`, `render` |
+| `scripts/voice.py synth` | One WAV for each step, with Kokoro. Needs the Kokoro Python (see Setup). |
+| `scripts/voice.py fit` | Sets `hold=` in the script so that each step lasts its spoken line. One round. |
+| `scripts/voice.py mix` | One voice track; each line starts 0.3 s after its step starts. |
+| `scripts/look.py` | A look preset (`classroom`, `black-metal`) and optional font files, into the `.anivo` file. |
+| `ffmpeg` | Put the voice track on the silent video. |
+
+## Setup (one time)
+
+```bash
+uv venv --python 3.12 ~/.anivo-tts && uv pip install --python ~/.anivo-tts/bin/python kokoro soundfile
+```
+
+The first run downloads the model (about 330 MB) from Hugging Face. Kokoro is Apache 2.0: you can use the voice in videos that earn money. `espeak-ng` (Homebrew) helps with words that are not in the dictionary.
+
+Voices that the owner chose: **`am_puck`** (male, default) and **`af_heart`** (female). Other voices: `am_liam`, `am_echo`, `bm_fable`. Do not use `am_michael` (sounds too old).
+
+## Procedure
+
+1. **Story first, in plain words.** Write the narration before the layout. Shape: hook question → the simple case → the new idea → how it works (2-4 steps) → what it causes → real examples → a catch or a limit → "In short". 12-25 steps. Rewrite the user's text: one idea for each step, 15-30 words for each line, short sentences, numbers as words if the voice must say them.
+2. **Plan each step as a pair: line + picture.** The picture shows what the line says, at the moment it says it. If a step has no picture change, join it with the next step.
+3. **Write a generator** (`gen.py`) that writes the `.txt` script. Loops make rows of bars, ticks, and cells; a generator keeps the IDs and positions consistent. One `caption="..."` for each step = the narration. For a step with no caption (the title), write `# say: ...` on the line after the step line.
+4. **Compile and lint.** `new` → `apply --mode replace` → fix all lint errors. Overlap warnings are fine when you mean them (a dot on a line).
+5. **Voice.** `synth` → `fit` → `look.py` → `contact-sheet`. Examine the sheet (rules below). Fix in `gen.py`, then run `gen.py`, `new`, `fit`, `look.py` again. `fit` applies the script for you.
+6. **Render and mix.**
+
+```bash
+anivo render x.anivo --out silent.mp4
+python3 scripts/voice.py mix x.anivo voice voice.wav --anivo "node packages/cli/bin/anivo.js"
+ffmpeg -y -i silent.mp4 -i voice.wav -c:v copy -c:a aac -b:a 160k -shortest final.mp4
+```
+
+7. **Check frames of the MP4**, not only the sheet: at step changes (a flash, a jump) and in the middle of long steps.
+8. **Report**: the length, the voice, the look, what you did not fix.
+
+> **CAUTION:** Run `look.py` after `anivo new`. `fit` keeps the settings (it uses replace mode), but a new file has no look.
+
+## Layout rules (1920 × 1080)
+
+| Zone | y | Use |
+|---|---|---|
+| Heading | 60-180 | One heading for each section, font 56-64. |
+| Stage | 200-820 | The picture. Keep the main shapes here. |
+| Caption band | 880-1040 | Keep it empty. The caption goes here as a subtitle. If an element is here, the caption moves next to the picture and covers it. |
+
+- A maximum of about 12 shapes at one time. Clear the stage (`exit … fade dur=400ms`) when a section starts; use `transition=fade` on that step.
+- Text sizes: heading 56-64, labels 36-46, small notes 32-38. Mono fonts are wider: about 0.6 × font size for each letter. Measure: `letters × 0.6 × size < width`.
+- A box label with two lines: `"64 weights\nscale 0.11"`.
+- Bars of a chart: compute the heights so the tallest bar stays below the heading (top ≥ 220).
+- Do not use IDs that are verbs or keywords (`scale`, `count`, `move`): the script reads them as words. Arrow IDs and element IDs share one namespace.
+
+## Motion rules
+
+- Each new thing enters when the voice talks about it: chain with `after=prev`; keep each action 0.4-1.2 s.
+- `wipe direction=up` for bars, `draw-on` for arrows, `pop` for shapes, `typewriter` for a title, `count` for numbers.
+- One emphasis (`pulse`, `circle`, `shake`, `glow`) for each step, at the end of its actions.
+- Use `morph` for a change of state (a label, a fill, a width), not exit + enter.
+
+## Looks
+
+| Preset | Script line | Feel |
+|---|---|---|
+| `classroom` | `style=sketch theme=paper-light background=grid` | Exercise book: paper, navy ink, blue and red pen, yellow highlighter, hand-drawn shapes. |
+| `black-metal` | `theme=studio-dark background=solid` + `--font` a mono font | Black, bone white, blood red. |
+
+Add a preset to `PRESETS` in `look.py` for a new look. Use theme tokens in the script (`accent`, `success`, …), not hex colors, so a look changes everything.
+
+## Facts and honesty
+
+- Check facts that the user gave. If a claim is weak or out of date, say so to the user and use a safer word ("at least", "about", "rough picture").
+- Write "rough numbers" on the screen when a chart is a picture, not data.
