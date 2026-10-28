@@ -3,16 +3,25 @@ import { placeCaption } from "./render.js";
 
 const cam = { x: 0, y: 0, width: 1920, height: 1080 };
 
+// An element in the bottom band: the caption cannot be a subtitle there.
+const band = { x: 0, y: 900, width: 1920, height: 180 };
+
 describe("caption place", () => {
+  it("is a subtitle at the bottom center when that place is free (docs/40)", () => {
+    const p = placeCaption({ width: 1200, height: 80 }, { side: "auto", anchor: { x: 800, y: 300, width: 300, height: 100 } }, cam, []);
+    expect(p.x).toBeCloseTo(360, 0);
+    expect(p.y + 80).toBeGreaterThan(1000);
+  });
+
   it("goes below the anchor when there is space", () => {
-    const p = placeCaption({ width: 400, height: 80 }, { side: "auto", anchor: { x: 800, y: 300, width: 300, height: 100 } }, cam, []);
+    const p = placeCaption({ width: 400, height: 80 }, { side: "auto", anchor: { x: 800, y: 300, width: 300, height: 100 } }, cam, [band]);
     expect(p.y).toBeGreaterThan(400);
     expect(p.x).toBeCloseTo(750, 0);
   });
 
   it("goes above when an element is below", () => {
     const below = { x: 700, y: 420, width: 500, height: 200 };
-    const p = placeCaption({ width: 400, height: 80 }, { side: "auto", anchor: { x: 800, y: 300, width: 300, height: 100 } }, cam, [below]);
+    const p = placeCaption({ width: 400, height: 80 }, { side: "auto", anchor: { x: 800, y: 300, width: 300, height: 100 } }, cam, [below, band]);
     expect(p.y + 80).toBeLessThanOrEqual(300);
   });
 
@@ -71,5 +80,20 @@ describe("motion blur", () => {
       return fills;
     };
     expect(calls(true)).toBeGreaterThan(calls(false));
+  });
+});
+
+describe("caption lines (docs/40)", () => {
+  it("are one line when they fit, else two lines of about the same length", async () => {
+    const { createCanvas } = await import("@napi-rs/canvas");
+    const { captionLines } = await import("./render.js");
+    const ctx = createCanvas(10, 10).getContext("2d") as unknown as Parameters<typeof captionLines>[0];
+    ctx.font = "40px sans-serif";
+    expect(captionLines(ctx, "A short caption.", 1300)).toHaveLength(1);
+    const long = "If one scale must reach eight, the sixteen levels are one apart. Now zero point four three rounds to zero.";
+    const two = captionLines(ctx, long, 1300);
+    expect(two).toHaveLength(2);
+    const [a, b] = two.map((l) => ctx.measureText(l).width);
+    expect(Math.abs(a! - b!)).toBeLessThan(0.25 * Math.max(a!, b!));
   });
 });
